@@ -1,5 +1,5 @@
 ---
-description: "Browse and edit the machine's memory, one bank or the whole 64K, see which bytes ran or changed on the heat map, and open any address as graphics."
+description: "Browse and edit the machine's memory: a map of the paging, every partition in a bank map, register tags, bytes changed since the last stop, typing over bytes, find, and an inspector."
 ---
 
 import { Callout, Steps } from 'nextra/components'
@@ -8,85 +8,209 @@ import { Callout, Steps } from 'nextra/components'
 
 The **Memory** view shows the machine's memory as a hex dump with characters beside it. Use it to
 check what your program wrote, to look into a bank that is not paged in, to change a byte while the
-machine is paused, and, with code coverage on, to see which bytes were executed, read or written.
+machine is paused, to find a byte pattern or a string, and, with code coverage on, to see which
+bytes were executed, read or written.
 
 <Shot
   src="guides/debugging/memory/memory-view.webp"
-  alt="The Memory view with its toolbar: Decimal, View, Chars, Bank, Heat, Go To and Show as graphics"
-  caption="The Memory view and its toolbar."
+  alt="The Memory view: the toolbar, the memory map bar, the register strip, the dump with its label gutter and the inspector"
+  caption="The Memory view: toolbar, memory map, registers, the dump and the inspector."
   width={760}
 />
 
 ## Open it
 
 Choose **View › Machine Views › Memory**, or click **Show Memory Panel** on the IDE toolbar. The
-view opens as a document in the IDE; the same items close it again.
+view opens as a document in the IDE; the same items close it again. The
+[`show-memory`](/en/reference/commands/#show-memory) command opens it too, at an address, a label,
+a register or a partition and offset.
 
 ## The toolbar
 
-- **Decimal**: show addresses and bytes in decimal instead of hexadecimal (off by default).
-- **View**: the layout: **8B / 1 col** (8 bytes a row), **8B / 2 col** (two 8-byte sections side by
-  side, the default) or **16B / 1 col**.
-- **Chars**: show each byte's character beside the dump (on by default). Hovering a byte outlines
-  its character.
-- **Bank**: show the bank label in front of each address (on by default; only on machines that
-  page memory).
+- **Go to**: type where to go and press <kbd>Enter</kbd> (<kbd>Ctrl</kbd>+<kbd>G</kbd> puts the
+  cursor there). It takes:
+  - an address, in hexadecimal (`8000`, `$8000`, `0x8000`) or, with **Dec** on, decimal; `%` for
+    binary;
+  - a register name: `HL`, `PC`, `IX`;
+  - a label: one from your build, your annotations or the ROM's;
+  - a partition and an offset, `47:$0100` or `R0:$10`, the syntax `bp-set` uses.
+
+  The box turns red and its tooltip says why when it does not understand the text.
+- **Find**: see [Find bytes and text](#find-bytes-and-text).
+- **Bytes**: **8**, **16** or **32** bytes a row.
+- **Hex** / **Dec**: the number format of addresses and bytes.
+- **Chars**: show each byte's character beside the dump.
+- **Labels**: show the label gutter in front of each row: the row's first label, and a tag for each
+  register pointing into the row.
 - **Heat**: colour the bytes by how they were used since coverage started: **Executed**, **Read**,
   **Written** or **All**, or **Off**. It appears on machines that record coverage; turn coverage on
   with **Debug › Code Coverage**. See [Code coverage and the heat map](/en/guides/analysis/code-coverage/).
-- **Go To**: type an address and press <kbd>Enter</kbd>. The view scrolls there and the byte at that
-  address flashes for a few seconds. Type decimal in decimal mode, hexadecimal otherwise.
-- **Show as graphics**: open the [Graphics Finder](/en/guides/analysis/graphics-finder/) at the
-  address at the top of the view, to look for sprites and fonts.
+- **Follow**: keep the cursor on the address a register holds, at every stop.
+- **Inspector**: show the inspector column beside the dump.
 
-Hover a byte to see its value in hexadecimal, decimal and binary.
+## The memory map
 
-## Look at one bank
+The strip under the toolbar is the 64K as the CPU sees it now: one cell per paging unit (four 16K
+slots on a 128K, the Next's eight MMU slots, the Cambridge Z88's segments), each with its address
+range and the partition in it. ROM is hatched and an empty card slot dashed. The frame along the
+bottom is the part in view, the **PC** and **SP** ticks mark the registers, and with **Heat** on a
+strip under each cell shows where the hot bytes are. Click a cell to go to its start.
 
-On machines that page memory, a second toolbar row has a **64K View** switch. On (the default), the
-view shows the 64K the CPU sees now, with the current paging. Off, choose a ROM page or RAM bank in
-the **Selected bank** chooser: the view shows that partition even when it is not paged in. The
-partition names are listed [below](#machine-specific-memory-partitions).
+Below the map, the **register strip** has a chip for each register that holds an address, with its
+value and the partition it points into. Click one to go there; **⋯** adds the alternate registers,
+`IR` and `WZ`.
+
+## Look at one partition
+
+On machines that page memory, the **Partitions** row picks what the view shows: **64K** for the
+address space as the CPU sees it, or one partition on its own, shown by offset from `$0000` even
+when it is not paged in. The map bar then describes that partition: its name, size, where it is
+paged in (or *not paged in*) and what the hardware uses it for.
+
+A machine with a handful of partitions lists them all as chips; a badge on a chip gives the slots
+it is paged into. A machine with many (the Z88's 256 banks, the Next's 247 or 503 partitions) shows
+**Paged in**, the **Recent** partitions you opened in this view, and the **Bank map** button.
+
+<Shot
+  src="guides/debugging/memory/bank-map-next.webp"
+  alt="The Bank map of a ZX Spectrum Next: the ROMs, DivMMC and the RAM pages as a grid, with paged-in badges and role bars"
+  caption="The Next's Bank map: paged-in badges, and bars for the ULA screen, Layer 2 and the tilemap."
+  width={760}
+/>
+
+The **Bank map** (<kbd>Ctrl</kbd>+<kbd>B</kbd>) shows every partition, laid out the way the machine
+has them. Each cell carries:
+
+- its **kind**, as its fill: ROM, RAM, card RAM, flash, EPROM, DivMMC ROM or RAM, empty, or a
+  mirror of another bank;
+- a **badge** with the slots it is paged into;
+- on the Next, a **role bar**: the ULA screen, the shadow screen, Layer 2 and its shadow, and the
+  tilemap, read from the machine's registers as it runs;
+- a dot when its bytes **changed** since the previous stop.
+
+Type in **Filter** to fade what does not match: a name (`47`, `M3`), a kind (`rom`), a role
+(`screen`) or a slot (`slot 2`). Arrow keys move, <kbd>Enter</kbd> opens the partition and
+<kbd>Esc</kbd> closes the map.
+
+<Shot
+  src="guides/debugging/memory/bank-map-z88.webp"
+  alt="The Bank map of a Cambridge Z88: four card slots of 64 banks, filtered to mirrors"
+  caption="The Z88's four card slots. A card smaller than its slot repeats across it: those banks are mirrors."
+  width={760}
+/>
+
+<Shot
+  src="guides/debugging/memory/partition-view.webp"
+  alt="The Memory view showing one ZX Spectrum Next RAM page by offset"
+  caption="One partition on its own, shown by offset."
+  width={760}
+/>
+
+## The dump
+
+- A **register tag** in the label gutter says which registers point into the row; the byte each
+  points at is underlined.
+- A small dot marks each byte that **changed since the previous stop**: while paused, since the
+  stop before this one.
+- The bytes a memory **breakpoint** watches are underlined in the breakpoint colour.
+- With the 64K shown, a rule marks the row where the next slot's partition starts.
+
+Click a byte to put the cursor on it. <kbd>Shift</kbd>+click, <kbd>Shift</kbd>+arrows or a drag
+select a range. The arrows, <kbd>Page Up</kbd>/<kbd>Page Down</kbd> and <kbd>Home</kbd>/<kbd>End</kbd>
+move the cursor.
 
 ## Change a byte
+
+Type over it: put the cursor on a RAM byte and type its new value in hexadecimal (decimal with
+**Dec** on). The byte is written as soon as it is complete and the cursor moves on;
+<kbd>Enter</kbd> writes a partial value and <kbd>Esc</kbd> drops it. ROM, flash and empty slots
+cannot be written; the inspector says why.
+
+For a word or a double word, use the inspector's **Edit** section (a value, its size in bytes, and
+**BE** for big-endian), or right-click the byte:
 
 <Steps>
 
 ### Right-click the byte
 
-Right-click a RAM byte in the dump. The **Set Memory Content** dialog opens for that address.
+The **Set Memory Content** dialog opens for that address.
 
 ### Enter the value
 
-Type a decimal number, a hexadecimal one with `$`, or a binary one with `%`; spaces between digits
-are ignored. Choose the **Content size**, 1 to 4 bytes. The value is written least significant
-byte first; tick **Big-endian write** to write the most significant byte first.
+Type a decimal number, a hexadecimal one with `$`, or a binary one with `%`. Choose the **Content
+size**, 1 to 4 bytes. The value is written least significant byte first; tick **Big-endian write**
+to write the most significant byte first.
 
 ### Click Set
 
-Click **Set** or press <kbd>Enter</kbd>. A ROM address cannot be written; the dialog says so.
+Click **Set** or press <kbd>Enter</kbd>.
 
 </Steps>
 
 <Callout type="info">
 Memory can be written while the machine runs, but the program may overwrite the value at once:
-pause it first. Writing also works while the machine is stopped, which is useful on machines whose
-memory survives switching off, such as the Cambridge Z88. While you stand in the past with reverse
-debugging on, an edit asks to [take over](/en/guides/debugging/reverse-debugging/#taking-over) first.
+pause it first. While you stand in the past with reverse debugging on, an edit asks to
+[take over](/en/guides/debugging/reverse-debugging/#taking-over) first.
 </Callout>
+
+## Find bytes and text
+
+Type in **Find** and press <kbd>Enter</kbd> (<kbd>Ctrl</kbd>+<kbd>F</kbd> puts the cursor there):
+
+- bytes: `21 00 58`, with `??` for any byte: `21 ?? 58`;
+- text in quotes: `"HELLO"`;
+- a label's name, which goes to the label.
+
+The count says which match is shown of how many; <kbd>F3</kbd> and <kbd>Shift</kbd>+<kbd>F3</kbd>
+(or the arrows) step through them. **View** searches what the view shows; **All** searches every
+partition of the machine, and a match in a partition that is not shown opens it.
+
+<Shot
+  src="guides/debugging/memory/find.webp"
+  alt="The Memory view with the matches of a byte pattern marked in the dump"
+  caption="Find: every match is marked, the current one outlined."
+  width={760}
+/>
+
+## The inspector
+
+The column beside the dump describes the byte under the cursor:
+
+- **Location**: the partition and offset, what the partition is, where the CPU sees it, its role,
+  its label, the registers pointing at it.
+- **Value at cursor**: the byte unsigned and signed, in binary and as a character; the word at the
+  cursor in both byte orders, with its label; the double word.
+- **Edit**: write a value of 1, 2 or 4 bytes.
+- **Selection**: the range, its length, sum and XOR, and its text; **Copy hex**, **Copy as .defb**,
+  **Show as graphics** (the [Graphics Finder](/en/guides/analysis/graphics-finder/)) and **Find these
+  bytes**.
+- **Instructions here**: the bytes at the cursor disassembled, and **Open in Disassembly**.
+- **Heat**: how often the byte was executed, read and written.
+- **Use**: **Breakpoint here**, **Break on write** (over the selection, when there is one) and
+  **Watch as word** for a labelled address.
+
+<Shot
+  src="guides/debugging/memory/inspector.webp"
+  alt="The Memory view's inspector: location, value at cursor, edit and instructions"
+  caption="The inspector."
+  width={420}
+/>
+
+Below about 120 characters of width, the inspector moves under the dump. Clear **Inspector** to
+give the dump the whole width.
 
 ## Machine-specific memory partitions
 
 Every partition has one **name** and one **description**. The name is what identifies it: it is what
-the bank column shows, what a breakpoint is listed under, and what the `bp-*` commands accept in a
-partition-qualified address such as `bp-set r1:$32ac`. The description is the longer form a chooser
-spells out beside the name; it is never typed and never appears in a breakpoint key.
+the chips and the bank map show, what a breakpoint is listed under, and what the `bp-*` commands and
+Go to accept in a partition-qualified address such as `r1:$32ac`. The description is the longer form
+shown beside the name.
 
 Names are accepted case-insensitively, so `r1` and `R1` are the same partition.
 
 ### ZX Spectrum 48K
 
-No partitions: this model supports only the 64K view.
+No partitions: this model has only the 64K view.
 
 ### ZX Spectrum 128K
 
@@ -94,6 +218,8 @@ No partitions: this model supports only the 64K view.
 | --- | --- | --- |
 | `R0`, `R1` | ROM 0, ROM 1 | The two ROM pages, 16K each |
 | `B0` ... `B7` | Bank 0 ... Bank 7 | The eight RAM banks, 16K each |
+
+Bank 5 holds the screen and bank 7 the shadow screen.
 
 ### ZX Spectrum +2E, +3E
 
@@ -104,11 +230,14 @@ No partitions: this model supports only the 64K view.
 
 ### Cambridge Z88
 
-| Name | Description | What it is |
-| --- | --- | --- |
-| `00` ... `FF` | Bank $00 ... Bank $FF | The 256 banks, 16K each |
+| Name | What it is |
+| --- | --- |
+| `00` ... `3F` | Slot 0: the ROM (`00`-`1F`) and the internal RAM (`20`-`3F`) |
+| `40` ... `7F`, `80` ... `BF`, `C0` ... `FF` | Card slots 1, 2 and 3 |
 
-The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed page.
+The bank map shows what is in each slot: a RAM, EPROM or flash card and its size, or an empty slot.
+A card sits at the top of its slot and repeats below it when it is smaller than the slot's 1M; those
+banks are **mirrors**, and their tooltip names the bank they repeat.
 
 ### ZX Spectrum Next
 
@@ -118,16 +247,14 @@ The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed p
 | Alt ROM | `X0`, `X1` | The alternate ROM pages, 16K each |
 | DivMMC ROM | `DM` | The DivMMC ROM, 8K |
 | DivMMC RAM | `M0` ... `MF` | The 16 DivMMC RAM banks, 8K each |
-| &mdash; | `00` ... `DF` | The 224 RAM pages, 8K each (`000` to `223` in decimal view) |
-
-The bank chooser heads each group once rather than repeating it on every entry, so a DivMMC RAM
-bank appears as `M3` under a **DivMMC RAM** heading. Hovering any entry names it in full.
+| RAM pages | `00` ... `DF` | The 224 RAM pages, 8K each (`000` to `223` in decimal view) |
+| Upper RAM | `U00` ... `UFF` | A KS3 board's upper 2 MB, 256 pages of 8K |
 
 <Callout type="info">
 On the ZX Next a RAM partition is an **8K page**, which is the granularity of the machine's own MMU.
 Code and tools that think in 16K banks (the `.bank` pragma, a NEX file's banks, the
 `.nex` viewer) address them in pairs: 16K bank *B* is the two partitions `2B` and `2B+1`, its
-low half first. So 16K bank 5 is partitions `0A` and `0B`.
+low half first. So 16K bank 5 is partitions `0A` and `0B`; a page's tooltip names its 16K bank.
 </Callout>
 
 <Callout type="info">
@@ -137,6 +264,12 @@ names on this machine. A name has to mean one thing.
 
 Earlier versions called the alternate ROMs `Q0` and `Q1`. Those spellings are still accepted by
 `bp-set` and friends, so existing scripts keep working, but the IDE now shows `X0` and `X1`.
+</Callout>
+
+<Callout type="info">
+Coming from an earlier version: the **64K View** switch and the **Selected bank** chooser are the
+**64K** chip and the partition row (or the Bank map), the **View** drop-down is **Bytes**, and the
+two-column 8-byte layout is gone: such a view opens with 16-byte rows.
 </Callout>
 
 ## Related

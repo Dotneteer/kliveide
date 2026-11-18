@@ -2696,6 +2696,47 @@ keeps the command as the keyboard path.
   An element shot of the Settings dialog came out clipped on the right while the dialog fitted with
   room to spare; measure with `getBoundingClientRect` or shoot the whole window.
 
+## The Memory And Disassembly Frame
+
+The Memory and Disassembly documents share one frame (`features/memoryMap/`,
+`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`): a toolbar of segmented controls and check boxes, a
+**memory map bar**, a **partition row** (with the **Bank map** behind it), a **register strip** and a
+`46ch` **inspector column**. Its colours are the `--color-memmap-*` / `--bgcolor-memmap-*` and
+`--color-flow-*` aliases in `componentAliases.ts`. Rules it settled:
+
+- **A partition's kind is its fill, and the kind class is the only fill.** RAM the accent's subtle
+  wash, ROM (and flash, EPROM, the DivMMC ROM) the raised surface hatched with `--border-subtle`, a
+  card's RAM the secondary accent's wash, the DivMMC the success hue's subtle fill, an empty slot a
+  dashed outline, a mirror a dotted one in the tertiary text. The map bar's cells and the Bank map's
+  cells set **no background of their own**: a base `background` on the cell rule, declared after the
+  kind rules, silently painted every empty Z88 slot as RAM. Add a kind by adding its class.
+- **The paging unit decides the badges.** A paged-in badge names slots in the machine's unit - 16K
+  slots on the 128K and the Z88 (`2`), 8K MMU slots on the Next (`0·1`), even for a 16K ROM there -
+  from `pagingUnitOf`, never from the partition's own size.
+- **Roles are a bar along a cell's bottom edge**, in the Layers views' identity hues (ULA screens
+  `--status-info`, Layer 2 `--status-warning`, tilemap `--status-success`); a shadow role is the same
+  hue dashed. A role is live state (NextReg/port), recomputed per refresh, never stored.
+- **A text count on a pressed chip inherits the chip's text colour**: `--data-secondary` vanishes on
+  the accent fill.
+- **The dump's new marks are overlays on the row's one text node** (`ByteMarks`): the selection and a
+  find match are washes behind the text (z-index -1, like heat cells), the cursor an accent outline,
+  the byte being typed over an accent fill showing the digits, a watched byte a breakpoint-hue
+  underline, a pointed byte a register-hue underline, a changed byte the shared dot in its corner.
+  One `key` string sums a row's marks so both hand-written memo comparators compare one value.
+- **The flow gutter is drawn per row**: each row carries its slice of the lanes (`flowGutter.ts`) in
+  an SVG as tall as the row, lane 0 innermost beside the address. Nothing is positioned over the
+  virtualised list, so variable-height synopsis rows cannot break it. Arrows are `--color-flow-arrow`
+  (tertiary text), dashed when conditional; the selected row's jumps take the accent, the branch
+  taken at PC the verdict hue. A row passes its highlighted edges only when it draws one of them, so
+  a selection change re-renders only the rows it touches.
+- **A rule row in a listing is a separator item, rendered by the row** (`item.separator`): a caption
+  over a `--border-strong` rule where the 64K enters another slot, an italic secondary line for an
+  empty card slot. It is display-only - the annotation, breakpoint and coverage logic read the
+  listing without it.
+- **The inspector is hidden until something is selected in the Disassembly view**, and its header
+  badge takes the warning hue when the inspected byte cannot be written (ROM, flash, an empty slot),
+  as the file inspector's Read-only badge does.
+
 ## A Bank Browser Has One Shell
 
 `controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks — or anything

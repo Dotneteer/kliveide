@@ -1,6 +1,7 @@
 # Memory And Disassembly Views Modernization Plan
 
-Status: **proposed** (2026-11-18, branch `feature/memory-view-mockup`). Nothing is built yet.
+Status: **implemented** (2026-11-18, branch `feature/memory-view-mockup`): all seven phases. The
+as-built notes and the deviations from the sketch below are §13.
 
 Mockups (open in a browser, or serve the folder with the `mockups` entry of `.claude/launch.json`):
 
@@ -334,3 +335,50 @@ included).
 Editing memory of a non-paged partition through a Memory map other than the emulator's own write path;
 a graphical memory map of the whole 2 MB; disassembly of the 6510 (the C64 keeps today's view); a
 debugger for the Z88's flash command sequences.
+
+## 13. As built
+
+Where the code is (for what each piece does, read its header comment):
+
+| Piece | Files |
+|---|---|
+| Partition model (phase 1) | `src/common/annotations/partitionInfo.ts`; the Z88's from its inserted cards (`Z88WasmV2Machine.getPartitionInfo`), the Next's from its labels and live registers (`ZxNextWasmHost.getPartitionInfo`, `ZxNextWasmV2Machine.getPartitionRoles`), the Spectrum family's and a generic one in `MainToEmuProcessor.getPartitionInfo`; `EmuApi.getPartitionInfo`, `MemoryInfo.partitionRoles` |
+| Shared frame (phase 2) | `src/renderer/features/memoryMap/`: `memoryMapModel.ts` (map cells, paging, recent, Bank map filter and keys), `goToTarget.ts` (the Go to language), `FrameControls`, `MemoryMapBar`, `PartitionRow` (with `BankMapPopover`), `RegisterStrip`, `Inspector`, `memoryEdit.ts` (type-over and the write path), `usePartitionInfo`, `useNamedLocations`; tokens `--color-memmap-*`, `--color-flow-*` |
+| Memory view (phase 3) | `features/memory/MemoryPanel.tsx`, `MemoryInspector.tsx`, `MemoryDumpSection.tsx` (`ByteMarks`), `useMemoryRefresh.ts` (registers, roles, the changed baseline by `tacts`) |
+| Find across partitions (phase 4) | `src/common/utils/memoryFind.ts`; `EmuApi.findMemory` (a cap of 1000 matches, mirrors and empty slots skipped) |
+| Disassembly view (phase 5) | `DocumentPanels/DisassemblyPanel.tsx`, `DisassemblyInspector.tsx`, `flowGutter.ts`, `listingRows.ts`, `printedReferences.ts`, `DisassemblyRow.tsx` (`FlowCell`, separator rows, reference counts) |
+| Cross-view (phase 6) | `show-memory` / `show-disass` take the Go to language (`ToolCommands.ts`, a bare number decimal as everywhere in the prompt); the Disassembly locator carries the Origin as `base` |
+| Docs (phase 7) | `guides/debugging/{memory,disassembly}.mdx` rewritten; recipes `guides-debugging.cjs` (extended), `guides-memory-next.cjs`, `guides-memory-z88.cjs`, `code-coverage.cjs` |
+
+Decisions as taken: D1-D8 as proposed. **Q1**: the Memory view shows a partition by offset; no Origin
+there. **Q2**: no split document.
+
+Deviations from the sketch, and why:
+
+- **The Disassembly inspector's Annotation section runs the row menu's dialogs** (Label...,
+  End-of-Line Comment... and the rest) rather than editing in place. The dialogs already commit at
+  once with no Save, and a second editor beside the bank document's controller would have to repeat
+  its label validation. One write path.
+- **Reference counts are by printed name** (`printedReferences.ts`), not
+  `countLabelReferencesInListing`: that function asks one bank's annotations, and the 64K listing
+  spans banks, ROM pages and build labels. The rule is the same - a reference is what the listing
+  printed - so the two agree on a bank's own labels.
+- **Labels stay inline** in their column, as the listing always drew them; the count follows the
+  label. There are no separate label rows.
+- **The Disassembly inspector has no Selection section**: the listing has one selected row, not a
+  range, and **Export** in the toolbar is the export path. Copy-as-source of a range is open.
+- **A plain number in Go to stays in the view**: an offset in a partition shown on its own, an
+  address in a partition listing at its Origin (as Go To always behaved); a register or a label goes
+  to the 64K view. Go to in the Disassembly view does not turn Follow PC off, as before.
+- **The toolbar wraps** onto a second line in a narrow document rather than folding into `⋯`
+  ("A Toolbar Of Fixed-Size Controls Wraps; It Never Shrinks").
+- **A Next role bar is the first role of a page**; the tooltip lists them all.
+- **Breakpoints from the Memory inspector** are set on the CPU address of a paged-in partition; a
+  partition that is not paged in says so in the status bar.
+
+Open:
+
+- Copy as source / Export of a selected range in the Disassembly view.
+- The flow gutter's lanes do not pass through synopsis rows (their pieces are drawn on instruction
+  rows only), which leaves a gap where a synopsis interrupts a long arrow.
+

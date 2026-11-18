@@ -23,7 +23,6 @@ import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
-import { FullPanel } from "@renderer/controls/layout/Panels";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
   type CachedRefreshState,
@@ -36,7 +35,7 @@ import {
   type LiveListingContext,
   useDisassemblyRefresh
 } from "./useDisassemblyRefresh";
-import { DisassemblyRow, deriveInstructionWidthCh } from "./DisassemblyRow";
+import { DisassemblyRow, deriveDisassemblyRowViewModel, deriveInstructionWidthCh } from "./DisassemblyRow";
 import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { MF_PROFILE } from "@common/machines/constants";
 import { PF_EXECUTED } from "@common/profile/profileTypes";
@@ -57,7 +56,7 @@ import {
   selectRowBreakpoint
 } from "./breakpointRowMatch";
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
-import { toHexa4 } from "../services/ide-commands";
+import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useT } from "@common/i18n/useT";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from "react";
@@ -72,12 +71,30 @@ import {
 import { disassemblyRowMenuItems, type RowMenuTarget } from "./disassemblyRowMenu";
 import { useAppServices } from "../services/AppServicesProvider";
 import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
-import {
-  createDisassemblyOffsetOptions,
-  DisassemblyBankToolbar,
-  DisassemblyToolbar
-} from "./DisassemblyToolbars";
 import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
+import classnames from "classnames";
+import frame from "@renderer/features/memoryMap/MemoryMap.module.scss";
+import { Check, FindBox, GoToBox, Segmented, ToolGroup } from "@renderer/features/memoryMap/FrameControls";
+import { MemoryMapBar, PartitionBar } from "@renderer/features/memoryMap/MemoryMapBar";
+import { PartitionRow } from "@renderer/features/memoryMap/PartitionRow";
+import { RegisterStrip } from "@renderer/features/memoryMap/RegisterStrip";
+import { usePartitionInfo } from "@renderer/features/memoryMap/usePartitionInfo";
+import { useNamedLocations } from "@renderer/features/memoryMap/useNamedLocations";
+import { GO_TO_ERROR_KEYS, parseGoToTarget, suggestLabels, type GoToTarget } from "@renderer/features/memoryMap/goToTarget";
+import {
+  buildMapCells,
+  cpuAddressOf,
+  pagedSlotsOf,
+  partitionAt,
+  pushRecent,
+  registerValuesOf
+} from "@renderer/features/memoryMap/memoryMapModel";
+import { kindText } from "@renderer/features/memoryMap/partitionText";
+import { edgesAt, layoutFlow } from "./flowGutter";
+import { buildListingRows } from "./listingRows";
+import { DisassemblyInspector, type InspectedOperand } from "./DisassemblyInspector";
+import { printedReferences, rowLabelName } from "./printedReferences";
+import { SmallIconButton } from "@renderer/controls/IconButton";
 
 /* M3: see `MemoryPanel` — the height belongs to `rowSizes`, not to this file. */
 const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
@@ -140,7 +157,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const [currentSegment, setCurrentSegment] = useState<number>(
     loadedViewState?.currentSegment ?? 0
   );
-  const [bankLabel, setBankLabel] = useState(
+  const [bankLabel] = useState(
     loadedViewState?.bankLabel ?? true
   );
 
@@ -160,6 +177,17 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
   // --- The ROM's annotations (§5.5), on unless the reader turned them off
   const [romLabels, setRomLabels] = useState(loadedViewState?.romLabels ?? true);
+  // --- The frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §4, §6)
+  const [flowOn, setFlowOn] = useState(loadedViewState?.flow ?? true);
+  const [inspectorShown, setInspectorShown] = useState(loadedViewState?.inspector ?? true);
+  const [recent, setRecent] = useState<number[]>([]);
+  const [bankMapOpen, setBankMapOpen] = useState(false);
+  const [findText, setFindText] = useState("");
+  const [findMatches, setFindMatches] = useState<number[] | undefined>();
+  const [findIndex, setFindIndex] = useState(0);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const { set: partitionSet, partitions } = usePartitionInfo(emuApi);
 
   const disassemblerFactory = machineInfo?.toolInfo?.[CT_DISASSEMBLER] as
     | DisassemblerFactory
@@ -294,7 +322,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     memorySnapshot,
     pausedPc,
     refreshDisassembly,
-    refreshVersion
+    refreshVersion,
+    registers: refreshRegisters,
+    partitionRoles
   } = useDisassemblyRefresh({
     cachedRefreshState,
     customDisassembly,
@@ -364,7 +394,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     screen,
     sysVarNames,
     romLabels,
-    topAddress
+    topAddress,
+    flow: flowOn,
+    inspector: inspectorShown
   });
 
   useEffect(() => {
@@ -394,8 +426,10 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
    */
   const navSegment = useRef(currentSegment);
   const navFullView = useRef(isFullView);
+  const navBase = useRef(disassOffset);
   navSegment.current = currentSegment;
   navFullView.current = isFullView;
+  navBase.current = disassOffset;
 
   const jumpTo = useCallback((address: number) => {
     pendingScrollTopAddress.current = address;
@@ -442,6 +476,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     if (locator.segment !== undefined && locator.segment !== null && locator.segment !== currentSegment) {
       navSegment.current = locator.segment;
       setCurrentSegment(locator.segment);
+      if (locator.fullView === false) setRecent((r) => pushRecent(r, locator.segment!));
+    }
+    // --- A partition listing's Origin, as the location was recorded (or `show-disass PART:offset`)
+    if (locator.fullView === false && locator.base !== undefined && locator.base !== disassOffset) {
+      navBase.current = locator.base;
+      setDisassOffset(locator.base);
     }
     // --- Restoring a place the user left must not be overridden by the next Follow PC tick.
     if (autoRefresh) {
@@ -460,6 +500,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         address: pendingScrollTopAddress.current ?? 0,
         segment: navSegment.current,
         fullView: navFullView.current,
+        ...(navFullView.current ? {} : { base: navBase.current }),
         viewMode: "disassembly"
       }),
       revealLocator: (locator) => revealLocator.current(locator)
@@ -718,80 +759,492 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     [items]
   );
 
-  return (
-    /* --- M1: `0.8em` gave 12.8px here; see `MemoryPanel`. Follows the panel font size now. */
-    <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
-      <DisassemblyToolbar
-        reverseTools={
-          <>
-            <ExportSourceButton scope={LIVE_VIEW_EXPORT_SCOPE} />
-            <ReverseToolsMenu scope={LIVE_VIEW_EXPORT_SCOPE} />
-          </>
-        }
-        autoRefresh={autoRefresh}
-        bankLabel={bankLabel}
-        decimalView={decimalView}
-        machineState={machineState}
-        onAutoRefreshChanged={(value) => {
-          setAutoRefresh(value);
-          if (value) {
-            setToScroll(0);
+  // ─── The frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §4) ─────────────────────────────
+
+  const slots = memorySnapshot?.slots ?? mem64kPartitions;
+  // --- A machine without partitions draws its map from the ROM flags
+  const [romFlags, setRomFlags] = useState<boolean[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    emuApi
+      .getRomFlags()
+      .then((flags) => !cancelled && setRomFlags(flags ?? []))
+      .catch(() => !cancelled && setRomFlags([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [emuApi, machineId]);
+  const mapCells = useMemo(() => buildMapCells(slots, partitions, romFlags), [slots, partitions, romFlags]);
+  const paged = useMemo(() => pagedSlotsOf(slots), [slots]);
+  const registers = useMemo(() => (refreshRegisters ? registerValuesOf(refreshRegisters) : undefined), [refreshRegisters]);
+  const shownPartition = !isFullView ? partitions.get(currentSegment) : undefined;
+  const hasPartitions = !!partitionSet && partitionSet.partitions.length > 0;
+  const namedLocations = useNamedLocations(symbols);
+
+  /*
+   * The rows the list shows: the listing, with a rule row where the 64K view enters another slot
+   * (§6.1) and an empty Z88 card slot folded into one row instead of 16K of `rst $38`. Display only:
+   * the annotation, breakpoint and coverage logic keep reading `items`.
+   */
+  const rows = useMemo(
+    () =>
+      !isFullView || !hasPartitions
+        ? items
+        : buildListingRows(items, mapCells, partitions, {
+            slotRule: (c) => {
+              const range = `$${toHexa4(c.start)}–$${toHexa4(c.end)}`;
+              const part = c.name ? ` · ${c.name}${c.description ? ` ${c.description}` : ""}` : "";
+              return `${t("panels.doc.disassembly.slotRule", { slot: c.slots.join("·") })} · ${range}${part}`;
+            },
+            emptySlot: (slot) => t("panels.doc.disassembly.emptySlot", { slot })
+          }),
+    [items, isFullView, hasPartitions, mapCells, partitions, t]
+  );
+
+  // --- The flow gutter, computed once per listing (risk "Performance")
+  const flowLayout = useMemo(() => (flowOn ? layoutFlow(rows) : undefined), [flowOn, rows]);
+  const selectedRow = annotationRow ? rows.indexOf(annotationRow) : -1;
+  const highlighted = useMemo(
+    () => (flowLayout && selectedRow >= 0 ? edgesAt(flowLayout, selectedRow) : undefined),
+    [flowLayout, selectedRow]
+  );
+  // --- The branch taken at PC, in the verdict hue
+  const takenEdge = useMemo(() => {
+    if (!flowLayout || !branchVerdicts) return undefined;
+    const pcRow = rows.findIndex((r) => !r.separator && r.address === pausedPc);
+    if (pcRow < 0 || !branchVerdicts.get(pausedPc)?.taken) return undefined;
+    return flowLayout.rows.get(pcRow)?.find((p) => p.kind === "source" || p.kind === "stubOut")?.edge;
+  }, [flowLayout, branchVerdicts, rows, pausedPc]);
+
+  // --- Reference counts on label rows (§6.1)
+  const references = useMemo(() => printedReferences(rows), [rows]);
+
+  // ─── Going places ─────────────────────────────────────────────────────────────────────────────
+
+  const selectView = useCallback((partition: number | undefined) => {
+    setAutoRefresh(false);
+    if (partition === undefined) {
+      navFullView.current = true;
+      setIsFullView(true);
+    } else {
+      navFullView.current = false;
+      navSegment.current = partition;
+      setIsFullView(false);
+      setCurrentSegment(partition);
+      setRecent((r) => pushRecent(r, partition));
+      // --- At its Origin: where the partition is paged in, else $0000 (§4.3)
+      const p = partitions.get(partition);
+      const at = p ? cpuAddressOf(slots, partition, 0, p.size) : undefined;
+      setDisassOffset(at !== undefined ? at & 0xe000 : 0);
+    }
+  }, [partitions, slots]);
+
+  const goToTarget = useCallback(
+    (target: GoToTarget) =>
+      void navigationHistoryService.recordJump("disassemblyGoTo", () => {
+        if (target.kind === "address") {
+          // --- A number stays in the view (a partition's listing is at its Origin); a register
+          // --- or a label names a CPU address, which the 64K view shows
+          if (!isFullView && target.via !== "number") {
+            navFullView.current = true;
+            setIsFullView(true);
           }
-          setScrollVersion((version) => version + 1);
-          // Not `refreshDisassembly()` here: it reads `cachedRefreshState.current`, which only
-          // picks up this new `autoRefresh` value once `useDisassemblyViewStatePersistence`'s own
-          // effect re-runs and syncs it - one render after this handler, not during it. Calling it
-          // here read the *previous* `autoRefresh`, so turning Follow PC on silently ran a manual,
-          // full-range disassembly instead of the small ~1KB window around PC - the "few seconds"
-          // this switch used to take. `autoRefresh` is now a dependency of the "refresh when the
-          // follow PC option changes" effect below, which - because `useDisassemblyViewStatePersistence`
-          // is called earlier in this component and so registers its effect first - always runs
-          // after the sync effect, and so always sees the current value.
-        }}
-        onDecimalViewChanged={setDecimalView}
-        onGoToAddress={(address) =>
-          void navigationHistoryService.recordJump("disassemblyGoTo", () => jumpTo(address))
+          // --- As Go To always did: a jump within the listing, which says so when the address is
+          // --- outside it (Follow PC lists about a kilobyte around PC)
+          jumpTo(target.address);
+        } else {
+          const p = partitions.get(target.partition);
+          const at = p ? cpuAddressOf(slots, target.partition, 0, p.size) : undefined;
+          const origin = at !== undefined ? at & 0xe000 : 0;
+          navFullView.current = false;
+          navSegment.current = target.partition;
+          setAutoRefresh(false);
+          setIsFullView(false);
+          setCurrentSegment(target.partition);
+          setDisassOffset(origin);
+          setRecent((r) => pushRecent(r, target.partition));
+          pendingScrollTopAddress.current = origin + target.offset;
+          pendingReveal.current = { address: origin + target.offset, retried: false };
         }
-        onGoToPc={() =>
-          void navigationHistoryService.recordJump("disassemblyGoTo", () => jumpTo(pausedPc))
-        }
-        onManualRefresh={async () => {
-          await refreshDisassembly();
-          dispatch(setIdeStatusMessageAction(t("panels.doc.disassembly.refreshed"), true));
-        }}
-        onRamChanged={setRam}
-        onScreenChanged={setScreen}
-        onShowBankLabelChanged={setBankLabel}
-        onSysVarNamesChanged={setSysVarNames}
-        onRomLabelsChanged={setRomLabels}
-        hasRomAnnotations={hasRomAnnotations}
-        romLabels={romLabels}
-        pausedPc={pausedPc}
-        ram={ram}
-        screen={screen}
-        sysVarNames={sysVarNames}
-        topAddress={topAddress}
-      />
+      }),
+    [navigationHistoryService, isFullView, partitions, slots, jumpTo]
+  );
+
+  const goToText = (text: string): string | undefined => {
+    const result = parseGoToTarget(text, {
+      decimal: decimalView,
+      registers,
+      partitionLabels: machineSetup.partitionLabels,
+      partitionSize: (id) => partitions.get(id)?.size,
+      slotPartitions: slots,
+      labels: namedLocations
+    });
+    if ("error" in result) return result.error === "empty" ? undefined : t(GO_TO_ERROR_KEYS[result.error]);
+    goToTarget(result.target);
+    return undefined;
+  };
+
+  /** Scroll to a row and select it */
+  const revealRow = useCallback((rowIndex: number) => {
+    const row = rows[rowIndex];
+    if (!row) return;
+    const top = Math.max(0, rowIndex - 3);
+    // --- The history reads where the listing is right after the jump (NAVIGATION_HISTORY_PLAN §4.2)
+    pendingScrollTopAddress.current = rows[top].address;
+    vlApi.current?.scrollToIndex(top, { align: "start" });
+    if (!row.separator) setAnnotationRow(row);
+  }, [rows]);
+
+  const showInMemory = useCallback(
+    (address: number) => {
+      const at = isFullView ? partitionAt(slots, partitions, address) : undefined;
+      // --- In the 64K view the address is the CPU's; a partition on its own names partition and offset
+      const spec = isFullView
+        ? `$${toHexa4(address)}`
+        : shownPartition
+          ? `${shownPartition.name}:$${toHexa4((address - disassOffset) & (shownPartition.size - 1))}`
+          : `$${toHexa4(address)}`;
+      void at;
+      void navigationHistoryService.recordJump("disassemblyGoTo", () =>
+        ideCommandsService.executeCommand(`show-memory ${spec}`)
+      );
+    },
+    [isFullView, slots, partitions, shownPartition, disassOffset, navigationHistoryService, ideCommandsService]
+  );
+
+  // ─── Find (§6.3): over the listing's printed text ────────────────────────────────────────────
+
+  const runFind = () => {
+    const query = findText.trim().toLowerCase();
+    if (!query) return;
+    const matches: number[] = [];
+    rows.forEach((row, index) => {
+      if (row.separator || row.prefixComment !== undefined) return;
+      const text = `${row.formattedLabel ?? ""} ${row.instruction ?? ""} ${row.hardComment ?? ""}`.toLowerCase();
+      if (text.includes(query)) matches.push(index);
+    });
+    setFindMatches(matches);
+    const start = Math.max(0, selectedRow);
+    const first = Math.max(0, matches.findIndex((m) => m >= start));
+    setFindIndex(first);
+    if (matches.length) revealRow(matches[first]);
+  };
+  const stepFind = (delta: 1 | -1) => {
+    if (!findMatches?.length) return;
+    const next = (findIndex + delta + findMatches.length) % findMatches.length;
+    setFindIndex(next);
+    revealRow(findMatches[next]);
+  };
+
+  // ─── Keyboard: rows, the Bank map, Go to, Find, Show in Memory ───────────────────────────────
+
+  const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const ctrl = event.ctrlKey || event.metaKey;
+    if (ctrl && (event.key === "b" || event.key === "B")) {
+      event.preventDefault();
+      if (partitionSet && partitionSet.partitions.length > 16) setBankMapOpen((o) => !o);
+      return;
+    }
+    if (ctrl && (event.key === "g" || event.key === "G" || event.key === "f" || event.key === "F")) {
+      event.preventDefault();
+      const inputs = toolbarRef.current?.querySelectorAll("input[type='text'], input:not([type])");
+      (inputs?.[event.key.toLowerCase() === "g" ? 0 : 1] as HTMLInputElement | undefined)?.focus();
+      return;
+    }
+    if (ctrl && (event.key === "m" || event.key === "M")) {
+      event.preventDefault();
+      if (annotationRow) showInMemory(annotationRow.address);
+      return;
+    }
+    if (event.key === "F3") {
+      event.preventDefault();
+      stepFind(event.shiftKey ? -1 : 1);
+      return;
+    }
+    if ((event.key === "ArrowDown" || event.key === "ArrowUp") && !event.altKey && !ctrl) {
+      event.preventDefault();
+      event.stopPropagation();
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      let at = selectedRow < 0 ? (vlApi.current?.findStartIndex() ?? 0) : selectedRow + delta;
+      while (rows[at]?.separator || rows[at]?.prefixComment !== undefined) at += delta;
+      if (!rows[at]) return;
+      setAnnotationRow(rows[at]);
+      const start = vlApi.current?.findStartIndex() ?? 0;
+      const visible = Math.floor((vlApi.current?.viewportSize ?? 400) / disassemblyRowItemSize);
+      if (at < start || at >= start + visible - 1) {
+        vlApi.current?.scrollToIndex(delta > 0 ? Math.max(0, at - visible + 2) : at, { align: "start" });
+      }
+      return;
+    }
+    handleAnnotationKeyDown(event);
+  };
+
+  // ─── The inspector's facts about the selected row ─────────────────────────────────────────────
+
+  const inspectedOperands = useMemo((): InspectedOperand[] => {
+    const item = annotationRow;
+    if (!item) return [];
+    const memory = memorySnapshot?.memory;
+    const base = memorySnapshot?.memoryBase ?? 0;
+    const bytesAt = (address: number) => {
+      if (!memory || !isFullView) return undefined;
+      const out: number[] = [];
+      for (let i = 0; i < 8; i++) {
+        const index = address + i - base;
+        if (index < 0 || index >= memory.length) break;
+        out.push(memory[index]);
+      }
+      return out.length ? out : undefined;
+    };
+    const partOf = (address: number) => {
+      const at = partitionAt(slots, partitions, address);
+      const p = at ? partitions.get(at.partition) : undefined;
+      return p && at ? `${p.name}:$${toHexa4(at.offset)}` : undefined;
+    };
+    const result: InspectedOperand[] = [];
+    for (const operand of item.operandCandidates ?? []) {
+      result.push({
+        text: operand.defaultText,
+        name: operand.resolvedText,
+        address: operand.operandValue,
+        partition: partOf(operand.operandValue),
+        bytes: bytesAt(operand.operandValue)
+      });
+    }
+    // --- (HL), (DE), (BC), (IX+d), (IY+d): where it points as the instruction runs
+    const indirect = /\((hl|de|bc|ix|iy)([+-]\$?[0-9a-f]+)?\)/i.exec(item.instruction ?? "");
+    if (indirect && registers) {
+      const reg = indirect[1].toUpperCase();
+      let address = registers[reg] ?? 0;
+      if (indirect[2]) {
+        const sign = indirect[2][0] === "-" ? -1 : 1;
+        const num = indirect[2].slice(1).replace("$", "");
+        address = (address + sign * parseInt(num, indirect[2].includes("$") ? 16 : 10)) & 0xffff;
+      }
+      result.push({ text: indirect[0], address, viaRegister: reg, partition: partOf(address), bytes: bytesAt(address) });
+    }
+    // --- NEXTREG reg,value: the register it writes
+    const nextreg = /^nextreg\s+\$?([0-9a-f]+)/i.exec(item.instruction ?? "");
+    if (nextreg) {
+      const reg = parseInt(nextreg[1], item.instruction!.includes("$") || /[a-f]/i.test(nextreg[1]) ? 16 : 10);
+      result.push({ text: `$${toHexa2(reg)}`, address: reg, nextReg: reg });
+    }
+    return result;
+  }, [annotationRow, memorySnapshot, isFullView, slots, partitions, registers]);
+
+  const inspectedReferences = useMemo(() => {
+    const name = annotationRow ? rowLabelName(annotationRow) : undefined;
+    if (!name) return undefined;
+    const list = references.get(name);
+    return (list ?? []).map((rowIndex) => ({
+      rowIndex,
+      address: rows[rowIndex].address,
+      text: rows[rowIndex].instruction ?? ""
+    }));
+  }, [annotationRow, references, rows]);
+
+  /** A label's reference count was clicked: select its row, the inspector lists the references */
+  const openReferences = useCallback((item: DisassemblyItem) => {
+    setAnnotationRow(item);
+    setInspectorShown(true);
+  }, []);
+
+  /** What the gutter's commands name a row by, as the row itself derives it */
+  const rowSpecOf = (item: DisassemblyItem) => {
+    const vm = deriveDisassemblyRowViewModel({
+      bankLabel,
+      breakpoint: undefined,
+      currentSegment,
+      decimalView,
+      isFullView,
+      item,
+      mem64kLabels,
+      partitionLabels: machineSetup.partitionLabels,
+      pausedPc,
+      showBanks: machineSetup.showBanks
+    });
+    return typeof vm.breakpointAddress === "number" ? `$${toHexa4(vm.breakpointAddress)}` : vm.breakpointAddress;
+  };
+
+  const selectedLocation = useMemo(() => {
+    if (!annotationRow) return undefined;
+    if (!isFullView && shownPartition) {
+      return `${shownPartition.name}:$${toHexa4((annotationRow.address - disassOffset) & (shownPartition.size - 1))}`;
+    }
+    const at = partitionAt(slots, partitions, annotationRow.address);
+    const p = at ? partitions.get(at.partition) : undefined;
+    return p && at ? `${p.name}:$${toHexa4(at.offset)}` : undefined;
+  }, [annotationRow, isFullView, shownPartition, disassOffset, slots, partitions]);
+  const selectedPartition = annotationRow
+    ? isFullView
+      ? partitions.get(resolveRowPartition(annotationRow.address, true, currentSegment, mem64kPartitions) ?? NaN)
+      : shownPartition
+    : undefined;
+  const flowKeyOf = (index: number) => {
+    const pieces = flowLayout?.rows.get(index);
+    if (!pieces) return undefined;
+    return pieces.map((p) => `${p.edge}${highlighted?.has(p.edge) ? "h" : ""}${p.edge === takenEdge ? "t" : ""}`).join(",");
+  };
+
+  const machineStarted =
+    machineState === MachineControllerState.Paused || machineState === MachineControllerState.Stopped;
+  return (
+    <div className={frame.document}>
+      {/* ─── Toolbar (§4.1, §6) ──────────────────────────────────────────────────────── */}
+      <div className={frame.toolbar} ref={toolbarRef}>
+        <GoToBox
+          placeholder={t("panels.memoryMap.goToPlaceholder")}
+          title={t("panels.memoryMap.goToTitle")}
+          suggestions={(text) => suggestLabels(text, namedLocations)}
+          onGo={goToText}
+        />
+        <button
+          type="button"
+          className={frame.button}
+          disabled={!machineStarted}
+          title={t("panels.doc.disassembly.goToPc")}
+          onClick={() => goToTarget({ kind: "address", address: pausedPc })}
+        >
+          ▶ PC
+        </button>
+        <Check
+          label={t("panels.doc.disassembly.followPc")}
+          title={t("panels.doc.disassembly.followPcTitle")}
+          value={autoRefresh}
+          onChange={(value) => {
+            setAutoRefresh(value);
+            if (value) {
+              setIsFullView(true);
+              setToScroll(0);
+            }
+            setScrollVersion((version) => version + 1);
+          }}
+        />
+        <SmallIconButton
+          iconName="refresh"
+          title={t("panels.doc.common.refreshNow")}
+          clicked={async () => {
+            await refreshDisassembly();
+            dispatch(setIdeStatusMessageAction(t("panels.doc.disassembly.refreshed"), true));
+          }}
+        />
+        <FindBox
+          placeholder={t("panels.doc.disassembly.findPlaceholder")}
+          title={t("panels.doc.disassembly.findTitle")}
+          text={findText}
+          count={findMatches?.length}
+          index={findIndex}
+          onTextChange={(text) => {
+            setFindText(text);
+            setFindMatches(undefined);
+          }}
+          onSearch={runFind}
+          onStep={stepFind}
+        />
+        <Segmented
+          label={t("panels.memoryView.numberFormat")}
+          value={decimalView ? "dec" : "hex"}
+          options={[
+            { value: "hex", text: t("panels.memoryView.hex"), title: t("panels.memoryView.hexTitle") },
+            { value: "dec", text: t("panels.memoryView.dec"), title: t("panels.doc.disassembly.decimalTitle") }
+          ]}
+          onChange={(v) => setDecimalView(v === "dec")}
+        />
+        <Check label={t("panels.doc.disassembly.sysVars")} title={t("panels.doc.disassembly.sysVarsTitle")} value={sysVarNames} onChange={setSysVarNames} />
+        {hasRomAnnotations && (
+          <Check label={t("panels.doc.disassembly.romLabels")} title={t("panels.doc.disassembly.romLabelsTitle")} value={romLabels} onChange={setRomLabels} />
+        )}
+        <Check label={t("panels.doc.disassembly.flow")} title={t("panels.doc.disassembly.flowTitle")} value={flowOn} onChange={setFlowOn} />
+        {machineSetup.allowViews && (
+          <ToolGroup>
+            <Check label={t("panels.doc.disassembly.ram")} title={t("panels.doc.disassembly.ramTitle")} value={ram} onChange={setRam} />
+            <Check label={t("panels.doc.disassembly.screen")} title={t("panels.doc.disassembly.screenTitle")} value={screen} onChange={setScreen} />
+          </ToolGroup>
+        )}
+        {!isFullView && shownPartition && (
+          <ToolGroup label={t("panels.doc.disassembly.origin")}>
+            <select
+              className={frame.select}
+              value={disassOffset}
+              title={t("panels.doc.disassembly.originTitle")}
+              aria-label={t("panels.doc.disassembly.origin")}
+              onChange={(e) => setDisassOffset(parseInt(e.target.value, 10))}
+            >
+              {Array.from({ length: 8 }, (_, i) => i * 0x2000).map((o) => (
+                <option key={o} value={o}>
+                  {decimalView ? o : `$${toHexa4(o)}`}
+                </option>
+              ))}
+            </select>
+          </ToolGroup>
+        )}
+        <span className={frame.spacer} />
+        <ExportSourceButton scope={LIVE_VIEW_EXPORT_SCOPE} />
+        <ReverseToolsMenu scope={LIVE_VIEW_EXPORT_SCOPE} />
+        <Check label={t("panels.memoryView.inspector")} title={t("panels.memoryView.inspectorTitle")} value={inspectorShown} onChange={setInspectorShown} />
+      </div>
       <HistoryPresentBanner subject="listedBytes" />
-      <DisassemblyBankToolbar
-        allowViews={machineSetup.allowViews}
-        autoRefresh={autoRefresh}
-        currentSegment={currentSegment}
-        decimalView={decimalView}
-        disassOffset={disassOffset}
-        displayBankMatrix={machineSetup.displayBankMatrix}
-        isFullView={isFullView}
-        offsetOptions={createDisassemblyOffsetOptions(decimalView)}
-        onCurrentSegmentChanged={setCurrentSegment}
-        onDisassOffsetChanged={setDisassOffset}
-        onFullViewChanged={setIsFullView}
-        segmentOptions={machineSetup.segmentOptions}
-        partitionOptions={machineSetup.partitionOptions}
-      />
-      {items.length > 0 && (
-        <div className={styles.disassemblyWrapper} onKeyDown={handleAnnotationKeyDown}>
+
+      {/* ─── The frame: map bar, partitions, registers (§4.2-4.4) ─────────────────── */}
+      <div className={frame.frame}>
+        <span className={frame.frameLabel}>
+          {isFullView ? t("panels.memoryMap.view64k") : t("panels.memoryMap.viewPartition")}
+        </span>
+        {isFullView || !shownPartition ? (
+          <MemoryMapBar
+            cells={mapCells}
+            viewport={
+              items.length
+                ? { start: pendingScrollTopAddress.current ?? 0, end: Math.min(0xffff, (pendingScrollTopAddress.current ?? 0) + 0x100) }
+                : undefined
+            }
+            ticks={registers ? [{ name: "PC", address: registers.PC }, { name: "SP", address: registers.SP }] : undefined}
+            onGoTo={(address) => goToTarget({ kind: "address", address })}
+          />
+        ) : (
+          <PartitionBar
+            partition={shownPartition}
+            pagedAt={cpuAddressOf(slots, shownPartition.id, 0, shownPartition.size)}
+            roles={partitionRoles?.[shownPartition.id]}
+            labelOf={(id) => partitions.get(id)?.name}
+          />
+        )}
+        {hasPartitions && (
+          <>
+            <span className={frame.frameLabel}>{t("panels.memoryMap.partitions")}</span>
+            <PartitionRow
+              set={partitionSet!}
+              partitions={partitions}
+              current={isFullView ? undefined : currentSegment}
+              paged={paged}
+              roles={partitionRoles}
+              recent={recent}
+              bankMapOpen={bankMapOpen}
+              onBankMapOpenChange={setBankMapOpen}
+              onSelect={(id) => void navigationHistoryService.recordJump("disassemblyGoTo", () => selectView(id))}
+            />
+          </>
+        )}
+        {registers && (
+          <>
+            <span className={frame.frameLabel}>{t("panels.memoryMap.registers")}</span>
+            <RegisterStrip
+              registers={registers}
+              flags={refreshRegisters ? refreshRegisters.af & 0xff : undefined}
+              decimal={decimalView}
+              partitionLabelAt={(address) => mem64kLabels[address >> 13] || undefined}
+              onGoTo={(_name, address) => goToTarget({ kind: "address", address })}
+            />
+          </>
+        )}
+      </div>
+
+      <div className={classnames(frame.body, { [frame.bodyNoInspector]: !inspectorShown || !annotationRow })}>
+        <div className={frame.listing} ref={listRef}>
+      {rows.length > 0 && (
+        <div className={styles.disassemblyWrapper} onKeyDown={handleListKeyDown} tabIndex={-1}>
           <VirtualizedList
-            items={items}
+            items={rows}
             apiLoaded={(api) => (vlApi.current = api)}
             itemSize={disassemblyRowItemSize}
             revealUnmeasuredItems
@@ -802,7 +1255,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               if (!vlApi.current) return;
 
               const startIndex = vlApi.current.findStartIndex();
-              const item = items[startIndex];
+              const item = rows[startIndex];
               if (item) {
                 pendingScrollTopAddress.current = item.address;
               }
@@ -814,8 +1267,11 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               );
             }}
             renderItem={(idx) => {
-              const item = items[idx];
+              const item = rows[idx];
               if (!item) return <div></div>;
+              const flow = flowLayout?.rows.get(idx);
+              const labelName = rowLabelName(item);
+              const refCount = labelName ? (references.get(labelName)?.length ?? 0) : undefined;
 
               return (
                 <DisassemblyRow
@@ -852,12 +1308,52 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   showCoverage={!!coverageMarks}
                   coverage={coverageMarks?.get(item.address)}
                   timeShare={timeShares?.get(item.address)}
+                  showFlow={!!flowLayout}
+                  flow={flow}
+                  flowHighlight={flow && highlighted ? highlighted : undefined}
+                  flowTaken={flow ? takenEdge : undefined}
+                  flowKey={flowKeyOf(idx)}
+                  refCount={refCount}
+                  onRefsClick={openReferences}
                 />
               );
             }}
           />
         </div>
       )}
+        </div>
+        {inspectorShown && annotationRow && (
+          <DisassemblyInspector
+            item={annotationRow}
+            location={selectedLocation}
+            kindBadge={selectedPartition ? `${selectedPartition.name} · ${kindText(t, selectedPartition.kind)}` : undefined}
+            decimal={decimalView}
+            verdict={branchVerdicts?.get(annotationRow.address)}
+            atPc={annotationRow.address === pausedPc}
+            operands={inspectedOperands}
+            references={inspectedReferences}
+            breakpointTarget={{
+              address: annotationRow.address,
+              spec: rowSpecOf(annotationRow),
+              breakpoint: selectRowBreakpoint(
+                breakpointMap.get(annotationRow.address),
+                resolveRowPartition(annotationRow.address, isFullView, currentSegment, mem64kPartitions)
+              ),
+              item: annotationRow
+            }}
+            partitionLabels={machineSetup.partitionLabels}
+            annotationEntries={annotationEditing.menuItemsFor(annotationRow)}
+            onRunCommand={(command) => void ideCommandsService.executeCommand(command)}
+            onEditBreakpoint={editBreakpoint}
+            onAnnotationAction={(entry) => void annotationEditing.run(annotationRow, entry.id, entry.label)}
+            onGoTo={(address) => goToTarget({ kind: "address", address })}
+            onShowInMemory={showInMemory}
+            onReference={(rowIndex) =>
+              void navigationHistoryService.recordJump("disassemblyGoTo", () => revealRow(rowIndex))
+            }
+          />
+        )}
+      </div>
       <ContextMenu state={rowMenuState} onClickOutside={() => rowMenuApi.conceal()}>
         {rowMenuTarget &&
           annotationEditing.menuItemsFor(rowMenuTarget.item).map((entry, index) => (
@@ -898,7 +1394,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             </span>
           ))}
       </ContextMenu>
-    </FullPanel>
+    </div>
   );
 };
 

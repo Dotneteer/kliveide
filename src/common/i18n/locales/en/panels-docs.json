@@ -400,11 +400,6 @@
   "@panels.doc.rowMenu.showAsGraphics": {
     "context": "Context-menu item of a disassembly row: opens the graphics finder showing the memory from this address as pixels."
   },
-  "panels.doc.disassembly.decimal": "Decimal",
-  "@panels.doc.disassembly.decimal": {
-    "context": "Label of a switch in the disassembly panel's header: show numbers in decimal instead of hexadecimal.",
-    "maxChars": 10
-  },
   "panels.doc.disassembly.decimalTitle": "Use decimal numbers?",
   "@panels.doc.disassembly.decimalTitle": {
     "context": "Tooltip of the 'Decimal' switch in the disassembly panel's header."
@@ -454,37 +449,9 @@
   "@panels.doc.disassembly.screenTitle": {
     "context": "Tooltip of the 'Screen' switch in the disassembly panel's header: include the screen memory area in the listing."
   },
-  "panels.doc.disassembly.bank": "Bank",
-  "@panels.doc.disassembly.bank": {
-    "context": "Label of a switch in the disassembly panel's header: show which memory bank each row's address is in.",
-    "maxChars": 8
-  },
-  "panels.doc.disassembly.bankTitle": "Display bank label information?",
-  "@panels.doc.disassembly.bankTitle": {
-    "context": "Tooltip of the 'Bank' switch in the disassembly panel's header."
-  },
   "panels.doc.disassembly.goToPc": "Go to the PC address",
   "@panels.doc.disassembly.goToPc": {
     "context": "Tooltip of the arrow icon button in the disassembly panel's header: scrolls to the instruction the CPU executes next. 'PC' is the Z80's program counter register; keep it."
-  },
-  "panels.doc.disassembly.fullView": "64K View",
-  "@panels.doc.disassembly.fullView": {
-    "context": "Label of a switch in the disassembly panel's second header row: list the whole 64K address space instead of one memory bank.",
-    "maxChars": 12
-  },
-  "panels.doc.disassembly.fullViewTitle": "Show the full 64K memory",
-  "@panels.doc.disassembly.fullViewTitle": {
-    "context": "Tooltip of the '64K View' switch in the disassembly panel's header."
-  },
-  "panels.doc.disassembly.selectBank": "Select bank",
-  "@panels.doc.disassembly.selectBank": {
-    "context": "Label in front of the memory-bank chooser in the disassembly panel's header.",
-    "maxChars": 14
-  },
-  "panels.doc.disassembly.offset": "Offset",
-  "@panels.doc.disassembly.offset": {
-    "context": "Label in front of the dropdown choosing the start offset inside the selected bank in the disassembly panel's header.",
-    "maxChars": 10
   },
   "panels.doc.copper.notAvailable": "The Copper is available on the ZX Spectrum Next",
   "@panels.doc.copper.notAvailable": {
@@ -2430,5 +2397,185 @@
   "@panels.doc.nextRegs.copied": {
     "context": "Tooltip of the copy button in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) right after it copied the instruction.",
     "maxChars": 16
+  },
+  "panels.doc.disassemblyRow.references": "{count, plural, =0 {No row of the listing names this label} one {# row of the listing names this label} other {# rows of the listing name this label}}: click to list them",
+  "@panels.doc.disassemblyRow.references": {
+    "context": "Tooltip of the reference count after a label in the Disassembly view.",
+    "placeholders": {
+      "count": "How many rows name the label"
+    }
+  },
+  "panels.disassInspector.instruction": "Instruction",
+  "@panels.disassInspector.instruction": {
+    "context": "Section title in the Disassembly view's inspector: the selected instruction.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.disassInspector.bytes": {
+    "context": "Aside of the inspector's Instruction section: the instruction's length.",
+    "placeholders": {
+      "count": "Length in bytes"
+    }
+  },
+  "panels.disassInspector.tstates": "{count} T",
+  "@panels.disassInspector.tstates": {
+    "context": "Aside of the inspector's Instruction section: T-states the instruction takes ('T' abbreviates T-states).",
+    "placeholders": {
+      "count": "T-states"
+    }
+  },
+  "panels.disassInspector.tstatesBoth": "{taken}/{notTaken} T",
+  "@panels.disassInspector.tstatesBoth": {
+    "context": "Aside of the inspector's Instruction section: T-states when the branch is taken / not taken.",
+    "placeholders": {
+      "taken": "T-states when taken",
+      "notTaken": "T-states when not taken"
+    }
+  },
+  "panels.disassInspector.verdict": "Verdict",
+  "@panels.disassInspector.verdict": {
+    "context": "Section title in the Disassembly view's inspector: whether the branch is taken and where it goes.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.verdictCertain": "at PC: certain",
+  "@panels.disassInspector.verdictCertain": {
+    "context": "Aside of the Verdict section when the row is at the program counter, so the verdict is fact."
+  },
+  "panels.disassInspector.verdictIf": "if the CPU arrived here now",
+  "@panels.disassInspector.verdictIf": {
+    "context": "Aside of the Verdict section on a row away from PC: the verdict is a prediction from the current flags."
+  },
+  "panels.disassInspector.operands": "Operands",
+  "@panels.disassInspector.operands": {
+    "context": "Section title in the Disassembly view's inspector: the addresses the instruction names and what is there.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.goTo": "Go to",
+  "@panels.disassInspector.goTo": {
+    "context": "Link after an operand: show its address in the listing.",
+    "maxChars": 10
+  },
+  "panels.disassInspector.memory": "Memory",
+  "@panels.disassInspector.memory": {
+    "context": "Link after an operand: show its address in the Memory view.",
+    "maxChars": 10
+  },
+  "panels.disassInspector.viaRegister": "Where it points as the instruction runs.",
+  "@panels.disassInspector.viaRegister": {
+    "context": "Note under an indirect operand such as (HL): the address comes from the register's current value."
+  },
+  "panels.disassInspector.nextReg": "Next register {reg}",
+  "@panels.disassInspector.nextReg": {
+    "context": "Link under a NEXTREG instruction's operand: open the register in the Next Registers document.",
+    "placeholders": {
+      "reg": "The register number, e.g. '$12'"
+    }
+  },
+  "panels.disassInspector.referredBy": "Referred to by",
+  "@panels.disassInspector.referredBy": {
+    "context": "Section title in the Disassembly view's inspector: the rows whose operands name this row's label.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.refCount": "{count, plural, one {# row} other {# rows}}",
+  "@panels.disassInspector.refCount": {
+    "context": "Aside of the 'Referred to by' section.",
+    "placeholders": {
+      "count": "How many rows"
+    }
+  },
+  "panels.disassInspector.annotation": "Annotation",
+  "@panels.disassInspector.annotation": {
+    "context": "Section title in the Disassembly view's inspector: the row's label and comment.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.label": "Label",
+  "@panels.disassInspector.label": {
+    "context": "Field label in the inspector's Annotation section.",
+    "maxChars": 12
+  },
+  "panels.disassInspector.comment": "Comment",
+  "@panels.disassInspector.comment": {
+    "context": "Field label in the inspector's Annotation section: the end-of-line comment.",
+    "maxChars": 12
+  },
+  "panels.disassInspector.notAnnotatable": "This row cannot be annotated.",
+  "@panels.disassInspector.notAnnotatable": {
+    "context": "The inspector's Annotation section when the row's memory cannot carry annotations."
+  },
+  "panels.disassInspector.breakpoint": "Breakpoint",
+  "@panels.disassInspector.breakpoint": {
+    "context": "Section title in the Disassembly view's inspector.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.bpNone": "none",
+  "@panels.disassInspector.bpNone": {
+    "context": "Aside of the Breakpoint section: the row has no breakpoint.",
+    "maxChars": 10
+  },
+  "panels.disassInspector.bpSet": "set",
+  "@panels.disassInspector.bpSet": {
+    "context": "Aside of the Breakpoint section: the row has an enabled breakpoint.",
+    "maxChars": 10
+  },
+  "panels.disassInspector.bpDisabled": "disabled",
+  "@panels.disassInspector.bpDisabled": {
+    "context": "Aside of the Breakpoint section: the row's breakpoint is disabled.",
+    "maxChars": 10
+  },
+  "panels.disassInspector.condition": "Condition: {condition}",
+  "@panels.disassInspector.condition": {
+    "context": "Under the breakpoint buttons: the breakpoint's condition.",
+    "placeholders": {
+      "condition": "The condition expression, e.g. 'A == 5'"
+    }
+  },
+  "panels.disassInspector.use": "Use",
+  "@panels.disassInspector.use": {
+    "context": "Section title in the Disassembly view's inspector: other things to do with the row.",
+    "maxChars": 20
+  },
+  "panels.disassInspector.showInMemory": "Show in Memory (Ctrl+M)",
+  "@panels.disassInspector.showInMemory": {
+    "context": "Button: show the row's address in the Memory view."
+  },
+  "panels.doc.disassembly.slotRule": "Slot {slot}",
+  "@panels.doc.disassembly.slotRule": {
+    "context": "Caption of the rule row where the 64K disassembly listing enters another memory slot; followed by the address range and the partition.",
+    "placeholders": {
+      "slot": "The slot number(s), e.g. '2' or '4·5'"
+    }
+  },
+  "panels.doc.disassembly.emptySlot": "— Card slot {slot} is empty —",
+  "@panels.doc.disassembly.emptySlot": {
+    "context": "One row standing for an empty Cambridge Z88 card slot in the disassembly listing, instead of 16K of meaningless instructions.",
+    "placeholders": {
+      "slot": "The card slot, 0-3"
+    }
+  },
+  "panels.doc.disassembly.findPlaceholder": "rst $10, LAST_K, label",
+  "@panels.doc.disassembly.findPlaceholder": {
+    "context": "Placeholder of the Disassembly view's Find box: examples of what it matches. Keep the examples."
+  },
+  "panels.doc.disassembly.findTitle": "Find text in the listing: mnemonics, operands, labels and comments as printed; Enter or F3 for the next match",
+  "@panels.doc.disassembly.findTitle": {
+    "context": "Tooltip of the Disassembly view's Find box."
+  },
+  "panels.doc.disassembly.flow": "Flow",
+  "@panels.doc.disassembly.flow": {
+    "context": "Check box in the Disassembly view's toolbar: draw arrows between jumps and their targets.",
+    "maxChars": 8
+  },
+  "panels.doc.disassembly.flowTitle": "Draw arrows from JR, JP and DJNZ to their targets",
+  "@panels.doc.disassembly.flowTitle": {
+    "context": "Tooltip of the Flow check box. JR, JP, DJNZ are Z80 instructions; do not translate them."
+  },
+  "panels.doc.disassembly.origin": "Origin",
+  "@panels.doc.disassembly.origin": {
+    "context": "Label of the drop-down that sets the CPU address a partition shown on its own is disassembled at.",
+    "maxChars": 8
+  },
+  "panels.doc.disassembly.originTitle": "The address the partition is disassembled at",
+  "@panels.doc.disassembly.originTitle": {
+    "context": "Tooltip of the Origin drop-down."
   }
 }

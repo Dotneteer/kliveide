@@ -3,9 +3,12 @@ import type { MemoryInfo } from "@common/messaging/EmuApi";
 import type { DropdownOption } from "@renderer/controls/Dropdown";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { t } from "@common/i18n/i18n";
 
-export type DumpViewMode = "8x1" | "8x2" | "16x1";
+/**
+ * Bytes per row (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` D7): 8, 16 or 32. The old two-column
+ * `8x2` layout is retired; a persisted `8x2` opens as 16-byte rows.
+ */
+export type DumpViewMode = "8x1" | "16x1" | "32x1";
 
 export type BankedMemoryPanelViewState = {
   topIndex?: number;
@@ -16,6 +19,12 @@ export type BankedMemoryPanelViewState = {
   viewMode?: string;
   charDump?: boolean;
   bankLabel?: boolean;
+  /** The label gutter: the row's first label and the registers pointing into it (§5.1) */
+  labelGutter?: boolean;
+  /** The inspector column is shown (D2) */
+  inspector?: boolean;
+  /** The register the view follows, or empty */
+  follow?: string;
 };
 
 export type CachedRefreshState = {
@@ -24,30 +33,22 @@ export type CachedRefreshState = {
   decimalView: boolean;
 };
 
-/** The memory view's layout choices, translated at display (call it while rendering) */
-export const viewModeOptions = (): DropdownOption[] => [
-  { value: "8x1", label: t("panels.feature.memory.layout8x1") },
-  { value: "8x2", label: t("panels.feature.memory.layout8x2") },
-  { value: "16x1", label: t("panels.feature.memory.layout16x1") }
-];
-
 export function resolveViewMode(viewMode?: string, twoColumns?: boolean): DumpViewMode {
-  if (viewMode === "8x1" || viewMode === "8x2" || viewMode === "16x1") {
+  if (viewMode === "8x1" || viewMode === "16x1" || viewMode === "32x1") {
     return viewMode;
   }
-  return twoColumns === false ? "8x1" : "8x2";
+  // --- The retired two-column layout (and a state from before view modes) shows 16-byte rows
+  if (viewMode === "8x2") return "16x1";
+  return twoColumns === false ? "8x1" : "16x1";
 }
 
-export function getBytesPerRow(viewMode: DumpViewMode): 8 | 16 {
-  return viewMode === "8x1" ? 8 : 16;
+export function getBytesPerRow(viewMode: DumpViewMode): 8 | 16 | 32 {
+  return viewMode === "8x1" ? 8 : viewMode === "32x1" ? 32 : 16;
 }
 
-export function getByteCount(viewMode: DumpViewMode): 8 | 16 {
-  return viewMode === "16x1" ? 16 : 8;
-}
-
-export function usesTwoColumns(viewMode: DumpViewMode): boolean {
-  return viewMode === "8x2";
+/** The bytes one dump section shows: the whole row */
+export function getByteCount(viewMode: DumpViewMode): 8 | 16 | 32 {
+  return getBytesPerRow(viewMode);
 }
 
 export function createRowAddresses(length: number, rowBytes: number): number[] {
@@ -58,6 +59,7 @@ export function createRowAddresses(length: number, rowBytes: number): number[] {
   return items;
 }
 
+/** The row that keeps the same first byte in view when the row width changes */
 export function convertTopIndexForViewMode(
   topIndex: number,
   previousViewMode: DumpViewMode,
@@ -65,10 +67,7 @@ export function convertTopIndexForViewMode(
 ): number {
   const previousBytesPerRow = getBytesPerRow(previousViewMode);
   const nextBytesPerRow = getBytesPerRow(nextViewMode);
-  if (previousBytesPerRow === nextBytesPerRow) {
-    return topIndex;
-  }
-  return nextBytesPerRow === 16 ? Math.floor(topIndex / 2) : topIndex * 2;
+  return Math.floor((topIndex * previousBytesPerRow) / nextBytesPerRow);
 }
 
 /**

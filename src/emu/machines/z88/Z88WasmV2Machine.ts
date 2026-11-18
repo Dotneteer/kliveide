@@ -28,7 +28,8 @@ import {
   stepOutAddressFromCore
 } from "../wasmDebugLoop";
 import { loadZ88WasmV2 } from "./wasm/Z88WasmV2Loader";
-import { z88LcdSizeRegisters } from "./z88MachineInfo";
+import { z88LcdSizeRegisters, z88PartitionLabels } from "./z88MachineInfo";
+import { z88PartitionInfo, type PartitionInfoSet, type Z88SlotCard } from "@common/annotations/partitionInfo";
 import { z88InternalRamSizeInBytes } from "./z88CardCatalog";
 import { Z88WasmHost } from "./Z88WasmHost";
 import { Z88_INTERNAL_RAM_BANK } from "@common/z88/z88Snapshot";
@@ -756,6 +757,24 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
   /** The card the backend holds in a slot (undefined when empty) */
   getInsertedCard(slot: number): Z88CardSpec | undefined {
     return this.cards[slot];
+  }
+
+  /**
+   * The 256 banks as the Memory and Disassembly views' Bank map shows them: the cards in the slots,
+   * their mirrors and the empty slots (`@common/annotations/partitionInfo`, plan §7)
+   */
+  getPartitionInfo(): PartitionInfoSet {
+    const slotCard = (card: Z88CardSpec | undefined): Z88SlotCard | undefined => {
+      if (!card) return undefined;
+      const kind: Z88SlotCard["kind"] =
+        card.kind === "RAM" ? "ram" : card.kind === "ROM" ? "rom" : card.kind === "UV_EPROM" ? "eprom" : "flash";
+      return { kind, sizeInBytes: card.sizeInBytes };
+    };
+    return z88PartitionInfo({
+      labels: z88PartitionLabels(),
+      slots: this.cards.map(slotCard),
+      internalRamBytes: this.internalRam.sizeInBytes
+    });
   }
 
   // ==========================================================================================

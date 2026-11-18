@@ -1,0 +1,1022 @@
+@use "@styles/core.scss" as *;
+
+// --- The Memory and Disassembly views' shared frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`
+// --- §4): the toolbar's segmented controls and boxes, the memory map bar, the partition row and the
+// --- Bank map, the register strip and the inspector column. Every colour is a token (the
+// --- `--color-memmap-*` / `--bgcolor-memmap-*` aliases), every width is `ch` of the panel font, and
+// --- rows take their height from the row tokens. See `dev/ai/ui-theming-intent-and-lessons.md`,
+// --- "The Memory And Disassembly Frame".
+
+// ─── The document: listing and inspector ─────────────────────────────────────
+
+.document {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  // --- The document's own width decides the layout, not the window's
+  container-type: inline-size;
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46ch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.bodyNoInspector {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+// --- Below 120ch the inspector stacks under the listing (a container query cannot restyle the
+// --- container itself, so the rule is on the grid inside it)
+@container (max-width: 120ch) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 40%);
+  }
+
+  .inspector {
+    border-left: 0;
+    border-top: 1px solid var(--border-default);
+  }
+}
+
+.listing {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+// ─── Toolbar pieces ──────────────────────────────────────────────────────────
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-chrome);
+  font-family: var(--main-font-family);
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
+
+.toolLabel {
+  font-size: var(--font-size-100);
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+.segmented {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+
+  &:disabled {
+    cursor: default;
+    color: var(--text-disabled);
+  }
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-100);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  input {
+    margin: 0;
+    accent-color: var(--accent-solid);
+  }
+}
+
+// --- Go to and Find: a label inside the box, then the field
+.box {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--size-controlSm);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  flex: 0 0 auto;
+
+  &:focus-within {
+    border-color: var(--accent-border);
+  }
+
+  input {
+    width: 18ch;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-200);
+  }
+}
+
+.boxError {
+  border-color: var(--status-error);
+}
+
+.boxLabel {
+  font-size: var(--font-size-100);
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+.findCount {
+  min-width: 7ch;
+  text-align: right;
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.findNav {
+  border: 0;
+  padding: 0 var(--space-1);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.select {
+  height: var(--size-controlSm);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  @include focus-ring;
+}
+
+.button {
+  height: var(--size-controlSm);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+// ─── The frame strip: map bar, partition row, registers ──────────────────────
+
+.frame {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-panel);
+  position: relative;
+}
+
+.frameLabel {
+  font-size: var(--font-size-50);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+// --- The memory map bar: one cell per paging unit, laid out by its share of the 64K
+.mapBar {
+  display: flex;
+  gap: 1px;
+  height: calc(var(--row-panelHeader) + var(--space-2));
+  position: relative;
+  min-width: 0;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+}
+
+.cellRange {
+  color: var(--data-secondary);
+  font-size: var(--font-size-50);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cellName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  b {
+    color: var(--color-state-value);
+    font-weight: 600;
+    margin-right: var(--space-1);
+  }
+}
+
+.cellDescription {
+  color: var(--data-secondary);
+}
+
+// --- A kind is the fill; the cells and chips set none of their own, so these always apply
+.kind_ram,
+.kind_mirror {
+  background: var(--bgcolor-memmap-ram);
+}
+
+// --- ROM is hatched: a raised surface with diagonal lines in the subtle border
+.kind_rom,
+.kind_divRom,
+.kind_flash,
+.kind_eprom {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 4px, var(--border-subtle) 4px 5px),
+    var(--bgcolor-memmap-rom);
+}
+
+.kind_cardRam {
+  background: var(--bgcolor-memmap-card);
+}
+
+.kind_divRam {
+  background: var(--bgcolor-memmap-div);
+}
+
+.kind_divRom {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 4px, var(--border-subtle) 4px 5px),
+    var(--bgcolor-memmap-div);
+}
+
+.kind_empty {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--color-memmap-empty);
+  color: var(--data-secondary);
+}
+
+.kind_mirror {
+  background: transparent;
+  border-style: dotted;
+  border-color: var(--color-memmap-empty);
+  color: var(--color-memmap-mirror);
+}
+
+// --- The part in view: a frame along the cell's bottom edge, positioned over the bar
+.viewport {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  border-radius: var(--radius-xs);
+  background: var(--color-memmap-viewport);
+  pointer-events: none;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-memmap-tick);
+  pointer-events: none;
+
+  &::after {
+    content: attr(data-reg);
+    position: absolute;
+    top: 0;
+    left: 3px;
+    font-size: var(--font-size-50);
+    font-weight: 700;
+    color: var(--color-memmap-tick);
+    line-height: 1;
+  }
+}
+
+// --- The heat strip under a cell: one band per 1/64 of the cell
+.heatStrip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  height: 3px;
+  display: flex;
+  pointer-events: none;
+
+  > span {
+    flex: 1 1 0;
+    background: var(--status-warning);
+  }
+}
+
+// --- One partition shown: the bar is the partition
+.partitionBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  height: calc(var(--row-panelHeader) + var(--space-2));
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  position: relative;
+  font-size: var(--font-size-100);
+  overflow: hidden;
+  white-space: nowrap;
+
+  b {
+    color: var(--color-state-value);
+    font-weight: 600;
+  }
+}
+
+.partitionBarDim {
+  color: var(--data-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// --- Partition chips
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: calc(var(--row-list) - 2px);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--accent-solid);
+    border-color: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+.chipPaged {
+  border-color: var(--color-memmap-paged);
+}
+
+.chipRom {
+  border-style: dashed;
+}
+
+.chipBadge {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--color-state-value);
+  font-size: var(--font-size-50);
+  line-height: 1.4;
+}
+
+.chipCount {
+  color: var(--data-secondary);
+
+  [aria-pressed="true"] > & {
+    color: inherit;
+  }
+}
+
+.rowLabel {
+  font-size: var(--font-size-100);
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+// --- The register strip
+.regChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: calc(var(--row-list) - 2px);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-memmap-register);
+  font: inherit;
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+
+  &[aria-pressed="true"] {
+    border-color: var(--color-memmap-cursor);
+  }
+}
+
+.regName {
+  color: var(--color-memmap-register);
+  font-weight: 700;
+}
+
+.regValue {
+  color: var(--color-state-value);
+}
+
+.regPart {
+  color: var(--data-secondary);
+  font-size: var(--font-size-50);
+}
+
+// ─── The Bank map ────────────────────────────────────────────────────────────
+
+.bankMap {
+  position: absolute;
+  left: var(--space-2);
+  top: 100%;
+  z-index: var(--z-overlay);
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 2 * var(--space-2));
+  max-height: 70vh;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-3);
+  font-family: var(--monospace-font);
+}
+
+.bankMapHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.bankMapTitle {
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--data-label);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1.5ch;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+}
+
+.legendBar {
+  display: inline-block;
+  width: 2ch;
+  height: 3px;
+  border-radius: var(--radius-xs);
+}
+
+.bankMapBody {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-2);
+}
+
+.block + .block {
+  margin-top: var(--space-2);
+}
+
+.blockCaption {
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-100);
+  color: var(--text-primary);
+  font-weight: 600;
+
+  span {
+    margin-left: var(--space-2);
+    color: var(--data-secondary);
+    font-weight: 400;
+  }
+}
+
+.blockChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 3ch repeat(16, minmax(4ch, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.gridHead {
+  text-align: center;
+  font-size: var(--font-size-50);
+  color: var(--data-secondary);
+}
+
+.mapCell {
+  position: relative;
+  min-width: 4ch;
+  height: var(--row-list);
+  padding: 0 var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+}
+
+.mapCellPaged {
+  border-color: var(--color-memmap-paged);
+  font-weight: 700;
+}
+
+.mapCellCurrent {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.mapCellFaded {
+  opacity: 0.25;
+}
+
+.mapCellBadge {
+  position: absolute;
+  top: -4px;
+  right: -3px;
+  min-width: 1.6ch;
+  padding: 0 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-memmap-badge);
+  color: var(--text-on-accent);
+  font-size: var(--font-size-50);
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.mapCellChanged::before,
+.mapCellAnnotated::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.mapCellChanged::before {
+  left: 2px;
+  background: var(--color-state-changed);
+}
+
+.mapCellAnnotated::after {
+  left: 9px;
+  background: var(--color-annotation-rail);
+}
+
+.roleBar {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 1px;
+  height: 2px;
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.role_ulaScreen,
+.role_shadowScreen {
+  background: var(--color-memmap-role-ula);
+}
+
+.role_layer2,
+.role_layer2Shadow {
+  background: var(--color-memmap-role-layer2);
+}
+
+.role_tilemap {
+  background: var(--color-memmap-role-tilemap);
+}
+
+// --- A shadow role: the same hue, dashed
+.role_shadowScreen,
+.role_layer2Shadow {
+  background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 5px);
+}
+
+.role_shadowScreen {
+  color: var(--color-memmap-role-ula);
+}
+
+.role_layer2Shadow {
+  color: var(--color-memmap-role-layer2);
+}
+
+.bankMapHint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+
+  kbd {
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-xs);
+    font-family: var(--monospace-font);
+  }
+}
+
+// ─── The inspector column ────────────────────────────────────────────────────
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.inspectorHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: var(--strip-panelHeader);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.inspectorAddress {
+  color: var(--color-memory-address);
+  font-size: var(--font-size-400);
+  font-weight: 600;
+}
+
+.inspectorSub {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.kindBadge {
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.kindBadgeReadOnly {
+  background: var(--status-warning-subtle);
+  color: var(--status-warning);
+}
+
+.inspectorScroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: contain;
+  }
+}
+
+.section {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--data-label);
+}
+
+.sectionAside {
+  margin-left: auto;
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 13ch minmax(0, 1fr);
+  gap: 2px var(--space-2);
+  align-items: baseline;
+}
+
+.fieldLabel {
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+.fieldValue {
+  color: var(--color-state-value);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fieldPlain {
+  color: var(--text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fieldDim {
+  color: var(--data-secondary);
+}
+
+.link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  @include focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.hint {
+  margin-top: var(--space-1);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.editRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+
+  input[type="text"] {
+    width: 14ch;
+    height: var(--size-controlSm);
+    padding: 0 var(--space-1);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: var(--bgcolor-input);
+    color: var(--text-primary);
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-200);
+    @include focus-ring;
+  }
+}
+
+.textField {
+  width: 100%;
+  height: var(--size-controlSm);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  @include focus-ring;
+}
+
+.miniListing {
+  display: grid;
+  grid-template-columns: 6ch 12ch minmax(0, 1fr);
+  gap: 0 var(--space-2);
+  white-space: nowrap;
+
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.miniAddress {
+  color: var(--color-disassembly-address);
+}
+
+.miniBytes {
+  color: var(--color-disassembly-opcodes);
+}
+
+.miniCurrent {
+  background: var(--bgcolor-memmap-selection);
+}
+
+.byteRun {
+  color: var(--color-memory-value);
+  overflow-wrap: anywhere;
+}
+
+.operand {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+
+  & + & {
+    margin-top: var(--space-1);
+  }
+}
+
+.operandHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.operandName {
+  color: var(--color-disassembly-label);
+  font-weight: 600;
+}
+
+.refList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.refRow {
+  display: grid;
+  grid-template-columns: 6ch minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  @include focus-ring;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.hidden {
+  display: none;
+}

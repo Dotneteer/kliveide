@@ -405,3 +405,91 @@
   height: 70%;
   background: var(--color-coverage-covered);
 }
+
+// ─── The live view's additions (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §6.1) ─────────────
+
+// --- A rule row: where the 64K listing enters another slot (a caption over a rule), or an empty
+// --- Z88 card slot shown as one quiet row
+.separatorRow {
+  display: flex;
+  align-items: flex-end;
+  padding-left: calc(var(--space-2) + 8ch);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.separatorEmpty {
+  align-items: center;
+  border-bottom: 0;
+  color: var(--data-secondary);
+  font-style: italic;
+}
+
+// --- The flow gutter: eight lanes of 1ch, between the breakpoint gutter and the address
+.flowGutter {
+  position: relative;
+  flex: 0 0 auto;
+  width: 8ch;
+  height: 100%;
+  align-self: stretch;
+
+  svg {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+}
+
+.flowLine {
+  stroke: var(--color-flow-arrow);
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.flowConditional {
+  stroke-dasharray: 2 2;
+}
+
+.flowSelected {
+  stroke: var(--color-flow-selected);
+  stroke-width: 1.6;
+  color: var(--color-flow-selected);
+}
+
+.flowTaken {
+  stroke: var(--color-flow-taken);
+  stroke-width: 1.6;
+  color: var(--color-flow-taken);
+}
+
+.flowArrow {
+  position: absolute;
+  right: -0.4ch;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-50);
+  line-height: 1;
+  color: var(--color-flow-arrow);
+  pointer-events: none;
+}
+
+// --- A label's reference count, after the label (`◂ 3`); a click lists them in the inspector
+.refCount {
+  flex: 0 0 auto;
+  width: 5ch;
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent-text);
+  }
+}
+
+.refCountNone {
+  cursor: default;
+}

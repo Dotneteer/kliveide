@@ -1,3 +1,5 @@
+import type { PartitionRole } from "@common/annotations/partitionInfo";
+import type { MemoryRegisters } from "@renderer/features/memory/useMemoryRefresh";
 import { MI_ZXNEXT } from "@common/machines/constants";
 import type { EmuApi, MemoryInfo } from "@common/messaging/EmuApi";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -151,6 +153,8 @@ export type LiveMemorySnapshot = {
 };
 
 export type DisassemblyRefreshResult = {
+  registers?: MemoryRegisters;
+  partitionRoles?: Record<number, PartitionRole[]>;
   breakpoints: BreakpointInfo[];
   /** The last read's memory and paging; undefined before the first refresh. */
   memorySnapshot?: LiveMemorySnapshot;
@@ -232,6 +236,11 @@ export function useDisassemblyRefresh({
   const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
   const [memorySnapshot, setMemorySnapshot] = useState<LiveMemorySnapshot | undefined>(undefined);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  // --- The register strip's values and the Bank map's roles (the shared frame, plan §4.3-4.4)
+  const [frameState, setFrameState] = useState<{
+    registers?: MemoryRegisters;
+    partitionRoles?: Record<number, PartitionRole[]>;
+  }>({});
   const refreshInProgress = useRef(false);
   const refreshPending = useRef(false);
   const activeRefresh = useRef<Promise<void> | null>(null);
@@ -356,6 +365,28 @@ export function useDisassemblyRefresh({
           );
           setBreakpoints(memoryBreakpoints);
           setBreakpointMap(buildBreakpointMap(memoryBreakpoints));
+          {
+            const r = history?.regs ?? getMemoryResponse;
+            setFrameState({
+              registers: {
+                pc,
+                sp: r.sp,
+                af: r.af,
+                bc: r.bc,
+                de: r.de,
+                hl: r.hl,
+                af_: r.af_,
+                bc_: r.bc_,
+                de_: r.de_,
+                hl_: r.hl_,
+                ix: r.ix,
+                iy: r.iy,
+                ir: r.ir,
+                wz: r.wz
+              },
+              partitionRoles: getMemoryResponse.partitionRoles
+            });
+          }
           setRefreshVersion((version) => version + 1);
 
           if (refreshState.autoRefresh && outputItems.length > 0) {
@@ -384,6 +415,7 @@ export function useDisassemblyRefresh({
   ]);
 
   return {
+    ...frameState,
     breakpoints,
     memorySnapshot,
     breakpointMap,

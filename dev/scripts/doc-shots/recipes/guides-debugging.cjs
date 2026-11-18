@@ -10,7 +10,11 @@
  * - `debugging/breakpoint-conditions/log-pane.webp` — the Output's Log pane with logpoint messages;
  * - `debugging/watch/watch-panel.webp` — a byte, a word and a label in the Watch panel;
  * - `debugging/machine-state-panels/{z80-cpu,ula,system-variables}.webp`;
- * - `debugging/memory/memory-view.webp` and `debugging/disassembly/disassembly-view.webp`.
+ * - `debugging/memory/{memory-view,inspector,find}.webp` and
+ *   `debugging/disassembly/{disassembly-view,flow-gutter,branch-verdicts,inspector,rom-annotated}.webp`,
+ *   the Memory and Disassembly views' frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §9), in a
+ *   wider window so the inspector sits beside the listing;
+ * - `analysis/annotations/inspector-edit.webp` — the Disassembly inspector's Annotation section.
  *
  * The program is `fixtures/guides/stripes.kz80.asm`. All breakpoints are set with `bp-set` on
  * source lines (`[file]:line`), so the margin shows them as a user's gestures would make them.
@@ -231,12 +235,36 @@ module.exports = {
         });
       }
 
+      // --- The Memory and Disassembly views want the width of a document with its inspector beside it
+      const widen = (width) =>
+        klive.app.evaluate(({ BrowserWindow }, w) =>
+          BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes("?ide"))?.setContentSize(w, 860), width);
+      const DOCUMENT = '[class*="_documentArea_"], [class*="_documentsContainer_"]';
+      const INSPECTOR = 'aside[class*="_inspector_"]';
+
       if (wants("memory")) {
+        await widen(1640);
         await step(klive, "memory", async () => {
           await klive.cmd("show-memory $8000", 2500);
           await klive.cmd("cls", 400);
+          // --- The cursor on the program's first byte, three bytes selected
+          await ide.locator('[role="grid"]').first().focus();
+          await ide.keyboard.press("Shift+ArrowRight");
+          await ide.keyboard.press("Shift+ArrowRight");
           await h.park(ide);
-          await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/debugging/memory/memory-view.webp", {
+          await klive.shot(DOCUMENT, "en/guides/debugging/memory/memory-view.webp", {
+            displayWidth: 760,
+            crop: { x: 0, y: 0, height: 560 }
+          });
+          await klive.shot(INSPECTOR, "en/guides/debugging/memory/inspector.webp", { displayWidth: 420 });
+        });
+        await step(klive, "memory-find", async () => {
+          await ide.getByRole("button", { name: "Find these bytes" }).first().click();
+          const find = ide.getByLabel("Find").first();
+          await find.press("Enter");
+          await klive.sleep(800);
+          await h.park(ide);
+          await klive.shot(DOCUMENT, "en/guides/debugging/memory/find.webp", {
             displayWidth: 760,
             crop: { x: 0, y: 0, height: 440 }
           });
@@ -244,16 +272,42 @@ module.exports = {
       }
 
       if (wants("disass")) {
+        await widen(1640);
         await step(klive, "disass", async () => {
           await klive.cmd("show-disass $8000", 2500);
           await klive.cmd("cls", 400);
+          // --- The DJNZ row selected: its loop arrow is highlighted and the inspector describes it
+          await ide.locator('[data-testid^="disassembly-row-"]', { hasText: "djnz" }).first().click();
+          await klive.sleep(600);
           await h.park(ide);
-          await klive.shot('[class*="_documentArea_"], [class*="_documentsContainer_"]', "en/guides/debugging/disassembly/disassembly-view.webp", {
+          await klive.shot(DOCUMENT, "en/guides/debugging/disassembly/disassembly-view.webp", {
             displayWidth: 760,
-            crop: { x: 0, y: 0, height: 480 },
+            crop: { x: 0, y: 0, height: 560 },
             markers: { execution: { selector: '[class*="_execPoint_"]', x: 0.02, y: 0.5 } }
           });
+          await klive.shot('[class*="_disassemblyWrapper_"]', "en/guides/debugging/disassembly/flow-gutter.webp", {
+            displayWidth: 760,
+            crop: { x: 0, y: 0, height: 360 }
+          });
+          await klive.shot('[class*="_disassemblyWrapper_"]', "en/guides/debugging/disassembly/branch-verdicts.webp", {
+            displayWidth: 760,
+            crop: { x: 0, y: 0, height: 360 }
+          });
+          await klive.shot(INSPECTOR, "en/guides/debugging/disassembly/inspector.webp", { displayWidth: 420 });
         });
+        await step(klive, "rom-annotated", async () => {
+          await klive.cmd("show-disass $0038", 2500);
+          await klive.cmd("cls", 400);
+          await ide.locator('[data-testid^="disassembly-row-"]', { hasText: "push" }).first().click();
+          await klive.sleep(600);
+          await h.park(ide);
+          await klive.shot(DOCUMENT, "en/guides/debugging/disassembly/rom-annotated.webp", {
+            displayWidth: 760,
+            crop: { x: 0, y: 0, height: 520 }
+          });
+          await klive.shot(INSPECTOR, "en/guides/analysis/annotations/inspector-edit.webp", { displayWidth: 420 });
+        });
+        await widen(1280);
       }
 
       await klive.cmd("em-stop", 1500);

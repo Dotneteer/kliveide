@@ -1,5 +1,5 @@
 ---
-description: "Read the machine's memory as Z80 instructions, follow the execution point, set breakpoints in the gutter and see how conditional branches will go."
+description: "Read the machine's memory as Z80 instructions: follow the execution point, see jumps as arrows and how conditional branches will go, find text, and inspect any instruction."
 ---
 
 import { Callout } from 'nextra/components'
@@ -13,7 +13,7 @@ and to see which way each conditional branch will go.
 
 <Shot
   src="guides/debugging/disassembly/disassembly-view.webp"
-  alt="The Disassembly view paused at the execution point, with the breakpoint gutter, addresses, bytes, T-states, branch marks and instructions"
+  alt="The Disassembly view paused at the execution point: the toolbar, the memory map, the registers, the listing with flow arrows and the inspector"
   caption="The Disassembly view, paused at the execution point."
   width={760}
 />
@@ -24,7 +24,9 @@ Choose **View › Machine Views › Disassembly**, or click **Show Disassembly P
 toolbar.
 
 With **Follow PC** on (the default), the view disassembles about 1024 bytes from the program
-counter and follows it as you step. Turn it off to disassemble the whole memory, or one bank.
+counter and follows it as you step. Turn it off to disassemble the whole memory, or one partition.
+The [`show-disass`](/en/reference/commands/#show-disass) command opens the view at an address, a
+label, a register or a partition and offset.
 
 ## Breakpoints in the gutter
 
@@ -47,21 +49,85 @@ with [`bp-set`](/en/reference/commands/#bp-set).
 
 ## The toolbar
 
-- **Decimal**: show addresses, bytes and operands in decimal instead of hexadecimal (off by default).
+- **Go to**: an address, a register, a label or a partition and offset, as in
+  [the Memory view](/en/guides/debugging/memory/#the-toolbar). An address inside an instruction
+  settles on the next instruction. <kbd>Ctrl</kbd>+<kbd>G</kbd> puts the cursor there.
+- **▶ PC**: go to the execution point (while the machine is paused).
+- **Follow PC**: follow the program counter, as above. The button after it refreshes the listing.
+- **Find**: see [Find](#find).
+- **Hex** / **Dec**: the number format of addresses, bytes and operands.
 - **Sys vars**: name 16-bit data addresses after the machine's system variables (on by default).
   See [System variable names](#system-variable-names).
 - **ROM labels**: show the ROM's annotations: its labels, comments and data regions (on by
   default; shown when the machine's ROM has annotations). See
   [ROM annotations](/en/guides/analysis/annotations/#rom-annotations).
-- **Follow PC**: follow the program counter, as above.
+- **Flow**: draw the [flow arrows](#flow-arrows).
 - **RAM:** and **Screen:** (with Follow PC off): disassemble the RAM (on by default) and the screen
   memory at `$4000`-`$5AFF` (off by default).
-- **Bank**: show the bank label in front of each address (machines that page memory).
-- **Go To**: type an address and press <kbd>Enter</kbd>. An address inside an instruction settles on
-  the next instruction.
+- **Origin** (with one partition shown): the address the partition is disassembled at.
+- **Export** and the reverse-engineering tools, then **Inspector**, which shows the inspector
+  column when a row is selected.
 
-The arrow button before **Go To** (**Go to the PC address**) is enabled while the machine is paused:
-it scrolls to the execution point, and its direction says whether that is above or below the view.
+Under the toolbar are the memory map, the partition row and the register strip of
+[the Memory view](/en/guides/debugging/memory/#the-memory-map); the register strip adds an **F**
+chip with the flags (`SZ5H3PNC`, a capital for a set flag), which the branch verdicts are judged
+against. With the 64K shown, a rule row marks where the listing enters another slot, and names the
+partition there. An empty Cambridge Z88 card slot is one row instead of 16K of `rst $38`.
+
+## Flow arrows
+
+<Shot
+  src="guides/debugging/disassembly/flow-gutter.webp"
+  alt="The flow gutter: arrows from JR, JP and DJNZ instructions to their targets, the selected row's highlighted"
+  caption="Flow arrows: dashed for a conditional jump, highlighted for the selected row."
+  width={760}
+/>
+
+The column between the breakpoint gutter and the address draws an arrow from each `JR`, `JP` and
+`DJNZ` to its target, in up to eight lanes, the shortest innermost. A conditional jump's arrow is
+dashed. The jumps of the selected row are highlighted, and the branch the CPU takes at the
+execution point is drawn in the verdict colour.
+
+A jump over more than about a screen of rows gets a short stub at each end instead of a line across
+the listing, and a jump whose target is outside the listing a stub pointing up or down. `CALL` and
+`RST` have no arrow: their branch mark (an out-and-back hook) says they return.
+
+## Labels and references
+
+A row with a label shows after it how many rows of the listing name that label (`◂ 3`). Click the
+count to list those rows in the inspector's **Referred to by** section, and click one there to go
+to it. These are the rows on which you read the name, the rule
+[Go to References](/en/guides/analysis/annotations/) follows.
+
+## Find
+
+Type in **Find** and press <kbd>Enter</kbd>: it searches the listing as printed, mnemonics, operands
+(names included), labels and comments, so `rst $10`, `LAST_K` and a label all work.
+<kbd>F3</kbd> and <kbd>Shift</kbd>+<kbd>F3</kbd> step through the matches, selecting each row.
+
+## The inspector
+
+<Shot
+  src="guides/debugging/disassembly/inspector.webp"
+  alt="The Disassembly view's inspector: the instruction, its verdict, its operands, its annotation and its breakpoint"
+  caption="The inspector of the selected instruction."
+  width={420}
+/>
+
+Click a row, or move with the arrow keys, and the inspector describes it:
+
+- **Instruction**: as printed, its bytes, its length and its T-states (taken and not taken).
+- **Verdict**: for a branch, what it will do; *certain* at the execution point, otherwise what
+  would happen if the CPU arrived here now.
+- **Operands**: each address the instruction names, with its name, its partition and offset and
+  the first bytes there, and **Go to** and **Memory ↗**. An indirect operand such as `(HL)` or
+  `(IX+5)` is resolved from the registers; a `NEXTREG` links to the register.
+- **Referred to by**: the rows that name this row's label.
+- **Annotation**: the row's label and comment, and the **Label...**, **End-of-Line Comment...** and
+  other entries of the row menu. An edit is saved at once.
+- **Breakpoint**: **Add Breakpoint**, **Add One-Shot Breakpoint**, **Run to Here** and **Edit
+  Breakpoint...**.
+- **Use**: **Show in Memory** (<kbd>Ctrl</kbd>+<kbd>M</kbd>), at the same address and partition.
 
 ## System variable names
 
@@ -102,13 +168,16 @@ While a machine is running or paused, the Disassembly View marks every condition
 with what that branch will do next, worked out from the CPU's current flags and registers. A narrow
 column between the T-states and the instruction carries the mark:
 
-<ClickableImage src="/images/working-with-ide/disass-branch-verdicts.png" width={640} />
+<Shot
+  src="guides/debugging/disassembly/branch-verdicts.webp"
+  alt="Branch marks in the Disassembly view: a loop closing backwards at the execution point with its readout, and marks for calls, returns and jumps"
+  caption="Branch marks, and the readout at the execution point."
+  width={760}
+/>
 
-This is the end of the ROM's keyboard scan, and it happens to show every mark a 48K listing can
-produce. The execution point is a `jr c` about to close a loop backwards, and the readout beside it
-says where to, which condition decided it, and what that costs. Below: three `ret z` that will not
-be taken, a `ret` and a `ret nz` that will return, a `call` drawn as an out-and-back hook, and two
-`jr nz` jumping forwards.
+The execution point is a branch about to be decided, and the readout beside it says where to,
+which condition decided it, and what that costs. The rows around it carry the marks of the other
+branches: returns, calls drawn as an out-and-back hook, and jumps.
 
 | Mark | Meaning |
 | --- | --- |
@@ -168,22 +237,36 @@ Three cases show a verdict but no destination, on purpose:
 - **`RET cc` away from the execution point.** The return address sits on the stack, and the top of
   the stack belongs to whatever is executing *now*, not to the row you are looking at. It is only
   shown for the row at PC, where it is genuinely that instruction's return address.
-- **`RET cc` in a banked view.** With the **64K View** switch off, the view holds one bank rather
-  than the whole address space, so the stack is not part of what is on display.
+- **`RET cc` in a partition shown on its own.** The view then holds one partition rather than
+  the whole address space, so the stack is not part of what is on display.
 
 While the machine is free-running rather than paused, the marks follow the CPU state as it is
 sampled, a few times a second. Pause or single-step for a verdict that stands still.
 
-## Looking at one bank
+## Looking at one partition
 
-On machines that page memory, a second toolbar row has a **64K View** switch. On (the default), the
-view disassembles the 64K the CPU sees now. Off, choose a ROM page or RAM bank in **Select bank**:
-the view disassembles that partition even when it is not paged in.
+The **Partitions** row picks the 64K or one partition, as in
+[the Memory view](/en/guides/debugging/memory/#look-at-one-partition). A partition on its own is
+disassembled at an **Origin**: where it is paged in now, or `$0000` when it is not. Change it in
+the toolbar's **Origin** chooser (8K page boundaries) so the addresses match where the code runs.
 
-The **Offset** chooser sets the address the bank is disassembled at, at one of the 8K page
-boundaries, so the addresses match where the code runs.
+<Shot
+  src="guides/debugging/disassembly/origin.webp"
+  alt="A Cambridge Z88 bank disassembled on its own at an Origin"
+  caption="A Z88 bank on its own, at its Origin."
+  width={760}
+/>
 
-The bank column and the bank chooser use the partition names of
+The ROM's own annotations follow the ROM page wherever it is shown:
+
+<Shot
+  src="guides/debugging/disassembly/rom-annotated.webp"
+  alt="The 48K ROM in the Disassembly view, with its labels, synopses and comments"
+  caption="The 48K ROM, annotated: labels, synopses and comments from its sidecar."
+  width={760}
+/>
+
+The partition names are those of
 [the Memory view](/en/guides/debugging/memory/#machine-specific-memory-partitions).
 
 A ZX Spectrum Next bank can also be popped out into its own document, with live contents and

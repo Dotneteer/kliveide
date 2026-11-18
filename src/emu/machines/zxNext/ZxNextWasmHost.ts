@@ -24,6 +24,7 @@ import {
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { IMPLICIT_NEXT_PROFILE_ID, nextProfileOf, romSetOf, type NextProfile } from "./nextProfiles";
 import { writeCodeSegments } from "../writeCodeSegments";
+import { nextPartitionInfo, type PartitionInfoSet } from "@common/annotations/partitionInfo";
 
 /**
  * The host side of a ZX Spectrum Next whose hardware is emulated elsewhere - in the WASM core.
@@ -126,6 +127,16 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
 
   getPartitionGroups(): Record<number, string> {
     return nextPartitionGroups(this.partitionOptions);
+  }
+
+  /** The partitions as the Memory and Disassembly views' Bank map shows them (plan §7) */
+  getPartitionInfo(): PartitionInfoSet {
+    return nextPartitionInfo({
+      labels: this.getPartitionLabels(),
+      descriptions: this.getPartitionDescriptions(),
+      groups: this.getPartitionGroups(),
+      upperRam: !!this.partitionOptions.upperRam
+    });
   }
 
   getDisassemblySections(options: Record<string, any>): IMemorySection[] {

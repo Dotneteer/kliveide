@@ -2491,21 +2491,6 @@
   "@panels.feature.navigation.showHistory": {
     "context": "Tooltip of the small down-arrow between the toolbar's Back and Forward arrows: opens the Navigation history popover."
   },
-  "panels.feature.memory.layout8x1": "8B / 1 col",
-  "@panels.feature.memory.layout8x1": {
-    "context": "Choice in the memory view's 'View' drop-down: 8 bytes per row, one column. 'B' = bytes, 'col' = column.",
-    "maxChars": 14
-  },
-  "panels.feature.memory.layout8x2": "8B / 2 col",
-  "@panels.feature.memory.layout8x2": {
-    "context": "Choice in the memory view's 'View' drop-down: 8 bytes per column, two columns per row. 'B' = bytes, 'col' = columns.",
-    "maxChars": 14
-  },
-  "panels.feature.memory.layout16x1": "16B / 1 col",
-  "@panels.feature.memory.layout16x1": {
-    "context": "Choice in the memory view's 'View' drop-down: 16 bytes per row, one column. 'B' = bytes, 'col' = column.",
-    "maxChars": 14
-  },
   "panels.feature.memory.heat.off": "Off",
   "@panels.feature.memory.heat.off": {
     "context": "Choice in the memory view's 'Heat' drop-down: no heat map colouring.",
@@ -2531,19 +2516,9 @@
     "context": "Choice in the memory view's 'Heat' drop-down: colour bytes by every kind of access.",
     "maxChars": 12
   },
-  "panels.feature.memory.decimal": "Decimal",
-  "@panels.feature.memory.decimal": {
-    "context": "Switch label in the memory view's toolbar: show numbers in decimal instead of hexadecimal.",
-    "maxChars": 12
-  },
   "panels.feature.memory.decimalTooltip": "Use decimal numbers?",
   "@panels.feature.memory.decimalTooltip": {
     "context": "Tooltip of the memory view's 'Decimal' switch."
-  },
-  "panels.feature.memory.view": "View",
-  "@panels.feature.memory.view": {
-    "context": "Label before the layout drop-down in the memory view's toolbar (a noun: the layout).",
-    "maxChars": 8
   },
   "panels.feature.memory.chars": "Chars",
   "@panels.feature.memory.chars": {
@@ -2554,15 +2529,6 @@
   "@panels.feature.memory.charsTooltip": {
     "context": "Tooltip of the memory view's 'Chars' switch."
   },
-  "panels.feature.memory.bank": "Bank",
-  "@panels.feature.memory.bank": {
-    "context": "Switch label in the memory view's toolbar: show the bank in front of each address.",
-    "maxChars": 10
-  },
-  "panels.feature.memory.bankTooltip": "Display bank label information?",
-  "@panels.feature.memory.bankTooltip": {
-    "context": "Tooltip of the memory view's 'Bank' switch."
-  },
   "panels.feature.memory.heat": "Heat",
   "@panels.feature.memory.heat": {
     "context": "Label before the heat-map drop-down in the memory view's toolbar.",
@@ -2572,28 +2538,9 @@
   "@panels.feature.memory.heatMap": {
     "context": "Accessible name of the memory view's heat-map drop-down: colours bytes by how often they were accessed."
   },
-  "panels.feature.memory.goTo": "Go To",
-  "@panels.feature.memory.goTo": {
-    "context": "Label of the address box in the memory view's toolbar: type an address and press Enter to scroll there.",
-    "maxChars": 10
-  },
   "panels.feature.memory.showAsGraphics": "Show as graphics",
   "@panels.feature.memory.showAsGraphics": {
     "context": "Tooltip of a memory view toolbar button: opens the graphics finder, which shows the memory as pixels."
-  },
-  "panels.feature.memory.fullView": "64K View",
-  "@panels.feature.memory.fullView": {
-    "context": "Switch label in the memory view's bank toolbar: show the whole 64K address space instead of one bank. '64K' is a size.",
-    "maxChars": 12
-  },
-  "panels.feature.memory.fullViewTooltip": "Show the full 64K memory",
-  "@panels.feature.memory.fullViewTooltip": {
-    "context": "Tooltip of the memory view's '64K View' switch."
-  },
-  "panels.feature.memory.selectedBank": "Selected bank",
-  "@panels.feature.memory.selectedBank": {
-    "context": "Label before the bank picker in the memory view's bank toolbar.",
-    "maxChars": 18
   },
   "panels.feature.memory.graphicsChar": "(graphics)",
   "@panels.feature.memory.graphicsChar": {
@@ -4215,5 +4162,647 @@
   "panels.side.nextReg.popOut": "Open the Next Registers document",
   "@panels.side.nextReg.popOut": {
     "context": "Tooltip of the pop-out icon button in the header of the Debug sidebar's Next Registers panel: opens the same registers as a document with more room."
+  },
+  "panels.memoryMap.kind.rom": "ROM",
+  "@panels.memoryMap.kind.rom": {
+    "context": "A memory partition's kind, shown as a badge and in the Bank map's legend of the Memory and Disassembly views: read-only memory.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.ram": "RAM",
+  "@panels.memoryMap.kind.ram": {
+    "context": "A memory partition's kind (badge, Bank map legend): the machine's own RAM.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.cardRam": "Card RAM",
+  "@panels.memoryMap.kind.cardRam": {
+    "context": "A memory partition's kind (badge, Bank map legend): RAM on a Cambridge Z88 memory card.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.flash": "Flash",
+  "@panels.memoryMap.kind.flash": {
+    "context": "A memory partition's kind (badge, Bank map legend): flash memory (a Z88 flash card or ROM chip).",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.eprom": "EPROM",
+  "@panels.memoryMap.kind.eprom": {
+    "context": "A memory partition's kind (badge, Bank map legend): a UV-erasable EPROM card.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.divRom": "DivMMC ROM",
+  "@panels.memoryMap.kind.divRom": {
+    "context": "A memory partition's kind (badge, Bank map legend): the DivMMC interface's ROM. 'DivMMC' is a product name.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.divRam": "DivMMC RAM",
+  "@panels.memoryMap.kind.divRam": {
+    "context": "A memory partition's kind (badge, Bank map legend): the DivMMC interface's RAM. 'DivMMC' is a product name.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.empty": "Empty",
+  "@panels.memoryMap.kind.empty": {
+    "context": "A memory partition's kind (badge, Bank map legend): an empty card slot, nothing is there.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.kind.mirror": "Mirror",
+  "@panels.memoryMap.kind.mirror": {
+    "context": "A memory partition's kind (badge, Bank map legend): the bank repeats another bank (a card smaller than its slot).",
+    "maxChars": 12
+  },
+  "panels.memoryMap.role.ulaScreen": "ULA screen",
+  "@panels.memoryMap.role.ulaScreen": {
+    "context": "What the hardware uses a memory page for (Bank map legend and tooltip): the normal ZX Spectrum screen memory. 'ULA' is a chip name.",
+    "maxChars": 16
+  },
+  "panels.memoryMap.role.shadowScreen": "Shadow screen",
+  "@panels.memoryMap.role.shadowScreen": {
+    "context": "What the hardware uses a memory page for (Bank map legend and tooltip): the second (shadow) ZX Spectrum screen in bank 7.",
+    "maxChars": 16
+  },
+  "panels.memoryMap.role.layer2": "Layer 2",
+  "@panels.memoryMap.role.layer2": {
+    "context": "What the hardware uses a memory page for (Bank map legend and tooltip): the ZX Spectrum Next's Layer 2 picture. 'Layer 2' is a hardware name.",
+    "maxChars": 16
+  },
+  "panels.memoryMap.role.layer2Shadow": "Layer 2 shadow",
+  "@panels.memoryMap.role.layer2Shadow": {
+    "context": "What the hardware uses a memory page for (Bank map legend and tooltip): the Next's Layer 2 shadow (back) buffer.",
+    "maxChars": 16
+  },
+  "panels.memoryMap.role.tilemap": "Tilemap",
+  "@panels.memoryMap.role.tilemap": {
+    "context": "What the hardware uses a memory page for (Bank map legend and tooltip): the ZX Spectrum Next's tilemap or its tile definitions.",
+    "maxChars": 16
+  },
+  "panels.memoryMap.note.mirror": "Repeats bank {bank}",
+  "@panels.memoryMap.note.mirror": {
+    "context": "Tooltip/inspector note for a Z88 bank that mirrors another bank of a smaller card.",
+    "placeholders": {
+      "bank": "The bank it repeats, e.g. '7F'"
+    }
+  },
+  "panels.memoryMap.note.emptySlot": "Slot {slot} is empty",
+  "@panels.memoryMap.note.emptySlot": {
+    "context": "Tooltip/inspector note for a bank of a Cambridge Z88 card slot that has no card.",
+    "placeholders": {
+      "slot": "The slot number, 0-3"
+    }
+  },
+  "panels.memoryMap.note.card": "{kind}, {size}, slot {slot}",
+  "@panels.memoryMap.note.card": {
+    "context": "Tooltip/inspector note for a Cambridge Z88 bank: the card it is on.",
+    "placeholders": {
+      "kind": "The card's kind, e.g. 'Card RAM' or 'Flash'",
+      "size": "The card's size, e.g. '128K' or '1M'",
+      "slot": "The slot number, 0-3"
+    }
+  },
+  "panels.memoryMap.note.bankLow": "16K bank {bank}, low half",
+  "@panels.memoryMap.note.bankLow": {
+    "context": "Tooltip/inspector note for a ZX Spectrum Next 8K RAM page: which 16K bank it is the first half of.",
+    "placeholders": {
+      "bank": "The 16K bank number (decimal)"
+    }
+  },
+  "panels.memoryMap.note.bankHigh": "16K bank {bank}, high half",
+  "@panels.memoryMap.note.bankHigh": {
+    "context": "Tooltip/inspector note for a ZX Spectrum Next 8K RAM page: which 16K bank it is the second half of.",
+    "placeholders": {
+      "bank": "The 16K bank number (decimal)"
+    }
+  },
+  "panels.memoryMap.slot.zero": "Slot 0 · ROM and internal RAM · {size}",
+  "@panels.memoryMap.slot.zero": {
+    "context": "Caption of the Cambridge Z88 slot 0 block in the Bank map (banks $00-$3F).",
+    "placeholders": {
+      "size": "The ROM's size, e.g. '512K'"
+    }
+  },
+  "panels.memoryMap.slot.empty": "Slot {slot} · empty",
+  "@panels.memoryMap.slot.empty": {
+    "context": "Caption of a Cambridge Z88 card slot block in the Bank map when no card is inserted.",
+    "placeholders": {
+      "slot": "The slot number, 1-3"
+    }
+  },
+  "panels.memoryMap.slot.card": "Slot {slot} · {kind} · {size}",
+  "@panels.memoryMap.slot.card": {
+    "context": "Caption of a Cambridge Z88 card slot block in the Bank map.",
+    "placeholders": {
+      "slot": "The slot number, 1-3",
+      "kind": "The card's kind, e.g. 'Card RAM'",
+      "size": "The card's size, e.g. '128K'"
+    }
+  },
+  "panels.memoryMap.goTo": "Go to",
+  "@panels.memoryMap.goTo": {
+    "context": "Label inside the Go to box of the Memory and Disassembly views' toolbar.",
+    "maxChars": 8
+  },
+  "panels.memoryMap.find": "Find",
+  "@panels.memoryMap.find": {
+    "context": "Label inside the Find box of the Memory and Disassembly views' toolbar.",
+    "maxChars": 8
+  },
+  "panels.memoryMap.findNone": "none",
+  "@panels.memoryMap.findNone": {
+    "context": "The Find box's count when nothing matched.",
+    "maxChars": 8
+  },
+  "panels.memoryMap.findCount": "{index} / {count}",
+  "@panels.memoryMap.findCount": {
+    "context": "The Find box's count: which match is shown, of how many.",
+    "maxChars": 12,
+    "placeholders": {
+      "index": "The current match, from 1",
+      "count": "How many matches"
+    }
+  },
+  "panels.memoryMap.findPrevious": "Previous match (Shift+F3)",
+  "@panels.memoryMap.findPrevious": {
+    "context": "Tooltip of the Find box's up arrow."
+  },
+  "panels.memoryMap.findNext": "Next match (F3)",
+  "@panels.memoryMap.findNext": {
+    "context": "Tooltip of the Find box's down arrow."
+  },
+  "panels.memoryMap.mapBar": "Memory map",
+  "@panels.memoryMap.mapBar": {
+    "context": "Accessible name of the memory map bar: the 64K address space as the CPU sees it, cell by cell."
+  },
+  "panels.memoryMap.upperHalf": "The upper half of the partition",
+  "@panels.memoryMap.upperHalf": {
+    "context": "Tooltip line of a memory map bar cell that shows the second 8K of a 16K partition."
+  },
+  "panels.memoryMap.pagedInAt": "paged in at {address}",
+  "@panels.memoryMap.pagedInAt": {
+    "context": "The memory map bar with one partition shown: where the CPU sees the partition now.",
+    "placeholders": {
+      "address": "A CPU address, e.g. '$8000'"
+    }
+  },
+  "panels.memoryMap.notPagedIn": "not paged in",
+  "@panels.memoryMap.notPagedIn": {
+    "context": "The memory map bar with one partition shown: the CPU cannot see the partition now."
+  },
+  "panels.memoryMap.registers": "Registers",
+  "@panels.memoryMap.registers": {
+    "context": "Label of the register strip of the Memory and Disassembly views (chips of the registers that hold addresses).",
+    "maxChars": 12
+  },
+  "panels.memoryMap.registerGoTo": "Go to the address in {register}",
+  "@panels.memoryMap.registerGoTo": {
+    "context": "Tooltip of a register chip.",
+    "placeholders": {
+      "register": "A Z80 register name, e.g. 'HL'"
+    }
+  },
+  "panels.memoryMap.flagsTitle": "The Z80 flags: a capital letter is a set flag",
+  "@panels.memoryMap.flagsTitle": {
+    "context": "Tooltip of the flags chip (SZ5H3PNC) in the Disassembly view's register strip."
+  },
+  "panels.memoryMap.moreRegisters": "Show the alternate registers, IR and WZ",
+  "@panels.memoryMap.moreRegisters": {
+    "context": "Tooltip of the '⋯' button at the end of the register strip."
+  },
+  "panels.memoryMap.fewerRegisters": "Hide the alternate registers, IR and WZ",
+  "@panels.memoryMap.fewerRegisters": {
+    "context": "Tooltip of the button at the end of the register strip when the extra registers are shown."
+  },
+  "panels.memoryMap.fullView": "64K",
+  "@panels.memoryMap.fullView": {
+    "context": "Chip in the partition row: show the 64K address space as the CPU sees it (not one partition).",
+    "maxChars": 6
+  },
+  "panels.memoryMap.fullViewTitle": "Show the 64K the CPU sees now",
+  "@panels.memoryMap.fullViewTitle": {
+    "context": "Tooltip of the '64K' chip in the partition row."
+  },
+  "panels.memoryMap.pagedIn": "Paged in",
+  "@panels.memoryMap.pagedIn": {
+    "context": "Label before the chips of the partitions paged into the CPU's 64K now.",
+    "maxChars": 10
+  },
+  "panels.memoryMap.recent": "Recent",
+  "@panels.memoryMap.recent": {
+    "context": "Label before the chips of the partitions opened last in this document.",
+    "maxChars": 10
+  },
+  "panels.memoryMap.bankMap": "Bank map",
+  "@panels.memoryMap.bankMap": {
+    "context": "Button in the partition row and title of the popover that shows every memory partition of the machine as a grid.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.bankMapTitle": "Show every partition (Ctrl+B)",
+  "@panels.memoryMap.bankMapTitle": {
+    "context": "Tooltip of the Bank map button."
+  },
+  "panels.memoryMap.pagedInSlots": "Paged in: slot {slots}",
+  "@panels.memoryMap.pagedInSlots": {
+    "context": "Tooltip line of a Bank map cell: the CPU slots the partition is paged into.",
+    "placeholders": {
+      "slots": "Slot numbers, e.g. '2, 3'"
+    }
+  },
+  "panels.memoryMap.changedTitle": "Changed since the previous stop",
+  "@panels.memoryMap.changedTitle": {
+    "context": "Tooltip line of a Bank map cell or byte whose memory changed since the machine last stopped."
+  },
+  "panels.memoryMap.annotatedTitle": "Has annotations",
+  "@panels.memoryMap.annotatedTitle": {
+    "context": "Tooltip line of a Bank map cell (Disassembly view) whose partition has labels or comments."
+  },
+  "panels.memoryMap.filter": "Filter",
+  "@panels.memoryMap.filter": {
+    "context": "Label inside the Bank map's filter box.",
+    "maxChars": 8
+  },
+  "panels.memoryMap.filterPlaceholder": "47, M3, screen, slot 2, rom…",
+  "@panels.memoryMap.filterPlaceholder": {
+    "context": "Placeholder of the Bank map's filter box: examples of what it matches (a partition name, a role, a slot, a kind)."
+  },
+  "panels.memoryMap.hintMove": "move",
+  "@panels.memoryMap.hintMove": {
+    "context": "Bank map footer, after the arrow keys: the arrows move between partitions."
+  },
+  "panels.memoryMap.hintOpen": "show the partition",
+  "@panels.memoryMap.hintOpen": {
+    "context": "Bank map footer, after the Enter key."
+  },
+  "panels.memoryMap.hintClose": "close",
+  "@panels.memoryMap.hintClose": {
+    "context": "Bank map footer, after the Esc key."
+  },
+  "panels.memoryMap.partitionCount": "{shown} of {count} partitions",
+  "@panels.memoryMap.partitionCount": {
+    "context": "Bank map footer: how many partitions the filter shows.",
+    "placeholders": {
+      "shown": "Partitions matching the filter",
+      "count": "All partitions"
+    }
+  },
+  "panels.memoryMap.goToError.number": "Not a number",
+  "@panels.memoryMap.goToError.number": {
+    "context": "Tooltip of the Go to box after Enter: the offset after 'PART:' is not a number."
+  },
+  "panels.memoryMap.goToError.partition": "No such partition on this machine",
+  "@panels.memoryMap.goToError.partition": {
+    "context": "Tooltip of the Go to box after Enter: the partition before ':' is not one of the machine's (e.g. 'Q9:0')."
+  },
+  "panels.memoryMap.goToError.unknown": "Not an address, a register, a label or PART:offset",
+  "@panels.memoryMap.goToError.unknown": {
+    "context": "Tooltip of the Go to box after Enter: the text was not understood."
+  },
+  "panels.memoryMap.goToError.range": "Out of range",
+  "@panels.memoryMap.goToError.range": {
+    "context": "Tooltip of the Go to box after Enter: the address is past 64K, or the offset past the partition's size."
+  },
+  "panels.memoryMap.goToPlaceholder": "$8000, label, R0:$10",
+  "@panels.memoryMap.goToPlaceholder": {
+    "context": "Placeholder of the Go to box: examples of what it takes (an address, a label, a partition-qualified address). Keep the examples as they are; translate only 'label'."
+  },
+  "panels.memoryMap.goToTitle": "An address ($8000, 32768, %1000…), a register, a label, or a partition and offset (47:$0100)",
+  "@panels.memoryMap.goToTitle": {
+    "context": "Tooltip of the Go to box."
+  },
+  "panels.memoryMap.partitions": "Partitions",
+  "@panels.memoryMap.partitions": {
+    "context": "Label of the partition row in the Memory and Disassembly views' frame.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.view64k": "64K view",
+  "@panels.memoryMap.view64k": {
+    "context": "Label before the memory map bar while the 64K the CPU sees is shown.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.viewPartition": "Partition",
+  "@panels.memoryMap.viewPartition": {
+    "context": "Label before the memory map bar while one partition is shown on its own.",
+    "maxChars": 12
+  },
+  "panels.memoryView.addr": "addr",
+  "@panels.memoryView.addr": {
+    "context": "Column head over the address column of the Memory view's dump (abbreviation of 'address').",
+    "maxChars": 6
+  },
+  "panels.memoryView.partAddr": "part addr",
+  "@panels.memoryView.partAddr": {
+    "context": "Column heads over the partition and address columns of the Memory view's dump ('part' = partition, 'addr' = address).",
+    "maxChars": 12
+  },
+  "panels.memoryView.labelColumn": "label",
+  "@panels.memoryView.labelColumn": {
+    "context": "Column head over the Memory view's label gutter.",
+    "maxChars": 8
+  },
+  "panels.memoryView.bytes": "Bytes",
+  "@panels.memoryView.bytes": {
+    "context": "Label before the 8 / 16 / 32 bytes-per-row choice in the Memory view's toolbar.",
+    "maxChars": 8
+  },
+  "panels.memoryView.numberFormat": "Number format",
+  "@panels.memoryView.numberFormat": {
+    "context": "Accessible name of the Hex / Dec choice in the Memory view's toolbar."
+  },
+  "panels.memoryView.hex": "Hex",
+  "@panels.memoryView.hex": {
+    "context": "Choice in the Memory view's toolbar: numbers in hexadecimal.",
+    "maxChars": 5
+  },
+  "panels.memoryView.hexTitle": "Show numbers in hexadecimal",
+  "@panels.memoryView.hexTitle": {
+    "context": "Tooltip of the Hex choice."
+  },
+  "panels.memoryView.dec": "Dec",
+  "@panels.memoryView.dec": {
+    "context": "Choice in the Memory view's toolbar: numbers in decimal.",
+    "maxChars": 5
+  },
+  "panels.memoryView.labels": "Labels",
+  "@panels.memoryView.labels": {
+    "context": "Check box in the Memory view's toolbar: show the label gutter (labels and register tags) before each row.",
+    "maxChars": 10
+  },
+  "panels.memoryView.labelsTitle": "Show each row's first label and the registers pointing into it",
+  "@panels.memoryView.labelsTitle": {
+    "context": "Tooltip of the Labels check box."
+  },
+  "panels.memoryView.follow": "Follow",
+  "@panels.memoryView.follow": {
+    "context": "Label of the drop-down that makes the Memory view follow a register (the cursor goes where the register points at every stop).",
+    "maxChars": 8
+  },
+  "panels.memoryView.followTitle": "Keep the cursor on the address a register holds",
+  "@panels.memoryView.followTitle": {
+    "context": "Tooltip of the Follow drop-down."
+  },
+  "panels.memoryView.inspector": "Inspector",
+  "@panels.memoryView.inspector": {
+    "context": "Check box in the Memory view's toolbar: show the inspector column beside the dump.",
+    "maxChars": 10
+  },
+  "panels.memoryView.inspectorTitle": "Show the inspector beside the dump",
+  "@panels.memoryView.inspectorTitle": {
+    "context": "Tooltip of the Inspector check box."
+  },
+  "panels.memoryView.dump": "Memory dump",
+  "@panels.memoryView.dump": {
+    "context": "Accessible name of the Memory view's hex dump."
+  },
+  "panels.memoryView.pointedBy": "{register} points into this row",
+  "@panels.memoryView.pointedBy": {
+    "context": "Tooltip of a register tag in the Memory view's label gutter.",
+    "placeholders": {
+      "register": "A Z80 register name, e.g. 'HL'"
+    }
+  },
+  "panels.memoryView.findPlaceholder": "21 00 58 or \"text\"",
+  "@panels.memoryView.findPlaceholder": {
+    "context": "Placeholder of the Memory view's Find box: a byte pattern or quoted text. Translate only the word 'text'."
+  },
+  "panels.memoryView.findTitle": "Find bytes (21 ?? 58), quoted text or a label; Enter or F3 for the next match",
+  "@panels.memoryView.findTitle": {
+    "context": "Tooltip of the Memory view's Find box ('??' matches any byte)."
+  },
+  "panels.memoryView.findScope": "Where to find",
+  "@panels.memoryView.findScope": {
+    "context": "Accessible name of the View / All choice after the Find box."
+  },
+  "panels.memoryView.findScopeView": "View",
+  "@panels.memoryView.findScopeView": {
+    "context": "Find scope choice: search the bytes the view shows (the 64K, or the partition shown).",
+    "maxChars": 6
+  },
+  "panels.memoryView.findScopeViewTitle": "Search what the view shows",
+  "@panels.memoryView.findScopeViewTitle": {
+    "context": "Tooltip of the View find scope."
+  },
+  "panels.memoryView.findScopeAll": "All",
+  "@panels.memoryView.findScopeAll": {
+    "context": "Find scope choice: search every memory partition of the machine.",
+    "maxChars": 6
+  },
+  "panels.memoryView.findScopeAllTitle": "Search every partition of the machine",
+  "@panels.memoryView.findScopeAllTitle": {
+    "context": "Tooltip of the All find scope."
+  },
+  "panels.memoryInspector.location": "Location",
+  "@panels.memoryInspector.location": {
+    "context": "Section title in the Memory view's inspector: where the cursor byte is.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.partition": "Partition",
+  "@panels.memoryInspector.partition": {
+    "context": "Field label in the inspector's Location section: the partition and offset.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.is": "Is",
+  "@panels.memoryInspector.is": {
+    "context": "Field label in the inspector's Location section: what the partition is (its description and size). A verb; short.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.cpuSees": "CPU sees it",
+  "@panels.memoryInspector.cpuSees": {
+    "context": "Field label in the inspector's Location section: the CPU address the byte is at now.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.slot": "slot {slot}",
+  "@panels.memoryInspector.slot": {
+    "context": "After a CPU address in the inspector: which 8K slot of the 64K it is in.",
+    "placeholders": {
+      "slot": "Slot number, 0-7"
+    }
+  },
+  "panels.memoryInspector.role": "Role",
+  "@panels.memoryInspector.role": {
+    "context": "Field label in the inspector's Location section: what the hardware uses the partition for (screen, Layer 2...).",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.label": "Label",
+  "@panels.memoryInspector.label": {
+    "context": "Field label in the inspector: the label at the cursor.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.pointedBy": "Pointed by",
+  "@panels.memoryInspector.pointedBy": {
+    "context": "Field label in the inspector: the registers holding the cursor's address.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.changed": "Changed",
+  "@panels.memoryInspector.changed": {
+    "context": "Field label in the inspector: the byte changed since the previous stop.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.value": "Value at cursor",
+  "@panels.memoryInspector.value": {
+    "context": "Section title in the Memory view's inspector: the cursor byte read every way.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.byte": "Byte",
+  "@panels.memoryInspector.byte": {
+    "context": "Field label: the byte as hex, unsigned and signed.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.binary": "Binary",
+  "@panels.memoryInspector.binary": {
+    "context": "Field label: the byte in binary.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.char": "Char",
+  "@panels.memoryInspector.char": {
+    "context": "Field label: the byte as a character (short for 'character').",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.wordLe": "Word (LE)",
+  "@panels.memoryInspector.wordLe": {
+    "context": "Field label: the 16-bit little-endian word at the cursor.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.wordBe": "Word (BE)",
+  "@panels.memoryInspector.wordBe": {
+    "context": "Field label: the 16-bit big-endian word at the cursor.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.dwordLe": "Dword (LE)",
+  "@panels.memoryInspector.dwordLe": {
+    "context": "Field label: the 32-bit little-endian value at the cursor.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.edit": "Edit",
+  "@panels.memoryInspector.edit": {
+    "context": "Section title in the Memory view's inspector: write a value at the cursor.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.typeOver": "or type over the byte in the dump",
+  "@panels.memoryInspector.typeOver": {
+    "context": "Aside of the inspector's Edit section: digits typed in the dump overwrite the cursor byte."
+  },
+  "panels.memoryInspector.editValue": "Value to write",
+  "@panels.memoryInspector.editValue": {
+    "context": "Accessible name of the inspector's value field."
+  },
+  "panels.memoryInspector.size": "Size in bytes",
+  "@panels.memoryInspector.size": {
+    "context": "Accessible name of the 1 / 2 / 4 choice in the inspector's Edit section."
+  },
+  "panels.memoryInspector.set": "Set",
+  "@panels.memoryInspector.set": {
+    "context": "Button in the inspector's Edit section: write the value.",
+    "maxChars": 8
+  },
+  "panels.memoryInspector.editHint": "Values: $FF, 255, %1111, or \"A\".",
+  "@panels.memoryInspector.editHint": {
+    "context": "Hint under the inspector's value field: the forms a value takes. Keep the examples."
+  },
+  "panels.memoryInspector.readOnly": "This byte cannot be written.",
+  "@panels.memoryInspector.readOnly": {
+    "context": "The inspector's Edit section when the cursor byte cannot be written."
+  },
+  "panels.memoryInspector.readOnlyKind": "{kind} cannot be written from here.",
+  "@panels.memoryInspector.readOnlyKind": {
+    "context": "The inspector's Edit section when the cursor byte is in read-only memory.",
+    "placeholders": {
+      "kind": "A partition kind, e.g. 'ROM', 'Flash' or 'Empty'"
+    }
+  },
+  "panels.memoryInspector.selection": "Selection",
+  "@panels.memoryInspector.selection": {
+    "context": "Section title in the Memory view's inspector: the selected range of bytes.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.range": "Range",
+  "@panels.memoryInspector.range": {
+    "context": "Field label: the selection's first and last address.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.length": "Length",
+  "@panels.memoryInspector.length": {
+    "context": "Field label: how many bytes are selected.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.sumXor": "Sum · XOR",
+  "@panels.memoryInspector.sumXor": {
+    "context": "Field label: the 16-bit sum and the XOR of the selected bytes.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.asText": "As text",
+  "@panels.memoryInspector.asText": {
+    "context": "Field label: the selected bytes as characters.",
+    "maxChars": 12
+  },
+  "panels.memoryInspector.copyHex": "Copy hex",
+  "@panels.memoryInspector.copyHex": {
+    "context": "Button: copy the selected bytes as hex to the clipboard."
+  },
+  "panels.memoryInspector.copyDefb": "Copy as .defb",
+  "@panels.memoryInspector.copyDefb": {
+    "context": "Button: copy the selected bytes as assembler '.defb' lines. '.defb' is a directive; do not translate it."
+  },
+  "panels.memoryInspector.findThese": "Find these bytes",
+  "@panels.memoryInspector.findThese": {
+    "context": "Button: put the selected bytes into the Find box."
+  },
+  "panels.memoryInspector.instructions": "Instructions here",
+  "@panels.memoryInspector.instructions": {
+    "context": "Section title in the Memory view's inspector: the bytes at the cursor disassembled.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.openInDisassembly": "Open in Disassembly",
+  "@panels.memoryInspector.openInDisassembly": {
+    "context": "Link in the inspector: show the cursor's address in the Disassembly view."
+  },
+  "panels.memoryInspector.heat": "Heat",
+  "@panels.memoryInspector.heat": {
+    "context": "Section title in the Memory view's inspector: how often the byte was executed, read and written.",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.use": "Use",
+  "@panels.memoryInspector.use": {
+    "context": "Section title in the Memory view's inspector: actions on the cursor byte (breakpoints, watch).",
+    "maxChars": 20
+  },
+  "panels.memoryInspector.breakpointHere": "Breakpoint here",
+  "@panels.memoryInspector.breakpointHere": {
+    "context": "Button: set an execution breakpoint at the cursor's address."
+  },
+  "panels.memoryInspector.breakOnWrite": "Break on write",
+  "@panels.memoryInspector.breakOnWrite": {
+    "context": "Button: set a memory-write breakpoint on the cursor byte."
+  },
+  "panels.memoryInspector.breakOnWriteRange": "Break on write to the selection",
+  "@panels.memoryInspector.breakOnWriteRange": {
+    "context": "Button: set a memory-write breakpoint over the selected range."
+  },
+  "panels.memoryInspector.watchWord": "Watch as word",
+  "@panels.memoryInspector.watchWord": {
+    "context": "Button: add the label at the cursor to the Watch panel as a 16-bit word."
+  },
+  "panels.memoryInspector.notPagedForBreakpoint": "The partition is not paged in: page it in to set a breakpoint on it.",
+  "@panels.memoryInspector.notPagedForBreakpoint": {
+    "context": "Status message when a breakpoint is asked for on a partition that the CPU cannot see now."
+  },
+  "panels.feature.memory.goTo": "Go To",
+  "@panels.feature.memory.goTo": {
+    "context": "Label of the address box in the memory view's toolbar: type an address and press Enter to scroll there.",
+    "maxChars": 10
+  },
+  "panels.feature.memory.decimal": "Decimal",
+  "@panels.feature.memory.decimal": {
+    "context": "Switch label in the memory view's toolbar: show numbers in decimal instead of hexadecimal.",
+    "maxChars": 12
+  },
+  "panels.memoryMap.note.internalRam": "Internal RAM, {size}",
+  "@panels.memoryMap.note.internalRam": {
+    "context": "Tooltip/inspector note for a Cambridge Z88 bank in $20-$3F: the machine's internal RAM.",
+    "placeholders": {
+      "size": "The RAM's size, e.g. '512K'"
+    }
+  },
+  "panels.memoryMap.note.slot0Rom": "Slot 0 {kind}, {size}",
+  "@panels.memoryMap.note.slot0Rom": {
+    "context": "Tooltip/inspector note for a Cambridge Z88 bank in $00-$1F: the ROM chip in slot 0 (OZ).",
+    "placeholders": {
+      "kind": "The chip's kind, e.g. 'ROM' or 'Flash'",
+      "size": "Its size, e.g. '512K'"
+    }
   }
 }

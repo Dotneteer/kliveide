@@ -16,6 +16,9 @@ export type MemoryViewStateValues = {
   viewMode: DumpViewMode;
   charDump: boolean;
   bankLabel: boolean;
+  labelGutter?: boolean;
+  inspector?: boolean;
+  follow?: string;
 };
 
 type PersistenceParams = MemoryViewStateValues & {
@@ -50,7 +53,10 @@ export function buildMemoryPanelViewState(
     decimalView: values.decimalView,
     viewMode: values.viewMode,
     charDump: values.charDump,
-    bankLabel: values.bankLabel
+    bankLabel: values.bankLabel,
+    labelGutter: values.labelGutter,
+    inspector: values.inspector,
+    follow: values.follow
   };
 }
 
@@ -124,6 +130,9 @@ export function useMemoryViewStatePersistence({
     values.decimalView,
     values.viewMode,
     values.charDump,
-    values.bankLabel
+    values.bankLabel,
+    values.labelGutter,
+    values.inspector,
+    values.follow
   ]);
 }

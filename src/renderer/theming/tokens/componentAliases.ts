@@ -1028,5 +1028,50 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-fw-selected": "var(--accent-subtle)",
   "--color-fw-key": "var(--text-primary)",
   "--bgcolor-fw-key": "var(--surface-raised)",
-  "--color-fw-key-border": "var(--border-strong)"
+  "--color-fw-key-border": "var(--border-strong)",
+
+  // --- The Memory and Disassembly views' frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §4.6) ---
+  /*
+   * The memory map bar, the partition chips and the Bank map. A partition's *kind* is a fill: RAM the
+   * accent's subtle wash (the user's memory, as the Disk Explorer's file sectors), ROM the raised
+   * surface with the hatched pattern drawn in the stylesheet, a card's RAM and flash the secondary
+   * accent's wash (memory that is not the machine's own), the DivMMC the success hue's subtle fill (a
+   * separate device), an empty slot a dashed outline and a mirror the tertiary text. A paged-in
+   * partition carries the accent's border; the selected one the focus ring.
+   */
+  "--bgcolor-memmap-ram": "var(--accent-subtle)",
+  "--bgcolor-memmap-rom": "var(--surface-raised)",
+  "--bgcolor-memmap-card": "var(--accent-secondary-subtle)",
+  "--bgcolor-memmap-div": "var(--status-success-subtle)",
+  "--color-memmap-mirror": "var(--text-tertiary)",
+  "--color-memmap-empty": "var(--border-subtle)",
+  "--color-memmap-paged": "var(--accent-border)",
+  "--color-memmap-badge": "var(--accent-solid)",
+  "--color-memmap-viewport": "var(--accent-solid)",
+  /* The PC and SP ticks: the register tags' hue, the second kind of value in the bar */
+  "--color-memmap-tick": "var(--color-state-value-alt)",
+  /*
+   * The Next's role bars, in the layer identity hues of the Layers views: the ULA screens the info
+   * hue, Layer 2 the warning hue, the tilemap the success hue. A shadow role is the same hue, dashed.
+   */
+  "--color-memmap-role-ula": "var(--status-info)",
+  "--color-memmap-role-layer2": "var(--status-warning)",
+  "--color-memmap-role-tilemap": "var(--status-success)",
+  /* A register tag in the dump's label gutter and its byte's underline (§5.1) */
+  "--color-memmap-register": "var(--color-state-value-alt)",
+  "--bgcolor-memmap-register": "var(--accent-secondary-subtle)",
+  /* The cursor byte, a selected range and a find match in the dump */
+  "--bgcolor-memmap-selection": "var(--accent-subtle)",
+  "--color-memmap-cursor": "var(--accent-solid)",
+  "--bgcolor-memmap-found": "var(--status-warning-subtle)",
+  "--color-memmap-found": "var(--status-warning)",
+  /* A byte a memory breakpoint watches */
+  "--color-memmap-breakpoint": "var(--color-breakpoint-binary)",
+  /*
+   * The Disassembly view's flow gutter (§6.1): arrows in the tertiary text so they sit behind the
+   * listing, the selected row's jumps in the accent, the taken branch at the PC in the verdict hue.
+   */
+  "--color-flow-arrow": "var(--text-tertiary)",
+  "--color-flow-selected": "var(--accent-solid)",
+  "--color-flow-taken": "var(--status-success)"
 };

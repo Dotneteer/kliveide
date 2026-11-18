@@ -22,7 +22,23 @@ import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
 import { isTvcCasFileName, parseTvcCasFile } from "@emu/machines/tvc/TvcCasFile";
-import { MI_ENTERPRISE, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
+import {
+  MI_ENTERPRISE,
+  MI_HT1080Z,
+  MI_SCORPION,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_TVC
+} from "@common/machines/constants";
+import {
+  genericPartitionInfo,
+  spectrumPartitionInfo,
+  spectrumPartitionRoles,
+  type PartitionInfoSet,
+  type PartitionRole
+} from "@common/annotations/partitionInfo";
+import { findPattern, MEMORY_FIND_LIMIT, type FindPattern } from "@common/utils/memoryFind";
+import type { MemoryFindMatch, MemoryFindResult, MemoryFindScope } from "@common/messaging/EmuApi";
 import { detectCasFormat, type CasFormat } from "@emu/machines/casFormat";
 import { getMachineName, machineRegistry } from "@common/machines/machine-registry";
 import { isEpTapeFileName, parseEpTapeFile } from "@emu/machines/enterprise/EpTapeFile";
@@ -1229,9 +1245,91 @@ class EmuMessageProcessor {
       selectedRom: controller.machine.getSelectedRomPage?.(),
       selectedBank: controller.machine.getSelectedRamBank?.(),
       memBreakpoints: controller.debugSupport.breakpoints,
+      partitionRoles: this.partitionRolesOf(controller.machine),
+      tacts: m.tacts,
       osInitialized: controller.machine?.isOsInitialized ?? false,
       ...this.historyOfMemoryView(controller)
     };
+  }
+
+  /** The machine families whose partitions are the Spectrum's (16K ROM pages and RAM banks) */
+  private static readonly SPECTRUM_PARTITION_MACHINES = [MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SCORPION];
+
+  /** Which partitions hold the screens now (plan D8); undefined on a machine that does not say */
+  private partitionRolesOf(machine: {
+    machineId: string;
+    getPartitionRoles?: () => Record<number, PartitionRole[]>;
+  }): Record<number, PartitionRole[]> | undefined {
+    try {
+      if (machine.getPartitionRoles) return machine.getPartitionRoles();
+      if (EmuMessageProcessor.SPECTRUM_PARTITION_MACHINES.includes(machine.machineId)) {
+        return spectrumPartitionRoles();
+      }
+    } catch {
+      // --- A core without the getters: no roles
+    }
+    return undefined;
+  }
+
+  /**
+   * What each partition is (`@common/annotations/partitionInfo`): the machine's own model when it has
+   * one (the Z88's cards, the Next's pages), the Spectrum family's, or the generic one built from the
+   * label maps. Undefined on a machine without partitions.
+   */
+  getPartitionInfo(): PartitionInfoSet | undefined {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    const own = machine.getPartitionInfo?.();
+    if (own) return own;
+    const labels = machine.getPartitionLabels();
+    if (!labels || Object.keys(labels).length === 0) return undefined;
+    const maps = {
+      labels,
+      descriptions: machine.getPartitionDescriptions(),
+      groups: machine.getPartitionGroups()
+    };
+    return EmuMessageProcessor.SPECTRUM_PARTITION_MACHINES.includes(machine.machineId)
+      ? spectrumPartitionInfo(maps)
+      : genericPartitionInfo(maps);
+  }
+
+  /**
+   * Searches memory for a byte pattern without copying it to the renderer (plan phase 4): the 64K the
+   * CPU sees, or every partition of the machine, each from its offset 0.
+   */
+  findMemory(pattern: FindPattern, scope: MemoryFindScope, limit = MEMORY_FIND_LIMIT): MemoryFindResult {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as IZxSpectrumMachine;
+    if (scope === "64k") {
+      const { offsets, truncated } = findPattern(machine.get64KFlatMemory(), pattern, limit);
+      return { matches: offsets.map((offset) => ({ offset })), truncated };
+    }
+    const matches: MemoryFindMatch[] = [];
+    const info = this.getPartitionInfo();
+    const ids = info
+      ? info.partitions.filter((p) => p.kind !== "empty" && p.kind !== "mirror").map((p) => p.id)
+      : [];
+    for (const id of ids) {
+      let bytes: Uint8Array;
+      try {
+        bytes = machine.getMemoryPartition(id);
+      } catch {
+        continue;
+      }
+      if (!bytes?.length) continue;
+      const found = findPattern(bytes, pattern, limit - matches.length);
+      for (const offset of found.offsets) matches.push({ partition: id, offset });
+      if (found.truncated || matches.length >= limit) {
+        return { matches, truncated: true };
+      }
+    }
+    return { matches, truncated: false };
   }
 
   /** The history cursor's PC, registers and decoded bytes, for the disassembly (T2) */

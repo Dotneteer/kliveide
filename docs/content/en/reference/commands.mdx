@@ -1939,23 +1939,30 @@ Use this command to display the machine code disassembly view, and optionally to
 it.
 
 ```
-show-disass [<address>]
+show-disass [<address> | <label> | <register> | <partition>:<offset>]
 ```
 
 Available aliases: `shdis`
 
-With an address, the view switches to the full 64K listing, turns **Follow PC** off and scrolls to
-that address. The **Show in Disassembly** menu items of the editor and the Breakpoints view use it.
+With an address, a label or a register, the view switches to the full 64K listing and scrolls there.
+A bare number is decimal, as elsewhere in the command prompt; write `$8000` for hexadecimal. A
+partition and an offset (`R0:$0038`, `b7:$100`, the `bp-set` syntax) show that partition on its own,
+disassembled at its Origin: where it is paged in now, or `$0000`. The **Show in Disassembly** menu
+items of the editor and the Breakpoints view use it.
 
 ## `show-memory`
 
-Use this command to display the memory contents view, optionally at an address (in the 64K view).
+Use this command to display the memory contents view, optionally at an address (in the 64K view), a
+label, a register, or an offset of a partition shown on its own.
 
 ```
-show-memory [<address>]
+show-memory [<address> | <label> | <register> | <partition>:<offset>]
 ```
 
 Available aliases: `shmem`
+
+`show-memory $5C3A` and `show-memory LAST_K` go to the same byte; `show-memory B7:$0000` shows bank 7
+from its first byte, paged in or not.
 
 ## `show-patterns`
 

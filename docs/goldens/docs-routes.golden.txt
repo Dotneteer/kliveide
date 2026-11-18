@@ -40,6 +40,7 @@
 /de/get-started/first-assembly-program/index.html
 /de/get-started/first-basic-program/index.html
 /de/get-started/first-next-program/index.html
+/de/get-started/how-projects-work/index.html
 /de/get-started/index.html
 /de/get-started/install/index.html
 /de/get-started/load-from-tape/index.html
@@ -958,6 +959,7 @@
 /es/get-started/first-assembly-program/index.html
 /es/get-started/first-basic-program/index.html
 /es/get-started/first-next-program/index.html
+/es/get-started/how-projects-work/index.html
 /es/get-started/index.html
 /es/get-started/install/index.html
 /es/get-started/load-from-tape/index.html
@@ -995,6 +997,7 @@
 /hu/get-started/first-assembly-program/index.html
 /hu/get-started/first-basic-program/index.html
 /hu/get-started/first-next-program/index.html
+/hu/get-started/how-projects-work/index.html
 /hu/get-started/index.html
 /hu/get-started/install/index.html
 /hu/get-started/load-from-tape/index.html
@@ -1011,6 +1014,7 @@
 /pt-BR/get-started/first-assembly-program/index.html
 /pt-BR/get-started/first-basic-program/index.html
 /pt-BR/get-started/first-next-program/index.html
+/pt-BR/get-started/how-projects-work/index.html
 /pt-BR/get-started/index.html
 /pt-BR/get-started/install/index.html
 /pt-BR/get-started/load-from-tape/index.html
@@ -1023,6 +1027,7 @@
 /pt-PT/get-started/first-assembly-program/index.html
 /pt-PT/get-started/first-basic-program/index.html
 /pt-PT/get-started/first-next-program/index.html
+/pt-PT/get-started/how-projects-work/index.html
 /pt-PT/get-started/index.html
 /pt-PT/get-started/install/index.html
 /pt-PT/get-started/load-from-tape/index.html

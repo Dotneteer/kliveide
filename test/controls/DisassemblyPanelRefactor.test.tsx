@@ -99,7 +99,9 @@ async function renderDisassemblyPanel({
     getMemoryContents,
     getPartitionLabels: vi.fn(() => Promise.resolve({ [-1]: "R0", 0: "B0" })),
     getPartitionDescriptions: vi.fn(() => Promise.resolve({})),
-    getPartitionGroups: vi.fn(() => Promise.resolve({}))
+    getPartitionGroups: vi.fn(() => Promise.resolve({})),
+    getPartitionInfo: vi.fn(() => Promise.resolve(undefined)),
+    getRomFlags: vi.fn(() => Promise.resolve([true, true, false, false, false, false, false, false]))
   };
   const virtualApi = {
     findStartIndex: vi.fn(() => 0),
@@ -127,6 +129,7 @@ async function renderDisassemblyPanel({
   }));
   vi.doMock("@renderer/core/RendererProvider", () => ({
     useDispatch: () => dispatch,
+    useStore: () => ({ getState: () => state, dispatch }),
     useSelector: (selector: (appState: typeof state) => unknown) => selector(state),
     // --- The panel reads the row height through `useRowSizes`, which reads the panel font size.
     // --- Returning undefined lets `getRowSizes` fall back to its default, i.e. the 20/18px these
@@ -443,7 +446,7 @@ describe("DisassemblyPanel refactor characterization", () => {
   it("scrolls to the row containing a submitted address", async () => {
     const { virtualApi } = await renderDisassemblyPanel();
 
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.change(goTo, { target: { value: "6002" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
 
@@ -461,7 +464,7 @@ describe("DisassemblyPanel refactor characterization", () => {
       during = api.getNavigationLocator();
     });
 
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.change(goTo, { target: { value: "6002" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
 
@@ -489,11 +492,11 @@ describe("DisassemblyPanel refactor characterization", () => {
       viewState: { autoRefresh: true }
     });
     const api = documentHubService.setDocumentApi.mock.calls.at(-1)?.[1];
-    expect(screen.getByText("Follow PC:on")).toBeInTheDocument();
+    expect((screen.getByLabelText("Follow PC") as HTMLInputElement).checked).toBe(true);
 
     act(() => api.revealLocator({ kind: "address", address: 0x6002, fullView: true }));
 
-    expect(await screen.findByText("Follow PC:off")).toBeInTheDocument();
+    await waitFor(() => expect((screen.getByLabelText("Follow PC") as HTMLInputElement).checked).toBe(false));
     await waitFor(() => expect(virtualApi.scrollToIndex).toHaveBeenCalledWith(1, { align: "start" }));
     expect(api.getNavigationLocator()).toMatchObject({ address: 0x6002 });
   });
@@ -510,7 +513,7 @@ describe("DisassemblyPanel refactor characterization", () => {
     const { virtualApi, dispatch } = await renderDisassemblyPanel();
     dispatch.mockClear();
 
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.change(goTo, { target: { value: "9000" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
 
@@ -529,7 +532,7 @@ describe("DisassemblyPanel refactor characterization", () => {
     const { virtualApi, dispatch } = await renderDisassemblyPanel();
     dispatch.mockClear();
 
-    const goTo = screen.getByLabelText("Go To");
+    const goTo = screen.getByLabelText("Go to");
     fireEvent.change(goTo, { target: { value: "1000" } });
     fireEvent.keyDown(goTo, { key: "Enter" });
 
@@ -594,7 +597,7 @@ describe("DisassemblyPanel refactor characterization", () => {
     });
     disassemblerFactory.mockClear();
 
-    fireEvent.click(screen.getByText("Follow PC:off"));
+    fireEvent.click(screen.getByLabelText("Follow PC"));
 
     await waitFor(() => {
       expect(disassemblerFactory).toHaveBeenCalled();

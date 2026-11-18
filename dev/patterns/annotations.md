@@ -126,6 +126,22 @@ edit goes through the bank document's own controller, given the bank the row is 
 to the user's ROM layer, never to a shipped sidecar. A row nowhere annotatable (a Timex
 DOCK chunk, no active set) gets the entries disabled with the reason.
 
+**The inspector is an editing surface too** (`DocumentPanels/DisassemblyInspector.tsx`,
+`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §6.2). Its Annotation section shows the selected row's
+label and end-of-line comment and offers the row menu's own entries (`menuItemsFor`: Label,
+Synopsis, End-of-Line Comment, Operand Label, Clear) as buttons, run through the same controller and
+dialogs, so an edit commits at once with no Save and lands where the row menu's would; a row that is
+not annotatable shows the menu's reason instead. Its Breakpoint section is the row menu's breakpoint
+entries (`disassemblyRowMenuItems`). The inspector adds no write path of its own: the in-place
+fields the plan sketched were kept as the existing dialogs, because a second editor beside the
+controller would have to repeat its label validation.
+
+The live view's label rows carry a **reference count** (`◂ 3`): the rows whose operands print the
+label's name (`DocumentPanels/printedReferences.ts`). It is Go to References' rule - a reference is
+what the listing printed - applied to the printed name, because the 64K listing spans banks, ROM
+pages and build symbols where `countLabelReferencesInListing` asks one bank's annotations. A click
+selects the row and the inspector lists the rows.
+
 The machine's custom disassembler (report codes after `RST $08`, calculator literals
 after `RST $28`) runs only inside the ROM it describes (`rom-gated-disassembler.ts`):
 the 48K's on any 48K BASIC page — which is how the 128K, +3 and Scorpion have it — and

@@ -131,6 +131,10 @@ registers: the command and interrupt registers, the segment registers that page 
 address ranges, the screen and font bases (with the bank and offset they point at), the timers and
 the keyboard lines. Point at a register to see what it does.
 
+The Memory and Disassembly views' **Bank map** lays the 256 banks out as the four slots, each
+headed by what is in it, and marks a card's **mirrors** (a card smaller than its slot repeats across
+it) and empty slots; see [the Memory view](/en/guides/debugging/memory/#look-at-one-partition).
+
 You can save the Z88's complete state with **File › Save Machine State...**; see
 [Machine state files](/en/guides/media/machine-state/).
 

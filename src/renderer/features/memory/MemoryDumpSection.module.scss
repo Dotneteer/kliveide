@@ -265,3 +265,100 @@
 .heatSmc {
   box-shadow: inset 0 0 0 1px var(--border-heat-smc);
 }
+
+/*
+ * The live Memory view's marks (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §5), laid at a byte's
+ * `ch` position like the overlays above - the row stays one text node. A selection and a find match
+ * are washes behind the text (z-index -1, like the heat cells); the cursor is an outline; the byte
+ * being typed over is filled with the accent and shows the digits typed so far.
+ */
+.selectionWash,
+.foundWash,
+.foundCurrent {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.selectionWash {
+  background: var(--bgcolor-memmap-selection);
+}
+
+.foundWash {
+  background: var(--bgcolor-memmap-found);
+}
+
+.foundCurrent {
+  background: var(--bgcolor-memmap-found);
+  outline: 1px solid var(--color-memmap-found);
+}
+
+.cursorByte,
+.editingByte {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.cursorByte {
+  outline: 2px solid var(--color-memmap-cursor);
+  outline-offset: 0;
+}
+
+.editingByte {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+/* A byte a memory breakpoint watches: an underline in the breakpoint hue */
+.breakpointMark {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--color-memmap-breakpoint);
+  pointer-events: none;
+}
+
+/* A byte a register points at: an underline in the register hue (§5.1) */
+.pointedMark {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-memmap-register);
+  pointer-events: none;
+}
+
+/* Changed since the previous stop: the shared dot in the byte's top-right corner */
+.changedDot {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    right: -3px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-state-changed);
+  }
+}
+
+.charSelected {
+  background: var(--bgcolor-memmap-selection);
+}
+
+.charCursor {
+  outline: 1px solid var(--color-memmap-cursor);
+  outline-offset: -1px;
+}
