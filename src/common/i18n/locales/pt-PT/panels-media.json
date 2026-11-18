@@ -176,7 +176,6 @@
   "panels.tape.fact.pilot": "Piloto",
   "panels.tape.fact.sync": "Sinc.",
   "panels.tape.fact.bits": "Bits",
-  "panels.tape.listAt": "Listar em:",
   "panels.tape.listAtTooltip": "O endereço onde listar este bloco na Desmontagem (hex). Enter para aplicar.",
   "panels.tape.block.noBytes": "Os bytes deste bloco não estão disponíveis.",
   "panels.tape.block.copy": "Copiar para a área de transferência",

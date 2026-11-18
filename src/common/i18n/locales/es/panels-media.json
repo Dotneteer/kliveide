@@ -176,7 +176,6 @@
   "panels.tape.fact.pilot": "Piloto",
   "panels.tape.fact.sync": "Sincronismo",
   "panels.tape.fact.bits": "Bits",
-  "panels.tape.listAt": "Listar en:",
   "panels.tape.listAtTooltip": "La dirección en la que listar este bloque en Desensamblado (hex). Pulsa Enter para aplicarla.",
   "panels.tape.block.noBytes": "Los bytes de este bloque no están disponibles.",
   "panels.tape.block.copy": "Copiar al portapapeles",

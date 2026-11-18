@@ -138,8 +138,11 @@
   }
 }
 
-// --- Go to and Find: a label inside the box, then the field
+// --- Go to and Find: a label inside the box, then the field. The box names its own UI font: it
+// --- also sits in toolbars outside the frame (the Graphics Finder, a tape block), inside documents
+// --- whose body is monospace
 .box {
+  font-family: var(--main-font-family);
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);

@@ -176,7 +176,6 @@
   "panels.tape.fact.pilot": "Pilot",
   "panels.tape.fact.sync": "Sync",
   "panels.tape.fact.bits": "Bits",
-  "panels.tape.listAt": "Listen ab:",
   "panels.tape.listAtTooltip": "Die Adresse, ab der dieser Block in der Disassemblierung gelistet wird (hex). Enter übernimmt.",
   "panels.tape.block.noBytes": "Die Bytes dieses Blocks sind nicht verfügbar.",
   "panels.tape.block.copy": "In die Zwischenablage kopieren",

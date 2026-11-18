@@ -465,7 +465,6 @@
   "panels.graphics.dimTitle": "Die Bytes abdunkeln, die die CPU nie gelesen hat: Grafiken sind gelesene Daten und heben sich so ab",
   "panels.graphics.dimUnavailable": "Das Abdunkeln benötigt die Codeabdeckung: Schalten Sie sie mit `coverage on` ein, führen Sie das Programm aus und pausieren Sie dann",
   "panels.graphics.presets": "Vorgaben",
-  "panels.graphics.goTo": "Gehe zu",
   "panels.graphics.view.label": "Speicher als Grafik",
   "panels.graphics.view.image": "Grafik",
   "panels.graphics.view.candidates": "Grafikkandidaten",

@@ -15,3 +15,6 @@ instruction: its verdict, what its operands point at, its annotation and its bre
 file viewer and popped-out banks share the same toolbar, Find and inspector.
 The viewers of state files, debug recordings, snapshots and RZX recordings show their facts in
 aligned, collapsible sections, with the screen framed beside the summary.
+The Graphics Finder, a NEX bank's sprites and a tape block's List at take the same Go to box, which
+marks text it cannot read; the Graphics Finder scrolls with the app's overlay scrollbar, and the
+µPD765 log colours its port and byte as the other state panels do.

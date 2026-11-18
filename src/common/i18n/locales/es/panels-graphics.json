@@ -465,7 +465,6 @@
   "panels.graphics.dimTitle": "Atenúa los bytes que la CPU nunca leyó: los gráficos son datos leídos, así que destacan",
   "panels.graphics.dimUnavailable": "Atenuar requiere la cobertura: actívala con `coverage on`, ejecuta el programa y luego pausa",
   "panels.graphics.presets": "Preajustes",
-  "panels.graphics.goTo": "Ir a",
   "panels.graphics.view.label": "Memoria como gráficos",
   "panels.graphics.view.image": "Gráficos",
   "panels.graphics.view.candidates": "Gráficos candidatos",

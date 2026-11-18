@@ -948,10 +948,15 @@
     "context": "Label in the tape viewer (.tap/.tzx files)'s timing details: the 0 and 1 bit pulse lengths.",
     "maxChars": 12
   },
-  "panels.tape.listAt": "List at:",
-  "@panels.tape.listAt": {
-    "context": "Label of the address box in the tape viewer (.tap/.tzx files)'s Disassembly details section for a block no header places.",
+  "panels.tape.listAtLabel": "List at",
+  "@panels.tape.listAtLabel": {
+    "context": "Tape file viewer, a code block without a load address. Name of the box where the user types the address to disassemble the block at (no colon).",
     "maxChars": 12
+  },
+  "panels.tape.listAtPlaceholder": "$8000",
+  "@panels.tape.listAtPlaceholder": {
+    "context": "Tape file viewer. Placeholder of the List at box: an example hexadecimal address. Keep as is.",
+    "maxChars": 8
   },
   "panels.tape.listAtTooltip": "The address to list this block at in Disassembly (hex). Enter to apply.",
   "@panels.tape.listAtTooltip": {
@@ -2973,7 +2978,7 @@
   "@panels.rom.levelCard.legendTitle": {
     "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title when the card only explains the levels (on the column head)."
   },
-  "panels.rom.levelCard.pageTitle": "Page {page} \u00b7 level {level}",
+  "panels.rom.levelCard.pageTitle": "Page {page} · level {level}",
   "@panels.rom.levelCard.pageTitle": {
     "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Title for one page of the ROM.",
     "placeholders": {
@@ -2992,7 +2997,7 @@
   "@panels.rom.levelCard.measured": {
     "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside a page's title: the level shown is what the tool measured. Lower case."
   },
-  "panels.rom.levelCard.measuredRecords": "measured {measured} \u00b7 records {recorded}",
+  "panels.rom.levelCard.measuredRecords": "measured {measured} · records {recorded}",
   "@panels.rom.levelCard.measuredRecords": {
     "context": "The ROM annotation editor's level hover card (opens when the pointer rests on a completeness level: the readiness chip, the 'records level' text, the Completeness column head, or a page's level meter). Small text beside the file's title: the measured level and the level the file itself claims. Lower case.",
     "placeholders": {

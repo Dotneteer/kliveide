@@ -176,7 +176,6 @@
   "panels.tape.fact.pilot": "Pilot",
   "panels.tape.fact.sync": "Szinkron",
   "panels.tape.fact.bits": "Bitek",
-  "panels.tape.listAt": "Listázás:",
   "panels.tape.listAtTooltip": "A cím, ahol a blokk a Visszafejtésben listázódjon (hexa). Enter: alkalmazás.",
   "panels.tape.block.noBytes": "A blokk bájtjai nem érhetők el.",
   "panels.tape.block.copy": "Másolás a vágólapra",

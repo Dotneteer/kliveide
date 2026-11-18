@@ -63,15 +63,20 @@
   margin-right: var(--space-2);
 }
 
+// --- The focusable frame; the scrolling is the `ScrollViewer` inside it, an overlay bar that takes
+// --- no width, not a native one
 .scroller {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
-  /* The drawn window moves inside the spacer as it scrolls; the browser's scroll anchoring would
-     "correct" the position for that move and land a Go to a row off. The view keeps its own. */
-  overflow-anchor: none;
+  overflow: hidden;
   outline: none;
   @include focus-ring;
+
+  /* The drawn window moves inside the spacer as it scrolls; the browser's scroll anchoring would
+     "correct" the position for that move and land a Go to a row off. The view keeps its own. */
+  :global([data-overlayscrollbars-viewport]) {
+    overflow-anchor: none;
+  }
 }
 
 /* As tall as the whole sheet, so the native scrollbar spans every frame row (G-T4). */

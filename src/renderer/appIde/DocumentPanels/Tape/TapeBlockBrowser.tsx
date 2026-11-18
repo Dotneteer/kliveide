@@ -9,7 +9,8 @@ import {
   type BankBrowserItem
 } from "@renderer/controls/bankBrowser/BankBrowser";
 import { ContextMenuItem } from "@renderer/controls/ContextMenu";
-import { AddressInput } from "@renderer/controls/AddressInput";
+import { GoToBox } from "@renderer/features/memoryMap/FrameControls";
+import { GO_TO_ERROR_KEYS, parseGoToNumber } from "@renderer/features/memoryMap/goToTarget";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { ZxSpectrumChars } from "@common/machines/char-codes";
@@ -436,12 +437,16 @@ const Details = ({
       {payload && !placedByHeader && !block.header && (
         <BankDetailsSection title={t("panels.helpers.view.disassembly")}>
           <div className={styles.listAt}>
-            <AddressInput
-              label={t("panels.tape.listAt")}
-              tooltip={t("panels.tape.listAtTooltip")}
-              decimalView={false}
-              clearOnEnter={false}
-              onAddressSent={async (address) => onListAt(address & 0xffff)}
+            <GoToBox
+              label={t("panels.tape.listAtLabel")}
+              placeholder={t("panels.tape.listAtPlaceholder")}
+              title={t("panels.tape.listAtTooltip")}
+              onGo={(text) => {
+                const address = parseGoToNumber(text);
+                if (address === undefined) return t(GO_TO_ERROR_KEYS.number);
+                onListAt(address & 0xffff);
+                return undefined;
+              }}
             />
             <span className={styles.listAtValue}>{`$${toHexa4(loadAt)}`}</span>
           </div>

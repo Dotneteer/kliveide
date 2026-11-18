@@ -2,7 +2,9 @@ import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
 import { useCallback, useRef, useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
+import classnames from "classnames";
 import styles from "./NecUpd765Panel.module.scss";
+import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
@@ -85,8 +87,10 @@ export const NecUpd765Panel = () => {
                   height={iconSizes.sm}
                   fill="--data-label"
                 />
-                <DataLabel text={toHexa4(item.addr)} xclass={styles.necAddress} />
-                <DataValue text={toHexa2(item.data ?? 0)} xclass={styles.necData} />
+                {/* --- A converted state panel: the port is the secondary accent, the byte the primary,
+                    --- two numbers in one row that only position tells apart */}
+                <DataLabel text={toHexa4(item.addr)} xclass={classnames(styles.necAddress, regStyles.stateValueAlt)} />
+                <DataValue text={toHexa2(item.data ?? 0)} xclass={classnames(styles.necData, regStyles.stateValue)} />
                 <DataLabel text={item.phase ?? " "} width="3ch" />
                 <DataSecondary text={item.comment ?? ""} />
               </DataRow>
