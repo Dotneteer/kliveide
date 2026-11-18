@@ -465,7 +465,6 @@
   "panels.graphics.dimTitle": "A CPU által soha nem olvasott bájtok elhalványítása: a grafika olvasott adat, így kiemelkedik",
   "panels.graphics.dimUnavailable": "Az elhalványításhoz lefedettség kell: bekapcsolás: `coverage on`, majd a program futtatása és szüneteltetése",
   "panels.graphics.presets": "Sablonok",
-  "panels.graphics.goTo": "Ugrás",
   "panels.graphics.view.label": "Memória grafikaként",
   "panels.graphics.view.image": "Grafika",
   "panels.graphics.view.candidates": "Grafikajelöltek",

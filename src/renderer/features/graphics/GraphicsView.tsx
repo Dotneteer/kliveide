@@ -30,7 +30,7 @@ import {
   type GraphicsLook
 } from "@common/reverse/graphicsDecode";
 import type { GraphicCandidate } from "@common/reverse/graphicsCandidates";
-import ScrollViewer from "@renderer/controls/ScrollViewer";
+import ScrollViewer, { type ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import styles from "./GraphicsView.module.scss";
 
 /*
@@ -119,7 +119,12 @@ export const GraphicsView = ({
   const [showCandidates, setShowCandidates] = useState(false);
   const l = useMemo(() => normalizeLook(look), [look]);
   const geometry = frameGeometry(l);
+  /** The focusable frame around the scroller: it takes the keys and measures the view */
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  /** The overlay scroller (`ScrollViewer`); scrolling goes through it, never a native bar */
+  const scrollApi = useRef<ScrollViewerApi>();
+  /** The last top the view asked for, replayed when the scroller's API arrives after it */
+  const wantedTop = useRef(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [scrollTop, setScrollTop] = useState(0);
   /** The offset frames are aligned to: the last Go to, raw, so any column count keeps it a row start. */
@@ -181,6 +186,30 @@ export const GraphicsView = ({
     return table;
   }, [l.ink, l.paper]);
 
+  /** Put the scroller at `top`, noting it as the view's own scroll (see `programmaticTop`) */
+  const scrollViewTo = (top: number) => {
+    wantedTop.current = top;
+    const api = scrollApi.current;
+    if (!api) {
+      programmaticTop.current = top;
+      return;
+    }
+    api.scrollToVertical(top);
+    programmaticTop.current = api.getScrollTop();
+  };
+  const scrollViewBy = (delta: number) => {
+    const api = scrollApi.current;
+    if (api) api.scrollToVertical(Math.max(0, api.getScrollTop() + delta));
+  };
+  const onScrollApi = useCallback((api: ScrollViewerApi) => {
+    scrollApi.current = api;
+    // --- A Go to before the scroller was ready
+    if (wantedTop.current > 0) {
+      api.scrollToVertical(wantedTop.current);
+      programmaticTop.current = api.getScrollTop();
+    }
+  }, []);
+
   /** Scroll so the frame row holding `offset` is at the top. */
   const scrollToOffset = useCallback(
     (offset: number, align: boolean) => {
@@ -192,10 +221,7 @@ export const GraphicsView = ({
       const nextK0 = firstFrameOf(nextPhase, frameBytes, columns);
       const frame = Math.floor((offset - nextPhase) / frameBytes) - nextK0;
       const top = Math.max(0, Math.floor(frame / columns)) * rowPx;
-      if (scrollerRef.current) {
-        scrollerRef.current.scrollTop = top;
-        programmaticTop.current = scrollerRef.current.scrollTop;
-      }
+      scrollViewTo(top);
       setScrollTop(top);
       // --- What a later re-layout (the panel measured, the width swept) keeps at the top
       lastTop.current = offset;
@@ -214,8 +240,7 @@ export const GraphicsView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frameBytes, columns, rowPx]);
 
-  const onScroll = () => {
-    const top = scrollerRef.current?.scrollTop ?? 0;
+  const onScroll = (top: number) => {
     setScrollTop(top);
     // --- The view's own scroll (a jump, a re-layout) already set `lastTop` exactly; a scroll event
     // --- arriving after the columns changed would round it to a stale row
@@ -243,7 +268,6 @@ export const GraphicsView = ({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const scroller = scrollerRef.current;
     let handled = true;
     switch (event.key) {
       case "ArrowLeft":
@@ -253,16 +277,16 @@ export const GraphicsView = ({
         if (l.layout !== "screen") onLookChange({ width: Math.min(32, l.width + 1) });
         break;
       case "ArrowUp":
-        if (scroller) scroller.scrollTop -= l.zoom;
+        scrollViewBy(-l.zoom);
         break;
       case "ArrowDown":
-        if (scroller) scroller.scrollTop += l.zoom;
+        scrollViewBy(l.zoom);
         break;
       case "PageUp":
-        if (scroller) scroller.scrollTop -= rowPx;
+        scrollViewBy(-rowPx);
         break;
       case "PageDown":
-        if (scroller) scroller.scrollTop += rowPx;
+        scrollViewBy(rowPx);
         break;
       default:
         handled = false;
@@ -302,9 +326,9 @@ export const GraphicsView = ({
         tabIndex={0}
         role="region"
         aria-label={t("panels.graphics.view.label")}
-        onScroll={onScroll}
         onKeyDown={onKeyDown}
       >
+        <ScrollViewer apiLoaded={onScrollApi} onScrolled={onScroll}>
         <div className={styles.spacer} style={{ height: rowTotal * rowPx }}>
           <div className={styles.window} style={{ top: firstRow * rowPx }}>
             <IndexedImageCanvas
@@ -358,6 +382,7 @@ export const GraphicsView = ({
             </IndexedImageCanvas>
           </div>
         </div>
+        </ScrollViewer>
       </div>
       {showCandidates && candidates && (
         <div className={styles.candidates}>

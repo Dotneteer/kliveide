@@ -82,6 +82,12 @@ Pop a bank out from its row's icon, by double-clicking the row, or by selecting 
 **Sprites** (the Sprites view needs the annotation file). The document remembers the view you last
 used for that bank.
 
+The **Memory** view has the toolbar of [the Memory view](/en/guides/debugging/memory/#the-toolbar):
+**Go to** (an address where the bank is listed, or an offset in the bank), **Find** bytes or quoted
+text, 8, 16 or 32 **Bytes** a row, **Hex** or **Dec**, **Chars**, and an **Inspector** for the byte
+under the cursor and a selection. The **Disassembly** view has **Hex**/**Dec**, **Sys vars**, the
+**Offset** the bank is listed at, and **Go to**.
+
 The header's **Bank** readout says where the bank is right now: `at $8000` when it is paged into the
 Z80 address space, `not paged in` when it is not, and `at $8000 · PC` when the program counter is
 inside it. Hover it for the 8K slot numbers.
@@ -102,7 +108,7 @@ than through the address space.
 
 While the machine is **paused** and the program counter is inside the bank, its disassembly
 highlights the current instruction, the same way the
-[Disassembly view](/en/guides/debugging/disassembly/) does. The button beside **Go To** scrolls to
+[Disassembly view](/en/guides/debugging/disassembly/) does. The button beside **Go to** scrolls to
 it. Both work only while paused with the PC in this bank: a running machine's PC has moved on by the
 time it is read, and a bank the processor is not in has no row to go to.
 

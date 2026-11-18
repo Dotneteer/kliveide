@@ -95,6 +95,16 @@
     "context": "Button in a row of the NEX Labels/Regions lists (and the sprite view's address box): closes the list and scrolls the disassembly to that place.",
     "maxChars": 8
   },
+  "panels.next.sprites.goToPlaceholder": "$C000, %1010",
+  "@panels.next.sprites.goToPlaceholder": {
+    "context": "NEX file viewer, a bank's Sprites view. Toolbar: placeholder of the Go to box, example inputs: $ marks hexadecimal, % binary. Keep the numbers and symbols.",
+    "maxChars": 16
+  },
+  "panels.next.sprites.goToTitle": "An address in the bank to show at the top. Hexadecimal, or decimal with Dec on; $, %, a trailing h or d say the base. Enter to go.",
+  "@panels.next.sprites.goToTitle": {
+    "context": "NEX file viewer, a bank's Sprites view. Toolbar: tooltip of the Go to box, which scrolls the sprite patterns to a typed address.",
+    "maxChars": 160
+  },
   "panels.next.regionType.disassembly": "Disassembly",
   "@panels.next.regionType.disassembly": {
     "context": "Region type in the NEX annotation editor: bytes listed as Z80 instructions. Radio option, filter and list cell.",

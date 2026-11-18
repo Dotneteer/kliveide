@@ -293,29 +293,6 @@ async function renderMemoryPanel({
       </button>
     )
   }));
-  vi.doMock("@renderer/controls/AddressInput", () => ({
-    AddressInput: ({
-      decimalView,
-      label,
-      onAddressSent,
-      onGotFocus
-    }: {
-      decimalView: boolean;
-      label: string;
-      onAddressSent?: (address: number) => Promise<void>;
-      onGotFocus?: () => void;
-    }) => (
-      <input
-        aria-label={label}
-        onFocus={() => onGotFocus?.()}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            void onAddressSent?.(parseInt(event.currentTarget.value, decimalView ? 10 : 16));
-          }
-        }}
-      />
-    )
-  }));
   vi.doMock("@renderer/controls/Dropdown", () => ({
     default: ({
       initialValue,

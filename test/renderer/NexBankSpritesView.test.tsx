@@ -20,9 +20,9 @@ vi.mock("@renderer/controls/LabeledSwitch", () => ({
     </button>
   )
 }));
-vi.mock("@renderer/controls/AddressInput", () => ({
-  AddressInput: ({ onAddressSent }: { onAddressSent?: (a: number) => Promise<void> }) => (
-    <button type="button" data-testid="go-to" onClick={() => void onAddressSent?.(0x4805)}>
+vi.mock("@renderer/features/memoryMap/FrameControls", () => ({
+  GoToBox: ({ onGo }: { onGo: (text: string) => string | undefined }) => (
+    <button type="button" data-testid="go-to" onClick={() => onGo("$4805")}>
       go
     </button>
   )

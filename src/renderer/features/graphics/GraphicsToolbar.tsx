@@ -6,7 +6,8 @@ import type { MessageKey } from "@common/i18n/keys.generated";
 import { PanelHeaderGroup } from "@renderer/controls/data";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { AddressInput } from "@renderer/controls/AddressInput";
+import { GoToBox } from "@renderer/features/memoryMap/FrameControls";
+import { GO_TO_ERROR_KEYS, parseGoToNumber } from "@renderer/features/memoryMap/goToTarget";
 import { Text } from "@renderer/controls/layout/Text";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import {
@@ -227,7 +228,16 @@ export const GraphicsToolbar = ({
           width={150}
           onChanged={(value) => onPreset(value)}
         />
-        <AddressInput label={t("panels.graphics.goTo")} clearOnEnter={true} decimalView={decimalView} onAddressSent={async (address) => onGoTo(address)} />
+        <GoToBox
+          placeholder={t("panels.graphics.goToPlaceholder")}
+          title={t("panels.graphics.goToTitle")}
+          onGo={(text) => {
+            const address = parseGoToNumber(text, decimalView);
+            if (address === undefined) return t(GO_TO_ERROR_KEYS.number);
+            onGoTo(address & 0xffff);
+            return undefined;
+          }}
+        />
       </PanelHeaderGroup>
     </>
   );

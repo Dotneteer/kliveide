@@ -49,7 +49,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. The Testing activity is the first with commands (`TestingCommands`: Add unit-test support and the runs). Badges so far: Breakpoints, Watch (neutral counts) and Unit Tests (failures, `tone="error"`, so it is absent when everything passes). **`SideBarPanelInfo.headerActions`** puts `SmallIconButton`s at the header's end, after the badge; the slot stops click and Enter/Space from also folding the panel. Its first user is the Next Registers panel's pop-out (`square-arrow-out-up-right`, the glyph every "open this as a document" button uses). |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Next Registers document, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document, the Execution History and the TVC Video panel (whose plans asked for it). **A new machine's state panel is born converted**: it is built from `controls/data/registers` with `valueXclass={regStyles.stateValue}` and `iconFill="--color-state-value"` from the start, never neutral first. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Next Registers document, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document, the Execution History, the TVC Video panel (whose plans asked for it) and the µPD765 log (the port in the secondary, the byte in the primary). **A new machine's state panel is born converted**: it is built from `controls/data/registers` with `valueXclass={regStyles.stateValue}` and `iconFill="--color-state-value"` from the start, never neutral first. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address, the µPD765 log's port beside its byte. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -1412,6 +1412,30 @@ headings look like strips of chrome in the content. `SectionHeader` is the primi
 *within* content: a disk track, a memory bank, a breakpoint group. Its own doc comment says so; the
 mistake recurs anyway, which is why it is here too.
 
+## A File Viewer's Facts
+
+A viewer that describes a file (a `.kls` state, a `.klr` debug recording, a `.sna`/`.z80`/`.szx`
+snapshot, an `.rzx` recording, a `.z88` snapshot) is built from `controls/data/FileFacts`, not from
+the old `ExpandableRow` / `LabeledText` / `LabeledFlag` rows (which only the Next file viewers still
+use). The rules the kit encodes:
+
+- **A section is a `SectionHeader` with a chevron**; a count goes after the title in the quiet
+  `meta` slot, and commands on what the section names (memory or disassembly at PC) sit in
+  `actions`, *outside* the clickable heading, so pressing one never folds the section.
+- **The label column is `minmax(<ch width>, max-content)`**: the `ch` floor lines the sections up,
+  and the column still grows to the longest label. A fixed `ch` column let "Opens in this build:"
+  run into its value, and a translation is longer still.
+- **Registers go in `FactCells` with a `labelWidth`**, so `AF:` and `AF':` put their values in the
+  same column; the cells wrap to the width. Two blocks in one section (Facts, then cells) get a
+  gap between them.
+- **Colour follows the data hierarchy**: a file's facts are neutral; a machine's *state* (registers,
+  ports, paging, the PC it opens at) takes `tone="state"`, `--color-state-value`, as the register
+  panels do. Yes/no is the Next Registers' dot (`FactFlag`), centred on the label's line, not on its
+  baseline. Errors and warnings are `FactNote` in the status tones, never a coloured value.
+- **The picture is framed beside the summary** (`FactsWithPicture`) and wraps under it when narrow.
+- **A command inside a label stays on the label's line**: a `dt` holding a button is an inline flex
+  row (the RZX segment's Play), otherwise the button breaks the label in two.
+
 ## A Header Action The Machine State Forbids Stays, Disabled, And Its Tooltip Says Why
 
 A document-header action that cannot run in the current machine state (the Execution History's
@@ -2501,7 +2525,7 @@ precisely what M1 exists to prevent, and the fix is the absolute token, never a 
 **After changing an inherited size, measure the `em`-based descendants in the running app**; they
 will have moved, and they will not have moved to anywhere you chose.
 
-The controls that stayed `1em` — `LabeledGroup`, `AddressInput`, `LabeledSwitch` — live in toolbars
+The controls that stayed `1em` — `LabeledGroup`, `LabeledSwitch` — live in toolbars
 and document panels, not dialogs. They are still M1 violations waiting for whoever restyles those.
 
 ## One Focus Affordance, Never Two
@@ -2742,6 +2766,16 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   its top and the document's bottom (`ResizeObserver` on the document) and scrolls its grid in a
   `ScrollViewer` with `sizeToContent`, between a fixed head and hint. With `overflow: auto` and only
   `70vh` the Next's last 300 partitions could not be reached.
+- **Every hex dump uses the frame, not only the live one.** The binary file viewer and the popped-out
+  bank dumps take the same controls (`FrameControls`), the same per-row marks (`byteMarks.ts`), the
+  same cursor, selection and Find (`useByteView`) and the same Value and Selection sections
+  (`ByteSections.tsx`, a read-only `ByteInspector`); a dump with its own toolbar is how the old
+  8x2 layout and `AddressInput` outlived the Memory view's redesign. **A box that takes a typed
+  address is `GoToBox`** everywhere (the Graphics Finder, a NEX bank's sprites, a tape block's List
+  at, with `label` for a name other than Go to), parsed by `parseGoToNumber` and refusing with
+  `GO_TO_ERROR_KEYS.number`; `AddressInput` is deleted. A document whose body is
+  monospace gives its header the UI font (`--main-font-family`): the frame's controls are
+  `font: inherit` and read in the code face otherwise.
 - **The Inspector toggle always shows or hides the column.** With nothing selected (the Disassembly
   view before a row is clicked) the column stays and says how to fill it; a column that appeared only
   with a selection made the toggle look broken. The header badge takes the warning hue when the inspected byte cannot be written (ROM, flash, an empty slot),

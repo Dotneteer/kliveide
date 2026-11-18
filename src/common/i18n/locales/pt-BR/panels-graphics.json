@@ -465,7 +465,6 @@
   "panels.graphics.dimTitle": "Esmaecer os bytes que a CPU nunca leu: gráficos são dados lidos, então eles se destacam",
   "panels.graphics.dimUnavailable": "O esmaecimento precisa de cobertura: ative-a com `coverage on`, execute o programa e pause",
   "panels.graphics.presets": "Modelos",
-  "panels.graphics.goTo": "Ir para",
   "panels.graphics.view.label": "Memória como gráficos",
   "panels.graphics.view.image": "Gráficos",
   "panels.graphics.view.candidates": "Candidatos a gráficos",

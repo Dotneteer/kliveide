@@ -3,11 +3,6 @@
   "@panels.doc.common.copyToClipboard": {
     "context": "Tooltip of the copy icon button in the header of a document panel (command result, BASIC listing, script output); copies the panel's whole text."
   },
-  "panels.doc.common.goTo": "Go To",
-  "@panels.doc.common.goTo": {
-    "context": "Label in front of the address box in a document panel's header (binary file viewer, disassembly); type an address and press Enter to jump there.",
-    "maxChars": 10
-  },
   "panels.doc.common.refreshNow": "Refresh now",
   "@panels.doc.common.refreshNow": {
     "context": "Tooltip of the refresh icon button in the header of the BASIC listing and disassembly panels; re-reads the machine's memory at once."
@@ -24,21 +19,6 @@
   "@panels.doc.commandResult.copied": {
     "context": "Status-bar message after the copy button of a command-result document panel copied the command's output."
   },
-  "panels.doc.binViewer.layout8x1": "8B / 1 col",
-  "@panels.doc.binViewer.layout8x1": {
-    "context": "Option of the dump-layout dropdown in the binary file viewer: 8 bytes per row in one column. 'B' is bytes, 'col' is column; keep it short.",
-    "maxChars": 12
-  },
-  "panels.doc.binViewer.layout8x2": "8B / 2 col",
-  "@panels.doc.binViewer.layout8x2": {
-    "context": "Option of the dump-layout dropdown in the binary file viewer: two columns of 8 bytes per row. 'B' is bytes, 'col' is column; keep it short.",
-    "maxChars": 12
-  },
-  "panels.doc.binViewer.layout16x1": "16B / 1 col",
-  "@panels.doc.binViewer.layout16x1": {
-    "context": "Option of the dump-layout dropdown in the binary file viewer: 16 bytes per row in one column. 'B' is bytes, 'col' is column; keep it short.",
-    "maxChars": 12
-  },
   "panels.doc.binViewer.noContent": "No content.",
   "@panels.doc.binViewer.noContent": {
     "context": "Message filling the binary file viewer when the opened file is empty."
@@ -51,19 +31,9 @@
       "maxMb": "The largest size the viewer shows, in megabytes (4)"
     }
   },
-  "panels.doc.binViewer.decimal": "Decimal",
-  "@panels.doc.binViewer.decimal": {
-    "context": "Label of a switch in the binary file viewer's header: show byte values and addresses in decimal instead of hexadecimal.",
-    "maxChars": 10
-  },
   "panels.doc.binViewer.decimalTitle": "Show byte values in decimal",
   "@panels.doc.binViewer.decimalTitle": {
     "context": "Tooltip of the 'Decimal' switch in the binary file viewer's header."
-  },
-  "panels.doc.binViewer.view": "View",
-  "@panels.doc.binViewer.view": {
-    "context": "Label in front of the dump-layout dropdown (bytes per row) in the binary file viewer's header.",
-    "maxChars": 8
   },
   "panels.doc.binViewer.chars": "Chars",
   "@panels.doc.binViewer.chars": {
@@ -2581,5 +2551,13 @@
   "panels.disassInspector.noSelection": "Select a row to see its instruction, operands, references, annotation and breakpoint.",
   "@panels.disassInspector.noSelection": {
     "context": "The Disassembly view's inspector column when no row is selected."
+  },
+  "panels.doc.binViewer.goToPlaceholder": "$1000, 4096, %1010",
+  "@panels.doc.binViewer.goToPlaceholder": {
+    "context": "Placeholder of the binary file viewer's Go to box: examples of an offset in hexadecimal, decimal and binary. Keep the examples."
+  },
+  "panels.doc.binViewer.goToTitle": "An offset in the file; $ for hexadecimal with Dec on",
+  "@panels.doc.binViewer.goToTitle": {
+    "context": "Tooltip of the binary file viewer's Go to box."
   }
 }

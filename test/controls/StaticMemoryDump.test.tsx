@@ -200,12 +200,56 @@ describe("StaticMemoryDump", () => {
       }),
       default: ({ children }: { children: ReactNode }) => <>{children}</>
     }));
-    vi.doMock("@renderer/controls/AddressInput", () => ({
-      AddressInput: ({ onAddressSent }: { onAddressSent: (address: number) => Promise<void> }) => (
-        <button data-testid="go-to-address" onClick={() => onAddressSent(0x1234)}>
+    /*
+     * The toolbar's controls are the Memory view's frame (`features/memoryMap/FrameControls`): the
+     * view chooser is drawn as a select, Go to as a button sending `$1234`, a check box as a switch,
+     * so the characterizations below keep reading them by the same test ids.
+     */
+    vi.doMock("@renderer/features/memoryMap/FrameControls", () => ({
+      Segmented: ({
+        label,
+        value,
+        options,
+        onChange
+      }: {
+        label: string;
+        value: string | number;
+        options: { value: string | number; text: string }[];
+        onChange: (value: string | number) => void;
+      }) =>
+        label === "Number format" ? (
+          <button
+            data-testid="switch-Decimal"
+            data-value={String(value === "dec")}
+            onClick={() => onChange(value === "dec" ? "hex" : "dec")}
+          >
+            Decimal
+          </button>
+        ) : label === "View" ? (
+          <select data-testid="view-mode" value={String(value)} onChange={(event) => onChange(event.target.value)}>
+            {options.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.text}
+              </option>
+            ))}
+          </select>
+        ) : null,
+      GoToBox: ({ onGo }: { onGo: (text: string) => string | undefined }) => (
+        <button data-testid="go-to-address" onClick={() => onGo("$1234")}>
           go
         </button>
-      )
+      ),
+      FindBox: () => null,
+      Check: ({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) => (
+        <button data-testid={`switch-${label}`} data-value={String(value)} onClick={() => onChange(!value)}>
+          {label}
+        </button>
+      ),
+      ToolGroup: ({ children }: { children?: ReactNode }) => <>{children}</>
+    }));
+    // --- The memory view's inspector scrolls in a ScrollViewer, which needs the theme
+    vi.doMock("@renderer/controls/ScrollViewer", () => ({
+      default: ({ children }: { children?: ReactNode }) => <div>{children}</div>
     }));
     vi.doMock("@renderer/controls/Dropdown", () => ({
       default: ({
@@ -488,14 +532,15 @@ describe("StaticMemoryDump", () => {
     );
   });
 
-  it("clamps a jump to an address outside the dump", async () => {
-    // --- $1234 is below a bank shown at $4000, so the row index would be negative.
+  it("reads a Go to below the listed bank as an offset in the bank", async () => {
+    // --- $1234 is below a bank shown at $4000: it is not one of the listing's addresses, but it is
+    // --- an offset the rows show, so it goes there (row $123) rather than to the top of the dump
     const harness = await renderStaticMemoryDump({ disassOffset: 0x4000 });
 
     fireEvent.click(screen.getByTestId("go-to-address"));
 
     await waitFor(() =>
-      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0, { align: "start" })
+      expect(harness.virtualApi.scrollToIndex).toHaveBeenCalledWith(0x123, { align: "start" })
     );
   });
 

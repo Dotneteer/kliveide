@@ -465,7 +465,6 @@
   "panels.graphics.dimTitle": "Esbater os bytes que a CPU nunca leu: os gráficos são dados lidos, por isso destacam-se",
   "panels.graphics.dimUnavailable": "Esbater requer cobertura: ativá-la com `coverage on`, executar o programa e depois pausar",
   "panels.graphics.presets": "Predefin.",
-  "panels.graphics.goTo": "Ir para",
   "panels.graphics.view.label": "Memória como gráficos",
   "panels.graphics.view.image": "Gráficos",
   "panels.graphics.view.candidates": "Candidatos a gráficos",

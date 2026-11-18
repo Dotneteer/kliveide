@@ -2389,10 +2389,15 @@
     "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). Toolbar: placeholder and accessible name of the dropdown of preset layouts.",
     "maxChars": 12
   },
-  "panels.graphics.goTo": "Go to",
-  "@panels.graphics.goTo": {
-    "context": "Graphics document (the graphics finder: memory drawn as 1-bit pixels to spot sprites and fonts). Toolbar: label of the address box that scrolls to an address.",
-    "maxChars": 8
+  "panels.graphics.goToPlaceholder": "$4000, %1010",
+  "@panels.graphics.goToPlaceholder": {
+    "context": "Graphics document (the graphics finder). Toolbar: placeholder of the Go to box, example inputs: $ marks hexadecimal, % binary. Keep the numbers and symbols.",
+    "maxChars": 16
+  },
+  "panels.graphics.goToTitle": "An address to show at the top. Hexadecimal, or decimal with Dec on; $, %, a trailing h or d say the base. Enter to go.",
+  "@panels.graphics.goToTitle": {
+    "context": "Graphics document (the graphics finder). Toolbar: tooltip of the Go to box, which scrolls the view to a typed address.",
+    "maxChars": 160
   },
   "panels.graphics.view.label": "Memory as graphics",
   "@panels.graphics.view.label": {

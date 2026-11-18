@@ -73,12 +73,15 @@ export const ToolGroup = ({ label, children }: { label?: string; children: React
  * marks the box until the text changes, and its reason is the box's tooltip.
  */
 export const GoToBox = ({
+  label,
   placeholder,
   title,
   suggestions,
   onGo,
   onFocusChange
 }: {
+  /** The box's name, when it is not "Go to" (a tape block's "List at") */
+  label?: string;
   placeholder: string;
   title: string;
   /** Label names for the text so far (a datalist) */
@@ -94,7 +97,7 @@ export const GoToBox = ({
   const options = suggestions?.(text) ?? [];
   return (
     <label className={classnames(styles.box, { [styles.boxError]: !!error })} title={error ?? title}>
-      <span className={styles.boxLabel}>{t("panels.memoryMap.goTo")}</span>
+      <span className={styles.boxLabel}>{label ?? t("panels.memoryMap.goTo")}</span>
       <input
         value={text}
         placeholder={placeholder}

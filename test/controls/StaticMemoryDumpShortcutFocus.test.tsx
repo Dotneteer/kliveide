@@ -97,9 +97,6 @@ async function renderPanel(strict = false) {
     }),
     default: ({ children }: { children: ReactNode }) => <>{children}</>
   }));
-  vi.doMock("@renderer/controls/AddressInput", () => ({
-    AddressInput: () => <button data-testid="go-to-address">go</button>
-  }));
   vi.doMock("@renderer/controls/Dropdown", () => ({
     default: () => <select />
   }));

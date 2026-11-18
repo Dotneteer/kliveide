@@ -253,26 +253,6 @@ async function renderDisassemblyPanel({
       );
     }
   }));
-  vi.doMock("@renderer/controls/AddressInput", () => ({
-    AddressInput: ({
-      decimalView,
-      label,
-      onAddressSent
-    }: {
-      decimalView: boolean;
-      label: string;
-      onAddressSent?: (address: number) => Promise<void>;
-    }) => (
-      <input
-        aria-label={label}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            void onAddressSent?.(parseInt(event.currentTarget.value, decimalView ? 10 : 16));
-          }
-        }}
-      />
-    )
-  }));
   vi.doMock("@renderer/controls/IconButton", () => ({
     SmallIconButton: ({
       clicked,
