@@ -2625,6 +2625,11 @@
   "@panels.feature.memory.liveTooltip": {
     "context": "Tooltip of the 'Live' badge in a popped-out bank's toolbar."
   },
+  "panels.feature.memory.goToAddress": "Go to address:",
+  "@panels.feature.memory.goToAddress": {
+    "context": "Label of the address box in a memory bank document's toolbar.",
+    "maxChars": 18
+  },
   "panels.feature.memory.bankLocation": "Bank",
   "@panels.feature.memory.bankLocation": {
     "context": "Label in a popped-out ZX Spectrum Next bank toolbar, before where the bank is paged in the Z80 address space right now.",
@@ -4775,6 +4780,16 @@
   "@panels.memoryInspector.notPagedForBreakpoint": {
     "context": "Status message when a breakpoint is asked for on a partition that the CPU cannot see now."
   },
+  "panels.feature.memory.goTo": "Go To",
+  "@panels.feature.memory.goTo": {
+    "context": "Label of the address box in the memory view's toolbar: type an address and press Enter to scroll there.",
+    "maxChars": 10
+  },
+  "panels.feature.memory.decimal": "Decimal",
+  "@panels.feature.memory.decimal": {
+    "context": "Switch label in the memory view's toolbar: show numbers in decimal instead of hexadecimal.",
+    "maxChars": 12
+  },
   "panels.memoryMap.note.internalRam": "Internal RAM, {size}",
   "@panels.memoryMap.note.internalRam": {
     "context": "Tooltip/inspector note for a Cambridge Z88 bank in $20-$3F: the machine's internal RAM.",
@@ -4789,26 +4804,5 @@
       "kind": "The chip's kind, e.g. 'ROM' or 'Flash'",
       "size": "Its size, e.g. '512K'"
     }
-  },
-  "panels.memoryView.findBytesTitle": "Find bytes (21 ?? 58) or quoted text; Enter or F3 for the next match",
-  "@panels.memoryView.findBytesTitle": {
-    "context": "Tooltip of the Find box of a file or bank dump ('??' matches any byte)."
-  },
-  "panels.feature.memory.viewModeLabel": "View",
-  "@panels.feature.memory.viewModeLabel": {
-    "context": "Accessible name of the Memory / Disassembly / Graphics / Sprites choice in a popped-out bank's toolbar.",
-    "maxChars": 8
-  },
-  "panels.feature.memory.goToPlaceholder": "$C000, 49152, %1010",
-  "@panels.feature.memory.goToPlaceholder": {
-    "context": "Placeholder of a popped-out bank's Go to box: examples of an address in hexadecimal, decimal and binary. Keep the examples."
-  },
-  "panels.feature.memory.goToTitle": "An address where the bank is listed, or an offset in the bank; $ for hexadecimal with Dec on",
-  "@panels.feature.memory.goToTitle": {
-    "context": "Tooltip of the Go to box in a popped-out bank's memory view."
-  },
-  "panels.feature.memory.goToDisassemblyTitle": "An address of the listing; $ for hexadecimal with Dec on",
-  "@panels.feature.memory.goToDisassemblyTitle": {
-    "context": "Tooltip of the Go to box in a popped-out bank's disassembly view."
   }
 }

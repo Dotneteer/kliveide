@@ -46,8 +46,7 @@ import {
 import { useLoadedMemoryViewState, useMemoryViewStatePersistence } from "./useMemoryViewState";
 import { useMemoryMachineSetup } from "./useMemoryMachineSetup";
 import { useMemoryRefresh } from "./useMemoryRefresh";
-import { getMemoryCharacterInfo, MemoryDumpSectionView } from "./MemoryDumpSection";
-import { rowMarks } from "@renderer/features/memoryMap/byteMarks";
+import { getMemoryCharacterInfo, MemoryDumpSectionView, type ByteMarks } from "./MemoryDumpSection";
 import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
 import { MemoryInspector } from "./MemoryInspector";
 import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
@@ -1139,12 +1138,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 cursor,
                 selection,
                 typeOver,
-                matches: viewMatches,
+                viewMatches,
                 findLength,
                 currentMatch: findResult ? viewMatches[findIndex] : undefined,
                 breakpointBytes,
                 baseline,
-                bytes: memory
+                memory
               });
               // --- The label gutter: the row's first label and the registers pointing into it
               let gutterLabel: string | undefined;
@@ -1239,6 +1238,69 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     </div>
   );
 };
+
+/** The marks of one row, built only for rendered rows; `key` sums them up for the memo comparators */
+function rowMarks(
+  address: number,
+  count: number,
+  s: {
+    cursor: number;
+    selection?: [number, number];
+    typeOver?: TypeOver;
+    viewMatches: number[];
+    findLength: number;
+    currentMatch?: number;
+    breakpointBytes: Set<number>;
+    baseline?: Uint8Array;
+    memory: Uint8Array;
+  }
+): ByteMarks | undefined {
+  const end = address + count - 1;
+  const marks: ByteMarks = { key: "" };
+  const keys: string[] = [];
+  if (s.cursor >= address && s.cursor <= end) {
+    marks.cursor = s.cursor - address;
+    keys.push(`c${marks.cursor}`);
+    if (s.typeOver) {
+      marks.editText = s.typeOver.text;
+      keys.push(`e${s.typeOver.text}`);
+    }
+  }
+  if (s.selection && s.selection[1] >= address && s.selection[0] <= end) {
+    marks.selection = [Math.max(0, s.selection[0] - address), Math.min(count - 1, s.selection[1] - address)];
+    keys.push(`s${marks.selection.join("-")}`);
+  }
+  if (s.findLength > 0 && s.viewMatches.length) {
+    const found: [number, number][] = [];
+    for (const m of s.viewMatches) {
+      const mEnd = m + s.findLength - 1;
+      if (mEnd < address || m > end) continue;
+      const range: [number, number] = [Math.max(0, m - address), Math.min(count - 1, mEnd - address)];
+      if (m === s.currentMatch) marks.foundCurrent = range;
+      else found.push(range);
+    }
+    if (found.length) marks.found = found;
+    if (found.length || marks.foundCurrent) keys.push(`f${found.map((r) => r.join("-")).join(",")}|${marks.foundCurrent?.join("-") ?? ""}`);
+  }
+  let bp: boolean[] | undefined;
+  let changed: boolean[] | undefined;
+  const hasBaseline = !!s.baseline && s.baseline.length === s.memory.length;
+  for (let i = 0; i < count; i++) {
+    if (s.breakpointBytes.has(address + i)) (bp ??= Array(count).fill(false))[i] = true;
+    if (hasBaseline && s.baseline![address + i] !== s.memory[address + i]) (changed ??= Array(count).fill(false))[i] = true;
+  }
+  if (bp) {
+    marks.breakpoint = bp;
+    keys.push(`b${bp.map((b) => (b ? 1 : 0)).join("")}`);
+  }
+  if (changed) {
+    marks.changed = changed;
+    keys.push(`d${changed.map((b) => (b ? 1 : 0)).join("")}`);
+  }
+  if (!keys.length) return undefined;
+  marks.key = keys.join(";");
+  return marks;
+}
 
 /** Hex of the cursor byte, for tests */
 export const formatCursorByte = (value: number) => `$${toHexa2(value)}`;

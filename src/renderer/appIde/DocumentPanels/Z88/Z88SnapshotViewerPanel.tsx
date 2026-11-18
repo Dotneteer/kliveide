@@ -6,15 +6,11 @@ import type { DocumentProps } from "@renderer/features/documents/DocumentsContai
 import type { GenericFileContext } from "../helpers/GenericFilePanel";
 
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import {
-  Fact,
-  FactCells,
-  FactFlag,
-  FactNote,
-  Facts,
-  FactSection,
-  FactsWithPicture
-} from "@renderer/controls/data/FileFacts";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
+import { Row } from "@renderer/controls/layout/Row";
+import { Text } from "@renderer/controls/layout/Text";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
@@ -53,7 +49,7 @@ import { z88BankDumpId, z88BankDumpTitle } from "./z88BankDocument";
  * memory dump and disassembly at PC), and every card bank by bank in the Slots browser
  * (`dev/plans/Z88_SLOT_BROWSER_PLAN.md`), which pops a bank out as its own document.
  *
- * Built from the shared file-facts primitives (`controls/data/FileFacts`); the banks from the Slots browser.
+ * Built only from the shared viewer primitives - no stylesheet of its own, no colour.
  */
 
 /* --- M2: `ch`, not px */
@@ -62,10 +58,8 @@ const REG_LABEL_WIDTH = "5ch";
 
 /** PB0..PB3 decoded to the 24-bit address they point at (issue #1417) */
 const PB_DECODERS = [z88Pb0Address, z88Pb1Address, z88Pb2Address, z88Pb3Address];
-const REG_CELL_WIDTH = "21ch";
-const TIM_LABEL_WIDTH = "6ch";
-const BYTE_CELL_WIDTH = "11ch";
-const PB_CELL_WIDTH = "24ch";
+const REG_VALUE_WIDTH = "14ch";
+const BLINK_VALUE_WIDTH = "30ch";
 
 type Z88SnapshotViewState = {
   scrollPosition?: number;
@@ -152,44 +146,60 @@ const SummarySection = ({ ctx, info }: SectionProps) => {
   const now = useMemo(() => Date.now(), []);
   const loadable = mapping.errors.length === 0;
   return (
-    <FactSection
-      title={t("panels.helpers.heading.snapshot")}
-      expanded={ctx.viewState?.summaryExpanded ?? true}
-      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
+    <ExpandableRow
+      heading={t("panels.helpers.heading.snapshot")}
+      initialExpanded={ctx.viewState?.summaryExpanded ?? true}
+      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
     >
-      <FactsWithPicture picture={snapshot.png && <LcdPicture png={snapshot.png} />}>
-        <Facts labelWidth={LABEL_WIDTH}>
-          <FactFlag label={t("panels.helpers.label.loadable")} value={loadable} />
-          <FactFlag label={t("panels.z88.label.autorun")} value={snapshot.autorun} />
-          <Fact label={t("panels.z88.label.savedAt")}>
-            {snapshot.stoppedAt !== undefined
+      <Row>
+        <LabeledFlag label={t("panels.helpers.label.loadable")} labelWidth={LABEL_WIDTH} value={loadable} />
+        <LabeledFlag label={t("panels.z88.label.autorun")} labelWidth={LABEL_WIDTH} value={snapshot.autorun} />
+      </Row>
+      {mapping.errors.map((error, index) => (
+        <Row key={`error${index}`}>
+          <Text text={error} variant="error" />
+        </Row>
+      ))}
+      {[...snapshot.warnings, ...mapping.warnings].map((warning, index) => (
+        <Row key={`warning${index}`}>
+          <Text text={warning} variant="warning" />
+        </Row>
+      ))}
+      <Row>
+        <LabeledText
+          label={t("panels.z88.label.savedAt")}
+          labelWidth={LABEL_WIDTH}
+          value={
+            snapshot.stoppedAt !== undefined
               ? new Date(snapshot.stoppedAt).toLocaleString(uiLocale())
-              : t("panels.z88.notRecorded")}
-          </Fact>
-          <Fact label={t("panels.z88.label.rtcSaved")}>{formatZ88Rtc(snapshot.blink.tim)}</Fact>
-          <Fact label={t("panels.z88.label.rtcOnLoad")} title={t("panels.z88.rtcOnLoadTooltip")}>
-            {formatZ88Rtc(adjustZ88LostTime(snapshot.blink.tim, snapshot.stoppedAt, now))}
-          </Fact>
-          {/* --- One entry per line: the archive's members on one line pushed the viewer into
-              --- horizontal scrolling */}
-          {snapshot.entries.map((entry, index) => (
-            <Fact key={entry.name} label={index === 0 ? t("panels.z88.label.contents") : ""}>
-              {t("panels.z88.entry", { name: entry.name, count: entry.size })}
-            </Fact>
-          ))}
-        </Facts>
-        {mapping.errors.map((error, index) => (
-          <FactNote key={`error${index}`} tone="error">
-            {error}
-          </FactNote>
-        ))}
-        {[...snapshot.warnings, ...mapping.warnings].map((warning, index) => (
-          <FactNote key={`warning${index}`} tone="warning">
-            {warning}
-          </FactNote>
-        ))}
-      </FactsWithPicture>
-    </FactSection>
+              : t("panels.z88.notRecorded")
+          }
+        />
+      </Row>
+      <Row>
+        <LabeledText label={t("panels.z88.label.rtcSaved")} labelWidth={LABEL_WIDTH} value={formatZ88Rtc(snapshot.blink.tim)} />
+      </Row>
+      <Row>
+        <LabeledText
+          label={t("panels.z88.label.rtcOnLoad")}
+          labelWidth={LABEL_WIDTH}
+          value={formatZ88Rtc(adjustZ88LostTime(snapshot.blink.tim, snapshot.stoppedAt, now))}
+          valueTooltip={t("panels.z88.rtcOnLoadTooltip")}
+        />
+      </Row>
+      {/* --- One entry per row: a data value never wraps, and the archive's members on one line
+          --- pushed the whole viewer into horizontal scrolling */}
+      {snapshot.entries.map((entry, index) => (
+        <Row key={entry.name}>
+          <LabeledText
+            label={index === 0 ? t("panels.z88.label.contents") : ""}
+            labelWidth={LABEL_WIDTH}
+            value={t("panels.z88.entry", { name: entry.name, count: entry.size })}
+          />
+        </Row>
+      ))}
+      {snapshot.png && <LcdPicture png={snapshot.png} />}
+    </ExpandableRow>
   );
 };
 
@@ -203,91 +213,137 @@ const LcdPicture = ({ png }: { png: Uint8Array }) => {
     return () => URL.revokeObjectURL(created);
   }, [png]);
   return url ? (
-    <img src={url} alt={t("panels.z88.lcdAlt")} style={{ imageRendering: "pixelated", maxWidth: "100%" }} />
+    <Row>
+      <img
+        src={url}
+        alt={t("panels.z88.lcdAlt")}
+        style={{ imageRendering: "pixelated", maxWidth: "100%" }}
+      />
+    </Row>
   ) : null;
 };
 
 const Register = ({ label, value }: { label: string; value: number }) => (
-  <Fact label={label} tone="state">{`$${toHexa4(value)} (${value})`}</Fact>
+  <LabeledText
+    label={label}
+    labelWidth={REG_LABEL_WIDTH}
+    value={`$${toHexa4(value)} (${value})`}
+    valueWidth={REG_VALUE_WIDTH}
+  />
 );
 
 const CpuSection = ({ ctx, info }: SectionProps) => {
   const t = useT();
   const cpu = info.snapshot.cpu;
   return (
-    <FactSection
-      title={t("panels.helpers.heading.z80Registers")}
-      expanded={ctx.viewState?.cpuExpanded ?? true}
-      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.cpuExpanded = exp))}
+    <ExpandableRow
+      heading={t("panels.helpers.heading.z80Registers")}
+      initialExpanded={ctx.viewState?.cpuExpanded ?? true}
+      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.cpuExpanded = exp))}
     >
-      <FactCells cellWidth={REG_CELL_WIDTH} labelWidth={REG_LABEL_WIDTH}>
+      <Row>
         <Register label="AF:" value={cpu.af} />
         <Register label="BC:" value={cpu.bc} />
         <Register label="DE:" value={cpu.de} />
         <Register label="HL:" value={cpu.hl} />
+        <Register label="PC:" value={cpu.pc} />
+      </Row>
+      <Row>
         <Register label="AF':" value={cpu.af_} />
         <Register label="BC':" value={cpu.bc_} />
         <Register label="DE':" value={cpu.de_} />
         <Register label="HL':" value={cpu.hl_} />
+        <Register label="SP:" value={cpu.sp} />
+      </Row>
+      <Row>
         <Register label="IX:" value={cpu.ix} />
         <Register label="IY:" value={cpu.iy} />
-        <Register label="PC:" value={cpu.pc} />
-        <Register label="SP:" value={cpu.sp} />
-        <Fact label="I:" tone="state">{`$${toHexa2(cpu.i)}`}</Fact>
-        <Fact label="R:" tone="state">{`$${toHexa2(cpu.r)}`}</Fact>
-        <Fact label="IM:" tone="state">{`${cpu.im}`}</Fact>
-        <FactFlag label="IFF1:" value={cpu.iff1} />
-        <FactFlag label="IFF2:" value={cpu.iff2} />
-      </FactCells>
-    </FactSection>
+        <LabeledText label="I:" labelWidth={REG_LABEL_WIDTH} value={`$${toHexa2(cpu.i)}`} valueWidth={REG_VALUE_WIDTH} />
+        <LabeledText label="R:" labelWidth={REG_LABEL_WIDTH} value={`$${toHexa2(cpu.r)}`} valueWidth={REG_VALUE_WIDTH} />
+        <LabeledText label="IM:" labelWidth={REG_LABEL_WIDTH} value={`${cpu.im}`} valueWidth={REG_VALUE_WIDTH} />
+      </Row>
+      <Row>
+        <LabeledFlag label="IFF1:" labelWidth={REG_LABEL_WIDTH} value={cpu.iff1} />
+        <LabeledFlag label="IFF2:" labelWidth={REG_LABEL_WIDTH} value={cpu.iff2} />
+      </Row>
+    </ExpandableRow>
   );
 };
+
+const BitRegister = ({ name, value }: { name: Z88BlinkBitRegister; value: number }) => (
+  <Row>
+    <LabeledText
+      label={`${name}:`}
+      labelWidth={REG_LABEL_WIDTH}
+      value={`$${toHexa2(value)} (${z88BlinkBitNames(name, value)})`}
+      valueWidth={BLINK_VALUE_WIDTH}
+    />
+  </Row>
+);
 
 const BlinkSection = ({ ctx, info }: SectionProps) => {
   const t = useT();
   const blink = info.snapshot.blink;
-  const bits: [Z88BlinkBitRegister, number][] = [
-    ["COM", blink.com],
-    ["INT", blink.int],
-    ["STA", blink.sta],
-    ["TMK", blink.tmk],
-    ["TSTA", blink.tsta]
-  ];
   return (
-    <FactSection
-      title="Blink"
-      expanded={ctx.viewState?.blinkExpanded ?? true}
-      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.blinkExpanded = exp))}
+    <ExpandableRow
+      heading="Blink"
+      initialExpanded={ctx.viewState?.blinkExpanded ?? true}
+      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.blinkExpanded = exp))}
     >
-      <Facts labelWidth={REG_LABEL_WIDTH}>
-        {bits.map(([name, value]) => (
-          <Fact key={name} label={`${name}:`} tone="state">
-            {`$${toHexa2(value)} (${z88BlinkBitNames(name, value)})`}
-          </Fact>
-        ))}
-        <Fact label="SBF:" tone="state">
-          {`$${toHexa4(blink.sbf)} (${formatZ88Ext24(z88SbfAddress(blink.sbf).ext24)})`}
-        </Fact>
-        <Fact label="LCD:" tone="state">
-          {t("panels.z88.lcdSize", { width: blink.scw * 8, height: blink.sch * 8 })}
-        </Fact>
-      </Facts>
-      <FactCells cellWidth={BYTE_CELL_WIDTH} labelWidth={TIM_LABEL_WIDTH}>
+      <BitRegister name="COM" value={blink.com} />
+      <BitRegister name="INT" value={blink.int} />
+      <BitRegister name="STA" value={blink.sta} />
+      <BitRegister name="TMK" value={blink.tmk} />
+      <BitRegister name="TSTA" value={blink.tsta} />
+      <Row>
         {blink.sr.map((bank, index) => (
-          <Fact key={`sr${index}`} label={`SR${index}:`} tone="state">{`$${toHexa2(bank)}`}</Fact>
+          <LabeledText
+            key={index}
+            label={`SR${index}:`}
+            labelWidth={REG_LABEL_WIDTH}
+            value={`$${toHexa2(bank)}`}
+            valueWidth="5ch"
+          />
         ))}
+      </Row>
+      <Row>
         {blink.tim.map((value, index) => (
-          <Fact key={`tim${index}`} label={`TIM${index}:`} tone="state">{`$${toHexa2(value)}`}</Fact>
+          <LabeledText
+            key={index}
+            label={`TIM${index}:`}
+            labelWidth="6ch"
+            value={`$${toHexa2(value)}`}
+            valueWidth="5ch"
+          />
         ))}
-      </FactCells>
-      <FactCells cellWidth={PB_CELL_WIDTH} labelWidth={REG_LABEL_WIDTH}>
+      </Row>
+      <Row>
+        <LabeledText
+          label="SBF:"
+          labelWidth={REG_LABEL_WIDTH}
+          value={`$${toHexa4(blink.sbf)} (${formatZ88Ext24(z88SbfAddress(blink.sbf).ext24)})`}
+          valueWidth="17ch"
+        />
+      </Row>
+      <Row>
         {blink.pb.map((value, index) => (
-          <Fact key={index} label={`PB${index}:`} tone="state">
-            {`$${toHexa4(value)} (${formatZ88Ext24(PB_DECODERS[index](value).ext24)})`}
-          </Fact>
+          <LabeledText
+            key={index}
+            label={`PB${index}:`}
+            labelWidth={REG_LABEL_WIDTH}
+            value={`$${toHexa4(value)} (${formatZ88Ext24(PB_DECODERS[index](value).ext24)})`}
+            valueWidth="17ch"
+          />
         ))}
-      </FactCells>
-    </FactSection>
+      </Row>
+      <Row>
+        <LabeledText
+          label="LCD:"
+          labelWidth={REG_LABEL_WIDTH}
+          value={t("panels.z88.lcdSize", { width: blink.scw * 8, height: blink.sch * 8 })}
+        />
+      </Row>
+    </ExpandableRow>
   );
 };
 
@@ -312,9 +368,9 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
     );
 
   return (
-    <FactSection
-      title={t("panels.z88.addressSpaceHeading")}
-      actions={
+    <ExpandableRow
+      heading={t("panels.z88.addressSpaceHeading")}
+      headingAction={
         <>
           <SmallIconButton
             iconName="memory-icon"
@@ -328,20 +384,26 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
           />
         </>
       }
-      expanded={ctx.viewState?.pagingExpanded ?? true}
-      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.pagingExpanded = exp))}
+      initialExpanded={ctx.viewState?.pagingExpanded ?? true}
+      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.pagingExpanded = exp))}
     >
-      <Facts labelWidth={LABEL_WIDTH}>
-        <Fact label="PC:" tone="state">
-          {t("panels.spectrum.pcInBank", {
+      <Row>
+        <LabeledText
+          label="PC:"
+          labelWidth={LABEL_WIDTH}
+          value={t("panels.spectrum.pcInBank", {
             pc: `$${toHexa4(pc)}`,
             bank: `$${toHexa2(location.bank)}`,
             offset: `$${toHexa4(location.offset)}`
           })}
-        </Fact>
-        {z88PagedRanges(snapshot).map((range) => (
-          <Fact key={range.start} label={`$${toHexa4(range.start)}-$${toHexa4(range.end)}:`} tone="state">
-            {
+        />
+      </Row>
+      {z88PagedRanges(snapshot).map((range) => (
+        <Row key={range.start}>
+          <LabeledText
+            label={`$${toHexa4(range.start)}-$${toHexa4(range.end)}:`}
+            labelWidth={LABEL_WIDTH}
+            value={
               // --- SR0 shows half a bank: bit 0 of the bank number picks the half
               range.start === 0x2000
                 ? t(range.offset ? "panels.z88.rangeUpper" : "panels.z88.rangeLower", {
@@ -350,10 +412,10 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
                   })
                 : t("panels.z88.range", { bank: `$${toHexa2(range.bank)}`, owner: range.owner })
             }
-          </Fact>
-        ))}
-      </Facts>
-    </FactSection>
+          />
+        </Row>
+      ))}
+    </ExpandableRow>
   );
 };
 
@@ -410,22 +472,26 @@ const BreakpointsSection = ({ ctx, info }: SectionProps) => {
   const t = useT();
   const breakpoints = info.snapshot.breakpoints;
   return (
-    <FactSection
-      title={t("panels.z88.breakpointsHeading", { count: breakpoints.length })}
-      expanded={ctx.viewState?.breakpointsExpanded ?? false}
-      onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.breakpointsExpanded = exp))}
+    <ExpandableRow
+      heading={t("panels.z88.breakpointsHeading", { count: breakpoints.length })}
+      initialExpanded={ctx.viewState?.breakpointsExpanded ?? false}
+      onExpanded={(exp) => ctx.changeViewState((vs) => (vs.breakpointsExpanded = exp))}
     >
       {breakpoints.length === 0 ? (
-        <FactNote>{t("panels.z88.noBreakpoints")}</FactNote>
+        <Row>
+          <Text text={t("panels.z88.noBreakpoints")} />
+        </Row>
       ) : (
-        <Facts labelWidth={LABEL_WIDTH}>
-          {breakpoints.map((bp, index) => (
-            <Fact key={index} label={`$${toHexa2(bp.bank)}:$${toHexa4(bp.offset)}`}>
-              {bp.display ? t("panels.z88.bpDisplay") : t("panels.z88.bpStops")}
-            </Fact>
-          ))}
-        </Facts>
+        breakpoints.map((bp, index) => (
+          <Row key={index}>
+            <LabeledText
+              label={`$${toHexa2(bp.bank)}:$${toHexa4(bp.offset)}`}
+              labelWidth={LABEL_WIDTH}
+              value={bp.display ? t("panels.z88.bpDisplay") : t("panels.z88.bpStops")}
+            />
+          </Row>
+        ))
       )}
-    </FactSection>
+    </ExpandableRow>
   );
 };

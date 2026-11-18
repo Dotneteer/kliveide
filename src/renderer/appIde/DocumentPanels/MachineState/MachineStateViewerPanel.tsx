@@ -6,7 +6,11 @@ import type { GenericFileContext } from "../helpers/GenericFilePanel";
 import type { KliveStateReadResult } from "@common/machineState/kliveStateFile";
 
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import { Fact, FactFlag, FactNote, Facts, FactSection, FactsWithPicture } from "@renderer/controls/data/FileFacts";
+import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
+import { LabeledText } from "@renderer/controls/layout/LabeledText";
+import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
+import { Row } from "@renderer/controls/layout/Row";
+import { Text } from "@renderer/controls/layout/Text";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { readKliveStateFile } from "@common/machineState/kliveStateFile";
@@ -16,7 +20,7 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/s
  * The Klive state file (`.kls`) viewer (`dev/plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9): the
  * screen as it was saved, the machine, when and by which Klive it was saved, the media it had, and
  * whether it carries a portable .szx part. It reads the file without inflating the memory image and
- * runs no core. Built from the shared file-facts primitives (`controls/data/FileFacts`).
+ * runs no core. Built only from the shared viewer primitives - no stylesheet, no colour.
  */
 
 /* --- M2: `ch`, not px */
@@ -81,85 +85,108 @@ const StateView = ({ ctx }: { ctx: ViewContext }) => {
   const savedAt = new Date(h.savedAt);
   return (
     <>
-      <FactSection
-        title={t("panels.machineState.heading")}
-        expanded={ctx.viewState?.summaryExpanded ?? true}
-        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
+      <ExpandableRow
+        heading={t("panels.machineState.heading")}
+        initialExpanded={ctx.viewState?.summaryExpanded ?? true}
+        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
       >
-        <FactsWithPicture
-          picture={
-            info.thumbnail && (
-              <ScreenCanvas
-                data={info.thumbnail.rgba}
-                palette={[]}
-                zoomFactor={info.thumbnail.width <= 200 ? 2 : 1}
-                screenWidth={info.thumbnail.width}
-                screenHeight={info.thumbnail.height}
-                createPixelData={thumbnailPixels}
-              />
-            )
-          }
-        >
-          <Facts labelWidth={LABEL_WIDTH}>
-            <Fact label={t("panels.helpers.label.machine")}>{h.machineName ?? h.machineId}</Fact>
-            <Fact label={t("panels.helpers.label.saved")}>
-              {isNaN(savedAt.getTime()) ? h.savedAt : savedAt.toLocaleString(uiLocale())}
-            </Fact>
-            <Fact label={t("panels.helpers.label.savedBy")}>{t("panels.helpers.kliveVersion", { version: h.kliveVersion })}</Fact>
-            <Fact label="PC:" tone="state">
-              ${toHexa4(h.pc)}
-            </Fact>
-            <FactFlag label={t("panels.machineState.portableSzx")} value={!!info.szx} />
-          </Facts>
-          <FactNote>
-            {info.szx ? t("panels.machineState.loadsWithSzx") : t("panels.machineState.loadsWithoutSzx")}
-          </FactNote>
-        </FactsWithPicture>
-      </FactSection>
-      <FactSection
-        title={t("panels.helpers.heading.media")}
-        meta={info.media.length || undefined}
-        expanded={ctx.viewState?.mediaExpanded ?? true}
-        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.mediaExpanded = exp))}
-      >
-        {info.media.length === 0 ? (
-          <FactNote>{t("panels.helpers.media.none")}</FactNote>
-        ) : (
-          <Facts labelWidth={LABEL_WIDTH}>
-            {info.media.map((m) => (
-              <Fact key={m.id} label={MEDIA_NAMES[m.id] ?? `${m.id}:`}>
-                {m.fileName ?? "-"}
-              </Fact>
-            ))}
-          </Facts>
+        <Row>
+          <LabeledText label={t("panels.helpers.label.machine")} labelWidth={LABEL_WIDTH} value={h.machineName ?? h.machineId} />
+        </Row>
+        <Row>
+          <LabeledText
+            label={t("panels.helpers.label.saved")}
+            labelWidth={LABEL_WIDTH}
+            value={isNaN(savedAt.getTime()) ? h.savedAt : savedAt.toLocaleString(uiLocale())}
+          />
+        </Row>
+        <Row>
+          <LabeledText
+            label={t("panels.helpers.label.savedBy")}
+            labelWidth={LABEL_WIDTH}
+            value={t("panels.helpers.kliveVersion", { version: h.kliveVersion })}
+          />
+        </Row>
+        <Row>
+          <LabeledText label="PC:" labelWidth={LABEL_WIDTH} value={`$${toHexa4(h.pc)}`} />
+        </Row>
+        <Row>
+          <LabeledFlag label={t("panels.machineState.portableSzx")} labelWidth={LABEL_WIDTH} value={!!info.szx} />
+        </Row>
+        <Row>
+          <Text
+            text={
+              info.szx ? t("panels.machineState.loadsWithSzx") : t("panels.machineState.loadsWithoutSzx")
+            }
+          />
+        </Row>
+        {info.thumbnail && (
+          <Row>
+            <ScreenCanvas
+              data={info.thumbnail.rgba}
+              palette={[]}
+              zoomFactor={info.thumbnail.width <= 200 ? 2 : 1}
+              screenWidth={info.thumbnail.width}
+              screenHeight={info.thumbnail.height}
+              createPixelData={thumbnailPixels}
+            />
+          </Row>
         )}
+      </ExpandableRow>
+      <ExpandableRow
+        heading={t("panels.helpers.heading.media")}
+        initialExpanded={ctx.viewState?.mediaExpanded ?? true}
+        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.mediaExpanded = exp))}
+      >
+        {info.media.length === 0 && (
+          <Row>
+            <Text text={t("panels.helpers.media.none")} />
+          </Row>
+        )}
+        {info.media.map((m) => (
+          <Row key={m.id}>
+            <LabeledText label={MEDIA_NAMES[m.id] ?? `${m.id}:`} labelWidth={LABEL_WIDTH} value={m.fileName ?? "-"} />
+          </Row>
+        ))}
         {info.media.some((m) => m.id === MEDIA_DISK_A || m.id === MEDIA_DISK_B) && (
-          <FactNote>{t("panels.machineState.disksDetached")}</FactNote>
+          <Row>
+            <Text text={t("panels.machineState.disksDetached")} />
+          </Row>
         )}
-      </FactSection>
-      <FactSection
-        title={t("panels.helpers.heading.file")}
-        expanded={ctx.viewState?.fileExpanded ?? false}
-        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
+      </ExpandableRow>
+      <ExpandableRow
+        heading={t("panels.helpers.heading.file")}
+        initialExpanded={ctx.viewState?.fileExpanded ?? false}
+        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
       >
-        <Facts labelWidth={LABEL_WIDTH}>
-          <Fact label={t("panels.helpers.label.machineId")}>{`${h.machineId}${h.modelId ? ` / ${h.modelId}` : ""}`}</Fact>
-          <Fact label={t("panels.helpers.label.core")}>{h.coreId}</Fact>
-          <Fact label={t("panels.helpers.label.fingerprint")}>{h.fingerprint}</Fact>
-          <Fact label={t("panels.machineState.memoryImage")}>
-            {t("panels.machineState.memoryImageValue", {
+        <Row>
+          <LabeledText label={t("panels.helpers.label.machineId")} labelWidth={LABEL_WIDTH} value={`${h.machineId}${h.modelId ? ` / ${h.modelId}` : ""}`} />
+        </Row>
+        <Row>
+          <LabeledText label={t("panels.helpers.label.core")} labelWidth={LABEL_WIDTH} value={h.coreId} />
+        </Row>
+        <Row>
+          <LabeledText label={t("panels.helpers.label.fingerprint")} labelWidth={LABEL_WIDTH} value={h.fingerprint} />
+        </Row>
+        <Row>
+          <LabeledText
+            label={t("panels.machineState.memoryImage")}
+            labelWidth={LABEL_WIDTH}
+            value={t("panels.machineState.memoryImageValue", {
               mib: (h.memorySize / 1048576).toLocaleString(uiLocale(), {
                 minimumFractionDigits: 1,
                 maximumFractionDigits: 1
               }),
               kib: Math.round(info.compressedImageSize / 1024)
             })}
-          </Fact>
-          {info.unknownSections.length > 0 && (
-            <Fact label={t("panels.helpers.label.unknownSections")}>{info.unknownSections.join(", ")}</Fact>
-          )}
-        </Facts>
-      </FactSection>
+          />
+        </Row>
+        {info.unknownSections.length > 0 && (
+          <Row>
+            <LabeledText label={t("panels.helpers.label.unknownSections")} labelWidth={LABEL_WIDTH} value={info.unknownSections.join(", ")} />
+          </Row>
+        )}
+      </ExpandableRow>
     </>
   );
 };
