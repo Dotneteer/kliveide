@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   cardFileRequiredHint,
+  chooseImageHint,
   pristineCardHint,
   selectViewModel
 } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardViewModel";
@@ -22,8 +23,51 @@ describe("Z88InsertCardViewModel — card type", () => {
 });
 
 describe("Z88InsertCardViewModel — the file row", () => {
-  it("hides the row until a card type is chosen", () => {
-    expect(selectViewModel(aState()).file.kind).toBe("hidden");
+  it("invites an image before a card type is chosen, so its size can choose one", () => {
+    expect(selectViewModel(aState()).file).toMatchObject({
+      kind: "shown",
+      text: chooseImageHint(),
+      warning: false
+    });
+  });
+
+  it("says a smaller image goes at the top of the card", () => {
+    const state = aState({
+      cardTypeId: CardIds.EPROMUV32,
+      file: "cards/app.epr",
+      imageSize: 16 * 1024
+    });
+
+    expect(selectViewModel(state).file).toMatchObject({
+      note: { text: "The 16K image goes at the top of the 32K card.", warning: false }
+    });
+  });
+
+  it("warns when the chosen card cannot take the image", () => {
+    const state = aState({
+      cardTypeId: CardIds.EPROMUV32,
+      file: "cards/big.epr",
+      imageSize: 128 * 1024
+    });
+    const vm = selectViewModel(state);
+
+    expect(vm.file).toMatchObject({
+      note: {
+        text: "The 128K image does not fit a 32K card. Choose another card type.",
+        warning: true
+      }
+    });
+    expect(vm.insertEnabled).toBe(false);
+  });
+
+  it("adds no note when the image fills its card", () => {
+    const state = aState({
+      cardTypeId: CardIds.EPROMUV128,
+      file: "cards/a.epr",
+      imageSize: 128 * 1024
+    });
+
+    expect(selectViewModel(state).file).toMatchObject({ note: undefined });
   });
 
   it("hides the row for a card that has no image", () => {

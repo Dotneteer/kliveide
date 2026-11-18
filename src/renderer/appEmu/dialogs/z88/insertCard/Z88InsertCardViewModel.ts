@@ -2,8 +2,11 @@ import { t } from "@common/i18n/i18n";
 import {
   SLOT0,
   canInsert,
+  cardCapacityOf,
   cardOptionsFor,
-  needsFile,
+  imageIsPadded,
+  imageMisfits,
+  offersFile,
   type Z88InsertCardState
 } from "./Z88InsertCardModel";
 
@@ -15,6 +18,24 @@ export function pristineCardHint(): string {
 
 export function cardFileRequiredHint(): string {
   return t("dialog.z88.insertCard.fileRequiredHint");
+}
+
+export function chooseImageHint(): string {
+  return t("dialog.z88.insertCard.chooseImageHint");
+}
+
+export function imageAtTopNote(imageSize: number, cardSize: number): string {
+  return t("dialog.z88.insertCard.imageAtTop", {
+    imageKb: Math.floor(imageSize / 1024),
+    cardKb: Math.floor(cardSize / 1024)
+  });
+}
+
+export function imageTooLargeNote(imageSize: number, cardSize: number): string {
+  return t("dialog.z88.insertCard.imageMisfit", {
+    imageKb: Math.floor(imageSize / 1024),
+    cardKb: Math.floor(cardSize / 1024)
+  });
 }
 
 export function invalidCardTitle(): string {
@@ -55,6 +76,9 @@ export type CardFileViewModel =
       warning: boolean;
       // --- Only a chosen file can be taken back off.
       clearable: boolean;
+      // --- How the chosen image goes into the chosen card: at its top when it is
+      // --- smaller, or not at all (a warning, and Ok is disabled).
+      note?: { text: string; warning: boolean };
     };
 
 export type Z88InsertCardViewModel = {
@@ -82,8 +106,9 @@ export function selectViewModel(state: Z88InsertCardState): Z88InsertCardViewMod
 }
 
 function selectFile(state: Z88InsertCardState): CardFileViewModel {
-  // --- Only a card that is backed by an image has a file row at all.
-  if (!needsFile(state)) return { kind: "hidden" };
+  // --- Only a card that is backed by an image has a file row; so does the
+  // --- dialog before a type is chosen, so the image can choose it.
+  if (!offersFile(state)) return { kind: "hidden" };
 
   if (state.file) {
     return {
@@ -94,16 +119,32 @@ function selectFile(state: Z88InsertCardState): CardFileViewModel {
       text: state.file.startsWith("/") ? state.file.substring(1) : state.file,
       selected: true,
       warning: false,
-      clearable: true
+      clearable: true,
+      note: selectNote(state)
     };
   }
 
   const isCardSlot = state.slot > SLOT0;
   return {
     kind: "shown",
-    text: isCardSlot ? pristineCardHint() : cardFileRequiredHint(),
+    text: !isCardSlot
+      ? cardFileRequiredHint()
+      : state.cardTypeId === undefined
+        ? chooseImageHint()
+        : pristineCardHint(),
     selected: false,
     warning: !isCardSlot,
     clearable: false
   };
+}
+
+function selectNote(state: Z88InsertCardState): { text: string; warning: boolean } | undefined {
+  const capacity = cardCapacityOf(state.cardTypeId);
+  if (imageMisfits(state)) {
+    return { text: imageTooLargeNote(state.imageSize, capacity), warning: true };
+  }
+  if (imageIsPadded(state)) {
+    return { text: imageAtTopNote(state.imageSize, capacity), warning: false };
+  }
+  return undefined;
 }

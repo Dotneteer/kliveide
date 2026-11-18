@@ -59,15 +59,25 @@ Each panel has small buttons: insert a card into an empty slot, eject a card, an
 Click the insert button on an empty slot's panel. Klive signals the Z88 that the slot's flap opened,
 as the real machine does, and opens **Insert Z88 Card - Slot** *n*.
 
-### Choose the card type
+### Choose the card file or the card type
 
-Pick a **Card type**: a RAM card (32K to 1M), a UV EPROM (32K, 128K or 256K), an Intel Flash
-(28F004S5 512K, 28F008S5 1M) or an AMD Flash (29F040B 512K, 29F080B 1M).
+Click the file row to select a card file (an EPROM or ROM image). Klive selects the card type from
+the image's size: a UV EPROM of 32K, 128K or 256K for an image up to that size, an AMD Flash 29F040B
+(512K) up to 512K, and an AMD Flash 29F080B (1M) above. If you chose a type first, Klive keeps to its
+kind (EPROM, Intel Flash or AMD Flash) when one of them is large enough.
+
+You can still pick another **Card type**: a RAM card (32K to 1M), a UV EPROM (32K, 128K or 256K), an
+Intel Flash (28F004S5 512K, 28F008S5 1M) or an AMD Flash (29F040B 512K, 29F080B 1M).
 
 ### Use a file or a blank card
 
-Select a card file (an EPROM or ROM image) to put its content on the card, or keep
-**Use pristine card** for an empty one. A file of a size the slot does not allow is refused.
+An image smaller than its card, such as a 16K application on a 32K EPROM, goes at the top of the
+card, where the Z88 looks for the card's header; the dialog says so under the file. A card too small
+for the image turns that line red, and **OK** stays disabled until you choose a larger one. A file
+that is not a whole number of 16K banks, or is larger than 1M, is refused. Slot 0 takes only a 128K,
+256K or 512K ROM image, on a card of exactly that size.
+
+With no file, keep **Use pristine card** for an empty card.
 
 </Steps>
 

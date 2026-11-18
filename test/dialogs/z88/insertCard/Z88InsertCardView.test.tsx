@@ -22,6 +22,26 @@ function renderView(
 }
 
 describe("Z88InsertCardView — the file row", () => {
+  it("shows how the image goes into the card", () => {
+    renderView({
+      file: {
+        kind: "shown",
+        text: "cards/a.epr",
+        note: { text: "The 16K image goes at the top of the 32K card.", warning: false }
+      }
+    });
+
+    expect(screen.getByTestId("z88-card-file-note")).toHaveTextContent(
+      "The 16K image goes at the top of the 32K card."
+    );
+  });
+
+  it("renders no note when the view model has none", () => {
+    renderView({ file: { kind: "shown", text: "cards/a.epr" } });
+
+    expect(screen.queryByTestId("z88-card-file-note")).not.toBeInTheDocument();
+  });
+
   it("renders no file row when the view model hides it", () => {
     renderView({ file: { kind: "hidden" } });
 

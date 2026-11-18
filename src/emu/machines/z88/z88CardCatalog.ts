@@ -76,6 +76,28 @@ export function z88CardSizeInBytes(sizeK: number): number {
   }
 }
 
+/** The bank size of the Z88: card images come in whole 16K banks */
+export const Z88_BANK_SIZE = 0x4000;
+
+/**
+ * Fits a card image to the card it goes into. An image shorter than the card - a 16K application
+ * on a 32K EPROM, a 64K one on a 128K EPROM - is placed at the top of the card, where the Z88 looks
+ * for a card's header (the top of its last bank), and the banks below it are left erased ($FF). An
+ * image as long as the card is returned unchanged.
+ * @param contents The card image
+ * @param cardSizeInBytes The card's size in bytes
+ * @throws When the image is longer than the card
+ */
+export function fitZ88CardImage(contents: Uint8Array, cardSizeInBytes: number): Uint8Array {
+  if (contents.length === cardSizeInBytes) return contents;
+  if (contents.length > cardSizeInBytes) {
+    throw new Error(`Invalid initial content size (${contents.length}/${cardSizeInBytes})`);
+  }
+  const fitted = new Uint8Array(cardSizeInBytes).fill(0xff);
+  fitted.set(contents, cardSizeInBytes - contents.length);
+  return fitted;
+}
+
 /**
  * Gets the chip (address line) mask of a card of the specified size. The mask selects the bank
  * bits the card decodes; a smaller card is mirrored across its slot.

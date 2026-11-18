@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ResponseMessage } from "@messaging/messages-core";
 
 import createAppStore from "@state/store";
-import { MC_Z88_SLOT1, MC_Z88_SLOT2 } from "@common/machines/constants";
+import { MC_Z88_SLOT1, MC_Z88_SLOT2, MC_Z88_SLOT3 } from "@common/machines/constants";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { CardIds } from "@emu/machines/z88/CardIds";
@@ -73,6 +73,25 @@ describe("Z88 host - configure()", () => {
 
     expect(machine.directReadMemory(1 * SLOT_BASE)).toBe(0x5a);
     expect(machine.directReadMemory(1 * SLOT_BASE + 0x7fff)).toBe(0x5a);
+  });
+
+  it("puts a card image smaller than its card at the top of the card (issue #1655)", async () => {
+    const machine = await createZ88();
+    // --- A 16K application on a 32K EPROM: its header is at the top of its one bank
+    const app = new Uint8Array(0x4000).fill(0x5a);
+    app[0x3fff] = 0x3c;
+    machine.setMachineProperty(FILE_PROVIDER, delayedFileProvider({ "app16k.epr": app }));
+    machine.dynamicConfig = {
+      [MC_Z88_SLOT3]: { size: 32, cardType: CardIds.EPROMUV32, file: "app16k.epr" }
+    };
+
+    await machine.configure();
+
+    // --- The lower bank is erased; the image is the upper one, which the slot's top bank ($3F)
+    // --- mirrors
+    expect(machine.directReadMemory(3 * SLOT_BASE)).toBe(0xff);
+    expect(machine.directReadMemory(3 * SLOT_BASE + 0x4000)).toBe(0x5a);
+    expect(machine.directReadMemory(3 * SLOT_BASE + 0x7fff)).toBe(0x3c);
   });
 
   it("inserts the other slots even when one card file cannot be read", async () => {

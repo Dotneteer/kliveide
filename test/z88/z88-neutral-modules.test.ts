@@ -24,7 +24,8 @@ import {
   z88ChipMaskForSize,
   z88InternalRamSizeInBytes,
   z88RomImageCardSpec,
-  z88SlotHasCard
+  z88SlotHasCard,
+  fitZ88CardImage
 } from "@emu/machines/z88/z88CardCatalog";
 import { CardIds } from "@emu/machines/z88/CardIds";
 import { goldens } from "../wasm/z88/z88-goldens";
@@ -207,5 +208,39 @@ describe("z88LcdSizeRegisters (the LCD size rule)", () => {
     ["1024x768", 0xff, 8]
   ])("%s: SCW %i, SCH %i", (size, scw, sch) => {
     expect(z88LcdSizeRegisters(size)).toEqual({ scw, sch });
+  });
+});
+
+describe("fitZ88CardImage (an image smaller than its card)", () => {
+  it("returns an image as long as the card unchanged", () => {
+    const image = new Uint8Array(0x8000).fill(0x12);
+    expect(fitZ88CardImage(image, 0x8000)).toBe(image);
+  });
+
+  it("puts a 16K image in the top bank of a 32K card and leaves the rest erased", () => {
+    const image = new Uint8Array(0x4000).fill(0x5a);
+    image[0x3fff] = 0x3c;
+    const fitted = fitZ88CardImage(image, 0x8000);
+
+    expect(fitted.length).toBe(0x8000);
+    expect(fitted.subarray(0, 0x4000).every((b) => b === 0xff)).toBe(true);
+    expect(fitted[0x4000]).toBe(0x5a);
+    // --- The card header, at the top of the image, stays at the top of the card
+    expect(fitted[0x7fff]).toBe(0x3c);
+  });
+
+  it("puts a 64K image in the top banks of a 128K card", () => {
+    const image = new Uint8Array(0x1_0000).fill(0x77);
+    const fitted = fitZ88CardImage(image, 0x2_0000);
+
+    expect(fitted[0xffff]).toBe(0xff);
+    expect(fitted[0x1_0000]).toBe(0x77);
+    expect(fitted[0x1_ffff]).toBe(0x77);
+  });
+
+  it("refuses an image longer than the card", () => {
+    expect(() => fitZ88CardImage(new Uint8Array(0x2_0000), 0x8000)).toThrow(
+      "Invalid initial content size (131072/32768)"
+    );
   });
 });
