@@ -86,11 +86,17 @@ export const Z88_BANK_SIZE = 0x4000;
  * image as long as the card is returned unchanged.
  * @param contents The card image
  * @param cardSizeInBytes The card's size in bytes
- * @throws When the image is longer than the card
+ * @throws When the image is longer than the card, or is not a whole number of banks
  */
 export function fitZ88CardImage(contents: Uint8Array, cardSizeInBytes: number): Uint8Array {
   if (contents.length === cardSizeInBytes) return contents;
-  if (contents.length > cardSizeInBytes) {
+  // --- Only whole banks are padded: a part of a bank is not a card image (the card dialog refuses
+  // --- it too), and the machine reports it as it always did
+  if (
+    contents.length > cardSizeInBytes ||
+    contents.length === 0 ||
+    contents.length % Z88_BANK_SIZE !== 0
+  ) {
     throw new Error(`Invalid initial content size (${contents.length}/${cardSizeInBytes})`);
   }
   const fitted = new Uint8Array(cardSizeInBytes).fill(0xff);

@@ -238,6 +238,15 @@ describe("fitZ88CardImage (an image smaller than its card)", () => {
     expect(fitted[0x1_ffff]).toBe(0x77);
   });
 
+  it("refuses an image that is not a whole number of banks", () => {
+    expect(() => fitZ88CardImage(new Uint8Array(100), 0x8000)).toThrow(
+      "Invalid initial content size (100/32768)"
+    );
+    expect(() => fitZ88CardImage(new Uint8Array(0), 0x8000)).toThrow(
+      "Invalid initial content size (0/32768)"
+    );
+  });
+
   it("refuses an image longer than the card", () => {
     expect(() => fitZ88CardImage(new Uint8Array(0x2_0000), 0x8000)).toThrow(
       "Invalid initial content size (131072/32768)"
