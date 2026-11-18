@@ -8,11 +8,7 @@ import type { DebugRecordingReadResult } from "@common/debugRecording/debugRecor
 import type { DebugRecordingCompatibility } from "@common/debugRecording/debugRecordingTypes";
 
 import { GenericFilePanel } from "../helpers/GenericFilePanel";
-import { ExpandableRow } from "@renderer/controls/layout/ExpandableRow";
-import { LabeledText } from "@renderer/controls/layout/LabeledText";
-import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
-import { Row } from "@renderer/controls/layout/Row";
-import { Text } from "@renderer/controls/layout/Text";
+import { Fact, FactFlag, FactNote, Facts, FactSection, FactsWithPicture } from "@renderer/controls/data/FileFacts";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -26,7 +22,7 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/s
  * the saved moment, the machine, the Klive build, how long and how much it recorded, its breakpoints,
  * media and sources, the note - and whether this build can replay it, which the emulator can tell
  * when it runs the recording's core (D3). It reads the file without inflating the timeline and runs
- * no core. Built only from the shared viewer primitives - no stylesheet, no colour, as the `.kls`
+ * no core. Built from the shared file-facts primitives (`controls/data/FileFacts`), as the `.kls`
  * viewer.
  */
 
@@ -136,186 +132,134 @@ const RecordingView = ({ ctx, fileSize }: { ctx: ViewContext; fileSize: number }
   const sources = info.sources;
   return (
     <>
-      <ExpandableRow
-        heading={t("panels.debugRecording.heading")}
-        initialExpanded={ctx.viewState?.summaryExpanded ?? true}
-        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
+      <FactSection
+        title={t("panels.debugRecording.heading")}
+        expanded={ctx.viewState?.summaryExpanded ?? true}
+        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.summaryExpanded = exp))}
       >
-        <Row>
-          <LabeledText label={t("panels.helpers.label.machine")} labelWidth={LABEL_WIDTH} value={h.machineName ?? h.machineId} />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.helpers.label.saved")}
-            labelWidth={LABEL_WIDTH}
-            value={isNaN(savedAt.getTime()) ? h.savedAt : savedAt.toLocaleString(uiLocale())}
-          />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.helpers.label.savedBy")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.debugRecording.savedBy", { version: h.kliveVersion, build: h.codeHash.slice(0, 8) })}
-          />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.debugRecording.length")}
-            labelWidth={LABEL_WIDTH}
-            value={t("panels.debugRecording.lengthValue", {
-              duration: formatReverseSeconds(h.seconds),
-              frames: Math.round(h.frames),
-              instructions: h.records
-            })}
-          />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.debugRecording.keyframes")}
-            labelWidth={LABEL_WIDTH}
-            value={t(
-              h.sparse
-                ? h.from
-                  ? "panels.debugRecording.keyframesSparseTrimmed"
-                  : "panels.debugRecording.keyframesSparse"
-                : h.from
-                  ? "panels.debugRecording.keyframesTrimmed"
-                  : "panels.debugRecording.keyframesValue",
-              { count: h.keyframes }
-            )}
-          />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.debugRecording.opensAt")}
-            labelWidth={LABEL_WIDTH}
-            value={t(h.cursor ? "panels.debugRecording.opensAtCursor" : "panels.debugRecording.opensAtEnd", {
-              pc: `$${toHexa4(h.pc)}`
-            })}
-          />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.debugRecording.fileSize")} labelWidth={LABEL_WIDTH} value={sizeText(fileSize)} />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.debugRecording.opensInBuild")} labelWidth={LABEL_WIDTH} value={compatibilityText(compatibility, h.coreId)} />
-        </Row>
-        {info.note && (
-          <Row>
-            <LabeledText label={t("panels.debugRecording.note")} labelWidth={LABEL_WIDTH} value={info.note} />
-          </Row>
-        )}
-        {info.thumbnail && (
-          <Row>
-            <ScreenCanvas
-              data={info.thumbnail.rgba}
-              palette={[]}
-              zoomFactor={info.thumbnail.width <= 200 ? 2 : 1}
-              screenWidth={info.thumbnail.width}
-              screenHeight={info.thumbnail.height}
-              createPixelData={thumbnailPixels}
-            />
-          </Row>
-        )}
-      </ExpandableRow>
-      <ExpandableRow
-        heading={t("panels.debugRecording.breakpointsHeading")}
-        initialExpanded={ctx.viewState?.debugExpanded ?? true}
-        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.debugExpanded = exp))}
+        <FactsWithPicture
+          picture={
+            info.thumbnail && (
+              <ScreenCanvas
+                data={info.thumbnail.rgba}
+                palette={[]}
+                zoomFactor={info.thumbnail.width <= 200 ? 2 : 1}
+                screenWidth={info.thumbnail.width}
+                screenHeight={info.thumbnail.height}
+                createPixelData={thumbnailPixels}
+              />
+            )
+          }
+        >
+          <Facts labelWidth={LABEL_WIDTH}>
+            <Fact label={t("panels.helpers.label.machine")}>{h.machineName ?? h.machineId}</Fact>
+            <Fact label={t("panels.helpers.label.saved")}>
+              {isNaN(savedAt.getTime()) ? h.savedAt : savedAt.toLocaleString(uiLocale())}
+            </Fact>
+            <Fact label={t("panels.helpers.label.savedBy")}>
+              {t("panels.debugRecording.savedBy", { version: h.kliveVersion, build: h.codeHash.slice(0, 8) })}
+            </Fact>
+            <Fact label={t("panels.debugRecording.length")}>
+              {t("panels.debugRecording.lengthValue", {
+                duration: formatReverseSeconds(h.seconds),
+                frames: Math.round(h.frames),
+                instructions: h.records
+              })}
+            </Fact>
+            <Fact label={t("panels.debugRecording.keyframes")}>
+              {t(
+                h.sparse
+                  ? h.from
+                    ? "panels.debugRecording.keyframesSparseTrimmed"
+                    : "panels.debugRecording.keyframesSparse"
+                  : h.from
+                    ? "panels.debugRecording.keyframesTrimmed"
+                    : "panels.debugRecording.keyframesValue",
+                { count: h.keyframes }
+              )}
+            </Fact>
+            <Fact label={t("panels.debugRecording.opensAt")} tone="state">
+              {t(h.cursor ? "panels.debugRecording.opensAtCursor" : "panels.debugRecording.opensAtEnd", {
+                pc: `$${toHexa4(h.pc)}`
+              })}
+            </Fact>
+            <Fact label={t("panels.debugRecording.fileSize")}>{sizeText(fileSize)}</Fact>
+            <Fact label={t("panels.debugRecording.opensInBuild")}>{compatibilityText(compatibility, h.coreId)}</Fact>
+            {info.note && <Fact label={t("panels.debugRecording.note")}>{info.note}</Fact>}
+          </Facts>
+        </FactsWithPicture>
+      </FactSection>
+      <FactSection
+        title={t("panels.debugRecording.breakpointsHeading")}
+        expanded={ctx.viewState?.debugExpanded ?? true}
+        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.debugExpanded = exp))}
       >
-        <Row>
-          <LabeledText label={t("panels.debugRecording.breakpoints")} labelWidth={LABEL_WIDTH} value={String(breakpoints.length)} />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.debugRecording.watches")} labelWidth={LABEL_WIDTH} value={String(watches.length)} />
-        </Row>
-        <Row>
-          <Text text={t("panels.debugRecording.breakpointsNote")} />
-        </Row>
-      </ExpandableRow>
-      <ExpandableRow
-        heading={t("panels.helpers.heading.media")}
-        initialExpanded={ctx.viewState?.mediaExpanded ?? true}
-        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.mediaExpanded = exp))}
+        <Facts labelWidth={LABEL_WIDTH}>
+          <Fact label={t("panels.debugRecording.breakpoints")}>{breakpoints.length}</Fact>
+          <Fact label={t("panels.debugRecording.watches")}>{watches.length}</Fact>
+        </Facts>
+        <FactNote>{t("panels.debugRecording.breakpointsNote")}</FactNote>
+      </FactSection>
+      <FactSection
+        title={t("panels.helpers.heading.media")}
+        meta={info.media.length || undefined}
+        expanded={ctx.viewState?.mediaExpanded ?? true}
+        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.mediaExpanded = exp))}
       >
-        {info.media.length === 0 && (
-          <Row>
-            <Text text={t("panels.helpers.media.none")} />
-          </Row>
-        )}
-        {info.media.map((m) => (
-          <Row key={m.id}>
-            <LabeledText label={MEDIA_NAMES[m.id] ?? `${m.id}:`} labelWidth={LABEL_WIDTH} value={m.fileName ?? "-"} />
-          </Row>
-        ))}
-        {info.media.some((m) => m.id === MEDIA_SD_CARD) && (
-          <Row>
-            <Text text={t("panels.debugRecording.sdCardNote")} />
-          </Row>
-        )}
-        <Row>
-          <LabeledFlag label={t("panels.debugRecording.privateData")} labelWidth={LABEL_WIDTH} value={true} />
-        </Row>
-        <Row>
-          <Text text={t("panels.debugRecording.privateNote")} />
-        </Row>
-      </ExpandableRow>
-      <ExpandableRow
-        heading={t("panels.debugRecording.sources")}
-        initialExpanded={ctx.viewState?.sourcesExpanded ?? false}
-        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.sourcesExpanded = exp))}
+        <Facts labelWidth={LABEL_WIDTH}>
+          {info.media.map((m) => (
+            <Fact key={m.id} label={MEDIA_NAMES[m.id] ?? `${m.id}:`}>
+              {m.fileName ?? "-"}
+            </Fact>
+          ))}
+          <FactFlag label={t("panels.debugRecording.privateData")} value={true} />
+        </Facts>
+        {info.media.length === 0 && <FactNote>{t("panels.helpers.media.none")}</FactNote>}
+        {info.media.some((m) => m.id === MEDIA_SD_CARD) && <FactNote>{t("panels.debugRecording.sdCardNote")}</FactNote>}
+        <FactNote>{t("panels.debugRecording.privateNote")}</FactNote>
+      </FactSection>
+      <FactSection
+        title={t("panels.debugRecording.sources")}
+        meta={sources?.files.length || undefined}
+        expanded={ctx.viewState?.sourcesExpanded ?? false}
+        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.sourcesExpanded = exp))}
       >
-        {!sources?.files.length && (
-          <Row>
-            <Text text={t("panels.debugRecording.noSources")} />
-          </Row>
+        {!sources?.files.length && <FactNote>{t("panels.debugRecording.noSources")}</FactNote>}
+        {!!(sources?.mainFile || sources?.files.length) && (
+          <Facts labelWidth={LABEL_WIDTH}>
+            {sources?.mainFile && <Fact label={t("panels.debugRecording.mainFile")}>{sources.mainFile}</Fact>}
+            {sources?.files.map((f) => (
+              <Fact
+                key={f.path}
+                label={f.text !== undefined ? t("panels.debugRecording.embedded") : t("panels.debugRecording.identified")}
+              >
+                {f.path}
+              </Fact>
+            ))}
+          </Facts>
         )}
-        {sources?.mainFile && (
-          <Row>
-            <LabeledText label={t("panels.debugRecording.mainFile")} labelWidth={LABEL_WIDTH} value={sources.mainFile} />
-          </Row>
-        )}
-        {sources?.files.map((f) => (
-          <Row key={f.path}>
-            <LabeledText
-              label={f.text !== undefined ? t("panels.debugRecording.embedded") : t("panels.debugRecording.identified")}
-              labelWidth={LABEL_WIDTH} value={f.path} />
-          </Row>
-        ))}
-      </ExpandableRow>
-      <ExpandableRow
-        heading={t("panels.helpers.heading.file")}
-        initialExpanded={ctx.viewState?.fileExpanded ?? false}
-        onExpanded={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
+      </FactSection>
+      <FactSection
+        title={t("panels.helpers.heading.file")}
+        expanded={ctx.viewState?.fileExpanded ?? false}
+        onExpandedChange={(exp) => ctx.changeViewState((vs) => (vs.fileExpanded = exp))}
       >
-        <Row>
-          <LabeledText label={t("panels.helpers.label.machineId")} labelWidth={LABEL_WIDTH} value={`${h.machineId}${h.modelId ? ` / ${h.modelId}` : ""}`} />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.helpers.label.core")} labelWidth={LABEL_WIDTH} value={h.coreId} />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.helpers.label.fingerprint")} labelWidth={LABEL_WIDTH} value={h.fingerprint} />
-        </Row>
-        <Row>
-          <LabeledText label={t("panels.debugRecording.codeHash")} labelWidth={LABEL_WIDTH} value={h.codeHash} />
-        </Row>
-        <Row>
-          <LabeledText
-            label={t("panels.debugRecording.sections")}
-            labelWidth={LABEL_WIDTH}
-            value={Object.entries(info.sectionSizes)
+        <Facts labelWidth={LABEL_WIDTH}>
+          <Fact label={t("panels.helpers.label.machineId")}>{`${h.machineId}${h.modelId ? ` / ${h.modelId}` : ""}`}</Fact>
+          <Fact label={t("panels.helpers.label.core")}>{h.coreId}</Fact>
+          <Fact label={t("panels.helpers.label.fingerprint")}>{h.fingerprint}</Fact>
+          <Fact label={t("panels.debugRecording.codeHash")}>{h.codeHash}</Fact>
+          <Fact label={t("panels.debugRecording.sections")}>
+            {Object.entries(info.sectionSizes)
               .filter(([tag]) => tag !== "END")
               .map(([tag, size]) => `${tag} ${sizeText(size)}`)
               .join(" · ")}
-          />
-        </Row>
-        {info.unknownSections.length > 0 && (
-          <Row>
-            <LabeledText label={t("panels.helpers.label.unknownSections")} labelWidth={LABEL_WIDTH} value={info.unknownSections.join(", ")} />
-          </Row>
-        )}
-      </ExpandableRow>
+          </Fact>
+          {info.unknownSections.length > 0 && (
+            <Fact label={t("panels.helpers.label.unknownSections")}>{info.unknownSections.join(", ")}</Fact>
+          )}
+        </Facts>
+      </FactSection>
     </>
   );
 };

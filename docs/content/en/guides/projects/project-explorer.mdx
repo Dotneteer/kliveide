@@ -113,8 +113,11 @@ and their compilers are in [File types](/en/guides/projects/file-types/): `.kz80
 | `.bin`, `.rom` | The binary dump viewer |
 | `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, `.svg`, `.ico`, `.tiff`, `.tif` | The image viewer |
 
-The **binary dump viewer** shows the bytes in hexadecimal with their characters beside them, with a
-**Go To** address box. The **image viewer** offers **Original size** (with zoom buttons), **Fit Width**
+The **binary dump viewer** shows the bytes with their characters beside them, with the toolbar of
+[the Memory view](/en/guides/debugging/memory/#the-toolbar): **Go to** an offset, **Find** bytes
+(`21 ?? 58`) or quoted text, 8, 16 or 32 **Bytes** a row, **Hex** or **Dec**, and an **Inspector**
+that reads the byte under the cursor every way and sums up a selection (click, <kbd>Shift</kbd>+click
+or <kbd>Shift</kbd>+arrows). It only reads the file. The **image viewer** offers **Original size** (with zoom buttons), **Fit Width**
 and **Fit Page**, and you can drag a large image to pan it.
 
 **Any other file** is checked when you first open it: valid UTF-8 text opens in the text editor,

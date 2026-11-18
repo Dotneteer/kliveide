@@ -1412,6 +1412,30 @@ headings look like strips of chrome in the content. `SectionHeader` is the primi
 *within* content: a disk track, a memory bank, a breakpoint group. Its own doc comment says so; the
 mistake recurs anyway, which is why it is here too.
 
+## A File Viewer's Facts
+
+A viewer that describes a file (a `.kls` state, a `.klr` debug recording, a `.sna`/`.z80`/`.szx`
+snapshot, an `.rzx` recording, a `.z88` snapshot) is built from `controls/data/FileFacts`, not from
+the old `ExpandableRow` / `LabeledText` / `LabeledFlag` rows (which only the Next file viewers still
+use). The rules the kit encodes:
+
+- **A section is a `SectionHeader` with a chevron**; a count goes after the title in the quiet
+  `meta` slot, and commands on what the section names (memory or disassembly at PC) sit in
+  `actions`, *outside* the clickable heading, so pressing one never folds the section.
+- **The label column is `minmax(<ch width>, max-content)`**: the `ch` floor lines the sections up,
+  and the column still grows to the longest label. A fixed `ch` column let "Opens in this build:"
+  run into its value, and a translation is longer still.
+- **Registers go in `FactCells` with a `labelWidth`**, so `AF:` and `AF':` put their values in the
+  same column; the cells wrap to the width. Two blocks in one section (Facts, then cells) get a
+  gap between them.
+- **Colour follows the data hierarchy**: a file's facts are neutral; a machine's *state* (registers,
+  ports, paging, the PC it opens at) takes `tone="state"`, `--color-state-value`, as the register
+  panels do. Yes/no is the Next Registers' dot (`FactFlag`), centred on the label's line, not on its
+  baseline. Errors and warnings are `FactNote` in the status tones, never a coloured value.
+- **The picture is framed beside the summary** (`FactsWithPicture`) and wraps under it when narrow.
+- **A command inside a label stays on the label's line**: a `dt` holding a button is an inline flex
+  row (the RZX segment's Play), otherwise the button breaks the label in two.
+
 ## A Header Action The Machine State Forbids Stays, Disabled, And Its Tooltip Says Why
 
 A document-header action that cannot run in the current machine state (the Execution History's
@@ -2742,6 +2766,13 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   its top and the document's bottom (`ResizeObserver` on the document) and scrolls its grid in a
   `ScrollViewer` with `sizeToContent`, between a fixed head and hint. With `overflow: auto` and only
   `70vh` the Next's last 300 partitions could not be reached.
+- **Every hex dump uses the frame, not only the live one.** The binary file viewer and the popped-out
+  bank dumps take the same controls (`FrameControls`), the same per-row marks (`byteMarks.ts`), the
+  same cursor, selection and Find (`useByteView`) and the same Value and Selection sections
+  (`ByteSections.tsx`, a read-only `ByteInspector`); a dump with its own toolbar is how the old
+  8x2 layout and `AddressInput` outlived the Memory view's redesign. A document whose body is
+  monospace gives its header the UI font (`--main-font-family`): the frame's controls are
+  `font: inherit` and read in the code face otherwise.
 - **The Inspector toggle always shows or hides the column.** With nothing selected (the Disassembly
   view before a row is clicked) the column stays and says how to fill it; a column that appeared only
   with a selection made the toggle look broken. The header badge takes the warning hue when the inspected byte cannot be written (ROM, flash, an empty slot),

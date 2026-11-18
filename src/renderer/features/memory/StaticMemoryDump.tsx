@@ -4,12 +4,10 @@ import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { STATIC_MEMORY_DUMP_VIEWER } from "@common/state/common-ids";
 import { Row } from "@renderer/controls/layout/Row";
-import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import classnames from "classnames";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
@@ -32,10 +30,13 @@ import {
 } from "@renderer/appIde/DocumentPanels/Next/nexBankDocument";
 import { evaluateBranch, type BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
 import { useRowSizes } from "@renderer/theming/useRowSizes";
-import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
-import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import frame from "@renderer/features/memoryMap/MemoryMap.module.scss";
+import { Check, FindBox, GoToBox, Segmented } from "@renderer/features/memoryMap/FrameControls";
+import { ByteInspector } from "@renderer/features/memoryMap/ByteSections";
+import { useByteView } from "@renderer/features/memoryMap/useByteView";
+import { parseGoToNumber } from "@renderer/features/memoryMap/goToTarget";
+import { GO_TO_ERROR_KEYS } from "@renderer/features/memoryMap/goToTarget";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Ht1080zCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/ht1080z-disassembler";
@@ -153,6 +154,10 @@ type MemoryDumpViewState = {
   disassOffset?: number;
   twoColumns?: boolean;
   charDump?: boolean;
+  /** Bytes a memory row shows: 8, 16 or 32 (16 when absent, as the old two 8-byte sections) */
+  bytesPerRow?: 8 | 16 | 32;
+  /** The memory view's inspector column (on when absent) */
+  inspector?: boolean;
   scrollPosition?: number;
   disassemblyScrollPosition?: number;
   version?: number;
@@ -285,36 +290,42 @@ const STATIC_DISASSEMBLY_FALLBACK_PAGE_ROWS = 16;
  */
 const GO_TO_PC_TITLE: MessageKey = "panels.feature.memory.goToPc";
 
-/* --- The view choices are translated where the toolbar renders, so these are functions (D7) */
-const graphicsViewModeOption = (t: TFunction): DropdownOption => ({
-  value: "graphics",
-  label: t("panels.feature.memory.viewMode.graphics")
-});
-
-/* --- Any dump can be read as graphics (§5.3); a dump with no disassembly offers just the two. */
-const memoryOnlyViewModeOptions = (t: TFunction): DropdownOption[] => [
-  { value: "memory", label: t("panels.feature.memory.viewMode.memory") },
-  graphicsViewModeOption(t)
-];
-
-const staticDumpViewModeOptions = (t: TFunction): DropdownOption[] => [
-  { value: "memory", label: t("panels.feature.memory.viewMode.memory") },
-  { value: "disassembly", label: t("panels.feature.memory.viewMode.disassembly") },
-  graphicsViewModeOption(t)
-];
-
-/* --- Sprites is offered for NEX banks only: a pattern sheet of an arbitrary dump means nothing. */
-const nexBankViewModeOptions = (t: TFunction): DropdownOption[] => [
-  ...staticDumpViewModeOptions(t),
-  { value: "sprites", label: t("panels.feature.memory.viewMode.sprites") }
-];
-
-function createStaticDisassemblyOffsetOptions(decimalView: boolean): DropdownOption[] {
-  return [0x0000, 0x4000, 0x8000, 0xc000].map((offset) => ({
-    value: offset.toString(10),
-    label: decimalView ? offset.toString(10) : `$${toHexa4(offset)}`
-  }));
+/*
+ * The views a dump offers, as the toolbar's segments; translated where the toolbar renders (D7). Any
+ * dump can be read as graphics (§5.3); a dump with no disassembly offers just the two; Sprites is for
+ * NEX banks only - a pattern sheet of an arbitrary dump means nothing.
+ */
+function viewModeSegments(
+  t: TFunction,
+  disassembly: boolean,
+  sprites: boolean
+): { value: StaticDumpViewMode; text: string }[] {
+  return [
+    { value: "memory" as const, text: t("panels.feature.memory.viewMode.memory") },
+    ...(disassembly ? [{ value: "disassembly" as const, text: t("panels.feature.memory.viewMode.disassembly") }] : []),
+    { value: "graphics" as const, text: t("panels.feature.memory.viewMode.graphics") },
+    ...(sprites ? [{ value: "sprites" as const, text: t("panels.feature.memory.viewMode.sprites") }] : [])
+  ];
 }
+
+/** The addresses a bank can be listed at: the four 16K slots */
+const DISASSEMBLY_OFFSETS = [0x0000, 0x4000, 0x8000, 0xc000];
+
+/** Hex / Dec, as the Memory view's toolbar has it */
+const NumberFormat = ({ decimal, onChange }: { decimal: boolean; onChange: (decimal: boolean) => void }) => {
+  const t = useT();
+  return (
+    <Segmented
+      label={t("panels.memoryView.numberFormat")}
+      value={decimal ? "dec" : "hex"}
+      options={[
+        { value: "hex", text: t("panels.memoryView.hex"), title: t("panels.memoryView.hexTitle") },
+        { value: "dec", text: t("panels.memoryView.dec"), title: t("panels.feature.memory.decimalTooltip") }
+      ]}
+      onChange={(v) => onChange(v === "dec")}
+    />
+  );
+};
 
 const StaticMemoryDump = ({
   document,
@@ -376,6 +387,11 @@ const StaticMemoryDump = ({
   );
   if (viewMode !== "sprites" && viewMode !== "graphics") lastListingView.current = viewMode;
   const decimalView = currentViewState.decimalView ?? false;
+  // --- The memory view's layout (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` D7): 16 bytes a row
+  // --- unless chosen otherwise, which is also what the old two 8-byte sections showed
+  const bytesPerRow: 8 | 16 | 32 = currentViewState.bytesPerRow ?? 16;
+  const charDump = currentViewState.charDump ?? true;
+  const memoryInspector = currentViewState.inspector ?? true;
   // --- On unless the reader turned it off: a named address is the more informative default, and a
   // --- listing that has never been configured should be the readable one.
   const sysVarNames = currentViewState.sysVarNames ?? true;
@@ -447,7 +463,7 @@ const StaticMemoryDump = ({
   // --- Versioned, so going to the same address twice still selects it the second time.
   const [spritesJumpAddress, setSpritesJumpAddress] = useState<{ address: number; version: number }>();
   const navDisassOffset = useRef(0);
-  const items = useMemo(() => createRowAddresses(contents.length, 16), [contents.length]);
+  const items = useMemo(() => createRowAddresses(contents.length, bytesPerRow), [contents.length, bytesPerRow]);
   const bankBreakpoints = useNexBankBreakpoints(viewAnnotationBank);
   /*
    * `undefined` — not an empty list — when there is nothing to say: no bank, or a machine that is
@@ -1220,10 +1236,10 @@ const StaticMemoryDump = ({
    */
   const rowIndexForAddress = useCallback(
     (address: number) => {
-      const index = Math.floor((address - disassOffset) / 16);
+      const index = Math.floor((address - disassOffset) / bytesPerRow);
       return Math.max(0, Math.min(index, Math.max(0, items.length - 1)));
     },
-    [disassOffset, items.length]
+    [disassOffset, items.length, bytesPerRow]
   );
 
   useEffect(() => {
@@ -1258,6 +1274,72 @@ const StaticMemoryDump = ({
   const changeDisassembleScreen = useCallback((next: boolean) => {
     changeViewState((vs) => (vs.disassembleScreen = next));
   }, [changeViewState]);
+
+  // ─── The memory view's frame (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md`): Bytes, Chars, the
+  // ─── inspector, a cursor and selection, Find
+  const changeBytesPerRow = useCallback(
+    (next: 8 | 16 | 32) => changeViewState((vs) => (vs.bytesPerRow = next)),
+    [changeViewState]
+  );
+  const changeCharDump = useCallback((next: boolean) => changeViewState((vs) => (vs.charDump = next)), [changeViewState]);
+  const changeMemoryInspector = useCallback(
+    (next: boolean) => changeViewState((vs) => (vs.inspector = next)),
+    [changeViewState]
+  );
+  const memoryListRef = useRef<HTMLDivElement>(null);
+  const memoryVisibleRows = () =>
+    Math.max(1, Math.floor((memoryVlApi.current?.viewportSize ?? 400) / dumpRowItemSize));
+  const revealMemoryByte = useCallback(
+    (index: number) => {
+      const api = memoryVlApi.current;
+      if (!api) return;
+      const row = Math.floor(index / bytesPerRow);
+      const start = api.findItemIndex(api.scrollOffset);
+      const count = Math.max(1, Math.floor(api.viewportSize / dumpRowItemSize));
+      if (row >= start && row < start + count - 1) return;
+      api.scrollToIndex(row < start ? row : Math.max(0, row - count + 2), { align: "start" });
+    },
+    [bytesPerRow, dumpRowItemSize]
+  );
+  const byteView = useByteView({ bytes: bankBytes, bytesPerRow, decimal: decimalView, reveal: revealMemoryByte });
+  const onDumpBytePointer = useCallback(
+    (index: number, kind: "down" | "drag", extend: boolean) => {
+      memoryListRef.current?.focus({ preventScroll: true });
+      byteView.onBytePointer(index, kind, extend);
+    },
+    [byteView]
+  );
+  /*
+   * Go to in the memory view: an address where the bank is listed (`disassOffset` on), as before, or
+   * an offset in the bank - the addresses the rows show.
+   */
+  const goToMemoryText = (text: string): string | undefined => {
+    const value = parseGoToNumber(text, decimalView);
+    if (value === undefined) return t(GO_TO_ERROR_KEYS.number);
+    const asAddress = value - disassOffset;
+    const index = asAddress >= 0 && asAddress < bankBytes.length ? asAddress : value < bankBytes.length ? value : -1;
+    if (index < 0) return t(GO_TO_ERROR_KEYS.range);
+    void navigationHistoryService.recordJump("memoryGoTo", () => {
+      const address = disassOffset + index;
+      navMemoryTop.current = address;
+      changeViewState((vs) => (vs.topAddress = address));
+      setMemoryJumpAddress(address);
+      byteView.moveTo(index, false, false);
+    });
+    return undefined;
+  };
+  /** Go to in the disassembly: an address of the listing */
+  const goToDisassemblyText = (text: string): string | undefined => {
+    const value = parseGoToNumber(text, decimalView);
+    if (value === undefined) return t(GO_TO_ERROR_KEYS.number);
+    if (value > 0xffff) return t(GO_TO_ERROR_KEYS.range);
+    void navigationHistoryService.recordJump("disassemblyGoTo", () => {
+      navDisassemblyTop.current = value;
+      changeViewState((vs) => (vs.topAddress = value));
+      jumpDisassemblyTo(value);
+    });
+    return undefined;
+  };
 
   const selectDisassemblyRow = useCallback((index: number, extendSelection: boolean) => {
     dispatchAnnotation({ type: "rowSelected", index, extend: extendSelection });
@@ -1540,66 +1622,57 @@ const StaticMemoryDump = ({
        --- were changed away from. 12.8px off the 16px root rather than the panel size the
        --- rows below it are drawn at. */
     <FullPanel fontFamily="--monospace-font" fontSize="--panel-font-size">
-      <PanelHeader>
+      <PanelHeader xclass={styles.header}>
         {contents && (
           <PanelHeaderGroup>
-            <Text text="View" />
-            <LabelSeparator />
-            <Dropdown
-              options={
-                !disassemblyEnabled
-                  ? memoryOnlyViewModeOptions(t)
-                  : isNexBankDocument
-                    ? nexBankViewModeOptions(t)
-                    : staticDumpViewModeOptions(t)
-              }
-              initialValue={viewMode}
-              width={104}
-              onChanged={(value) =>
-                changeViewMode(value as StaticDumpViewMode)
-              }
+            <Segmented
+              label={t("panels.feature.memory.viewModeLabel")}
+              value={viewMode}
+              options={viewModeSegments(t, disassemblyEnabled, disassemblyEnabled && isNexBankDocument)}
+              onChange={changeViewMode}
             />
           </PanelHeaderGroup>
         )}
         {viewMode === "disassembly" && (
           <>
             <PanelHeaderGroup>
-              <LabeledSwitch
-                value={decimalView}
-                label={t("panels.feature.memory.decimal")}
-                title={t("panels.feature.memory.decimalTooltip")}
-                clicked={changeDecimalView}
-              />
+              <NumberFormat decimal={decimalView} onChange={changeDecimalView} />
             </PanelHeaderGroup>
             {!isZ88Listing && (
               <PanelHeaderGroup>
-                <LabeledSwitch
+                <Check
                   value={sysVarNames}
                   label={t("panels.feature.memory.sysVars")}
                   title={t("panels.doc.disassembly.sysVarsTitle")}
-                  clicked={changeSysVarNames}
+                  onChange={changeSysVarNames}
                 />
               </PanelHeaderGroup>
             )}
             {screenSwitchOffered && (
               <PanelHeaderGroup>
-                <LabeledSwitch
+                <Check
                   value={disassembleScreen}
                   label={t("panels.feature.memory.screen")}
                   title={t("panels.feature.memory.screenTooltip")}
-                  clicked={changeDisassembleScreen}
+                  onChange={changeDisassembleScreen}
                 />
               </PanelHeaderGroup>
             )}
             <PanelHeaderGroup>
-              <Text text={t("panels.feature.memory.offset")} />
-              <LabelSeparator />
-              <Dropdown
-                options={createStaticDisassemblyOffsetOptions(decimalView)}
-                initialValue={disassOffset.toString(10)}
-                width={68}
-                onChanged={(value) => changeDisassemblyOffset(parseInt(value, 10))}
-              />
+              <span className={frame.toolLabel}>{t("panels.feature.memory.offset")}</span>
+              <select
+                className={frame.select}
+                value={disassOffset}
+                data-testid="disassembly-offset"
+                aria-label={t("panels.feature.memory.offset")}
+                onChange={(e) => changeDisassemblyOffset(parseInt(e.target.value, 10))}
+              >
+                {DISASSEMBLY_OFFSETS.map((offset) => (
+                  <option key={offset} value={offset}>
+                    {decimalView ? offset : `$${toHexa4(offset)}`}
+                  </option>
+                ))}
+              </select>
             </PanelHeaderGroup>
           </>
         )}
@@ -1650,19 +1723,52 @@ const StaticMemoryDump = ({
           </PanelHeaderGroup>
         )}
         {viewMode === "memory" && (
-          <PanelHeaderGroup>
-            <AddressInput
-              label={t("panels.feature.memory.goToAddress")}
-              decimalView={false}
-              onAddressSent={async (address) => {
-                await navigationHistoryService.recordJump("memoryGoTo", () => {
-                  navMemoryTop.current = address;
-                  changeViewState((vs) => (vs.topAddress = address));
-                  setMemoryJumpAddress(address);
-                });
-              }}
-            />
-          </PanelHeaderGroup>
+          <>
+            <PanelHeaderGroup>
+              <GoToBox
+                placeholder={t("panels.feature.memory.goToPlaceholder")}
+                title={t("panels.feature.memory.goToTitle")}
+                onGo={goToMemoryText}
+              />
+              <FindBox
+                placeholder={t("panels.memoryView.findPlaceholder")}
+                title={t("panels.memoryView.findBytesTitle")}
+                text={byteView.find.text}
+                count={byteView.find.matches?.length}
+                index={byteView.find.index}
+                invalid={byteView.find.invalid}
+                onTextChange={byteView.setFindText}
+                onSearch={byteView.runFind}
+                onStep={byteView.stepFind}
+              />
+            </PanelHeaderGroup>
+            <PanelHeaderGroup>
+              <span className={frame.toolLabel}>{t("panels.memoryView.bytes")}</span>
+              <Segmented
+                label={t("panels.memoryView.bytes")}
+                value={bytesPerRow}
+                options={[
+                  { value: 8, text: "8" },
+                  { value: 16, text: "16" },
+                  { value: 32, text: "32" }
+                ]}
+                onChange={(v) => changeBytesPerRow(v as 8 | 16 | 32)}
+              />
+              <NumberFormat decimal={decimalView} onChange={changeDecimalView} />
+              <Check
+                label={t("panels.feature.memory.chars")}
+                title={t("panels.feature.memory.charsTooltip")}
+                value={charDump}
+                onChange={changeCharDump}
+              />
+              <Check
+                label={t("panels.memoryView.inspector")}
+                title={t("panels.memoryView.inspectorTitle")}
+                value={memoryInspector}
+                onChange={changeMemoryInspector}
+              />
+            </PanelHeaderGroup>
+          </>
         )}
         {viewMode === "disassembly" && (
           <PanelHeaderGroup>
@@ -1677,17 +1783,10 @@ const StaticMemoryDump = ({
                 })
               }
             />
-            <AddressInput
-              label={t("panels.feature.memory.goTo")}
-              clearOnEnter={true}
-              decimalView={decimalView}
-              onAddressSent={async (address) => {
-                await navigationHistoryService.recordJump("disassemblyGoTo", () => {
-                  navDisassemblyTop.current = address;
-                  changeViewState((vs) => (vs.topAddress = address));
-                  jumpDisassemblyTo(address);
-                });
-              }}
+            <GoToBox
+              placeholder={t("panels.feature.memory.goToPlaceholder")}
+              title={t("panels.feature.memory.goToDisassemblyTitle")}
+              onGo={goToDisassemblyText}
             />
           </PanelHeaderGroup>
         )}
@@ -1760,6 +1859,21 @@ const StaticMemoryDump = ({
       )}
       <FullPanel>
         {contents && viewMode === "memory" ? (
+          <div className={classnames(frame.body, styles.memoryBody, { [frame.bodyNoInspector]: !memoryInspector })}>
+          <div
+            className={frame.listing}
+            ref={memoryListRef}
+            tabIndex={0}
+            role="grid"
+            aria-label={t("panels.memoryView.dump")}
+            style={{ outline: "none" }}
+            onKeyDown={(e) => {
+              if (byteView.onKeyDown(e, memoryVisibleRows())) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+          >
           <VirtualizedList
             items={items}
             itemSize={dumpRowItemSize}
@@ -1771,9 +1885,9 @@ const StaticMemoryDump = ({
               const topPos = pendingScrollPosition.current;
               changeViewState((vs) => (vs.scrollPosition = topPos));
               // --- Keep a jump's exact address while its row is still the top one.
-              const topRowAddress = disassOffset + Math.floor(topPos / dumpRowItemSize) * 16;
+              const topRowAddress = disassOffset + Math.floor(topPos / dumpRowItemSize) * bytesPerRow;
               const jumpRowAddress =
-                disassOffset + Math.floor((navMemoryTop.current - disassOffset) / 16) * 16;
+                disassOffset + Math.floor((navMemoryTop.current - disassOffset) / bytesPerRow) * bytesPerRow;
               if (jumpRowAddress !== topRowAddress) {
                 navMemoryTop.current = topRowAddress;
               }
@@ -1810,25 +1924,30 @@ const StaticMemoryDump = ({
                   <Row>
                     <MemoryDumpSection
                       address={item}
-                      bytes={bankBytes.subarray(item, item + 8)}
-                      changedBytes={changedFlagsIn(activeDiff, item, 8)}
-                      decimalView={false}
-                      charDump={true}
+                      bytes={bankBytes.subarray(item, item + bytesPerRow) as unknown as readonly number[]}
+                      changedBytes={changedFlagsIn(activeDiff, item, bytesPerRow)}
+                      decimalView={decimalView}
+                      charDump={charDump}
                       lastJumpAddress={-1}
-                    />
-                    <MemoryDumpSection
-                      address={item + 8}
-                      bytes={bankBytes.subarray(item + 8, item + 16)}
-                      changedBytes={changedFlagsIn(activeDiff, item + 8, 8)}
-                      decimalView={false}
-                      charDump={true}
-                      lastJumpAddress={-1}
+                      marks={byteView.marksOf(item, Math.min(bytesPerRow, bankBytes.length - item))}
+                      onBytePointer={onDumpBytePointer}
                     />
                   </Row>
                 </div>
               );
             }}
           />
+          </div>
+          {memoryInspector && (
+            <ByteInspector
+              bytes={bankBytes}
+              cursor={byteView.cursor}
+              selection={byteView.selection}
+              decimal={decimalView}
+              onFindBytes={byteView.setFindText}
+            />
+          )}
+          </div>
         ) : null}
         {contents && viewMode === "graphics" ? (
           <GraphicsView
