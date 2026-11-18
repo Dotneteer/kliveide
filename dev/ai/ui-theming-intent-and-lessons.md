@@ -2776,7 +2776,12 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   bank dumps take the same controls (`FrameControls`), the same per-row marks (`byteMarks.ts`), the
   same cursor, selection and Find (`useByteView`) and the same Value and Selection sections
   (`ByteSections.tsx`, a read-only `ByteInspector`); a dump with its own toolbar is how the old
-  8x2 layout and `AddressInput` outlived the Memory view's redesign. **A box that takes a typed
+  8x2 layout and `AddressInput` outlived the Memory view's redesign. **A byte preview inside another
+  view** (`StaticMemoryView`: a disk sector, a file on a disk, in the File Manager or on a hard disk)
+  draws the same rows - one `MemoryDumpSection` per 16-byte row in a `DataRow`, `useByteView`'s
+  cursor and selection - with no toolbar beyond the frame's `Check` for "Show all". Its cursor shows
+  only once the preview has had focus: a box on byte 0 of every sector is noise in its host. Its
+  offsets take four digits while what it shows fits in 64K, whatever the file's size. **A box that takes a typed
   address is `GoToBox`** everywhere (the Graphics Finder, a NEX bank's sprites, a tape block's List
   at, with `label` for a name other than Go to), parsed by `parseGoToNumber` and refusing with
   `GO_TO_ERROR_KEYS.number`; `AddressInput` is deleted. A document whose body is
