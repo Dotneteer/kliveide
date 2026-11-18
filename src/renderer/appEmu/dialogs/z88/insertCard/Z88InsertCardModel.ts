@@ -1,6 +1,8 @@
 import { MC_Z88_SLOT0 } from "@common/machines/constants";
 import type { MachineConfigSet } from "@common/machines/info-types";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
+import { Z88_BANK_SIZE, z88CardSpec } from "@emu/machines/z88/z88CardCatalog";
 import type { UiReducer } from "@mvc/core/types";
 import { cardTypes, type CardTypeData } from "../../../machines/z88Cards";
 
@@ -14,6 +16,22 @@ export const SLOT0 = 0;
 // --- emulator is concerned: only these three sizes fit, and swapping it is a
 // --- machine rebuild rather than a hot plug.
 export const SLOT0_ACCEPTED_SIZES_KB = [128, 256, 512];
+
+// --- The largest card a card slot takes: 1M, the whole slot.
+export const CARD_SLOT_MAX_IMAGE_KB = 1024;
+
+/**
+ * The card a card image of a given size gets when nothing else decides it: the smallest one that
+ * holds it, an EPROM up to 256K and an AMD flash card above (issue #1655). An image smaller than its
+ * card goes at the top of the card, so a 16K application lands on a 32K EPROM.
+ */
+export const DEFAULT_CARD_FOR_IMAGE: { maxKb: number; type: CardIds }[] = [
+  { maxKb: 32, type: CardIds.EPROMUV32 },
+  { maxKb: 128, type: CardIds.EPROMUV128 },
+  { maxKb: 256, type: CardIds.EPROMUV256 },
+  { maxKb: 512, type: CardIds.AMDF29F040B },
+  { maxKb: 1024, type: CardIds.AMDF29F080B }
+];
 
 export type Z88CardCheckResult = {
   content?: Uint8Array;
@@ -29,6 +47,8 @@ export type Z88InsertCardState = {
   // --- so state stays comparable by value.
   cardTypeId?: string;
   file?: string;
+  // --- The chosen image's length in bytes, when the main process could read it.
+  imageSize?: number;
   busy: boolean;
 };
 
@@ -37,14 +57,14 @@ export type Z88InsertCardState = {
 export type Z88InsertCardEvent =
   | { type: "envReplaced"; env: Z88Environment }
   | { type: "cardTypeChanged"; cardTypeId?: string }
-  | { type: "fileChanged"; file?: string }
+  | { type: "fileChanged"; file?: string; imageSize?: number }
   | { type: "insertStarted" }
   | { type: "insertSettled" };
 
 // ─── Initial state ───────────────────────────────────────────────────────────
 
 export function initialState(env: Z88Environment, slot: number): Z88InsertCardState {
-  return { env, slot, cardTypeId: undefined, file: undefined, busy: false };
+  return { env, slot, cardTypeId: undefined, file: undefined, imageSize: undefined, busy: false };
 }
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
@@ -60,7 +80,9 @@ export const reduce: UiReducer<Z88InsertCardState, Z88InsertCardEvent> = (state,
         : { ...state, cardTypeId: event.cardTypeId };
 
     case "fileChanged":
-      return event.file === state.file ? state : { ...state, file: event.file };
+      return event.file === state.file && event.imageSize === state.imageSize
+        ? state
+        : { ...state, file: event.file, imageSize: event.imageSize };
 
     case "insertStarted":
       return state.busy ? state : { ...state, busy: true };
@@ -97,45 +119,89 @@ export function cardOptionsFor(slot: number): { value: string; label: string }[]
 }
 
 /**
- * The card sizes the selected type can fall back to.
- *
- * Derived from the selection rather than stored, so picking a size-substituted
- * fallback also updates what the next file dialog will accept — the old
- * component kept a copy and left it stale.
+ * How many bytes a card type holds. The catalogue's own `size` is what a slot configuration stores;
+ * the chip decides (an AMD 29F080B is 1M whatever the configuration says), so ask the machine's
+ * card catalogue.
  */
-export function acceptedSizesOf(state: Z88InsertCardState): number[] {
-  return cardTypeOf(state.cardTypeId)?.fallback?.map((entry) => entry.size) ?? [];
-}
-
-// --- Slot 0 narrows the accepted set further: an EPROM size that is legal in a
-// --- card slot is not a legal internal ROM.
-export function pickerSizesOf(state: Z88InsertCardState): number[] {
-  const sizes = acceptedSizesOf(state);
-  return state.slot > SLOT0
-    ? sizes
-    : sizes.filter((size) => SLOT0_ACCEPTED_SIZES_KB.includes(size));
-}
-
-export function isAcceptedSize(acceptedSizesKb: number[], byteLength: number): boolean {
-  return acceptedSizesKb.some((size) => size * 1024 === byteLength);
+export function cardCapacityOf(cardTypeId: string | undefined): number | undefined {
+  const cardType = cardTypeOf(cardTypeId);
+  if (!cardType) return undefined;
+  try {
+    return z88CardSpec(cardType.value, cardType.size).sizeInBytes;
+  } catch {
+    return cardType.size * 1024;
+  }
 }
 
 /**
- * The card type a file's own size implies.
+ * Whether a card image of this length can go into the slot at all, whatever the card type.
  *
- * A "RAM" or "EPROM" choice is really a family; the actual chip is decided by
- * how big the image turned out to be.
+ * Slot 0 boots from its image, so the image must be a whole internal ROM. A card slot takes any
+ * whole number of 16K banks up to 1M: a shorter image goes at the top of a larger card.
  */
-export function fallbackTypeFor(
+export function isValidImageSize(slot: number, byteLength: number): boolean {
+  if (slot === SLOT0) {
+    return SLOT0_ACCEPTED_SIZES_KB.some((size) => size * 1024 === byteLength);
+  }
+  return (
+    byteLength > 0 &&
+    byteLength % Z88_BANK_SIZE === 0 &&
+    byteLength <= CARD_SLOT_MAX_IMAGE_KB * 1024
+  );
+}
+
+/**
+ * Whether a card type can take an image of this length in the slot: slot 0 needs an exact fit, a
+ * card slot a card at least as large as the image.
+ */
+export function imageFitsCard(
   cardTypeId: string | undefined,
+  slot: number,
+  byteLength: number
+): boolean {
+  const cardType = cardTypeOf(cardTypeId);
+  if (!cardType?.getFile) return false;
+  if (slot === SLOT0 && !cardType.allowInSlot0) return false;
+  const capacity = cardCapacityOf(cardTypeId);
+  return slot === SLOT0 ? capacity === byteLength : capacity >= byteLength;
+}
+
+/**
+ * The card type an image of this length gets by default (`DEFAULT_CARD_FOR_IMAGE`), restricted to
+ * the cards the slot takes.
+ */
+export function defaultCardTypeFor(slot: number, byteLength: number): string | undefined {
+  const allowed = allowedCardTypesFor(slot).map((card) => card.value as string);
+  return DEFAULT_CARD_FOR_IMAGE.find(
+    (entry) =>
+      entry.maxKb * 1024 >= byteLength &&
+      allowed.includes(entry.type) &&
+      imageFitsCard(entry.type, slot, byteLength)
+  )?.type;
+}
+
+/**
+ * The card type to select once an image's length is known.
+ *
+ * A type already chosen is treated as a family ("EPROM", "Intel flash"): the smallest member of it
+ * that takes the image wins, so choosing "EPROM 128K" and then a 32K image gives "EPROM 32K". When
+ * nothing is chosen, or the chosen family cannot take the image, the default for the image's size
+ * is selected (`DEFAULT_CARD_FOR_IMAGE`).
+ */
+export function cardTypeForImage(
+  cardTypeId: string | undefined,
+  slot: number,
   byteLength: number | undefined
 ): string | undefined {
-  const cardType = cardTypeOf(cardTypeId);
   // --- A check that came back with neither content nor a complaint leaves the
-  // --- selection alone rather than throwing on a missing length.
-  if (!cardType?.fallback || byteLength === undefined) return undefined;
-  const lengthKb = Math.floor(byteLength / 1024);
-  return cardType.fallback.find((entry) => entry.size === lengthKb)?.type;
+  // --- selection alone rather than guessing.
+  if (byteLength === undefined) return cardTypeId;
+  const family = cardTypeOf(cardTypeId)?.fallback ?? [];
+  const familyFit = family
+    .map((entry) => entry.type as string)
+    .filter((type) => imageFitsCard(type, slot, byteLength))
+    .sort((a, b) => cardCapacityOf(a) - cardCapacityOf(b))[0];
+  return familyFit ?? defaultCardTypeFor(slot, byteLength) ?? cardTypeId;
 }
 
 // ─── Derived rules ───────────────────────────────────────────────────────────
@@ -145,13 +211,49 @@ export function needsFile(state: Z88InsertCardState): boolean {
 }
 
 /**
+ * Whether the card-image row is shown: for a card backed by an image, and before any card type is
+ * chosen, so the image can come first and pick the card type from its size.
+ */
+export function offersFile(state: Z88InsertCardState): boolean {
+  return state.cardTypeId === undefined || needsFile(state);
+}
+
+/**
+ * Whether the chosen image goes into the chosen card. Unknown when either is missing, which is not
+ * a misfit.
+ */
+export function imageMisfits(state: Z88InsertCardState): boolean {
+  return (
+    needsFile(state) &&
+    !!state.file &&
+    state.imageSize !== undefined &&
+    !imageFitsCard(state.cardTypeId, state.slot, state.imageSize)
+  );
+}
+
+/** Whether the chosen image is shorter than its card, so it goes at the top of it. */
+export function imageIsPadded(state: Z88InsertCardState): boolean {
+  return (
+    needsFile(state) &&
+    !!state.file &&
+    state.imageSize !== undefined &&
+    !imageMisfits(state) &&
+    state.imageSize < cardCapacityOf(state.cardTypeId)
+  );
+}
+
+/**
  * Whether the dialog has enough to insert something.
  *
  * A card slot can take a blank card, so a type alone is enough there. Slot 0
  * cannot: the machine has to boot from something.
  */
 export function canInsert(state: Z88InsertCardState): boolean {
-  return !!state.cardTypeId && (state.slot > SLOT0 || !!state.file);
+  return (
+    !!state.cardTypeId &&
+    (state.slot > SLOT0 || (needsFile(state) && !!state.file)) &&
+    !imageMisfits(state)
+  );
 }
 
 export function slotStateOf(state: Z88InsertCardState): CardSlotState {
@@ -159,7 +261,8 @@ export function slotStateOf(state: Z88InsertCardState): CardSlotState {
   const slotState: CardSlotState = {
     cardType: cardType?.value,
     size: cardType?.size,
-    file: state.file
+    // --- An image chosen before switching to a card that takes none (RAM) is not loaded into it.
+    file: needsFile(state) ? state.file : undefined
   };
   // --- A file-backed card inserted without a file is a blank one; the machine
   // --- needs to be told so it formats rather than reads.

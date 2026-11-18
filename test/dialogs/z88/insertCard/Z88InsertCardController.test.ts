@@ -29,7 +29,7 @@ describe("Z88InsertCardController — choosing a card file", () => {
   it("rejects an image the slot cannot take, and says how big it was", async () => {
     const h = openInsertCardDialog({
       pickCardFile: "/cards/huge.epr",
-      checkCard: { content: cardImage(1024) }
+      checkCard: { content: cardImage(2048) }
     });
     await h.dispatch({ type: "cardTypeSelected", cardTypeId: CardIds.EPROMUV128 });
 
@@ -38,7 +38,7 @@ describe("Z88InsertCardController — choosing a card file", () => {
     expect(h.ports.cardFile.notify).toHaveBeenCalledWith(
       "error",
       invalidCardTitle(),
-      "The size of the selected card is 1048576 bytes (1024 KBytes), which is not allowed in this slot."
+      "The size of the selected card is 2097152 bytes (2048 KBytes), which is not allowed in this slot."
     );
     // --- A rejected pick must not look as though it had been taken.
     expect(h.state.file).toBeUndefined();
@@ -112,6 +112,50 @@ describe("Z88InsertCardController — choosing a card file", () => {
     await h.dispatch({ type: "selectCardFileRequested" });
 
     expect(h.state.cardTypeId).toBe(CardIds.EPROMUV256);
+  });
+
+  it("pre-selects the card type from the image's size when none is chosen (issue #1655)", async () => {
+    const h = openInsertCardDialog({
+      pickCardFile: "/cards/app16k.epr",
+      checkCard: { content: cardImage(16) }
+    });
+
+    await h.dispatch({ type: "selectCardFileRequested" });
+
+    expect(h.state.cardTypeId).toBe(CardIds.EPROMUV32);
+    expect(h.state.imageSize).toBe(16 * 1024);
+    expect(h.vm.insertEnabled).toBe(true);
+  });
+
+  it("lets the user change the pre-selected type to a larger card", async () => {
+    const h = openInsertCardDialog({
+      pickCardFile: "/cards/app64k.epr",
+      checkCard: { content: cardImage(64) }
+    });
+    await h.dispatch({ type: "selectCardFileRequested" });
+    expect(h.state.cardTypeId).toBe(CardIds.EPROMUV128);
+
+    await h.dispatch({ type: "cardTypeSelected", cardTypeId: CardIds.AMDF29F040B });
+    await h.dispatch({ type: "insertRequested" });
+
+    expect(h.ports.machine.applyCardState).toHaveBeenCalledWith(1, {
+      cardType: CardIds.AMDF29F040B,
+      size: 512,
+      file: "/cards/app64k.epr"
+    });
+  });
+
+  it("disables Ok when the user changes to a card too small for the image", async () => {
+    const h = openInsertCardDialog({
+      pickCardFile: "/cards/a.epr",
+      checkCard: { content: cardImage(128) }
+    });
+    await h.dispatch({ type: "selectCardFileRequested" });
+
+    await h.dispatch({ type: "cardTypeSelected", cardTypeId: CardIds.EPROMUV32 });
+
+    expect(h.state.file).toBe("/cards/a.epr");
+    expect(h.vm.insertEnabled).toBe(false);
   });
 
   it("lets the substituted type widen what the next pick accepts", async () => {

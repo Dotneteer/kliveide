@@ -27,7 +27,12 @@ import { EmulatedKeyStroke, tactsPast, toTactCounter } from "@emu/structs/Emulat
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Z88KeyCode } from "./Z88KeyCode";
 import { z88KeyMappings } from "./Z88KeyMappings";
-import { z88CardSpec, z88RomImageCardSpec, z88SlotHasCard } from "./z88CardCatalog";
+import {
+  fitZ88CardImage,
+  z88CardSpec,
+  z88RomImageCardSpec,
+  z88SlotHasCard
+} from "./z88CardCatalog";
 import {
   parseZ88PartitionLabel,
   resolveZ88KeyboardLayout,
@@ -205,7 +210,11 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
     const source = z88SlotSource(state);
     if (source === this.slotSources[slot]) return;
     const card = z88CardSpec(state.cardType, state.size);
-    const contents = state.file ? await this.loadRomFromFile(state.file) : undefined;
+    // --- A card slot takes an image smaller than its card (a 16K application on a 32K EPROM) at
+    // --- the top of the card; slot 0's ROM must fill its card (see `setup()`)
+    const contents = state.file
+      ? fitZ88CardImage(await this.loadRomFromFile(state.file), card.sizeInBytes)
+      : undefined;
     this.insertCard(slot, card, contents);
     this.slotSources[slot] = source;
   }

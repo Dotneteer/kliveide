@@ -5,11 +5,10 @@ import type { Z88Environment } from "../Z88Ports";
 import type { Z88InsertCardIntent } from "./Z88InsertCardIntents";
 import {
   canInsert,
+  cardTypeForImage,
   configWithSlot0,
-  fallbackTypeFor,
   initialState,
-  isAcceptedSize,
-  pickerSizesOf,
+  isValidImageSize,
   reduce,
   requiresRestart,
   slotStateOf,
@@ -25,7 +24,7 @@ import {
 } from "./Z88InsertCardViewModel";
 
 /**
- * Orchestrates the Insert Card dialog: pick a file, judge it, maybe substitute
+ * Orchestrates the Insert Card dialog: pick a file, judge it, select
  * the card type its size implies, then insert — hot into a card slot, or by
  * rebuilding the machine for slot 0.
  */
@@ -78,17 +77,17 @@ export class Z88InsertCardController extends UiController<
   }
 
   /**
-   * Chooses a card image and accepts it only if its size fits the slot.
+   * Chooses a card image, accepts it only if the slot can take an image of its size, and selects
+   * the card type that size implies (issue #1655): the user then clicks OK, or picks another type.
    *
    * Every rejection clears the field rather than leaving the previous file in
    * place — otherwise a rejected pick would look as though it had been taken.
    */
   private async selectCardFile(): Promise<void> {
-    const state = this.state;
-    const acceptedSizes = pickerSizesOf(state);
+    const slot = this.state.slot;
     const token = this.pickRun.begin();
 
-    const path = await this.ports.cardFile.pickCardFile(state.slot);
+    const path = await this.ports.cardFile.pickCardFile(slot);
     if (!token.isCurrent()) return;
     if (!path) {
       this.emit({ type: "fileChanged", file: undefined });
@@ -100,7 +99,7 @@ export class Z88InsertCardController extends UiController<
 
     if (check.content) {
       const byteLength = check.content.length;
-      if (!isAcceptedSize(acceptedSizes, byteLength)) {
+      if (!isValidImageSize(slot, byteLength)) {
         this.emit({ type: "fileChanged", file: undefined });
         await this.ports.cardFile.notify(
           "error",
@@ -115,12 +114,13 @@ export class Z88InsertCardController extends UiController<
       return;
     }
 
-    this.emit({ type: "fileChanged", file: path });
+    const imageSize = check.content?.length;
+    this.emit({ type: "fileChanged", file: path, imageSize });
 
-    // --- A family choice such as "EPROM" resolves to the actual chip once the
-    // --- image's size is known.
-    const fallback = fallbackTypeFor(this.state.cardTypeId, check.content?.length);
-    if (fallback) this.emit({ type: "cardTypeChanged", cardTypeId: fallback });
+    // --- The image's size decides the card: the smallest of the chosen family that holds it, or
+    // --- the default card for that size.
+    const cardTypeId = cardTypeForImage(this.state.cardTypeId, slot, imageSize);
+    this.emit({ type: "cardTypeChanged", cardTypeId });
   }
 
   private async insert(): Promise<void> {

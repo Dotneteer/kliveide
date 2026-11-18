@@ -2863,6 +2863,26 @@
   "@dialog.z88.insertCard.fileRequiredHint": {
     "context": "Clickable warning (in red) in the card-file row for slot 0, the internal ROM, which cannot be blank; clicking opens a file picker."
   },
+  "dialog.z88.insertCard.chooseImageHint": "Click to select a card image - its size sets the card type",
+  "@dialog.z88.insertCard.chooseImageHint": {
+    "context": "Clickable text in the card-file row of the Insert Z88 Card dialog before a card type is chosen: clicking opens a file picker, and the card type is then selected from the image's size (the user can still change it)."
+  },
+  "dialog.z88.insertCard.imageAtTop": "The {imageKb}K image goes at the top of the {cardKb}K card.",
+  "@dialog.z88.insertCard.imageAtTop": {
+    "context": "Note under the chosen card image in the Insert Z88 Card dialog when the image is smaller than the selected card: it is placed in the card's top banks, where the Z88 looks for an application card's header. \"K\" means kilobytes.",
+    "placeholders": {
+      "imageKb": "The image's size in kilobytes, a number such as 16",
+      "cardKb": "The selected card's size in kilobytes, a number such as 32"
+    }
+  },
+  "dialog.z88.insertCard.imageMisfit": "The {imageKb}K image does not fit a {cardKb}K card. Choose another card type.",
+  "@dialog.z88.insertCard.imageMisfit": {
+    "context": "Warning (in red) under the chosen card image in the Insert Z88 Card dialog when the selected card type cannot take the image (too small, or not exactly the image's size for slot 0, the internal ROM). OK is disabled until another type is chosen. \"K\" means kilobytes.",
+    "placeholders": {
+      "imageKb": "The image's size in kilobytes, a number such as 256",
+      "cardKb": "The selected card's size in kilobytes, a number such as 128"
+    }
+  },
   "dialog.z88.insertCard.invalidCard.title": "Invalid Z88 Card",
   "@dialog.z88.insertCard.invalidCard.title": {
     "context": "Title of the error message box when the chosen Z88 card image file cannot be used.",

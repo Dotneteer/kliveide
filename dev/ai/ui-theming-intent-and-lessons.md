@@ -934,7 +934,13 @@ about it.
 children end up next to each other, the note squeezing the field until its value is cut off. Wrap
 the pair in one column (`display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0`) and
 give the note its top margin there - the Create Disk File dialog's folder note
-(`CreateDiskDialog.module.scss`, `.fieldWithHint`).
+(`CreateDiskDialog.module.scss`, `.fieldWithHint`), and the Insert Z88 Card dialog's image note
+(`.fileField`).
+
+A note that can turn into a problem keeps one element and swaps its colour: `--text-secondary` while
+it informs ("the 16K image goes at the top of the 32K card"), `--status-error` while it is the reason
+OK is disabled. The field above it does not turn red as well (see "Two lines of prose about the same
+problem").
 
 ## A `min-width` Is A Column, Not A Gap
 

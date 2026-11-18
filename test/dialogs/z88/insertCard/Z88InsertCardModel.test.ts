@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  SLOT0_ACCEPTED_SIZES_KB,
-  acceptedSizesOf,
   allowedCardTypesFor,
   canInsert,
+  cardCapacityOf,
   cardOptionsFor,
+  cardTypeForImage,
   configWithSlot0,
-  fallbackTypeFor,
+  defaultCardTypeFor,
+  imageFitsCard,
+  imageIsPadded,
+  imageMisfits,
   initialState,
-  isAcceptedSize,
+  isValidImageSize,
   needsFile,
-  pickerSizesOf,
+  offersFile,
   reduce,
   requiresRestart,
   slotStateOf
@@ -53,37 +56,32 @@ describe("Z88InsertCardModel — the card catalogue", () => {
   });
 });
 
-describe("Z88InsertCardModel — accepted sizes", () => {
-  it("has no accepted sizes until a card type is chosen", () => {
-    expect(acceptedSizesOf(aState())).toEqual([]);
+describe("Z88InsertCardModel — image sizes", () => {
+  it("takes any whole number of 16K banks up to 1M in a card slot", () => {
+    for (const kb of [16, 32, 48, 64, 128, 192, 256, 512, 1024]) {
+      expect(isValidImageSize(1, kb * 1024)).toBe(true);
+    }
   });
 
-  it("takes the accepted sizes from the chosen card's fallbacks", () => {
-    const state = aState({ cardTypeId: CardIds.EPROMUV128 });
-
-    expect(acceptedSizesOf(state)).toEqual([32, 128, 256]);
+  it("refuses an empty, partial-bank or oversized image in a card slot", () => {
+    expect(isValidImageSize(1, 0)).toBe(false);
+    expect(isValidImageSize(1, 16 * 1024 - 1)).toBe(false);
+    expect(isValidImageSize(1, 2048 * 1024)).toBe(false);
   });
 
-  it("narrows the picker further for the internal ROM socket", () => {
-    // --- A 32K EPROM is a legal card but not a legal internal ROM.
-    const state = aState({ cardTypeId: CardIds.EPROMUV128 }, anEnv(), 0);
-
-    expect(pickerSizesOf(state)).toEqual([128, 256]);
-    expect(pickerSizesOf(state).every((size) => SLOT0_ACCEPTED_SIZES_KB.includes(size))).toBe(
-      true
-    );
+  it("takes only a whole internal ROM in slot 0", () => {
+    expect(isValidImageSize(0, 128 * 1024)).toBe(true);
+    expect(isValidImageSize(0, 256 * 1024)).toBe(true);
+    expect(isValidImageSize(0, 512 * 1024)).toBe(true);
+    expect(isValidImageSize(0, 32 * 1024)).toBe(false);
+    expect(isValidImageSize(0, 64 * 1024)).toBe(false);
   });
 
-  it("keeps every fallback size for a card slot", () => {
-    const state = aState({ cardTypeId: CardIds.EPROMUV128 }, anEnv(), 2);
-
-    expect(pickerSizesOf(state)).toEqual([32, 128, 256]);
-  });
-
-  it("measures an image against the accepted sizes in kilobytes", () => {
-    expect(isAcceptedSize([128], 128 * 1024)).toBe(true);
-    expect(isAcceptedSize([128], 128 * 1024 - 1)).toBe(false);
-    expect(isAcceptedSize([], 128 * 1024)).toBe(false);
+  it("measures a card by its chip, not by the configured size", () => {
+    // --- The catalogue stores 512 for the AMD 29F080B; the chip is 1M.
+    expect(cardCapacityOf(CardIds.AMDF29F080B)).toBe(1024 * 1024);
+    expect(cardCapacityOf(CardIds.EPROMUV32)).toBe(32 * 1024);
+    expect(cardCapacityOf(undefined)).toBeUndefined();
   });
 
   it("says how big the rejected card was, in both units", () => {
@@ -93,24 +91,92 @@ describe("Z88InsertCardModel — accepted sizes", () => {
   });
 });
 
-describe("Z88InsertCardModel — size-implied card type", () => {
-  it("resolves a card family to the chip the image's size implies", () => {
-    expect(fallbackTypeFor(CardIds.EPROMUV128, 32 * 1024)).toBe(CardIds.EPROMUV32);
-    expect(fallbackTypeFor(CardIds.EPROMUV32, 256 * 1024)).toBe(CardIds.EPROMUV256);
+describe("Z88InsertCardModel — which card takes an image", () => {
+  it("lets a card slot's card hold an image smaller than itself", () => {
+    expect(imageFitsCard(CardIds.EPROMUV32, 1, 16 * 1024)).toBe(true);
+    expect(imageFitsCard(CardIds.EPROMUV128, 1, 64 * 1024)).toBe(true);
+    expect(imageFitsCard(CardIds.EPROMUV32, 1, 64 * 1024)).toBe(false);
   });
 
-  it("leaves a card with no fallback table alone", () => {
-    expect(fallbackTypeFor(CardIds.RAM512, 512 * 1024)).toBeUndefined();
+  it("needs an exact fit in slot 0", () => {
+    expect(imageFitsCard(CardIds.EPROMUV128, 0, 128 * 1024)).toBe(true);
+    expect(imageFitsCard(CardIds.EPROMUV256, 0, 128 * 1024)).toBe(false);
   });
 
-  it("leaves the selection alone when the size matches no fallback", () => {
-    expect(fallbackTypeFor(CardIds.EPROMUV128, 64 * 1024)).toBeUndefined();
+  it("never puts an image on a card that takes none", () => {
+    expect(imageFitsCard(CardIds.RAM512, 1, 32 * 1024)).toBe(false);
+  });
+
+  it("pre-selects a card by the image's size (issue #1655)", () => {
+    expect(defaultCardTypeFor(1, 16 * 1024)).toBe(CardIds.EPROMUV32);
+    expect(defaultCardTypeFor(1, 32 * 1024)).toBe(CardIds.EPROMUV32);
+    expect(defaultCardTypeFor(1, 48 * 1024)).toBe(CardIds.EPROMUV128);
+    expect(defaultCardTypeFor(1, 64 * 1024)).toBe(CardIds.EPROMUV128);
+    expect(defaultCardTypeFor(1, 128 * 1024)).toBe(CardIds.EPROMUV128);
+    expect(defaultCardTypeFor(1, 192 * 1024)).toBe(CardIds.EPROMUV256);
+    expect(defaultCardTypeFor(1, 256 * 1024)).toBe(CardIds.EPROMUV256);
+    expect(defaultCardTypeFor(1, 384 * 1024)).toBe(CardIds.AMDF29F040B);
+    expect(defaultCardTypeFor(1, 512 * 1024)).toBe(CardIds.AMDF29F040B);
+    expect(defaultCardTypeFor(1, 1024 * 1024)).toBe(CardIds.AMDF29F080B);
+  });
+
+  it("pre-selects only an exactly fitting slot-0 card", () => {
+    expect(defaultCardTypeFor(0, 128 * 1024)).toBe(CardIds.EPROMUV128);
+    expect(defaultCardTypeFor(0, 256 * 1024)).toBe(CardIds.EPROMUV256);
+    expect(defaultCardTypeFor(0, 512 * 1024)).toBe(CardIds.AMDF29F040B);
+  });
+
+  it("selects the default card when nothing is chosen yet", () => {
+    expect(cardTypeForImage(undefined, 1, 16 * 1024)).toBe(CardIds.EPROMUV32);
+  });
+
+  it("keeps to the chosen family when a member of it holds the image", () => {
+    expect(cardTypeForImage(CardIds.EPROMUV128, 1, 32 * 1024)).toBe(CardIds.EPROMUV32);
+    expect(cardTypeForImage(CardIds.EPROMUV32, 1, 256 * 1024)).toBe(CardIds.EPROMUV256);
+    expect(cardTypeForImage(CardIds.IF28F004S5, 1, 1024 * 1024)).toBe(CardIds.IF28F008S5);
+    // --- The smallest that holds it: a 64K image goes on a 128K EPROM.
+    expect(cardTypeForImage(CardIds.EPROMUV256, 1, 64 * 1024)).toBe(CardIds.EPROMUV128);
+  });
+
+  it("leaves the family for the default when none of it holds the image", () => {
+    expect(cardTypeForImage(CardIds.EPROMUV128, 1, 512 * 1024)).toBe(CardIds.AMDF29F040B);
+    expect(cardTypeForImage(CardIds.RAM512, 1, 32 * 1024)).toBe(CardIds.EPROMUV32);
   });
 
   it("leaves the selection alone when the check returned no content", () => {
     // --- A check that produced neither an image nor a complaint has no length
     // --- to measure; the old component read `.length` off it and threw.
-    expect(fallbackTypeFor(CardIds.EPROMUV128, undefined)).toBeUndefined();
+    expect(cardTypeForImage(CardIds.EPROMUV128, 1, undefined)).toBe(CardIds.EPROMUV128);
+  });
+});
+
+describe("Z88InsertCardModel — the chosen image and the chosen card", () => {
+  it("offers the image row before a type is chosen, and for an image-backed type", () => {
+    expect(offersFile(aState())).toBe(true);
+    expect(offersFile(aState({ cardTypeId: CardIds.EPROMUV32 }))).toBe(true);
+    expect(offersFile(aState({ cardTypeId: CardIds.RAM512 }))).toBe(false);
+  });
+
+  it("puts a smaller image at the top of its card", () => {
+    const state = aState({ cardTypeId: CardIds.EPROMUV32, file: "/a.epr", imageSize: 16 * 1024 });
+
+    expect(imageIsPadded(state)).toBe(true);
+    expect(imageMisfits(state)).toBe(false);
+    expect(canInsert(state)).toBe(true);
+  });
+
+  it("refuses a card too small for the image", () => {
+    const state = aState({ cardTypeId: CardIds.EPROMUV32, file: "/a.epr", imageSize: 128 * 1024 });
+
+    expect(imageMisfits(state)).toBe(true);
+    expect(canInsert(state)).toBe(false);
+  });
+
+  it("does not load an image into a card that takes none", () => {
+    const state = aState({ cardTypeId: CardIds.RAM512, file: "/a.epr", imageSize: 32 * 1024 });
+
+    expect(canInsert(state)).toBe(true);
+    expect(slotStateOf(state).file).toBeUndefined();
   });
 });
 

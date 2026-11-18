@@ -3,6 +3,14 @@
   padding: 8px 0;
 }
 
+/* The file row and the note under it, as one column (DialogRow lays out side by side) */
+.fileField {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .filenameRow {
   display: flex;
   flex-direction: row;
@@ -26,6 +34,17 @@
   &.fileSelected {
     color: var(--color-text-hilite);
   }
+
+  &.warning {
+    color: var(--status-error);
+  }
+}
+
+/* How the image goes into the card: under the file row, clear of it */
+.note {
+  margin-top: var(--space-1_5);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 
   &.warning {
     color: var(--status-error);

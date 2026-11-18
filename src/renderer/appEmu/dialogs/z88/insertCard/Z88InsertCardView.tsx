@@ -35,43 +35,55 @@ export const Z88InsertCardView = ({ vm, dispatch }: Z88InsertCardViewProps) => {
       </DialogRow>
       {vm.file.kind === "shown" && (
         <DialogRow label={t("dialog.z88.insertCard.fileLabel")}>
-          <div className={styles.filenameRow}>
-            <div
-              data-testid="z88-card-file-browse"
-              className={styles.fileButton}
-              onClick={() => dispatch({ type: "selectCardFileRequested" })}
-            >
-              <IconButton
-                iconName="file-code"
-                buttonWidth={20}
-                buttonHeight={20}
-                title={t("dialog.z88.insertCard.selectFileTooltip")}
-              />
-            </div>
-            <div
-              data-testid="z88-card-file"
-              className={classnames(styles.filename, {
-                [styles.fileSelected]: vm.file.selected,
-                [styles.warning]: vm.file.warning
-              })}
-              onClick={() => dispatch({ type: "selectCardFileRequested" })}
-            >
-              {vm.file.text}
-            </div>
-            {vm.file.clearable && (
-              // --- The click lives on the wrapper rather than the IconButton so
-              // --- the control is addressable: IconButton renders a div with no
-              // --- role or accessible name of its own.
+          {/* --- One column: `DialogRow` lays its children side by side, and the note
+              --- belongs under the file, not beside it. */}
+          <div className={styles.fileField}>
+            <div className={styles.filenameRow}>
               <div
-                data-testid="z88-card-file-clear"
-                onClick={() => dispatch({ type: "clearCardFileRequested" })}
+                data-testid="z88-card-file-browse"
+                className={styles.fileButton}
+                onClick={() => dispatch({ type: "selectCardFileRequested" })}
               >
                 <IconButton
-                  iconName="close"
+                  iconName="file-code"
                   buttonWidth={20}
                   buttonHeight={20}
-                  title={t("dialog.z88.insertCard.usePristineTooltip")}
+                  title={t("dialog.z88.insertCard.selectFileTooltip")}
                 />
+              </div>
+              <div
+                data-testid="z88-card-file"
+                className={classnames(styles.filename, {
+                  [styles.fileSelected]: vm.file.selected,
+                  [styles.warning]: vm.file.warning
+                })}
+                onClick={() => dispatch({ type: "selectCardFileRequested" })}
+              >
+                {vm.file.text}
+              </div>
+              {vm.file.clearable && (
+                // --- The click lives on the wrapper rather than the IconButton so
+                // --- the control is addressable: IconButton renders a div with no
+                // --- role or accessible name of its own.
+                <div
+                  data-testid="z88-card-file-clear"
+                  onClick={() => dispatch({ type: "clearCardFileRequested" })}
+                >
+                  <IconButton
+                    iconName="close"
+                    buttonWidth={20}
+                    buttonHeight={20}
+                    title={t("dialog.z88.insertCard.usePristineTooltip")}
+                  />
+                </div>
+              )}
+            </div>
+            {vm.file.note && (
+              <div
+                data-testid="z88-card-file-note"
+                className={classnames(styles.note, { [styles.warning]: vm.file.note.warning })}
+              >
+                {vm.file.note.text}
               </div>
             )}
           </div>
