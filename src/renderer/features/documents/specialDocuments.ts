@@ -3,6 +3,8 @@ import {
   BASIC_PANEL_ID,
   COPPER_EDITOR,
   COPPER_PANEL_ID,
+  NEXTREGS_EDITOR,
+  NEXTREGS_PANEL_ID,
   DISASSEMBLY_EDITOR,
   DISASSEMBLY_PANEL_ID,
   MEMORY_EDITOR,
@@ -34,6 +36,7 @@ export type SpecialDocumentId =
   | typeof DISASSEMBLY_PANEL_ID
   | typeof BASIC_PANEL_ID
   | typeof COPPER_PANEL_ID
+  | typeof NEXTREGS_PANEL_ID
   | typeof SPRITES_PANEL_ID
   | typeof TILEMAP_PANEL_ID
   | typeof LAYER2_PANEL_ID
@@ -76,6 +79,13 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "bp-copper",
     workspaceRestorable: true
   }, { name: "panels.document.copperList" }),
+  // --- The ZX Spectrum Next registers, popped out of the Debug sidebar's Next Registers panel
+  [NEXTREGS_PANEL_ID]: withTexts({
+    id: NEXTREGS_PANEL_ID,
+    type: NEXTREGS_EDITOR,
+    iconName: "sliders-horizontal",
+    workspaceRestorable: true
+  }, { name: "panels.document.nextRegisters" }),
   // --- The ZX Spectrum Next sprites and pattern RAM (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4)
   [SPRITES_PANEL_ID]: withTexts({
     id: SPRITES_PANEL_ID,

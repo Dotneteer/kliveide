@@ -37,6 +37,7 @@ import {
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   COPPER_EDITOR,
+  NEXTREGS_EDITOR,
   HISTORY_EDITOR,
   PROFILER_EDITOR,
   GRAPHICS_EDITOR,
@@ -64,6 +65,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
+import { createNextRegDocumentPanel } from "./appIde/DocumentPanels/NextRegs/NextRegDocumentPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
 import { createFileManagerPanel } from "./appIde/DocumentPanels/FileManager/FileManagerPanel";
@@ -204,7 +206,7 @@ import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPan
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
-import { NextRegPanel } from "./appIde/SideBarPanels/NextRegPanel";
+import { NextRegPanel, NextRegPanelActions } from "./appIde/SideBarPanels/NextRegPanel";
 import { CopperPanel } from "./appIde/SideBarPanels/CopperPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
 import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
@@ -303,6 +305,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: NextRegPanel,
+    // --- Pops the panel out into the Next Registers document
+    headerActions: NextRegPanelActions,
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.nextRegisters" }),
   {
@@ -512,6 +516,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: COPPER_EDITOR,
     renderer: createCopperListPanel,
     icon: "bp-copper"
+  },
+  {
+    // --- The Next Registers panel popped out into a document
+    id: NEXTREGS_EDITOR,
+    renderer: createNextRegDocumentPanel,
+    icon: "sliders-horizontal"
   },
   {
     id: HISTORY_EDITOR,

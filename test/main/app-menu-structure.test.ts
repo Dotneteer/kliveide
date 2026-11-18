@@ -319,6 +319,7 @@ describe("the application menu", () => {
       "Disassembly",
       "Audio Mixer",
       "BASIC Listing",
+      "Next Registers",
       "Copper List",
       "Sprite Inspector",
       "Tilemap Inspector",

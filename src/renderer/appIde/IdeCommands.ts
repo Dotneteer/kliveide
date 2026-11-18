@@ -84,6 +84,7 @@ import {
   ShowMemoryCommand
 } from "./commands/ToolCommands";
 import { HideCopperCommand, ShowCopperCommand, StepCopperCommand } from "./commands/CopperCommands";
+import { HideNextRegsCommand, ShowNextRegsCommand } from "./commands/NextRegCommands";
 import { ShowTbuCommand } from "./commands/TbuCommands";
 import { ShowFwCommand } from "./commands/FwCommands";
 import {
@@ -229,6 +230,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ShowFwCommand());
   cmdSrv.registerCommand(new HideCopperCommand());
   cmdSrv.registerCommand(new StepCopperCommand());
+  cmdSrv.registerCommand(new ShowNextRegsCommand());
+  cmdSrv.registerCommand(new HideNextRegsCommand());
   cmdSrv.registerCommand(new ShowHistoryCommand());
   cmdSrv.registerCommand(new HideHistoryCommand());
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());

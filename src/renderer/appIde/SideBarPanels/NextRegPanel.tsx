@@ -1,15 +1,16 @@
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Value } from "@renderer/controls/layout/Value";
-import { useCallback, useEffect, useState } from "react";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useCallback, useState } from "react";
 import { toBin8, toHexa2 } from "../services/ide-commands";
-import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
 import {} from "@controls/Tooltip";
-import { NextRegDescriptor, NextRegValueSlice, RegValueState } from "@emu/machines/zxNext/nextRegDescriptors";
+import { NextRegValueSlice, RegValueState } from "@emu/machines/zxNext/nextRegDescriptors";
 import { isFlagSlice, sliceBits, sliceText, sliceValue } from "@common/zxnext/nextRegSlices";
-import { useEmuApi } from "@renderer/core/EmuApi";
+import { useNextRegDescriptors, useNextRegState } from "@renderer/features/nextRegs/useNextRegState";
+import { SmallIconButton } from "@controls/IconButton";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { DataRow } from "@renderer/controls/data";
 import { Icon } from "@renderer/controls/Icon";
@@ -130,17 +131,6 @@ const SliceRow = ({ slice, regValue }: { slice: NextRegValueSlice; regValue: num
   );
 };
 
-/*
- * The descriptor table, cached across mounts.
- *
- * It is static *per machine*, not global — so the machine it was fetched for is cached with it.
- * Keyed on nothing, a Next → Spectrum → Next round trip kept the first machine's slice descriptors
- * and showed them against the second's registers. `SysVarsPanel` re-fetches on `machineId` for the
- * same reason; §12.1 of the modernization plan is the rationale.
- */
-let nextRegDescriptors: Record<number, NextRegDescriptor>;
-let nextRegDescriptorsMachineId: string | undefined;
-
 /**
  * One register row, with **one** tooltip.
  *
@@ -211,21 +201,13 @@ const NextRegRow = ({ item, description, hasDetail, isExpanded, onToggle }: Next
 
 export const NextRegPanel = () => {
   const t = useT();
-  const emuApi = useEmuApi();
-  const machineId = useSelector((s) => s.emulatorState?.machineId);
-  const [lastRegIndex, setLastRegIndex] = useState<number>();
-  const [regVals, setRegVals] = useState<RegValueState[]>();
   /*
-   * Descriptors are held in state as well as in the module-level cache.
-   *
-   * The cache survives remounts so the fetch happens once per session; the state is what makes the
-   * rows re-render when it arrives. Without it the panel showed whatever the descriptors happened
-   * to be at the last state-refresh tick — tolerable when they fed only a tooltip, not when they
-   * decide whether a row has an expander at all.
+   * The descriptors and the state come from the hooks the Next Registers document reads too
+   * (`features/nextRegs/useNextRegState`): the descriptor table is cached per machine there, and
+   * the state refreshes with the machine.
    */
-  const [descriptors, setDescriptors] = useState<Record<number, NextRegDescriptor>>(
-    () => nextRegDescriptors
-  );
+  const descriptors = useNextRegDescriptors();
+  const { lastRegisterIndex: lastRegIndex, regs: regVals } = useNextRegState();
   /*
    * Which registers are expanded, held *here* rather than inside the row.
    *
@@ -242,33 +224,6 @@ export const NextRegPanel = () => {
       return next;
     });
   }, []);
-
-  useEffect(() => {
-    if (!emuApi) return;
-    if (nextRegDescriptors && nextRegDescriptorsMachineId === machineId) {
-      setDescriptors(nextRegDescriptors);
-      return;
-    }
-    emuApi.getNextRegDescriptors().then((response) => {
-      const table: Record<number, NextRegDescriptor> = {};
-      response.descriptors.forEach((d) => {
-        table[d.id] = d;
-      });
-      nextRegDescriptors = table;
-      nextRegDescriptorsMachineId = machineId;
-      setDescriptors(table);
-    });
-  }, [emuApi, machineId]);
-
-  // --- `useCallback`: `useEmuStateListener` keys its subscription on the callback's identity, and
-  // --- this panel re-renders every tick.
-  const refreshNextDeviceState = useCallback(async () => {
-    const response = await emuApi.getNextRegState();
-    setLastRegIndex(response.lastRegisterIndex);
-    setRegVals(response.regs);
-  }, [emuApi]);
-
-  useEmuStateListener(emuApi, refreshNextDeviceState);
 
   return (
     <div className={styles.nextRegPanel}>
@@ -315,3 +270,20 @@ export const NextRegPanel = () => {
   );
 };
 
+
+/**
+ * The panel header's pop-out button: opens the Next Registers document, which shows the same
+ * registers with the room of a document — grouping by index or by category, the bits drawn field
+ * by field and an inspector column.
+ */
+export const NextRegPanelActions = (_props: SideBarPanelBadgeProps) => {
+  const t = useT();
+  const { ideCommandsService } = useAppServices();
+  return (
+    <SmallIconButton
+      iconName="square-arrow-out-up-right"
+      title={t("panels.side.nextReg.popOut")}
+      clicked={() => void ideCommandsService.executeCommand("show-nextregs")}
+    />
+  );
+};

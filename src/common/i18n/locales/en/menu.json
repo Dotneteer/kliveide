@@ -1032,5 +1032,10 @@
       "card": "The card's ROM set id, shown verbatim, e.g. 'nextzxos-2.10'",
       "size": "Its size on disk in megabytes, e.g. '58.6'"
     }
+  },
+  "menu.next.nextRegisters": "Next Registers",
+  "@menu.next.nextRegisters": {
+    "context": "Item of View › Machine Views on the ZX Spectrum Next: opens the Next Registers document.",
+    "maxChars": 30
   }
 }
