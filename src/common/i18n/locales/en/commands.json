@@ -1880,5 +1880,17 @@
   "commands.audioMixer.noSound": "The current machine has no sound output",
   "@commands.audioMixer.noSound": {
     "context": "Error of the show-audio-mixer IDE command on a machine without sound (ZX80, ZX81)."
+  },
+  "commands.nextRegs.showDescription": "Displays the Next Registers document, optionally selecting a register",
+  "@commands.nextRegs.showDescription": {
+    "context": "Description of the 'show-nextregs' IDE command in the command help."
+  },
+  "commands.nextRegs.hideDescription": "Hides the Next Registers document",
+  "@commands.nextRegs.hideDescription": {
+    "context": "Description of the 'hide-nextregs' IDE command in the command help."
+  },
+  "commands.nextRegs.nextOnly": "The Next registers exist on the ZX Spectrum Next only",
+  "@commands.nextRegs.nextOnly": {
+    "context": "Error of the 'show-nextregs' IDE command when the current machine is not a ZX Spectrum Next."
   }
 }

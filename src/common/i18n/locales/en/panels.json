@@ -1085,5 +1085,10 @@
   "@panels.audioMixer.none": {
     "context": "Audio Mixer document (an IDE tab with one strip per sound source of the emulated machine - level meter, fader, mute and solo buttons, a small spectrum - and an analyser for the selected source): shown for a fact that has no value (a silent source has no strongest frequency).",
     "maxChars": 2
+  },
+  "panels.document.nextRegisters": "Next Registers",
+  "@panels.document.nextRegisters": {
+    "context": "Name of the Next Registers document tab (the ZX Spectrum Next's hardware registers), opened from the Debug sidebar's Next Registers panel or View › Machine Views.",
+    "maxChars": 24
   }
 }

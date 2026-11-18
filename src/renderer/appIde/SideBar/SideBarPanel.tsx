@@ -55,6 +55,7 @@ export const SideBarPanel = ({
   const newHeight = { height: `${suggestedSize}px` };
   // Capitalized, because JSX reads a lowercase tag name as an HTML element.
   const Badge = sideBar.badge;
+  const HeaderActions = sideBar.headerActions;
   const useScrollViewer = sideBar.useScrollViewer ?? true;
   return (
     <div
@@ -98,6 +99,20 @@ export const SideBarPanel = ({
           * has nothing to report also costs nothing here.
           */}
         {Badge && <Badge panelId={sideBar.id} expanded={expanded} />}
+        {/*
+          * The header-actions slot. The header itself toggles the panel on click and on Space or
+          * Enter, so the slot keeps both from reaching it: pressing a header button must run the
+          * button, not also fold the panel away.
+          */}
+        {HeaderActions && (
+          <span
+            className={styles.headerActions}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <HeaderActions panelId={sideBar.id} expanded={expanded} />
+          </span>
+        )}
       </div>
       {expanded && (
         <div className={styles.contentWrapper}>

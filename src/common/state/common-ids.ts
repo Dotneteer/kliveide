@@ -9,6 +9,9 @@ export const BASIC_PANEL_ID = "$basic";
 export const BASIC_EDITOR = "Basic";
 export const COPPER_PANEL_ID = "$copper";
 export const COPPER_EDITOR = "CopperList";
+// --- The ZX Spectrum Next registers as a document, popped out of the Debug sidebar panel
+export const NEXTREGS_PANEL_ID = "$nextRegs";
+export const NEXTREGS_EDITOR = "NextRegisters";
 export const SPRITES_PANEL_ID = "$sprites";
 export const SPRITES_EDITOR = "SpriteInspector";
 export const TILEMAP_PANEL_ID = "$tilemap";

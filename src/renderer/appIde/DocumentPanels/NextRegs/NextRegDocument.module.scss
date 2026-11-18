@@ -1,0 +1,692 @@
+@use "@styles/core.scss" as *;
+
+// --- The Next Registers document: a register list beside an inspector column. Every colour is a
+// --- token (values `--color-state-value`, the last write `--color-state-value-alt`, changes
+// --- `--color-state-changed`), every column width is `ch` of the panel font, and the rows take
+// --- their height from `--row-size-list`. See `dev/ai/ui-theming-intent-and-lessons.md`,
+// --- "A Register Document: Fields Are Two Washes, The Inspector Decodes".
+
+.panel {
+  overflow: hidden;
+  // --- The document's own width decides the layout, not the window's
+  container-type: inline-size;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+// --- Side by side, each pane scrolls on its own
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52ch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+// --- A pane's scrolling body under its fixed header; scrolled to its end, it keeps the wheel
+.paneScroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: contain;
+  }
+}
+
+// ─── The toolbar ─────────────────────────────────────────────────────────────
+
+.toolLabel {
+  font-size: var(--font-size-100);
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+.segmented {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+// --- The `$243B` readout: which register the port selects; a click goes to it
+.selectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 40ch;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  color: var(--data-label);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+}
+
+.selectedChipLabel {
+  white-space: nowrap;
+}
+
+.selectedChipValue {
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+.selectedChipName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--data-secondary);
+}
+
+// ─── The register list ───────────────────────────────────────────────────────
+
+.listPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+// --- Expander, Reg, Name, Access, Bits, Last written, Value. Only the name takes the slack.
+.grid {
+  display: grid;
+  grid-template-columns: 2ch 4ch minmax(12ch, 1fr) 3ch 24ch 12ch 10ch;
+  column-gap: var(--space-2);
+  align-items: center;
+  padding: 0 var(--space-3) 0 var(--space-2);
+}
+
+.columnHeads {
+  min-height: var(--row-panelHeader);
+  color: var(--data-secondary);
+  border-bottom: 1px solid var(--border-default);
+
+  // --- The heads keep the rows' font size, so their `ch` tracks line up; only the text is smaller
+  > span {
+    font-size: var(--font-size-100);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.alignEnd {
+  text-align: right;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--space-4);
+  outline: none;
+  // --- As wide as the pane, never narrower than its columns at their minimum
+  min-width: calc(79ch + 6 * var(--space-2) + var(--space-2) + var(--space-3));
+}
+
+.noMatch {
+  padding: var(--space-4);
+  color: var(--data-secondary);
+}
+
+.group + .group {
+  margin-top: var(--space-1);
+}
+
+// --- A group's heading is content, not chrome (`SectionHeader`'s rule): no surface of its own
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--row-panelHeader);
+  padding: 0 var(--space-3) 0 var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.groupRange {
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+.groupTitle {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.groupDescription {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--data-secondary);
+  font-size: var(--font-size-200);
+}
+
+.groupFill {
+  flex: 1 1 auto;
+}
+
+.groupChanged {
+  color: var(--color-state-changed);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.groupCount {
+  min-width: 3ch;
+  padding: 0 var(--space-1_5);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  text-align: center;
+}
+
+.row {
+  min-height: var(--row-size-list);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+// --- The selection: the accent's wash and a bar at the leading edge, like the Sprite Inspector's
+.rowSelected,
+.rowSelected:hover {
+  background: var(--accent-subtle);
+  box-shadow: inset 2px 0 0 var(--accent-solid);
+}
+
+.list:focus-visible .rowSelected {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regId {
+  position: relative;
+  color: var(--data-label);
+  font-weight: 600;
+}
+
+// --- Changed since the previous stop: the dot after the index, never a row fill
+.changed::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(-1 * var(--space-1_5));
+  width: calc(var(--panel-font-size) * 0.45);
+  height: calc(var(--panel-font-size) * 0.45);
+  border-radius: 50%;
+  background: var(--color-state-changed);
+  transform: translateY(-50%);
+}
+
+.regName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.alsoIn {
+  margin-left: var(--space-2);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.access {
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--data-secondary);
+  line-height: 1.5;
+}
+
+.access_ro {
+  color: var(--color-state-value-alt);
+  border-color: var(--accent-secondary-border);
+}
+
+.access_wo {
+  color: var(--status-warning);
+  border-color: var(--status-warning);
+}
+
+.lastWrite {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-state-value-alt);
+}
+
+.value {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+.noValue {
+  color: var(--data-secondary);
+  font-weight: 400;
+}
+
+// --- The row's bits: one cell a bit, the two field washes alternating, a set flag filled
+.bits {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.bit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-disabled);
+  font-size: var(--font-size-100);
+  line-height: 1.5;
+}
+
+.bitUnknown {
+  border-style: dashed;
+}
+
+.fieldA {
+  background: var(--accent-subtle);
+  border-color: transparent;
+  color: var(--data-secondary);
+}
+
+.fieldB {
+  background: var(--accent-secondary-subtle);
+  border-color: transparent;
+  color: var(--data-secondary);
+}
+
+.bitSet {
+  color: var(--color-state-value);
+  font-weight: 700;
+}
+
+.flagSet {
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+}
+
+// --- Adjacent bits of one field read as one block
+.joinLeft {
+  margin-left: -2px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.joinRight {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+// --- The decoded fields under an expanded row: a rule and an indent, no fill (see NextRegPanel)
+.fields {
+  display: flex;
+  flex-direction: column;
+  margin: 1px var(--space-3) var(--space-1) calc(var(--space-2) + 4ch);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-panel-separator);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 4ch 4ch minmax(0, 1fr);
+  column-gap: var(--space-2);
+  align-items: start;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.fieldBits {
+  text-align: right;
+  color: var(--data-secondary);
+}
+
+.fieldValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--panel-line-height);
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+.fieldText {
+  color: var(--data-label);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.fieldNamed {
+  color: var(--color-state-value);
+}
+
+// ─── The inspector column ────────────────────────────────────────────────────
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.inspectorEmpty {
+  padding: var(--space-4);
+  color: var(--data-secondary);
+}
+
+.inspectorId {
+  color: var(--data-label);
+  font-weight: 700;
+}
+
+.inspectorName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.inspectorAccess {
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.inspectorBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1_5);
+  padding: var(--space-3);
+
+  & + & {
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+.sectionLabel {
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.valueCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.valueCard {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-canvas);
+}
+
+.valueCardHeading {
+  font-size: var(--font-size-100);
+  color: var(--data-label);
+}
+
+.valueCardHex {
+  font-size: var(--font-size-400);
+  font-weight: 700;
+  color: var(--color-state-value);
+}
+
+.valueCardAlt {
+  color: var(--color-state-value-alt);
+}
+
+.valueCardDetail {
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+}
+
+.valueCardMissing {
+  padding: var(--space-1) 0;
+  color: var(--data-secondary);
+}
+
+.note {
+  font-size: var(--font-size-200);
+  color: var(--data-label);
+}
+
+.noteChanged {
+  color: var(--color-state-changed);
+}
+
+// --- The bit diagram: numbers, bits, then one bracket a field
+.diagram {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--space-1) 3px;
+}
+
+.diagramBitNo {
+  text-align: center;
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+}
+
+.diagramBit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--panel-line-height) * 1.6);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-disabled);
+  font-size: var(--font-size-400);
+  font-weight: 700;
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+}
+
+// --- The field washes and the set-bit colour, restated after `.diagramBit` sets its own colour
+.diagramBit.fieldA,
+.diagramBit.fieldB {
+  color: var(--data-secondary);
+}
+
+.diagramBit.bitSet {
+  color: var(--color-state-value);
+}
+
+.diagramHot {
+  outline-color: var(--accent-solid);
+}
+
+.diagramSpan {
+  overflow: hidden;
+  padding-top: 2px;
+  border-top: 2px solid var(--border-strong);
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.diagramHot {
+    outline: none;
+    border-top-color: var(--accent-solid);
+    color: var(--text-primary);
+  }
+}
+
+.diagramSpanUnused {
+  border-top-style: dashed;
+  border-top-color: var(--border-default);
+  color: var(--data-secondary);
+}
+
+.fieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fieldItem {
+  display: grid;
+  grid-template-columns: 4ch 4ch minmax(0, 1fr);
+  column-gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-0_5) var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.fieldItemHot {
+  background: var(--surface-hover);
+}
+
+.valueChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.valueChip {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.valueChipCurrent {
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+}
+
+.valueChipCode {
+  margin-right: var(--space-1);
+}
+
+.categoryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.categoryChip {
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent-secondary-subtle);
+  color: var(--accent-secondary-text);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.codeLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 0 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+
+  code {
+    font-family: var(--monospace-font);
+    color: var(--color-state-value);
+  }
+}
+
+// --- Narrow: the inspector stacks under the list, each pane still scrolling on its own
+@container (max-width: 120ch) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(calc(var(--strip-panelHeader) * 6), 1fr) minmax(0, 40%);
+  }
+
+  .inspector {
+    border-left: 0;
+    border-top: 1px solid var(--border-default);
+  }
+}

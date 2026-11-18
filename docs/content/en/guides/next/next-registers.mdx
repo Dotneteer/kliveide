@@ -52,6 +52,40 @@ decimal and binary. Registers whose bit fields are documented have a chevron: cl
 expand it into one line per field, with a flag shown as a filled or empty circle and a multi-bit
 field as its value, followed by what it means. Hover a field for its bits and value.
 
+## The Next Registers document
+
+For more room, click the pop-out button at the right of the **Next Registers** panel's header (or
+choose **View › Machine Views › Next Registers**, or type `show-nextregs` in the command prompt). The
+**Next Registers** document opens in the editor area with the same registers and more detail:
+
+<Shot src="guides/next/next-registers/nextreg-document.webp" alt="The Next Registers document grouped by index, with register $15 selected and decoded in the inspector column" caption="The Next Registers document: each register's bits tinted field by field, and the selected register decoded on the right." width={900} />
+
+- **Group** them **By index**, sixteen registers to a block (`$00–$0F`, `$10–$1F`, ...), or
+  **By category**, under the headings of the book's NextReg reference (Memory (MMU), Layer 2,
+  Sprites, Audio, Interrupts and so on). A register that belongs to several categories, such as
+  `$69`, is listed in each of them, with *also in ...* after its name.
+- Each row shows the register number, its name, whether it is read/write (**RW**), read-only
+  (**RO**) or write-only (**WO**), its eight bits, the last written value and the current value.
+  The bits are tinted field by field, so you can see where each field starts and ends; a set flag
+  is filled.
+- Show the values in **Hex**, **Dec** or **Bin**.
+- Type in the filter box to narrow the list: `$52` finds that register, and a word finds it in
+  register names, field descriptions, value names and category names.
+- Switch on **Changed** to keep only the registers whose value changed since the previous stop (a
+  dot after the register number marks them, and each group heading counts them), **Written** to keep
+  only those your program has written, and **All fields** to decode every register.
+- The **$243B selects** readout names the register currently selected through port `$243B`; click
+  it to go to that register.
+
+Click a register to decode it in the inspector column: its current and last written values in
+hexadecimal, decimal and binary, a diagram of its bits with a bracket per field, every field with its
+value and the meaning of each of its named values, the categories it belongs to (click one to show it
+in the list), and the `nextreg` instruction that writes its current value, with a copy button.
+Use the arrow keys to move through the list; the right and left arrows open and close a register's
+fields.
+
+`show-nextregs $15` opens the document with register `$15` selected; `hide-nextregs` closes it.
+
 The same register names appear wherever Klive mentions a NextReg: the
 [Copper List](/en/guides/next/copper/) decodes its `MOVE` instructions with them, and a
 [NextReg write breakpoint](/en/guides/next/next-breakpoints/) names the register it stopped on.

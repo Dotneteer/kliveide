@@ -108,6 +108,22 @@ module.exports = {
           maxHeight: 620
         });
       });
+      await step(klive, "nextreg-document", async () => {
+        // --- The panel header's pop-out button opens the document; the panel stays open
+        const panel = h.sectionLocator(ide, "Next Registers");
+        await panel.locator('[class*="_headerActions_"] button').click();
+        await ide.locator('[class*="_documentArea_"] [data-reg="21"]').first().waitFor({ timeout: 10000 });
+        const stillOpen = await panel.evaluate(
+          (el) => (el.querySelector('[class*="_contentWrapper_"]')?.getBoundingClientRect().height ?? 0) > 2
+        );
+        if (!stillOpen) throw new Error("The pop-out button folded the Next Registers panel");
+        // --- Select Reg $15: four fields, one of them with named values
+        await klive.cmd("show-nextregs $15", 1500);
+        await klive.cmd("cls", 400);
+        await h.park(ide);
+        await klive.shot(DOCS, "en/guides/next/next-registers/nextreg-document.webp", { displayWidth: 900 });
+        await klive.cmd("hide-nextregs", 800);
+      });
       await step(klive, "memory-mapping", async () => {
         await h.sections(ide, ["Next Memory Mapping"]);
         await h.park(ide);

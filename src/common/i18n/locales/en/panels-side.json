@@ -4211,5 +4211,9 @@
     "placeholders": {
       "port": "The port, e.g. 'A7h'"
     }
+  },
+  "panels.side.nextReg.popOut": "Open the Next Registers document",
+  "@panels.side.nextReg.popOut": {
+    "context": "Tooltip of the pop-out icon button in the header of the Debug sidebar's Next Registers panel: opens the same registers as a document with more room."
   }
 }

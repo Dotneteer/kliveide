@@ -871,7 +871,8 @@ function isMachineStopped(): boolean {
 }
 
 /**
- * View › Machine Views on the Next: the Copper List document (`dev/plans/COPPER_DEBUGGING_PLAN.md`
+ * View › Machine Views on the Next: the Next Registers document (the Debug sidebar panel's
+ * pop-out), the Copper List document (`dev/plans/COPPER_DEBUGGING_PLAN.md`
  * §4.5), the Sprite Inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
  * (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), the Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md`
  * §4.4) and the Layers document (`dev/plans/LAYER_COMPOSITION_PLAN.md`). All go through the IDE's
@@ -879,6 +880,7 @@ function isMachineStopped(): boolean {
  * toggles themselves live on the Layers strip under the screen, which has every one of them.
  */
 export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
+  { id: "show_next_registers", label: t("menu.next.nextRegisters"), click: ideCommand("show-nextregs") },
   { id: "show_copper_list", label: t("menu.next.copperList"), click: ideCommand("show-copper") },
   { id: "show_sprite_inspector", label: t("menu.next.spriteInspector"), click: ideCommand("show-sprites") },
   { id: "show_tilemap_inspector", label: t("menu.next.tilemapInspector"), click: ideCommand("show-tilemap") },

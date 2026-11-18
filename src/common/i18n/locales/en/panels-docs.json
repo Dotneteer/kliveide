@@ -1966,5 +1966,469 @@
     "placeholders": {
       "percent": "A whole number, 0-100"
     }
+  },
+  "panels.doc.nextRegs.cat.identity": "System identity",
+  "@panels.doc.nextRegs.cat.identity": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.identity": "Which machine, core version and board this is.",
+  "@panels.doc.nextRegs.catDesc.identity": {
+    "context": "One-line description of the 'System identity' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.control": "System control",
+  "@panels.doc.nextRegs.cat.control": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.control": "Reset, machine type, CPU speed and core boot.",
+  "@panels.doc.nextRegs.catDesc.control": {
+    "context": "One-line description of the 'System control' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.memory": "Memory (MMU)",
+  "@panels.doc.nextRegs.cat.memory": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.memory": "The eight 8K slots, legacy 128K paging and alternate ROMs.",
+  "@panels.doc.nextRegs.catDesc.memory": {
+    "context": "One-line description of the 'Memory (MMU)' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.layers": "Layer system",
+  "@panels.doc.nextRegs.cat.layers": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.layers": "Layer priority, global transparency and the fallback colour.",
+  "@panels.doc.nextRegs.catDesc.layers": {
+    "context": "One-line description of the 'Layer system' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.layer2": "Layer 2",
+  "@panels.doc.nextRegs.cat.layer2": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.layer2": "Banks, resolution and hardware scrolling of the bitmap layer.",
+  "@panels.doc.nextRegs.catDesc.layer2": {
+    "context": "One-line description of the 'Layer 2' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.ula": "ULA / LoRes",
+  "@panels.doc.nextRegs.cat.ula": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.ula": "ULA scrolling and control, ULA+, LoRes and Radastan modes.",
+  "@panels.doc.nextRegs.catDesc.ula": {
+    "context": "One-line description of the 'ULA / LoRes' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.sprites": "Sprites",
+  "@panels.doc.nextRegs.cat.sprites": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.sprites": "Selecting a sprite and streaming its attributes.",
+  "@panels.doc.nextRegs.catDesc.sprites": {
+    "context": "One-line description of the 'Sprites' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.tilemap": "Tilemap",
+  "@panels.doc.nextRegs.cat.tilemap": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.tilemap": "Tilemap layout, memory, default attributes and scrolling.",
+  "@panels.doc.nextRegs.catDesc.tilemap": {
+    "context": "One-line description of the 'Tilemap' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.palettes": "Palettes",
+  "@panels.doc.nextRegs.cat.palettes": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.palettes": "Palette selection, 8- and 9-bit colour writes and ULANext.",
+  "@panels.doc.nextRegs.catDesc.palettes": {
+    "context": "One-line description of the 'Palettes' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.clip": "Clip windows",
+  "@panels.doc.nextRegs.cat.clip": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.clip": "Per-layer clip rectangles and their indices.",
+  "@panels.doc.nextRegs.catDesc.clip": {
+    "context": "One-line description of the 'Clip windows' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.raster": "Raster / timing",
+  "@panels.doc.nextRegs.cat.raster": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.raster": "The active video line, the line interrupt and forced interrupts.",
+  "@panels.doc.nextRegs.catDesc.raster": {
+    "context": "One-line description of the 'Raster / timing' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.copper": "Copper",
+  "@panels.doc.nextRegs.cat.copper": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.copper": "Uploading, starting and timing the Copper's program.",
+  "@panels.doc.nextRegs.catDesc.copper": {
+    "context": "One-line description of the 'Copper' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.audio": "Audio",
+  "@panels.doc.nextRegs.cat.audio": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.audio": "AY and TurboSound settings, the DACs and Pi I²S audio.",
+  "@panels.doc.nextRegs.catDesc.audio": {
+    "context": "One-line description of the 'Audio' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.interrupts": "Interrupts",
+  "@panels.doc.nextRegs.cat.interrupts": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.interrupts": "Hardware IM2, interrupt sources and status, NMI and DMA interrupts.",
+  "@panels.doc.nextRegs.catDesc.interrupts": {
+    "context": "One-line description of the 'Interrupts' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.joystick": "Joystick",
+  "@panels.doc.nextRegs.cat.joystick": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.joystick": "Joystick modes and the joystick I/O mode.",
+  "@panels.doc.nextRegs.catDesc.joystick": {
+    "context": "One-line description of the 'Joystick' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.keyboard": "Keyboard",
+  "@panels.doc.nextRegs.cat.keyboard": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.keyboard": "The PS/2 keymap and the extended keys' states.",
+  "@panels.doc.nextRegs.catDesc.keyboard": {
+    "context": "One-line description of the 'Keyboard' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.peripherals": "Peripherals",
+  "@panels.doc.nextRegs.cat.peripherals": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.peripherals": "Scandoubler, contention, hotkeys, mouse and speaker settings.",
+  "@panels.doc.nextRegs.catDesc.peripherals": {
+    "context": "One-line description of the 'Peripherals' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.divmmc": "DivMMC",
+  "@panels.doc.nextRegs.cat.divmmc": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.divmmc": "The ROM addresses that page in DivMMC automatically.",
+  "@panels.doc.nextRegs.catDesc.divmmc": {
+    "context": "One-line description of the 'DivMMC' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.bus": "Expansion bus",
+  "@panels.doc.nextRegs.cat.bus": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.bus": "The edge connector, its port decoding and what propagates to it.",
+  "@panels.doc.nextRegs.catDesc.bus": {
+    "context": "One-line description of the 'Expansion bus' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.pi": "Raspberry Pi / GPIO",
+  "@panels.doc.nextRegs.cat.pi": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.pi": "GPIO pins, the Pi's UART, I²C and SPI, I²S and the ESP's GPIO.",
+  "@panels.doc.nextRegs.catDesc.pi": {
+    "context": "One-line description of the 'Raspberry Pi / GPIO' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.debugging": "Debugging",
+  "@panels.doc.nextRegs.cat.debugging": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.debugging": "I/O traps and the XADC/DNA diagnostics.",
+  "@panels.doc.nextRegs.catDesc.debugging": {
+    "context": "One-line description of the 'Debugging' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.user": "User storage",
+  "@panels.doc.nextRegs.cat.user": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.user": "Eight bits of scratch storage the hardware ignores.",
+  "@panels.doc.nextRegs.catDesc.user": {
+    "context": "One-line description of the 'User storage' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.cat.other": "Other",
+  "@panels.doc.nextRegs.cat.other": {
+    "context": "Name of a NextReg category, a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups 'By category'; also a chip in the inspector. The categories follow the Klive book's NextReg reference. Keep register and chip names (ULA, MMU, DivMMC, Copper, GPIO) as they are.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.catDesc.other": "Registers the book's quick reference does not list.",
+  "@panels.doc.nextRegs.catDesc.other": {
+    "context": "One-line description of the 'Other' NextReg category, shown dimmed after its group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Truncated with an ellipsis when the document is narrow."
+  },
+  "panels.doc.nextRegs.access.rw": "RW",
+  "@panels.doc.nextRegs.access.rw": {
+    "context": "Badge in a register row of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register can be read and written. Two or three letters.",
+    "maxChars": 3
+  },
+  "panels.doc.nextRegs.access.ro": "RO",
+  "@panels.doc.nextRegs.access.ro": {
+    "context": "Badge in a register row of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register is read-only. Two or three letters.",
+    "maxChars": 3
+  },
+  "panels.doc.nextRegs.access.wo": "WO",
+  "@panels.doc.nextRegs.access.wo": {
+    "context": "Badge in a register row of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register is write-only (reading it does not return what was written). Two or three letters.",
+    "maxChars": 3
+  },
+  "panels.doc.nextRegs.access.rwTitle": "Read / write",
+  "@panels.doc.nextRegs.access.rwTitle": {
+    "context": "Tooltip of the 'RW' badge in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column), and the access line in its inspector header.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.access.roTitle": "Read-only",
+  "@panels.doc.nextRegs.access.roTitle": {
+    "context": "Tooltip of the 'RO' badge in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column), and the access line in its inspector header.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.access.woTitle": "Write-only",
+  "@panels.doc.nextRegs.access.woTitle": {
+    "context": "Tooltip of the 'WO' badge in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column), and the access line in its inspector header.",
+    "maxChars": 24
+  },
+  "panels.doc.nextRegs.notAvailable": "The Next registers exist on the ZX Spectrum Next only.",
+  "@panels.doc.nextRegs.notAvailable": {
+    "context": "Message filling the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when the current machine is not a ZX Spectrum Next."
+  },
+  "panels.doc.nextRegs.groupBy": "Group",
+  "@panels.doc.nextRegs.groupBy": {
+    "context": "Label before the two grouping buttons ('By index', 'By category') in the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column); also the buttons' accessible name.",
+    "maxChars": 10
+  },
+  "panels.doc.nextRegs.byIndex": "By index",
+  "@panels.doc.nextRegs.byIndex": {
+    "context": "Header button of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): group the registers in blocks of sixteen by register number ($00-$0F, $10-$1F, ...).",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.byIndexTitle": "Group the registers by number, sixteen to a block",
+  "@panels.doc.nextRegs.byIndexTitle": {
+    "context": "Tooltip of the 'By index' button in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.byCategory": "By category",
+  "@panels.doc.nextRegs.byCategory": {
+    "context": "Header button of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): group the registers by what they control (Memory, Sprites, Audio, ...).",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.byCategoryTitle": "Group the registers by what they control, as the book's NextReg reference does",
+  "@panels.doc.nextRegs.byCategoryTitle": {
+    "context": "Tooltip of the 'By category' button in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.values": "Values",
+  "@panels.doc.nextRegs.values": {
+    "context": "Label before the number-format buttons (Hex, Dec, Bin) in the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column); also the buttons' accessible name.",
+    "maxChars": 10
+  },
+  "panels.doc.nextRegs.hex": "Hex",
+  "@panels.doc.nextRegs.hex": {
+    "context": "Header button of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): show register values in hexadecimal.",
+    "maxChars": 5
+  },
+  "panels.doc.nextRegs.dec": "Dec",
+  "@panels.doc.nextRegs.dec": {
+    "context": "Header button of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): show register values in decimal.",
+    "maxChars": 5
+  },
+  "panels.doc.nextRegs.bin": "Bin",
+  "@panels.doc.nextRegs.bin": {
+    "context": "Header button of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): show register values in binary.",
+    "maxChars": 5
+  },
+  "panels.doc.nextRegs.changedOnly": "Changed:",
+  "@panels.doc.nextRegs.changedOnly": {
+    "context": "Label of a switch in the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): show only the registers whose value changed since the previous debugger stop.",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.changedOnlyTitle": "Show only the registers that changed since the previous stop",
+  "@panels.doc.nextRegs.changedOnlyTitle": {
+    "context": "Tooltip of the 'Changed' switch in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.writtenOnly": "Written:",
+  "@panels.doc.nextRegs.writtenOnly": {
+    "context": "Label of a switch in the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): show only the registers the running program has written to.",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.writtenOnlyTitle": "Show only the registers the program has written",
+  "@panels.doc.nextRegs.writtenOnlyTitle": {
+    "context": "Tooltip of the 'Written' switch in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.expandAll": "All fields:",
+  "@panels.doc.nextRegs.expandAll": {
+    "context": "Label of a switch in the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): open the decoded bit fields under every register row.",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.expandAllTitle": "Show the decoded fields of every register",
+  "@panels.doc.nextRegs.expandAllTitle": {
+    "context": "Tooltip of the 'All fields' switch in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.portSelects": "$243B selects",
+  "@panels.doc.nextRegs.portSelects": {
+    "context": "Label of a clickable readout at the right of the header of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column), followed by a register number and name: the register currently selected through port $243B. Keep '$243B' (a port number) as it is.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.portSelectsTitle": "The register port $243B selects. Click to go to it.",
+  "@panels.doc.nextRegs.portSelectsTitle": {
+    "context": "Tooltip of the '$243B selects' readout in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). Keep '$243B' as it is."
+  },
+  "panels.doc.nextRegs.filterPlaceholder": "Filter: $15, layer, sprite, field text…",
+  "@panels.doc.nextRegs.filterPlaceholder": {
+    "context": "Placeholder of the filter box above the register list of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column). '$15' is an example register number and stays as it is; the words are examples of what can be typed."
+  },
+  "panels.doc.nextRegs.shownCount": "{shown} of {total}",
+  "@panels.doc.nextRegs.shownCount": {
+    "context": "Count at the right of the filter box in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) while a filter is active: how many registers are shown.",
+    "maxChars": 12,
+    "placeholders": {
+      "shown": "Registers shown (e.g. 12)",
+      "total": "Registers documented (e.g. 141)"
+    }
+  },
+  "panels.doc.nextRegs.col.reg": "Reg",
+  "@panels.doc.nextRegs.col.reg": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register number. Short.",
+    "maxChars": 4
+  },
+  "panels.doc.nextRegs.col.name": "Name",
+  "@panels.doc.nextRegs.col.name": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register's name.",
+    "maxChars": 12
+  },
+  "panels.doc.nextRegs.col.access": "Acc",
+  "@panels.doc.nextRegs.col.access": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): access (read/write, read-only, write-only). Three letters at most.",
+    "maxChars": 3
+  },
+  "panels.doc.nextRegs.col.bits": "Bits 7…0",
+  "@panels.doc.nextRegs.col.bits": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) above eight cells showing the register's bits, bit 7 first.",
+    "maxChars": 22
+  },
+  "panels.doc.nextRegs.col.lastWritten": "Written",
+  "@panels.doc.nextRegs.col.lastWritten": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the value the CPU or Copper last wrote to the register.",
+    "maxChars": 10
+  },
+  "panels.doc.nextRegs.col.value": "Value",
+  "@panels.doc.nextRegs.col.value": {
+    "context": "Column heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the value the register reads back now.",
+    "maxChars": 9
+  },
+  "panels.doc.nextRegs.noMatch": "No register matches the filter.",
+  "@panels.doc.nextRegs.noMatch": {
+    "context": "Message in the register list of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when the filter and switches leave nothing to show."
+  },
+  "panels.doc.nextRegs.changedCount": "{count, plural, one {# changed} other {# changed}}",
+  "@panels.doc.nextRegs.changedCount": {
+    "context": "Note on a group heading in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): how many of the group's registers changed since the previous debugger stop.",
+    "maxChars": 14,
+    "placeholders": {
+      "count": "How many registers changed (1 or more)"
+    }
+  },
+  "panels.doc.nextRegs.alsoIn": "also in {categories}",
+  "@panels.doc.nextRegs.alsoIn": {
+    "context": "Dimmed note after a register's name in the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when it groups by category and the register is filed under more than one category.",
+    "placeholders": {
+      "categories": "The other categories' names, comma-separated, e.g. 'Audio, Peripherals'"
+    }
+  },
+  "panels.doc.nextRegs.selectRegister": "Select a register to see its fields.",
+  "@panels.doc.nextRegs.selectRegister": {
+    "context": "Message in the inspector column of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when no register is selected."
+  },
+  "panels.doc.nextRegs.section.value": "Value",
+  "@panels.doc.nextRegs.section.value": {
+    "context": "Section heading in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register's current and last written values. Shown uppercase.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.section.bits": "Bits",
+  "@panels.doc.nextRegs.section.bits": {
+    "context": "Section heading in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): a diagram of the register's eight bits with a bracket per field. Shown uppercase.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.section.fields": "Fields",
+  "@panels.doc.nextRegs.section.fields": {
+    "context": "Section heading in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the register's bit fields decoded one by one. Shown uppercase.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.section.categories": "Categories",
+  "@panels.doc.nextRegs.section.categories": {
+    "context": "Section heading in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the categories the register is filed under, as clickable chips. Shown uppercase.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.section.code": "Code",
+  "@panels.doc.nextRegs.section.code": {
+    "context": "Section heading in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): the 'nextreg' instruction that writes the current value, with a copy button. Shown uppercase.",
+    "maxChars": 16
+  },
+  "panels.doc.nextRegs.notReadable": "not readable",
+  "@panels.doc.nextRegs.notReadable": {
+    "context": "Shown in the 'Current value' card of the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) for a write-only register, which returns nothing meaningful when read.",
+    "maxChars": 18
+  },
+  "panels.doc.nextRegs.notWritable": "read-only",
+  "@panels.doc.nextRegs.notWritable": {
+    "context": "Shown in the 'Last written' card of the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) for a read-only register, which cannot be written.",
+    "maxChars": 18
+  },
+  "panels.doc.nextRegs.neverWritten": "never written",
+  "@panels.doc.nextRegs.neverWritten": {
+    "context": "Shown in the 'Last written' card of the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when the program has not written the register since the machine started.",
+    "maxChars": 18
+  },
+  "panels.doc.nextRegs.changedNote": "Changed since the previous stop: {before} → {after}",
+  "@panels.doc.nextRegs.changedNote": {
+    "context": "Note under the value cards in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column).",
+    "placeholders": {
+      "before": "The value at the previous stop, e.g. '$0A'",
+      "after": "The value now, e.g. '$0B'"
+    }
+  },
+  "panels.doc.nextRegs.differsNote": "Reading back gives a different value than the last write: the register is asymmetric, or the hardware changed it since.",
+  "@panels.doc.nextRegs.differsNote": {
+    "context": "Note under the value cards in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) when the current value and the last written value differ."
+  },
+  "panels.doc.nextRegs.writeOnlyNote": "Reading this register does not return what was written, so the bits show the last write.",
+  "@panels.doc.nextRegs.writeOnlyNote": {
+    "context": "Note under the value cards in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) for a write-only register."
+  },
+  "panels.doc.nextRegs.unusedBits": "unused",
+  "@panels.doc.nextRegs.unusedBits": {
+    "context": "Label under bits that belong to no documented field in the bit diagram of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)'s inspector.",
+    "maxChars": 10
+  },
+  "panels.doc.nextRegs.noFields": "No field breakdown is documented for this register; its value is one byte.",
+  "@panels.doc.nextRegs.noFields": {
+    "context": "Shown in the Fields section of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)'s inspector for a register without documented bit fields."
+  },
+  "panels.doc.nextRegs.showCategoryTitle": "Show this category in the list",
+  "@panels.doc.nextRegs.showCategoryTitle": {
+    "context": "Tooltip of a category chip in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column): switches the list to 'By category' and scrolls to that group."
+  },
+  "panels.doc.nextRegs.copy": "Copy the instruction",
+  "@panels.doc.nextRegs.copy": {
+    "context": "Tooltip of the copy button beside the 'nextreg' instruction in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column)."
+  },
+  "panels.doc.nextRegs.copied": "Copied",
+  "@panels.doc.nextRegs.copied": {
+    "context": "Tooltip of the copy button in the inspector of the Next Registers document (the ZX Spectrum Next's hardware registers, 'NextRegs', as a list beside an inspector column) right after it copied the instruction.",
+    "maxChars": 16
   }
 }

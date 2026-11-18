@@ -35,6 +35,16 @@ export type SideBarPanelBadgeProps = {
 export type SideBarPanelBadge = ComponentType<SideBarPanelBadgeProps>;
 
 /**
+ * Small icon buttons at the right end of a panel header — after the badge — for actions on the
+ * panel as a whole, such as popping it out into a document (`NextRegPanelActions`).
+ *
+ * A component, like the badge, so it can read the store. The header stops a click or key press
+ * inside the slot from also toggling the panel open or shut, so the actions need not.
+ * Render `SmallIconButton`s; the slot does the spacing.
+ */
+export type SideBarPanelHeaderActions = ComponentType<SideBarPanelBadgeProps>;
+
+/**
  * Describes a particular side bar panel
  */
 export type SideBarPanelInfo = {
@@ -76,6 +86,11 @@ export type SideBarPanelInfo = {
    * collapses, so nothing shifts and no space is reserved.
    */
   readonly badge?: SideBarPanelBadge;
+
+  /**
+   * Optional actions at the right end of this panel's header (see `SideBarPanelHeaderActions`).
+   */
+  readonly headerActions?: SideBarPanelHeaderActions;
 
   /**
    * Is the panel expanded when initializing?

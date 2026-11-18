@@ -127,3 +127,15 @@
   flex-direction: column;
   overflow: hidden;
 }
+
+/*
+ * The header-actions slot (`SideBarPanelInfo.headerActions`): icon buttons at the header's end.
+ * The 24px `SmallIconButton` box is taller than the 26px band's content area once the 1px focus
+ * border is counted, so the slot pulls its own block margin in rather than growing the header.
+ */
+.headerActions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-block: -2px;
+}
