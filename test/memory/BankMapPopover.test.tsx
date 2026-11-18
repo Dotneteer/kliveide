@@ -3,6 +3,13 @@ import { render, fireEvent, cleanup, screen } from "@testing-library/react";
 
 import { nextPartitionInfo, partitionIndex, spectrumPartitionInfo } from "@common/annotations/partitionInfo";
 import { nextPartitionGroups, nextPartitionLabels } from "@emu/machines/zxNext/nextMachineInfo";
+import type { ReactNode } from "react";
+
+// --- The map's grid scrolls in a ScrollViewer, which needs the theme
+vi.mock("@renderer/controls/ScrollViewer", () => ({
+  default: ({ children }: { children?: ReactNode }) => <div>{children}</div>
+}));
+
 import { BankMapPopover, PartitionRow } from "@renderer/features/memoryMap/PartitionRow";
 import { pagedSlotsOf } from "@renderer/features/memoryMap/memoryMapModel";
 

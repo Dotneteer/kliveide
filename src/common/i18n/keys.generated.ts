@@ -3590,6 +3590,7 @@ export type MessageKey =
   | "panels.disassInspector.label"
   | "panels.disassInspector.memory"
   | "panels.disassInspector.nextReg"
+  | "panels.disassInspector.noSelection"
   | "panels.disassInspector.notAnnotatable"
   | "panels.disassInspector.operands"
   | "panels.disassInspector.refCount"

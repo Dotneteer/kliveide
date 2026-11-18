@@ -29,14 +29,17 @@
   min-height: 0;
 }
 
+// --- Without the inspector the listing is the only track, at every width: the stacked layout's
+// --- inspector row must not stay behind as an empty box
 .bodyNoInspector {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
 }
 
 // --- Below 120ch the inspector stacks under the listing (a container query cannot restyle the
 // --- container itself, so the rule is on the grid inside it)
 @container (max-width: 120ch) {
-  .body {
+  .body:not(.bodyNoInspector) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(0, 40%);
   }
@@ -547,6 +550,8 @@
   display: flex;
   flex-direction: column;
   max-width: calc(100% - 2 * var(--space-2));
+  // --- The document clips what passes its bottom edge, so the map is never taller than the room
+  // --- left under the partition row (set from the component, measured); this is the fallback
   max-height: 70vh;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -601,9 +606,16 @@
   border-radius: var(--radius-xs);
 }
 
-.bankMapBody {
+// --- The grid scrolls in a ScrollViewer between the fixed head and hint
+.bankMapScroll {
   min-height: 0;
-  overflow: auto;
+
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: contain;
+  }
+}
+
+.bankMapBody {
   padding: var(--space-2);
 }
 
@@ -809,6 +821,12 @@
 .kindBadgeReadOnly {
   background: var(--status-warning-subtle);
   color: var(--status-warning);
+}
+
+.inspectorEmpty {
+  padding: var(--space-4) var(--space-3);
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
 }
 
 .inspectorScroll {

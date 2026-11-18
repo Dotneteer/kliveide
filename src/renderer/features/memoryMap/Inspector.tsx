@@ -39,6 +39,13 @@ export const InspectorColumn = ({
   </aside>
 );
 
+/** The column with nothing to inspect yet: one hint where the sections would be */
+export const InspectorEmpty = ({ message }: { message: string }) => (
+  <aside className={styles.inspector}>
+    <div className={styles.inspectorEmpty}>{message}</div>
+  </aside>
+);
+
 export const InspectorSection = ({
   title,
   aside,

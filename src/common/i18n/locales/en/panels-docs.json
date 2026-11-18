@@ -2577,5 +2577,9 @@
   "panels.doc.disassembly.originTitle": "The address the partition is disassembled at",
   "@panels.doc.disassembly.originTitle": {
     "context": "Tooltip of the Origin drop-down."
+  },
+  "panels.disassInspector.noSelection": "Select a row to see its instruction, operands, references, annotation and breakpoint.",
+  "@panels.disassInspector.noSelection": {
+    "context": "The Disassembly view's inspector column when no row is selected."
   }
 }

@@ -93,6 +93,7 @@ import { kindText } from "@renderer/features/memoryMap/partitionText";
 import { edgesAt, layoutFlow } from "./flowGutter";
 import { buildListingRows } from "./listingRows";
 import { DisassemblyInspector, type InspectedOperand } from "./DisassemblyInspector";
+import { InspectorEmpty } from "@renderer/features/memoryMap/Inspector";
 import { printedReferences, rowLabelName } from "./printedReferences";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 
@@ -1239,7 +1240,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         )}
       </div>
 
-      <div className={classnames(frame.body, { [frame.bodyNoInspector]: !inspectorShown || !annotationRow })}>
+      <div className={classnames(frame.body, { [frame.bodyNoInspector]: !inspectorShown })}>
         <div className={frame.listing} ref={listRef}>
       {rows.length > 0 && (
         <div className={styles.disassemblyWrapper} onKeyDown={handleListKeyDown} tabIndex={-1}>
@@ -1322,6 +1323,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         </div>
       )}
         </div>
+        {/* --- The toggle always shows or hides the column; with no row selected it says how to fill it */}
+        {inspectorShown && !annotationRow && <InspectorEmpty message={t("panels.disassInspector.noSelection")} />}
         {inspectorShown && annotationRow && (
           <DisassemblyInspector
             item={annotationRow}

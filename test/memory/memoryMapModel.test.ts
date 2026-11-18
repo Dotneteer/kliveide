@@ -197,3 +197,27 @@ describe("parseGoToTarget", () => {
     expect(suggestLabels("pr", ctx.labels)).toEqual(["PRINT_A"]);
   });
 });
+
+describe("bankSiteOf", () => {
+  it("names a Next RAM page's byte by its 16K bank", async () => {
+    const { bankSpaceFor } = await import("@common/annotations/bankSpace");
+    const { bankSiteOf } = await import("@renderer/features/memoryMap/memoryMapModel");
+    const space = bankSpaceFor("zxnext");
+    const next = partitionIndex(NEXT);
+    // --- Page $0B is the high half of bank 5
+    expect(bankSiteOf(space, next.get(0x0b)!, 0x10)).toEqual({ bank: 5, offset: 0x2010 });
+    expect(bankSiteOf(space, next.get(0x0a)!, 0x10)).toEqual({ bank: 5, offset: 0x0010 });
+    // --- ROM and DivMMC pages have no bank site
+    expect(bankSiteOf(space, next.get(-1)!, 0x10)).toBeUndefined();
+    expect(bankSiteOf(space, next.get(-8)!, 0x10)).toBeUndefined();
+  });
+
+  it("names a 128K bank's byte by the bank itself, and nothing without bank breakpoints", async () => {
+    const { bankSpaceFor } = await import("@common/annotations/bankSpace");
+    const { bankSiteOf } = await import("@renderer/features/memoryMap/memoryMapModel");
+    const parts = partitionIndex(SP128);
+    expect(bankSiteOf(bankSpaceFor("sp128"), parts.get(7)!, 0x1234)).toEqual({ bank: 7, offset: 0x1234 });
+    expect(bankSiteOf(bankSpaceFor("sp128"), parts.get(-1)!, 0)).toBeUndefined();
+    expect(bankSiteOf(undefined, parts.get(7)!, 0)).toBeUndefined();
+  });
+});

@@ -187,7 +187,9 @@ The column beside the dump describes the byte under the cursor:
 - **Instructions here**: the bytes at the cursor disassembled, and **Open in Disassembly**.
 - **Heat**: how often the byte was executed, read and written.
 - **Use**: **Breakpoint here**, **Break on write** (over the selection, when there is one) and
-  **Watch as word** for a labelled address.
+  **Watch as word** for a labelled address. A breakpoint on a RAM bank's byte is set
+  [bank-relative](/en/guides/debugging/breakpoints/#bank-relative-breakpoints) (`bp-set 10:+$0010`), so it fires wherever the
+  bank is paged, also for a bank shown here that is not paged in now.
 
 <Shot
   src="guides/debugging/memory/inspector.webp"

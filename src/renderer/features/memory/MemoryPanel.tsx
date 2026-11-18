@@ -60,6 +60,7 @@ import { usePartitionInfo } from "@renderer/features/memoryMap/usePartitionInfo"
 import { useNamedLocations } from "@renderer/features/memoryMap/useNamedLocations";
 import { GO_TO_ERROR_KEYS, parseGoToTarget, suggestLabels, type GoToTarget } from "@renderer/features/memoryMap/goToTarget";
 import {
+  bankSiteOf,
   buildMapCells,
   cpuAddressOf,
   pagedSlotsOf,
@@ -322,7 +323,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- The labels: the shared resolver, asked with the paging the view shows
-  const { symbols } = useAddressSymbols(projectService, { romLabels: true });
+  const { symbols, bankSpace } = useAddressSymbols(projectService, { romLabels: true });
   const namedLocations = useNamedLocations(symbols);
   const labelSlots = useMemo(() => {
     if (isFullView) return slotPartitions;
@@ -846,18 +847,36 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   /** The inspector's breakpoints: at the cursor, or a write breakpoint over the selection */
+  /*
+   * The inspector's breakpoints: at the cursor, or a write breakpoint over the selection. A byte of
+   * a RAM bank is named bank-relatively (`bp-set 05:+$0010`), which fires wherever the bank is paged
+   * and so works for a bank shown on its own, paged in or not; anything else (ROM, a DivMMC page, a
+   * machine without banks) by its CPU address, qualified by its partition where there is one. What
+   * `bp-set` says when it refuses goes to the status bar: a button that silently did nothing is the
+   * failure this replaced.
+   */
   const setBreakpoint = (kind: "exec" | "write") => {
     const from = selection ? selection[0] : cursor;
     const length = selection ? selection[1] - selection[0] + 1 : 1;
-    const cpu = cpuAddressOfView(from);
-    if (cpu === undefined) {
-      dispatch(setIdeStatusMessageAction(t("panels.memoryInspector.notPagedForBreakpoint"), false));
-      return;
-    }
     const at = locate(from);
-    const spec = at && partitionSet ? `${at.partition.name}:$${toHexa4(cpu)}` : `$${toHexa4(cpu)}`;
+    const site = at ? bankSiteOf(bankSpace, at.partition, at.offset) : undefined;
+    let spec: string;
+    if (site) {
+      spec = `${toHexa2(site.bank)}:+$${toHexa4(site.offset)}`;
+    } else {
+      const cpu = cpuAddressOfView(from);
+      if (cpu === undefined) {
+        dispatch(setIdeStatusMessageAction(t("panels.memoryInspector.notPagedForBreakpoint"), false));
+        return;
+      }
+      spec = at && partitionSet ? `${at.partition.name}:$${toHexa4(cpu)}` : `$${toHexa4(cpu)}`;
+    }
     const options = kind === "write" ? ` -w${length > 1 ? ` -len ${length}` : ""}` : "";
-    void ideCommandsService.executeCommand(`bp-set ${spec}${options}`);
+    void ideCommandsService.executeCommand(`bp-set ${spec}${options}`).then((result) => {
+      if (result && !result.success && result.finalMessage) {
+        dispatch(setIdeStatusMessageAction(result.finalMessage, false));
+      }
+    });
   };
 
   const openInDisassembly = () => {

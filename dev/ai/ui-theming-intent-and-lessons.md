@@ -2733,8 +2733,18 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   over a `--border-strong` rule where the 64K enters another slot, an italic secondary line for an
   empty card slot. It is display-only - the annotation, breakpoint and coverage logic read the
   listing without it.
-- **The inspector is hidden until something is selected in the Disassembly view**, and its header
-  badge takes the warning hue when the inspected byte cannot be written (ROM, flash, an empty slot),
+- **A hidden inspector leaves one track at every width.** The stacked layout below `120ch` is a
+  container query on the grid; it must exclude the inspector-less grid
+  (`.body:not(.bodyNoInspector)`), or the 40% inspector row stays behind as an empty box under the
+  listing.
+- **A popover that hangs inside a document is no taller than the room under it.** The document clips
+  what passes its bottom edge, so a `vh` cap is not enough: the Bank map measures the space between
+  its top and the document's bottom (`ResizeObserver` on the document) and scrolls its grid in a
+  `ScrollViewer` with `sizeToContent`, between a fixed head and hint. With `overflow: auto` and only
+  `70vh` the Next's last 300 partitions could not be reached.
+- **The Inspector toggle always shows or hides the column.** With nothing selected (the Disassembly
+  view before a row is clicked) the column stays and says how to fill it; a column that appeared only
+  with a selection made the toggle look broken. The header badge takes the warning hue when the inspected byte cannot be written (ROM, flash, an empty slot),
   as the file inspector's Read-only badge does.
 
 ## A Bank Browser Has One Shell

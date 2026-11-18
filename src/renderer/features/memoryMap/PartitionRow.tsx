@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import classnames from "classnames";
 
@@ -178,6 +179,33 @@ export const BankMapPopover = ({
 
   useEffect(() => filterRef.current?.focus(), []);
 
+  /*
+   * The map hangs below the partition row, inside a document that clips whatever passes its bottom
+   * edge: with 247 or 503 partitions the last rows were cut off and could not be scrolled to. The
+   * map is therefore never taller than the room between its top and the document's bottom, and its
+   * grid scrolls inside that.
+   */
+  const [maxHeight, setMaxHeight] = useState<number | undefined>();
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const fit = () => {
+      const host = root.closest(`.${styles.document}`) ?? root.parentElement;
+      if (!host) return;
+      const room = host.getBoundingClientRect().bottom - root.getBoundingClientRect().top - 8;
+      setMaxHeight(room > 120 ? Math.floor(room) : 120);
+    };
+    fit();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : undefined;
+    const host = root.closest(`.${styles.document}`);
+    if (host && observer) observer.observe(host);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, []);
+
   // --- A click outside closes the map
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -289,6 +317,7 @@ export const BankMapPopover = ({
     <div
       ref={rootRef}
       className={styles.bankMap}
+      style={maxHeight !== undefined ? { maxHeight } : undefined}
       role="dialog"
       aria-label={t("panels.memoryMap.bankMap")}
       onKeyDown={onKeyDown}
@@ -321,6 +350,7 @@ export const BankMapPopover = ({
           ))}
         </div>
       </div>
+      <ScrollViewer className={styles.bankMapScroll} thinScrollBar sizeToContent>
       <div className={styles.bankMapBody}>
         {set.layout.map((block) => (
           <div key={block.key} className={styles.block}>
@@ -354,6 +384,7 @@ export const BankMapPopover = ({
           </div>
         ))}
       </div>
+      </ScrollViewer>
       <div className={styles.bankMapHint}>
         <span>
           <kbd>←↑→↓</kbd> {t("panels.memoryMap.hintMove")}

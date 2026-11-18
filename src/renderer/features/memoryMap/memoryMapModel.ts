@@ -1,3 +1,4 @@
+import type { BankSite, BankSpace } from "@common/annotations/bankSpace";
 import type {
   BankMapBlock,
   PartitionInfo,
@@ -276,6 +277,30 @@ export function moveInBankMap(
 /** The partition set's ids in Bank map order */
 export function bankMapOrder(set: PartitionInfoSet | undefined): number[] {
   return set ? set.layout.flatMap((b) => b.ids) : [];
+}
+
+/**
+ * The 16K bank site of a byte of a RAM partition, for a bank-relative breakpoint
+ * (`bp-set <bank>:+<offset>`, which fires wherever the bank is paged): a Next 8K page is half of a
+ * 16K bank (`bank16`), a 16K RAM partition is its own bank. Checked against the machine's bank
+ * space - the bank exists and maps back to this partition - so a ROM page, a DivMMC page or a
+ * machine without bank breakpoints gets `undefined`.
+ */
+export function bankSiteOf(
+  space: Pick<BankSpace, "bankBreakpoints" | "maxBank" | "partitionOf"> | undefined,
+  partition: PartitionInfo,
+  offset: number
+): BankSite | undefined {
+  if (!space?.bankBreakpoints) return undefined;
+  let site: BankSite | undefined;
+  if (partition.bank16) {
+    site = { bank: partition.bank16.bank, offset: partition.bank16.half * 0x2000 + offset };
+  } else if ((partition.kind === "ram" || partition.kind === "cardRam") && partition.size === 0x4000) {
+    site = { bank: partition.id, offset };
+  }
+  if (!site || site.bank < 0 || site.bank > space.maxBank || site.offset < 0 || site.offset > 0x3fff) return undefined;
+  const back = space.partitionOf(site);
+  return back === undefined || back === partition.id ? site : undefined;
 }
 
 /** The registers that hold addresses, in the strip's order; the rest go behind `⋯` */

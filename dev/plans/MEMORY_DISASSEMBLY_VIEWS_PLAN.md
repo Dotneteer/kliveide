@@ -373,8 +373,10 @@ Deviations from the sketch, and why:
 - **The toolbar wraps** onto a second line in a narrow document rather than folding into `⋯`
   ("A Toolbar Of Fixed-Size Controls Wraps; It Never Shrinks").
 - **A Next role bar is the first role of a page**; the tooltip lists them all.
-- **Breakpoints from the Memory inspector** are set on the CPU address of a paged-in partition; a
-  partition that is not paged in says so in the status bar.
+- **Breakpoints from the Memory inspector** on a RAM bank's byte are bank-relative
+  (`bp-set <bank>:+<offset>`, `bankSiteOf`), so they fire wherever the bank is paged and work for a
+  bank shown on its own that is not paged in; anything else (ROM, a DivMMC page) by its CPU address
+  and partition, which needs it paged in. A refused `bp-set` puts its message in the status bar.
 
 Open:
 
