@@ -16,7 +16,6 @@
   "panels.sideBar.kliveProject": "Klive-Projekt",
   "panels.sideBar.callStack": "Aufrufliste",
   "panels.sideBar.nextMemoryMapping": "Next-Speicherzuordnung",
-  "panels.sideBar.nextRegisters": "Next-Register",
   "panels.sideBar.variables": "Variablen",
   "panels.sideBar.watch": "Überwachung",
   "panels.sideBar.breakpoints": "Haltepunkte",

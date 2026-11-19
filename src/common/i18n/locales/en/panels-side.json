@@ -1395,39 +1395,6 @@
   "@panels.side.nextReg.lastWritten": {
     "context": "Heading in a Next Registers panel row's tooltip, above the last byte written to the register (it can differ from what it reads back)."
   },
-  "panels.side.nextReg.lastRegIndexLabel": "Last Reg Index:",
-  "@panels.side.nextReg.lastRegIndexLabel": {
-    "context": "Label of the first row of the Next Registers panel: the register number last selected through port $243B. 'Reg' abbreviates 'register'.",
-    "maxChars": 20
-  },
-  "panels.side.nextReg.lastRegIndex": "Last register index",
-  "@panels.side.nextReg.lastRegIndex": {
-    "context": "Heading of the tooltip of the Next Registers panel's 'Last Reg Index' value."
-  },
-  "panels.side.nextReg.bit": "Bit {bits}",
-  "@panels.side.nextReg.bit": {
-    "context": "First line of the tooltip of a single-bit field in an expanded Next register row.",
-    "placeholders": {
-      "bits": "The bit number, e.g. '7'"
-    }
-  },
-  "panels.side.nextReg.bits": "Bits {bits}",
-  "@panels.side.nextReg.bits": {
-    "context": "First line of the tooltip of a multi-bit field in an expanded Next register row.",
-    "placeholders": {
-      "bits": "The bit range, e.g. '7:5'"
-    }
-  },
-  "panels.side.nextReg.bitSet": "Set",
-  "@panels.side.nextReg.bitSet": {
-    "context": "Last line of the tooltip of a single-bit field in an expanded Next register row: the bit is 1.",
-    "maxChars": 10
-  },
-  "panels.side.nextReg.bitClear": "Clear",
-  "@panels.side.nextReg.bitClear": {
-    "context": "Last line of the tooltip of a single-bit field in an expanded Next register row: the bit is 0 (an adjective, not a verb).",
-    "maxChars": 10
-  },
   "panels.side.memMapping.currentRom": "Current ROM:",
   "@panels.side.memMapping.currentRom": {
     "context": "Row label of the Next Memory Mapping panel: the ROM selected for paging.",
@@ -4153,10 +4120,6 @@
     "placeholders": {
       "port": "The port, e.g. 'A7h'"
     }
-  },
-  "panels.side.nextReg.popOut": "Open the Next Registers document",
-  "@panels.side.nextReg.popOut": {
-    "context": "Tooltip of the pop-out icon button in the header of the Debug sidebar's Next Registers panel: opens the same registers as a document with more room."
   },
   "panels.memoryMap.kind.rom": "ROM",
   "@panels.memoryMap.kind.rom": {

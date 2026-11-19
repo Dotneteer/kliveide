@@ -67,9 +67,8 @@ div.memMapFlag {
 }
 
 /*
- * A mapping row's leading. See the twin rule in `NextRegPanel.module.scss` for the reasoning —
- * `dense` to shed the 26px list row, then 2px of block padding to land on the Call Stack panel's
- * row height, which is the reference the author chose for both Next panels.
+ * A mapping row's leading: `dense` to shed the 26px list row, then 2px of block padding to land on
+ * the Call Stack panel's row height, which is the reference the author chose for the Next panels.
  *
  * Doubled class, deliberately. `DataRow`'s own `.dense` sets the `padding` *shorthand*
  * (`0 var(--space-2)`), and a single-class rule here would tie with it on specificity — the

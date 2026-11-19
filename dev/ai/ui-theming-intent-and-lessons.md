@@ -46,10 +46,10 @@ These were decided by the project author. Changing them is a product decision, n
 | Toolbar glyphs | **Toolbar buttons in both windows use stroked Lucide-style icons too.** In the IDE, the sync-source-with-breakpoint toggle is `crosshair`, show-memory is `binary` and show-disassembly is `logs`. Those two sit side by side, so they must read as a pair: raw bytes beside a column listing. The author picked `logs` over `code`, `square-code`, `scan-text` and `list-ordered`. **The emulator's record button is `record-start`**, a Lucide-style redraw of the stock `record` codicon: a 2px ring at r=10 around a filled dot at r=6. The author turned down Lucide's `circle-dot` and kept the original's look. The redraw keeps the codicon's proportions: the ring-to-dot gap is one eighth of the icon. A Lucide-*like* glyph may fill an inner shape with `currentColor` and `stroke="none"`; it still follows the theme and the armed/recording `fill`. A swap goes to a *new* icon name at the toolbar call site and never re-points a stock name that other panels share: `memory-icon`, `disassembly-icon` and `record` still serve dialogs, snapshot viewers and the RZX menu. `chevron-down` is the exception that cannot be scoped: an `.svg` with that name replaces the chevron everywhere, so it is still the stock glyph. |
 | Toolbar size | **The main toolbar is compact: 16px secondary icons and 20px primary ones (run/debug split button, pause), all in 24px button boxes, on a 36px strip.** The author asked for a 20% cut so more buttons fit. **Shrink the box with the glyph:** a smaller icon in the old 30px box saves no width. The numbers live in `controls/toolbar-constants.ts` (`SECONDARY_ICON_SIZE`, `PRIMARY_ICON_SIZE`, `TOOLBAR_BUTTON_SIZE`), and a new toolbar `IconButton` passes all three rather than relying on `IconButton`'s 24/30 defaults. `ToolbarSplitButton.module.scss` mirrors the box by hand (26px tall, 28px primary, 14px chevron), so change it together with the constant. The strip height follows the buttons: it keeps exactly 3px of clearance above and below them (`STRIP.toolbar`). |
 | Toolbar split groups | **Any "action + chevron" pair in the toolbar is one split button, never two `IconButton`s.** The run/debug start button, the emulator's sound group (mute/unmute plus the sound-level menu) and its recording group (record plus the recordings menu) share one frame: a 28px main half and a 14px chevron half with a 12px (`xs`) chevron. The frame comes from `ToolbarSplitButton.module.scss`. Use `ToolbarSplitButton` when the menu chooses what the main button runs, and `ToolbarSplitAction` when the main button toggles and the menu is something else; that component leaves both clicks, and the menu, to the caller. A chevron drawn as a full-size `IconButton` reads as a third peer button rather than as part of its neighbour. |
-| Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. The Testing activity is the first with commands (`TestingCommands`: Add unit-test support and the runs). Badges so far: Breakpoints, Watch (neutral counts) and Unit Tests (failures, `tone="error"`, so it is absent when everything passes). **`SideBarPanelInfo.headerActions`** puts `SmallIconButton`s at the header's end, after the badge; the slot stops click and Enter/Space from also folding the panel. Its first user is the Next Registers panel's pop-out (`square-arrow-out-up-right`, the glyph every "open this as a document" button uses). |
+| Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. The Testing activity is the first with commands (`TestingCommands`: Add unit-test support and the runs). Badges so far: Breakpoints, Watch (neutral counts) and Unit Tests (failures, `tone="error"`, so it is absent when everything passes). **`SideBarPanelInfo.headerActions`** puts `SmallIconButton`s at the header's end, after the badge; the slot stops click and Enter/Space from also folding the panel. No panel uses it now (the Next Registers panel, its first user, was replaced by its document); an "open this as a document" action uses `square-arrow-out-up-right`. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Next Registers document, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document, the Execution History, the TVC Video panel (whose plans asked for it) and the µPD765 log (the port in the secondary, the byte in the primary). **A new machine's state panel is born converted**: it is built from `controls/data/registers` with `valueXclass={regStyles.stateValue}` and `iconFill="--color-state-value"` from the start, never neutral first. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address, the µPD765 log's port beside its byte. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Next Registers document, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document, the Execution History, the TVC Video panel (whose plans asked for it) and the µPD765 log (the port in the secondary, the byte in the primary). **A new machine's state panel is born converted**: it is built from `controls/data/registers` with `valueXclass={regStyles.stateValue}` and `iconFill="--color-state-value"` from the start, never neutral first. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — the Next Registers document's previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address, the µPD765 log's port beside its byte. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -75,7 +75,7 @@ The derivation and the per-accent numbers are in `ui-design-system.md`, "Seconda
   the two apart.** Four attempts, three accepted, and the refusal is the instructive one:
   - *Refused* — the Z80 shadow bank. `AF'` is already named differently from `AF`, so a second hue
     duplicates what the label says.
-  - *Accepted* — `NextRegPanel`'s previous value (`08 → 08`): the same register a moment apart,
+  - *Accepted* — the Next Registers document's previous value (`08 → 08`): the same register a moment apart,
     with nothing but position separating the pair.
   - *Accepted* — `MemMappingPanel`'s page rows (`FF -- 000000 0000FF`): bank numbers and memory
     offsets, four unlabelled hex numbers where only the colour split says where the pair breaks.
@@ -282,8 +282,8 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   `TooltipFactory` binds `mouseenter`/`mouseleave` to whatever element it is handed — so wrap the
   row (see `TipRow` in `MemMappingPanel`) and drop the per-cell `tooltip` props. It renders nothing
   inline (it portals only while visible), so it is safe as a child of the row's flex container.
-  Keep per-cell tooltips only where a row genuinely has two things to say — `NextRegPanel` names
-  its previous and current values separately.
+  Keep per-cell tooltips only where a row genuinely has two things to say, such as a previous and a
+  current value named separately.
 - **In a narrow sidebar, a row tooltip opens *under* the row and wraps.** `placement="right"` on a
   full-width row places the box past the row's far end - past the sidebar's edge, far from the value
   it explains - and `.tooltip` has no width limit, so a sentence-long description ran out of the
@@ -764,22 +764,21 @@ enough to look like "it just feels off" and large enough to be visible.
   glyph — expressed in the glyph's own em so it tracks the type scale. Keep the scaling on an inner
   span, never on the width-bearing box: `ch` resolves against the element's own font size, so a
   `1.6em` box measuring `3ch` is 28.8px while its `1em` neighbours' `3ch` is 18px.
-- **A conditionally rendered cell moves every column after it.** `NextRegPanel` renders its
-  `previous value -->` cell only when the register has a `lastWrite`, so the value column sits 10ch
-  further right on those rows than on the others — a ragged column in a 128-row virtualized list.
-  Left as-is for now (see the note in that panel's review): reserving the column always would put an
-  8ch hole in the majority of rows, which fights the Density decision above. Worth knowing as a
-  shape: in a tabular list, a cell that can vanish needs a placeholder or the grid is not a grid.
+- **A conditionally rendered cell moves every column after it.** A row that renders a `previous
+  value -->` cell only when there is one puts the value column further right on those rows than on
+  the others — a ragged column in a long virtualized list. Reserving the column always puts a hole
+  in the majority of rows, which fights the Density decision above. In a tabular list, a cell that
+  can vanish needs a placeholder or the grid is not a grid.
 - **`controls/layout`'s `Label` is not on the same origin as `controls/data`'s.** It adds
   `.legacySpacing` — `margin-inline: var(--measure-gap)` on *both* sides — so a row using it starts
   0.8ch right of a row using `DataLabel`/`SimpleValue`. The ULA panel had both shapes and therefore
   two label origins (`KL0` against `FCL`). Override it from the caller's own stylesheet with a
   type+class selector (`span.klLabel { margin-inline: 0 }`), which beats the single-class
   `.legacySpacing` whatever the load order. It also takes its `width` as an **inline style**, so a
-  width in your override class is ignored unless you drop the `width` prop. `NextRegPanel` had the
-  same margin *plus* a leading `LabelSeparator`, which started its content ~21.6px into the row
-  while the two panels stacked above it started at 8px — worth checking the left edge of adjacent
-  sidebar panels against each other, not just rows within one panel.
+  width in your override class is ignored unless you drop the `width` prop. The same margin *plus*
+  a leading `LabelSeparator` once started a panel's content ~21.6px into the row while the two
+  panels stacked above it started at 8px — worth checking the left edge of adjacent sidebar panels
+  against each other, not just rows within one panel.
 - **A fixed-px icon in a `ch`-sized cell does not align with text in that cell.** A 16px flag dot at
   the value cell's `flex-start` centres ~8px in, while a digit's ink centres half a character in, so
   every dot read as shifted right of the numbers above it. Wrap the icon in a `width: 1ch;
@@ -2122,7 +2121,7 @@ Four traps worth knowing:
   on exactly the face this app ships for authenticity. With the leading declared it is 23px on all
   three. **Survey for this rather than fixing the reported instance**: grep for stylesheets that name
   `--panel-font-size` but neither set `line-height` nor include `side-panel-content`. That grep is
-  now clean: `CallStackPanel`, `NextRegPanel`, `BreakpointsPanel`, `WatchPanel`, `NecUpd765Panel` and
+  now clean: `CallStackPanel`, `BreakpointsPanel`, `WatchPanel`, `NecUpd765Panel` and
   `ScriptingHistoryPanel` all declare it. **Re-run the grep after adding a panel** — the mandate has
   no test behind it, and a new panel that hand-rolls `font-family` + `font-size` instead of using
   `DataPanel` or the mixin re-opens the hole silently.

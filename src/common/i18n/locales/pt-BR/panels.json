@@ -16,7 +16,6 @@
   "panels.sideBar.kliveProject": "Projeto Klive",
   "panels.sideBar.callStack": "Pilha de chamadas",
   "panels.sideBar.nextMemoryMapping": "Mapeamento de memória Next",
-  "panels.sideBar.nextRegisters": "Registradores Next",
   "panels.sideBar.variables": "Variáveis",
   "panels.sideBar.watch": "Inspeção",
   "panels.sideBar.breakpoints": "Pontos de interrupção",

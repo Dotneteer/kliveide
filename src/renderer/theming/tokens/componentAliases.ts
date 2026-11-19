@@ -679,9 +679,9 @@ export const componentAliases: Record<string, string> = {
   /*
    * The *second kind* of value in a row, where a row carries two that must not be confused.
    *
-   * This is the secondary accent's actual criterion, and these panels meet it twice:
+   * This is the secondary accent's actual criterion, and these views meet it twice:
    *
-   * - `NextRegPanel`'s `08 → 08` — the left number is what was last written to the register, the
+   * - The Next Registers' `08 → 08` — the left number is what was last written to the register, the
    *   right one is what it reads back as. The same register a moment apart.
    * - `MemMappingPanel`'s page rows — `bank8k bank16k readOffset writeOffset`, where the first two
    *   are *bank numbers* and the last two are *addresses into memory*. Four hex numbers in a row

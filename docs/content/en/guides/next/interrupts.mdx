@@ -24,7 +24,7 @@ Run the program in debug mode and pause it where the interrupt should have run.
 
 ### Open the Interrupts panel
 
-Open the Debug activity and expand the **Interrupts** header, below **Copper**.
+Open the **Machine info** activity and expand the **Interrupts** header, below **Copper**.
 
 ### Read the diagnostics
 
@@ -64,7 +64,7 @@ While the machine is paused, hovering a row shows two buttons:
   Available for the line interrupt, the ULA and CTC channels 0-3.
 - **Clear** clears the source's status bit by writing a 1 to `$C8`-`$CA`.
 
-Both are real writes to the machine: the Next Registers panel shows them like a program's.
+Both are real writes to the machine: the Next Registers document shows them like a program's.
 
 **NMI** shows the NMI arbiter's state (IDLE, FETCH, HOLD, END) and the device it chose, whether the M1
 and DRIVE buttons may raise an NMI (`$06` bits 3 and 4), the +3 disk port trap (`$D8` bit 0), the

@@ -96,7 +96,8 @@ module.exports = {
         await klive.shot(DOCS, "en/guides/next/interrupts/interrupt-timeline.webp", { displayWidth: 900 });
       });
 
-      await h.activity(klive, "Debug");
+      // --- The Interrupts panel is in the Machine info activity, with the other Next panels
+      await h.activity(klive, "Machine info");
       await step(klive, "panel", async () => {
         // --- An interrupt stop on the line interrupt: the machine stops at its handler's first
         // --- instruction, nested inside the ULA's handler, so both are in service
@@ -114,6 +115,8 @@ module.exports = {
       });
 
       await step(klive, "stop-dialog", async () => {
+        // --- The Breakpoints panel is in the Debug activity
+        await h.activity(klive, "Debug");
         const panel = h.sectionLocator(ide, "Breakpoints");
         await h.sections(ide, ["Breakpoints"]);
         await panel.getByText("INT:ACK:LINE").first().dblclick();

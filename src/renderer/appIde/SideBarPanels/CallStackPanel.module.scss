@@ -50,8 +50,7 @@
 /*
  * The frame index ("Top:", "1:", "2:", ...).
  *
- * Trailing-aligned so the colons line up down the column whatever the number's width — the same
- * reason `NextRegPanel` right-aligns its arrow cell. `margin-inline: 0` drops `controls/layout`
+ * Trailing-aligned so the colons line up down the column whatever the number's width. `margin-inline: 0` drops `controls/layout`
  * `Label`'s `.legacySpacing`; `5ch` holds the widest form ("Top:" and a three-digit index are both
  * four characters) and replaces a `width={32}` **px** prop, which M2 forbids.
  */

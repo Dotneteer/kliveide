@@ -208,7 +208,6 @@ import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPan
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
-import { NextRegPanel, NextRegPanelActions } from "./appIde/SideBarPanels/NextRegPanel";
 import { CopperPanel } from "./appIde/SideBarPanels/CopperPanel";
 import { InterruptsPanel } from "./appIde/SideBarPanels/InterruptsPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
@@ -297,36 +296,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     useScrollViewer: false,
     renderer: CallStackPanel,
   }, { title: "panels.sideBar.callStack" }),
-  withTexts({
-    id: "nextMemoryMappingPanel",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: MemMappingPanel,
-    restrictTo: [MI_ZXNEXT]
-  }, { title: "panels.sideBar.nextMemoryMapping" }),
-  withTexts({
-    id: "nextRegPanel",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    useScrollViewer: false,
-    renderer: NextRegPanel,
-    // --- Pops the panel out into the Next Registers document
-    headerActions: NextRegPanelActions,
-    restrictTo: [MI_ZXNEXT]
-  }, { title: "panels.sideBar.nextRegisters" }),
-  {
-    // --- Beside the Next Registers (`dev/plans/COPPER_DEBUGGING_PLAN.md` D16)
-    id: "nextCopperPanel",
-    title: "Copper",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: CopperPanel,
-    restrictTo: [MI_ZXNEXT]
-  },
-  withTexts({
-    // --- Beside the Copper (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §3)
-    id: "nextInterruptsPanel",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: InterruptsPanel,
-    restrictTo: [MI_ZXNEXT]
-  }, { title: "panels.sideBar.interrupts" }),
   {
     id: "ulaPanel",
     title: "ULA & I/O",
@@ -388,7 +357,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     useScrollViewer: false,
     renderer: WatchPanel,
     badge: WatchBadge,
-    expandedOnInit: true
+    // --- Collapsed until asked for: the badge shows how many expressions it holds
+    expandedOnInit: false
   }, { title: "panels.sideBar.watch" }),
   withTexts({
     id: "breakpointsPanel",
@@ -427,6 +397,29 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: PalettePanel,
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.nextPalettes" }),
+  withTexts({
+    id: "nextMemoryMappingPanel",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: MemMappingPanel,
+    restrictTo: [MI_ZXNEXT]
+  }, { title: "panels.sideBar.nextMemoryMapping" }),
+  {
+    // --- The Copper's live state (`dev/plans/COPPER_DEBUGGING_PLAN.md` D16); the Copper List document
+    // --- and Step Copper are where it is debugged
+    id: "nextCopperPanel",
+    title: "Copper",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: CopperPanel,
+    restrictTo: [MI_ZXNEXT]
+  },
+  withTexts({
+    // --- The Next's interrupt system (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §3), with the other
+    // --- Next machine information. The Next Registers are a document (View › Machine Views)
+    id: "nextInterruptsPanel",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: InterruptsPanel,
+    restrictTo: [MI_ZXNEXT]
+  }, { title: "panels.sideBar.interrupts" }),
   withTexts({
     // --- The Testing activity's first panel (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13)
     id: "unitTestsPanel",

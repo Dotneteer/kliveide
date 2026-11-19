@@ -226,7 +226,7 @@ line; all UI text through `t()` with translator context (`dev/ai/i18n-guide.md`)
 
 ## 10. As built (2026-11-18)
 
-**Answers taken for §7** (change them in review): (1) its own panel, below Copper; (2) recording only
+**Answers taken for §7** (change them in review): (1) its own panel, in the Machine info activity below Copper (moved there with Next Memory Mapping and Copper; the Next Registers side-bar panel was removed in favour of its document); (2) recording only
 while the Interrupt Timeline is open, which the timeline's toolbar says; (3) the expansion bus has a
 dimmed row saying "not emulated"; (4) Ring and Clear exist, only while paused, as real NextReg writes.
 
