@@ -1,6 +1,7 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phase 1 implemented, in review** (2026-11-19, branch `dma-debugging-tools-mockups`). This plan
+Status: **Phase 1 implemented, in review; shipped as the feature on its own** (2026-11-19, branch
+`dma-debugging-tools-mockups`). This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -313,5 +314,5 @@ In the order the mockup page suggests, each reusing what the earlier ones add:
   `DmaWr*Pragma` nodes in `src/main/compiler-common/`). Phase 2 (editor support) builds on them rather
   than adding a pragma.
 
-**Not done**: the competitive analysis line and the changeset wait for the commit that completes the
-plan (§7), since §8's phases may still be added to it.
+**Shipped on its own** (the author's decision): Phase 1 carries the changeset and the competitive
+analysis line (§7). The tools of §8, if built, are follow-up features with changesets of their own.
