@@ -19,6 +19,7 @@ import {
   type StaticCompletionItem
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
+import { computeDmaCodeLenses, computeDmaHover, DMA_LINE_RE } from "./dma-editor";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
 // --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
@@ -33,6 +34,7 @@ import {
 // Semantic-token change notification
 // ---------------------------------------------------------------------------
 let _fireSemanticChange: (() => void) | undefined;
+let _fireCodeLensChange: (() => void) | undefined;
 
 /**
  * Fires the semantic-token onDidChange event so Monaco immediately
@@ -40,6 +42,8 @@ let _fireSemanticChange: (() => void) | undefined;
  */
 export function notifySemanticTokensChanged(): void {
   _fireSemanticChange?.();
+  // --- The `.dma` code lenses come from the same build data (NEXT_DMA_DEBUGGING_PLAN §10.3)
+  _fireCodeLensChange?.();
 }
 
 // ---------------------------------------------------------------------------
@@ -1301,6 +1305,9 @@ export function registerZ80Providers(
   const LANG = "kz80-asm";
   const OPEN_INCLUDE_CMD = "klive.openIncludeFile";
 
+  // --- A document's `.dma` programs, from the last build (NEXT_DMA_DEBUGGING_PLAN §10.3)
+  const modelDmaPrograms = (_model: any, fileIndex: number) => getService().getDmaPrograms?.(fileIndex) ?? [];
+
   // Register a Monaco command so that the link provider can trigger navigation
   // via a command: URI (single-click, no modifier key required).
   try {
@@ -1413,13 +1420,18 @@ export function registerZ80Providers(
       // --- A `.copper` line: the decoded Copper word (`nop`/`halt` there are not Z80 mnemonics).
       // --- Only before a comment, so hovering the comment still behaves as elsewhere.
       const commentAt = lineContent.indexOf(";");
-      const copperResult =
-        commentAt < 0 || position.column <= commentAt
-          ? computeCopperHover(lineContent, lineAddr?.bytes)
+      const beforeComment = commentAt < 0 || position.column <= commentAt;
+      const copperResult = beforeComment ? computeCopperHover(lineContent, lineAddr?.bytes) : null;
+
+      // --- A `.dma` line: its register group decoded, and its program's summary (§10.3)
+      const dmaResult =
+        beforeComment && fileIndex !== undefined && DMA_LINE_RE.test(lineContent)
+          ? computeDmaHover(position.lineNumber, modelDmaPrograms(model, fileIndex))
           : null;
 
       // --- Symbol / instruction hover
       const result =
+        dmaResult ??
         copperResult ??
         (word
           ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.(), lineContent)
@@ -1644,6 +1656,26 @@ export function registerZ80Providers(
   // --- Semantic syntax highlighting (compiler-resolved symbol kinds → colours)
   const semanticEmitter = new monaco.Emitter();
   _fireSemanticChange = () => semanticEmitter.fire(undefined);
+
+  // --- `.dma` programs: a code lens with the summary over each program's first line (§10.3)
+  const codeLensEmitter = new monaco.Emitter();
+  _fireCodeLensChange = () => codeLensEmitter.fire(undefined);
+  monaco.languages.registerCodeLensProvider(LANG, {
+    onDidChange: codeLensEmitter.event,
+    provideCodeLenses(model: any) {
+      const modelPath: string = model.uri?.fsPath ?? model.uri?.path ?? "";
+      const fileIndex = getService().getFileIndex(modelPath);
+      if (fileIndex === undefined) return { lenses: [], dispose() {} };
+      const lenses = computeDmaCodeLenses(modelDmaPrograms(model, fileIndex)).map((lens) => ({
+        range: { startLineNumber: lens.lineNumber, startColumn: 1, endLineNumber: lens.lineNumber, endColumn: 1 },
+        command: { id: "", title: lens.title }
+      }));
+      return { lenses, dispose() {} };
+    },
+    resolveCodeLens(_model: any, lens: any) {
+      return lens;
+    }
+  });
 
   monaco.languages.registerDocumentSemanticTokensProvider(LANG, {
     onDidChange: semanticEmitter.event,

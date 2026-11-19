@@ -1,7 +1,7 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phase 1 implemented, in review; shipped as the feature on its own** (2026-11-19, branch
-`dma-debugging-tools-mockups`). This plan
+Status: **Phase 1 shipped** (PR #1664). **Phase 2, editor support, implemented, in review** (2026-11-19,
+branch `dma-editor-support`; §10). This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -316,3 +316,84 @@ In the order the mockup page suggests, each reusing what the earlier ones add:
 
 **Shipped on its own** (the author's decision): Phase 1 carries the changeset and the competitive
 analysis line (§7). The tools of §8, if built, are follow-up features with changesets of their own.
+
+## 10. Phase 2: editor support for `.dma` programs
+
+Mockup tool 6. The assembler already has the `.dma` statement language (one line per register group or
+command, `docs/content/en/reference/z80-assembler/zx-next-dma.mdx`), completions for it, and the
+decoded `dma` region kind in annotations; the mockup's proposed `.dma` block pragma is therefore not
+needed. Phase 2 adds what the editor and the build do not yet say about such a program.
+
+### 10.1 What a program is
+
+A **`.dma` program** is a run of `.dma` lines in one output segment whose bytes are contiguous, with the
+data bytes between them (the runtime patching pattern's `.dw` lines) counted in. Two `.dma` lines
+belong to one program when nothing but the follow bytes the DMA still expects lies between them: the
+gap between the first line's end and the second line's start is at most the number of follow bytes
+pending after decoding the program so far. A longer gap (code, unrelated data) starts a new program.
+Raw `.defb` programs are not analysed: nothing marks them as DMA programs.
+
+### 10.2 Build warnings (the assembler)
+
+After the fixups, a post-pass (`checkDmaPrograms`, beside `collectCopperBlocks`) decodes each program's
+bytes with `dmaDecoder.ts` and reports warnings, never errors, so a build never fails on them. They reach
+the editor as squiggles through the background compile, the build output and `klive` CLI builds.
+
+| Code | When | Line |
+|---|---|---|
+| Z0388 | A `.dma` line's first byte is taken as a follow byte of an earlier group (an omitted WR0 or WR4 value without its `.dw`) | the swallowed line |
+| Z0389 | An enable (`.dma enable`, `.dma wr3 dma_enable`, or `$87` through `.dma cmd`) after a WR0/WR4 start address with no `.dma load` between | the enable |
+| Z0390 | Auto restart while the program's mode keeps the bus (byte or continuous, or burst without a prescaler): the CPU never gets the bus back | WR5 |
+| Z0391 | A prescaler in byte or continuous mode: the DMA keeps the bus while it waits | WR2 |
+| Z0392 | A setting the Next's DMA ignores: a search transfer type, `int_enable`, `stop_on_match`, mask or match | the line |
+
+A group that still expects bytes where a program ends is not reported: whether the bytes after a
+program are its `.dw` values or unrelated code cannot be told from the bytes.
+
+Z0390/Z0391 use the program's last WR4; without one, they are not checked.
+
+### 10.3 The editor
+
+- **Hover on a `.dma` line** (`computeDmaHover`, beside `computeCopperHover`): the line's decoded group
+  (`formatDmaCommand`, `describeDmaCommand`), then the program's summary. The bytes come from the last
+  build (`getLineAddress`), as the Copper hover does; before a build there is no DMA hover.
+- **A code lens on a program's first `.dma` line** with its summary: direction, port A and port B
+  addresses (or "patched at run time" when a value comes from a `.dw` the program writes as 0), bytes
+  to move, mode, and with a prescaler its exact period and rate at 3.5 MHz (`dmaPacing`). Refreshed when
+  a build's language data arrives.
+- Both are computed by one pure module, `src/common/zxnext/dma/dmaProgram.ts` (program grouping from
+  per-line bytes, the summary and the lint rules), used by the assembler's post-pass and the editor, so
+  they agree.
+
+### 10.4 Done when
+
+- `test/zxnext-hw/...` is not needed: everything is byte-level. Unit tests for `dmaProgram.ts` (grouping,
+  each rule, the summary) and assembler tests that compile sources with each rule's trap and check the
+  warning code and line, and that the reference page's examples compile with no warning.
+- Provider tests for the hover and the code lens text.
+- The reference page `zx-next-dma.mdx` gains a "Warnings" table (Z0388-Z0392) and a note on the hover and
+  code lens; the guide `guides/next/dma.mdx` links to it.
+- Checked in the running app: squiggles from the background compile, the hover, the code lens.
+
+### 10.5 As built (2026-11-19)
+
+- **The editor's programs come from the assembler, not from per-line bytes.** Pragma lines have no
+  listing items, so the language data's `lineInfo` holds no bytes for `.dma` lines (nor for `.copper`
+  lines: `computeCopperHover`'s compiled-bytes fallback is never fed, and only its literal decoding
+  works). The assembler's post-pass therefore exports its programs as `AssemblerOutput.dmaPrograms`
+  (`DmaProgramRecord`: the program's address, its bytes after the fixups, and each `.dma` line's
+  offset and length); `extractIntelData` passes them on, and `LanguageIntelService.getDmaPrograms`
+  regroups them per file with `dmaProgramsOfFile`. The editor and the warnings use one grouping.
+- **Five warnings, Z0388-Z0392.** A group still missing bytes where a program ends was dropped (§10.2).
+- **The code lens title is translated** (`panels.feature.dmaLens.*`); the hover's decoded text is the
+  decoder's English, as the disassembly shows it, like the Copper hover.
+- **The pacing in the summary assumes 3-clock cycles at 3.5 MHz**; a timing byte that shortens the
+  cycles only matters for prescalers too small to have an effect.
+- **The reference page's operating-mode table was corrected**: it described `byte` and `burst` the
+  Zilog way; on the Next, byte mode is continuous and burst mode frees the bus only while the prescaler
+  waits.
+- Files: `src/common/zxnext/dma/dmaProgram.ts`; `common-assembler.ts` (`_dmaEmissions`,
+  `checkDmaPrograms`); `assembler-errors.ts`, `compiler.json` (Z0388-Z0392);
+  `src/renderer/appIde/services/dma-editor.ts` and `z80-providers.ts` (hover, code lens);
+  tests `test/z80-assembler/dma-warnings.test.ts`, `dma-editor.test.ts`; docs `zx-next-dma.mdx`
+  (Warnings, In the editor), `guides/next/dma.mdx` (screenshots: `guides-dma-editor` recipe).

@@ -29,6 +29,7 @@ import {
 } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
 import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
+import { dmaProgramWarnings, groupDmaPrograms } from "@common/zxnext/dma/dmaProgram";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
@@ -311,6 +312,12 @@ export abstract class CommonAssembler<
   private _copperEmissions: CopperEmission<TInstruction>[] = [];
 
   /**
+   * Every `.dma` line's bytes, in emission order; `checkDmaPrograms` groups them into programs and
+   * reports their warnings once the fixups have patched the bytes (NEXT_DMA_DEBUGGING_PLAN §10)
+   */
+  private _dmaEmissions: DmaEmission<TInstruction>[] = [];
+
+  /**
    * Store the handler of trace messages
    */
   private _traceHandler: (message: string) => void;
@@ -466,6 +473,7 @@ export abstract class CommonAssembler<
     this._modelPragmas = [];
     this._nexBorderSetExplicitly = false;
     this._copperEmissions = [];
+    this._dmaEmissions = [];
 
     // --- Prepare pre-defined symbols
     this.conditionSymbols = Object.assign({}, this._options.predefinedSymbols);
@@ -501,6 +509,9 @@ export abstract class CommonAssembler<
     }
     if (emitSuccess) {
       emitSuccess = this.collectCopperBlocks();
+    }
+    if (emitSuccess) {
+      this.checkDmaPrograms();
     }
     if (!emitSuccess) {
       // --- If failed, clear output segments
@@ -1968,6 +1979,8 @@ export abstract class CommonAssembler<
     pragmaLine: Pragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
+    // --- A `.dma` line: where its bytes start, recorded after the switch
+    const dmaStart = (pragmaLine.type as string).startsWith("Dma") ? this.dmaEmissionStart() : undefined;
     switch (pragmaLine.type) {
       case "OrgPragma":
         await this.processOrgPragma(pragmaLine, label);
@@ -2136,7 +2149,7 @@ export abstract class CommonAssembler<
         this.processSaveNexBar(pragmaLine);
         break;
 
-      // --- DMA pragma cases
+      // --- DMA pragma cases (each line's bytes are recorded for `checkDmaPrograms`)
       case "DmaResetPragma":
         this.processDmaSimpleCommand(pragmaLine, 0xc3);
         break;
@@ -2194,6 +2207,73 @@ export abstract class CommonAssembler<
         this.processCopperWordPragma(pragmaLine);
         break;
     }
+    if (dmaStart) this.recordDmaEmission(pragmaLine, dmaStart);
+  }
+
+  /** The segment and offset the next byte goes to, for a `.dma` line's record */
+  private dmaEmissionStart(): { segmentIndex: number; offset: number; segment: BinarySegment } {
+    this.ensureCodeSegment();
+    return {
+      segmentIndex: this._output.segments.length - 1,
+      offset: this._currentSegment.currentOffset,
+      segment: this._currentSegment
+    };
+  }
+
+  /** Records the bytes a `.dma` line emitted (none when the model is not the Next) */
+  private recordDmaEmission(
+    pragma: Pragma<TInstruction, TToken>,
+    start: { segmentIndex: number; offset: number; segment: BinarySegment }
+  ): void {
+    if (this._currentSegment !== start.segment) return;
+    const length = this._currentSegment.currentOffset - start.offset;
+    if (length <= 0) return;
+    this._dmaEmissions.push({
+      segmentIndex: start.segmentIndex,
+      offset: start.offset,
+      length,
+      sourceLine: pragma as unknown as AssemblyLine<TInstruction>
+    });
+  }
+
+  /**
+   * Groups the `.dma` lines into programs and reports their warnings (NEXT_DMA_DEBUGGING_PLAN §10.2):
+   * after the fixups, so symbolic values are in. Warnings only; it never fails a build.
+   */
+  private checkDmaPrograms(): void {
+    this._output.dmaPrograms.length = 0;
+    let run: DmaEmission<TInstruction>[] = [];
+    const flush = () => {
+      if (run.length === 0) return;
+      const code = this._output.segments[run[0].segmentIndex]?.emittedCode;
+      if (code) {
+        const lines = run.map((e, index) => ({ key: index, offset: e.offset, length: e.length }));
+        for (const program of groupDmaPrograms(code, lines)) {
+          this._output.dmaPrograms.push({
+            address: (this._output.segments[run[0].segmentIndex].startAddress + program.start) & 0xffff,
+            bytes: Array.from(code.slice(program.start, program.end)),
+            lines: program.lines.map((l) => ({
+              fileIndex: run[l.key].sourceLine.fileIndex,
+              line: run[l.key].sourceLine.line,
+              offset: l.offset - program.start,
+              length: l.length
+            }))
+          });
+          for (const w of dmaProgramWarnings(program)) {
+            const args = w.ownerKey !== undefined ? [...w.args, run[w.ownerKey].sourceLine.line] : w.args;
+            this.reportAssemblyWarning(w.code, run[w.key].sourceLine, null, ...args);
+          }
+        }
+      }
+      run = [];
+    };
+    for (const emission of this._dmaEmissions) {
+      if (run.length > 0 && (run[0].segmentIndex !== emission.segmentIndex || emission.offset < run[run.length - 1].offset)) {
+        flush();
+      }
+      run.push(emission);
+    }
+    flush();
   }
 
   /**
@@ -6469,6 +6549,14 @@ function isByteEmittingPragma<TInstruction extends TypedObject>(
 /**
  * One `.copper` word as it was emitted: where it is, and which line produced it
  */
+/** A `.dma` line's bytes in a segment (NEXT_DMA_DEBUGGING_PLAN §10) */
+type DmaEmission<TInstruction extends TypedObject> = {
+  segmentIndex: number;
+  offset: number;
+  length: number;
+  sourceLine: AssemblyLine<TInstruction>;
+};
+
 type CopperEmission<TInstruction extends TypedObject> = {
   segmentIndex: number;
   offset: number;

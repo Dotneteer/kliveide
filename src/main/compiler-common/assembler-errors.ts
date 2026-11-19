@@ -136,6 +136,13 @@ export type ErrorCodes =
   | "Z0386"
   | "Z0387"
 
+  // --- `.dma` program warnings (NEXT_DMA_DEBUGGING_PLAN §10.2)
+  | "Z0388"
+  | "Z0389"
+  | "Z0390"
+  | "Z0391"
+  | "Z0392"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"

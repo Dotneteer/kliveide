@@ -97,7 +97,8 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
     symbolReferences,
     documentOutline: outline,
     sourceFiles: sourceFileList,
-    lineInfo
+    lineInfo,
+    dmaPrograms: "dmaPrograms" in output && Array.isArray((output as any).dmaPrograms) ? (output as any).dmaPrograms : []
   };
 }
 

@@ -7,6 +7,7 @@ import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceF
 import { CommonTokenType } from "./common-tokens";
 import type { ProcedureInfo, SourceAnnotation } from "@abstractions/CompilerInfo";
 import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
+import type { DmaProgramRecord } from "@common/zxnext/dma/dmaProgram";
 
 /**
  * This class represents the output of the Z80 assembler
@@ -114,6 +115,9 @@ export class AssemblerOutput<
    * value (after fixups) and source line (`dev/plans/COPPER_DEBUGGING_PLAN.md` D8)
    */
   readonly copperBlocks: CopperBlock[] = [];
+
+  /** The `.dma` programs, with their bytes after the fixups (NEXT_DMA_DEBUGGING_PLAN §10) */
+  readonly dmaPrograms: DmaProgramRecord[] = [];
 
   /**
    * The `.proc`/`.endp` blocks' extents (`dev/plans/PROFILER_PLAN.md` D7): the profiler rolls time up

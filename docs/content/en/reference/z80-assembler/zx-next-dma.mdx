@@ -254,9 +254,9 @@ The assembler **always** sets D2 and D3 (the address follow-byte indicator bits)
 
 | Mode | Description |
 |---|---|
-| `byte` | Single byte per /BUSREQ assertion |
-| `continuous` | Transfer the entire block in one burst |
-| `burst` | Transfer bytes until /WAIT is de-asserted |
+| `byte` | Accepted; on the Next it behaves exactly like `continuous` |
+| `continuous` | The DMA keeps the bus from the first byte to the last, prescaler waits included |
+| `burst` | The DMA gives the bus back to the CPU while the prescaler waits; without a prescaler it behaves like `continuous` |
 
 **Examples:**
 
@@ -430,6 +430,27 @@ This emits 14 bytes in total:
 | `Z0366` | Expected operating mode: `'byte'`, `'continuous'`, or `'burst'` | Invalid WR4 mode |
 | `Z0367` | Prescaler requires cycle length to be specified | WR2 prescaler given without cycle length |
 | `Z0368` | The `.dma` pragma requires the Next model (`.model next`) | Used outside `.model next` |
+
+### Warnings
+
+After a build the assembler reads each `.dma` program the way the DMA reads it and warns about the
+setups that compile but do not do what they say. A program is a run of `.dma` lines whose bytes follow
+each other, with the `.dw` values of the runtime patching pattern counted in. Warnings never stop the build.
+
+| Code | Message (gist) | Cause |
+|---|---|---|
+| `Z0388` | This line's first byte is taken as a follow byte of the WR*n* on line *m* | A `wr0` without its block length, or a `wr4` without its address, is not followed by the `.dw` that supplies it, so the DMA takes the next line's byte instead |
+| `Z0389` | The DMA is enabled after new start addresses but without `.dma load` | Only `load` copies the start addresses into the addresses the transfer uses |
+| `Z0390` | Auto restart in continuous mode never gives the bus back | `wr5 auto_restart` with a `wr4` mode that keeps the bus: the CPU stops for good |
+| `Z0391` | In continuous mode the DMA keeps the bus while the prescaler waits | A `wr2` prescaler with a `byte` or `continuous` `wr4`: use `burst` for a paced transfer |
+| `Z0392` | The ZX Spectrum Next's DMA ignores ... | `search`, `int_enable`, `stop_on_match`, mask or match: the Next's DMA has none of them |
+
+## In the editor
+
+After a build, a line above each `.dma` program summarises it: where the bytes come from and go to,
+how many, the mode, and with a prescaler the byte period and rate at 3.5 MHz. Hovering a `.dma` line
+decodes its register group. To see the DMA's state while a program runs, use the
+[DMA panel](/en/guides/next/dma/).
 
 ---
 
