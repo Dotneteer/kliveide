@@ -1,6 +1,7 @@
 import { documentDisplayName } from "./specialDocuments";
 import { useT } from "@common/i18n/useT";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { backgroundBuildMessages } from "@renderer/features/editor/monaco/editorDiagnostics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CloseMode } from "./DocumentTab";
@@ -57,6 +58,8 @@ export const DocumentsHeader = () => {
   const handlersInitialized = useRef(false);
   const projectVersion = useSelector((s) => s.project?.projectFileVersion);
   const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
+  // --- The last background build's messages, for the error count on each tab
+  const buildMessages = useSelector(backgroundBuildMessages);
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
   // Subscribe so dirty flags refresh when editor changes update service-owned document objects.
@@ -373,6 +376,7 @@ export const DocumentsHeader = () => {
           areaId={documentAreaId}
           isInActiveArea={!activeDocumentAreaId || documentAreaId === activeDocumentAreaId}
           awaiting={awaiting}
+          buildMessages={buildMessages}
           dirtyStates={dirtyStates}
           isProjectDebugging={isProjectDebugging}
           openDocs={openDocs ?? []}

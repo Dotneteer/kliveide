@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  backgroundBuildMessages,
   closestSymbol,
   countProblems,
   fileErrorCount,
@@ -57,6 +58,23 @@ describe("editor diagnostics: counts", () => {
     expect(fileErrorCount(errors, "code/main.kz80.asm")).toBe(1);
     expect(fileErrorCount(errors, undefined)).toBe(0);
     expect(fileErrorCount(undefined, "code/main.kz80.asm")).toBe(0);
+  });
+});
+
+describe("editor diagnostics: background build messages", () => {
+  const errors = [{ filename: "/p/a.kz80.asm" }];
+  const compilation = { backgroundResult: { errors } };
+
+  it("gives the messages while background compilation is on", () => {
+    expect(
+      backgroundBuildMessages({ globalSettings: { editorOptions: { allowBackgroundCompile: true } }, compilation })
+    ).toBe(errors);
+  });
+
+  it("gives none while it is off", () => {
+    expect(
+      backgroundBuildMessages({ globalSettings: { editorOptions: { allowBackgroundCompile: false } }, compilation })
+    ).toBeUndefined();
   });
 });
 
