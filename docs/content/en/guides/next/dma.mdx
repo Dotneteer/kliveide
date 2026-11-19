@@ -106,6 +106,37 @@ mode.
 
 The `dma` command prints the same rows and warnings as text in the command output.
 
+## Stopping on DMA events
+
+A **DMA stop** is a breakpoint bound to something the DMA does rather than to an address. Add one in the
+Breakpoints panel with the **DMA event** type, or with `bp-set`:
+
+| Command | Stops |
+|---|---|
+| `bp-set dma:enable` | after the instruction that enabled the DMA |
+| `bp-set dma:load` | after the instruction that wrote `$CF` |
+| `bp-set dma:end` | after the byte that ends a block, an auto restart's wrap included |
+| `bp-set dma:count:256` | after the block's 256th byte |
+| `bp-set dma:write:$4000-$5AFF` | after the DMA writes memory in the range |
+| `bp-set dma:held:70000` | when one hold of the bus passes 70,000 T-states |
+| `bp-set dma:problem` | after a write the DMA ignores or that leaves it deaf, or an enable without a load |
+
+An enable, a load or a setup problem happens inside the CPU's `OUT`, so the machine stops after that
+instruction. The other events happen inside a transfer, while the CPU waits for the bus: the machine stops
+there, before the CPU's next instruction, with the transfer half done, and the CPU panel shows the CPU as
+held by the DMA. Continue, and the transfer goes on with its next byte. Hit counts, conditions and
+logpoints work as on any breakpoint; port breakpoints already stop on the DMA's port writes.
+
+<Shot src="guides/next/dma/dma-stop.webp" alt="The Breakpoints panel's DMA events group with the stop DMA:COUNT:100 marked as the one that fired, at $8013" caption="A DMA stop after the block's 100th byte: the machine stopped inside the transfer, before the instruction at $8013." width={380} />
+
+### Stepping the DMA
+
+While the machine is paused and the DMA has a transfer under way, the DMA panel shows three buttons:
+
+- **Step byte** runs until the DMA moves its next byte (`step-dma`).
+- **To end of block** runs until the block ends (`step-dma-block`).
+- **Until the CPU has the bus** runs until the DMA lets go of the bus (`step-dma-release`).
+
 ## What the program wrote: the DMA Port Log
 
 The panel shows where the DMA ended up; the **DMA Port Log** shows how it got there: every byte written

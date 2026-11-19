@@ -383,7 +383,8 @@ static uint32_t zxnextDebugAccessHit(uint32_t accessMask);
 #define Z80_DEBUG_LOOP_PREFIX zxnext
 #define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
 #define Z80_DEBUG_LOOP_STOP() \
-  (zxSdGetHostCommand() != ZX_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u || zxnextIntHitPresent != 0u)
+  (zxSdGetHostCommand() != ZX_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u || zxnextIntHitPresent != 0u || \
+   zxnextDmaHitPresent != 0u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* The access-breakpoint test of the last instruction: the shared log's memory accesses, the Next's port record */

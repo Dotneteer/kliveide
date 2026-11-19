@@ -931,5 +931,10 @@
   "@debug.bpGroup.interrupt": {
     "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the ZX Spectrum Next interrupt stops (breakpoints on an interrupt event: taken, lost, waiting, NMI); sentence case, matching the breakpoint dialog's type selector.",
     "maxChars": 24
+  },
+  "debug.bpGroup.dma": "DMA events",
+  "@debug.bpGroup.dma": {
+    "context": "Group header in the Breakpoints panel: the ZX Spectrum Next's DMA stops.",
+    "maxChars": 24
   }
 }

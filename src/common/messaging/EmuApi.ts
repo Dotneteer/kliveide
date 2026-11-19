@@ -42,6 +42,7 @@ import type {
 } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
+import type { DmaHit, DmaStepMode } from "@common/zxnext/dma/dmaStops";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
   HistoricalCpuInfo,
@@ -892,6 +893,14 @@ class EmuApiImpl {
   }
 
   /**
+   * Arms a ZX Spectrum Next DMA step (one byte, to the block's end, or until the DMA lets go of the bus)
+   * and runs the machine in debug mode until it fires.
+   */
+  async stepDma(_mode: DmaStepMode): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ZX Spectrum Next interrupt event ring's records written since `since` (all held ones by
    * default), oldest first.
    */
@@ -1300,6 +1309,11 @@ export type Z80CpuState = {
    * interrupt stop (`int:`) fires.
    */
   lastInterruptStop?: InterruptStopEvent;
+  /**
+   * The DMA event the machine last stopped on. ZX Spectrum Next only, and absent until a DMA stop
+   * (`dma:`) or a DMA step fires.
+   */
+  lastDmaStop?: DmaHit & { partition?: number };
   /**
    * Set while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
    * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory

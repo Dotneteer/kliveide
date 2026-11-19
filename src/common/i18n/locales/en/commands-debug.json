@@ -1381,6 +1381,30 @@
   "@commands.bp.interrupt.kind": {
     "context": "Validation error of 'bp-set int:...' (ZX Spectrum Next interrupt stops). The specs are syntax, keep them."
   },
+  "commands.bp.dma.kind": "Unknown DMA event: use enable, load, end, count:<n>, write:<address>[-<address>], held:<T> or problem",
+  "@commands.bp.dma.kind": {
+    "context": "Error of bp-set dma:... Keep the event names and placeholders."
+  },
+  "commands.bp.dma.count": "dma:count needs a number of bytes from 1 to 65536, e.g. dma:count:256",
+  "@commands.bp.dma.count": {
+    "context": "Error of bp-set dma:count. Keep the example."
+  },
+  "commands.bp.dma.address": "dma:write needs an address or a range from $0000 to $FFFF, e.g. dma:write:$4000-$5AFF",
+  "@commands.bp.dma.address": {
+    "context": "Error of bp-set dma:write. Keep the example."
+  },
+  "commands.bp.dma.limit": "dma:held needs a number of T-states from 1 to 16777215, e.g. dma:held:70000",
+  "@commands.bp.dma.limit": {
+    "context": "Error of bp-set dma:held. Keep the example."
+  },
+  "commands.bp.dma.extra": "This DMA event takes no more arguments",
+  "@commands.bp.dma.extra": {
+    "context": "Error of bp-set dma:... when there are too many ':'-separated parts."
+  },
+  "commands.bp.dma.noAccessOptions": "A DMA stop takes none of -r, -w, -i, -o, -c, -m, -v or -attr",
+  "@commands.bp.dma.noAccessOptions": {
+    "context": "Error of bp-set dma:... with an access option. Keep the option names."
+  },
   "commands.bp.interrupt.source": "Unknown interrupt source: use one of {sources}",
   "@commands.bp.interrupt.source": {
     "context": "Validation error of 'bp-set int:ack:<source>'. The source names are syntax, keep them.",

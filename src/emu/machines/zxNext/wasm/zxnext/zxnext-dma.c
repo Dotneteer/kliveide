@@ -154,6 +154,90 @@ static void zxnextDmaLogRecord(uint32_t value, uint32_t flags, uint32_t before, 
   zxnextDmaLogCount++;
 }
 
+/*
+ * DMA stops (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §12): the watch the host pushes on every debug-loop
+ * entry, the latch the in-core loop returns on (Z80_DEBUG_LOOP_STOP) and the hit's record. Debugging
+ * state only: every static here is volatile, and nothing here changes what the DMA does - a hit inside a
+ * transfer only makes zxnextCpuRunDma return early (zxnextDmaBreak), and the next call carries on.
+ * The hit record is 16 bytes:
+ *   +0 u8 kind (ZXNEXT_DMAW_* bit index)   +1 u8 problem (ZXNEXT_DMAP_*)
+ *   +2 u16 bytes the block has moved       +4 u16 working source  +6 u16 working destination
+ *   +8 u16 the written address (write)     +10 u16 PC: the instruction's at a port write, the next
+ *                                               instruction's inside a transfer
+ *   +12 u32 CPU T-states the bus was held (held)
+ */
+#define ZXNEXT_DMAW_ENABLE 0u
+#define ZXNEXT_DMAW_LOAD 1u
+#define ZXNEXT_DMAW_END 2u
+#define ZXNEXT_DMAW_BYTE 3u
+#define ZXNEXT_DMAW_COUNT 4u
+#define ZXNEXT_DMAW_WRITE 5u
+#define ZXNEXT_DMAW_HELD 6u
+#define ZXNEXT_DMAW_PROBLEM 7u
+#define ZXNEXT_DMAW_RELEASE 8u
+#define ZXNEXT_DMAP_DEAF 1u
+#define ZXNEXT_DMAP_BECOMES_DEAF 2u
+#define ZXNEXT_DMAP_IGNORED 3u
+#define ZXNEXT_DMAP_NO_LOAD 4u
+#define ZXNEXT_DMA_WATCH_SLOTS 4u
+static uint32_t zxnextDmaWatchKinds;
+static uint32_t zxnextDmaWatchCounts[ZXNEXT_DMA_WATCH_SLOTS];
+static uint32_t zxnextDmaWatchWriteLo[ZXNEXT_DMA_WATCH_SLOTS];
+static uint32_t zxnextDmaWatchWriteHi[ZXNEXT_DMA_WATCH_SLOTS];
+static uint32_t zxnextDmaWatchHeldLimit;
+static uint8_t zxnextDmaHitPresent;
+static uint8_t zxnextDmaHitRecord[16];
+/* A hit inside a transfer: zxnextCpuRunDma returns before the next instruction */
+static uint8_t zxnextDmaBreak;
+/* The current hold of the bus, for `held` */
+static uint8_t zxnextDmaHoldOpen;
+static uint8_t zxnextDmaHoldReported;
+static uint32_t zxnextDmaHoldStart;
+
+/* The bytes the block has moved: the counter from its start (0, or $FFFF in Z80 DMA mode) */
+static inline uint32_t zxnextDmaBytesMoved(void) { return (uint32_t)(uint16_t)(dmaCounter - (dmaMode ? 0xffffu : 0u)); }
+
+static void zxnextDmaHit(uint32_t kind, uint32_t problem, uint32_t address, uint32_t heldTacts, uint32_t inTransfer) {
+  if (zxnextDmaHitPresent || !(zxnextDmaWatchKinds & (1u << kind))) return;
+  uint8_t *r = zxnextDmaHitRecord;
+  const uint32_t moved = zxnextDmaBytesMoved();
+  const uint32_t pc = inTransfer || !zxnextCpuInInstruction ? (z80GetPc() & 0xffffu) : ((z80GetPc() - 2u) & 0xffffu);
+  r[0] = (uint8_t)kind; r[1] = (uint8_t)problem;
+  r[2] = (uint8_t)moved; r[3] = (uint8_t)(moved >> 8);
+  r[4] = (uint8_t)dmaSrc; r[5] = (uint8_t)(dmaSrc >> 8);
+  r[6] = (uint8_t)dmaDest; r[7] = (uint8_t)(dmaDest >> 8);
+  r[8] = (uint8_t)address; r[9] = (uint8_t)(address >> 8);
+  r[10] = (uint8_t)pc; r[11] = (uint8_t)(pc >> 8);
+  r[12] = (uint8_t)heldTacts; r[13] = (uint8_t)(heldTacts >> 8); r[14] = (uint8_t)(heldTacts >> 16); r[15] = (uint8_t)(heldTacts >> 24);
+  zxnextDmaHitPresent = 1u;
+  if (inTransfer) zxnextDmaBreak = 1u;
+}
+
+/* A byte the transfer moved: `byte`, `count` and `write` (the destination before it stepped) */
+static void zxnextDmaWatchByte(uint32_t destIo, uint32_t destAddress) {
+  zxnextDmaHit(ZXNEXT_DMAW_BYTE, 0u, 0u, 0u, 1u);
+  if (zxnextDmaWatchKinds & (1u << ZXNEXT_DMAW_COUNT)) {
+    const uint32_t moved = zxnextDmaBytesMoved();
+    for (uint32_t i = 0; i < ZXNEXT_DMA_WATCH_SLOTS; i++) {
+      if (zxnextDmaWatchCounts[i] != 0u && zxnextDmaWatchCounts[i] == moved) zxnextDmaHit(ZXNEXT_DMAW_COUNT, 0u, 0u, 0u, 1u);
+    }
+  }
+  if (!destIo && (zxnextDmaWatchKinds & (1u << ZXNEXT_DMAW_WRITE))) {
+    const uint32_t a = destAddress & 0xffffu;
+    for (uint32_t i = 0; i < ZXNEXT_DMA_WATCH_SLOTS; i++) {
+      if (zxnextDmaWatchWriteHi[i] >= zxnextDmaWatchWriteLo[i] && a >= zxnextDmaWatchWriteLo[i] && a <= zxnextDmaWatchWriteHi[i]) {
+        zxnextDmaHit(ZXNEXT_DMAW_WRITE, 0u, a, 0u, 1u);
+      }
+    }
+  }
+}
+
+/* An enable through $87 or WR3 D6: `enable`, and `problem` when new start addresses wait for a load */
+static void zxnextDmaWatchEnable(void) {
+  zxnextDmaHit(ZXNEXT_DMAW_ENABLE, 0u, 0u, 0u, 0u);
+  if (dmaStartsSinceLoad) zxnextDmaHit(ZXNEXT_DMAW_PROBLEM, ZXNEXT_DMAP_NO_LOAD, 0u, 0u, 0u);
+}
+
 /* The note an enable latches */
 static inline void zxnextDmaLatchEnableNote(void) {
   dmaEnableNote = (uint8_t)((dmaStartsSinceLoad ? 0x01u : 0u) | (dmaEndOfBlockN ? 0u : 0x02u));
@@ -331,6 +415,7 @@ static void zxnextDmaCommand(uint8_t d) {
       dmaPortBTiming = 1;
       break;
     case 0xcfu: // load
+      if (zxnextDmaWatchKinds) zxnextDmaHit(ZXNEXT_DMAW_LOAD, 0u, 0u, 0u, 0u);
       dmaEndOfBlockN = 1;
       dmaStartsSinceLoad = 0;
       dmaEnableNote = 0;
@@ -353,6 +438,7 @@ static void zxnextDmaCommand(uint8_t d) {
       dmaRdSeq = zxnextDmaFirstReadEntry();
       break;
     case 0x87u:
+      if (zxnextDmaWatchKinds) zxnextDmaWatchEnable();
       zxnextDmaLatchEnableNote();
       dmaSeq = DMA_SEQ_START;
       dmaGrantAfterNextM1 = zxnextCpuInInstruction;
@@ -472,6 +558,7 @@ static void zxnextDmaWriteBase(uint8_t d) {
     case 0x00u: // WR3
       dmaRegTemp = d;
       if (d & 0x40u) {
+        if (zxnextDmaWatchKinds) zxnextDmaWatchEnable();
         zxnextDmaLatchEnableNote();
         dmaSeq = DMA_SEQ_START;
       }
@@ -591,13 +678,23 @@ static uint32_t zxnextDmaReadStatusByteCore(void) {
 
 /* A write to the DMA's port, recorded in the DMA Port Log while it records */
 void zxnextDmaWritePort(uint32_t value) {
-  if (!zxnextDmaLogEnabled) {
+  if (!zxnextDmaLogEnabled && !(zxnextDmaWatchKinds & (1u << ZXNEXT_DMAW_PROBLEM))) {
     zxnextDmaWritePortCore(value);
     return;
   }
   const uint32_t before = dmaWrSeq;
   zxnextDmaWritePortCore(value);
-  zxnextDmaLogRecord(value & 0xffu, 0u, before, dmaWrSeq, dmaRegTemp, dmaStartsSinceLoad);
+  if (zxnextDmaLogEnabled) zxnextDmaLogRecord(value & 0xffu, 0u, before, dmaWrSeq, dmaRegTemp, dmaStartsSinceLoad);
+  if (zxnextDmaWatchKinds & (1u << ZXNEXT_DMAW_PROBLEM)) {
+    /* The setup problems the log marks too (dmaLog.ts): written while deaf, the WR4 trap, a base byte
+       that matches no group (D7 = 1, D1-D0 = 10, not 10xxx010) */
+    const uint32_t d = value & 0xffu;
+    if (before == DMA_WR_R4_BYTE_2) zxnextDmaHit(ZXNEXT_DMAW_PROBLEM, ZXNEXT_DMAP_DEAF, 0u, 0u, 0u);
+    else if (dmaWrSeq == DMA_WR_R4_BYTE_2) zxnextDmaHit(ZXNEXT_DMAW_PROBLEM, ZXNEXT_DMAP_BECOMES_DEAF, 0u, 0u, 0u);
+    else if (before == DMA_WR_IDLE && (d & 0x83u) == 0x82u && (d & 0xc7u) != 0x82u) {
+      zxnextDmaHit(ZXNEXT_DMAW_PROBLEM, ZXNEXT_DMAP_IGNORED, 0u, 0u, 0u);
+    }
+  }
 }
 
 /* A read of the DMA's port, recorded in the DMA Port Log while it records */
@@ -606,6 +703,32 @@ uint32_t zxnextDmaReadStatusByte(void) {
   const uint32_t value = zxnextDmaReadStatusByteCore();
   if (zxnextDmaLogEnabled) zxnextDmaLogRecord(value, ZXNEXT_DMALOGF_READ, entry, 0u, 0u, 0u);
   return value;
+}
+
+/*
+ * The DMA-stop watch (§12): a bit per ZXNEXT_DMAW_* kind, up to four `count` targets (bytes moved; 0 is
+ * none), up to four `write` ranges (inclusive; lo > hi is none) and the `held` limit in CPU T-states.
+ * 0 kinds disarms. Clears a stale hit.
+ */
+void zxnextSetDmaWatch(uint32_t kinds, uint32_t heldLimit) {
+  zxnextDmaWatchKinds = kinds;
+  zxnextDmaWatchHeldLimit = heldLimit;
+  zxnextDmaHitPresent = 0u;
+  zxnextDmaBreak = 0u;
+}
+void zxnextSetDmaWatchSlot(uint32_t slot, uint32_t count, uint32_t writeLo, uint32_t writeHi) {
+  if (slot >= ZXNEXT_DMA_WATCH_SLOTS) return;
+  zxnextDmaWatchCounts[slot] = count;
+  zxnextDmaWatchWriteLo[slot] = writeLo;
+  zxnextDmaWatchWriteHi[slot] = writeHi;
+}
+uint32_t zxnextDmaHitRecordPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaHitRecord; }
+/* The latched hit: 1 and the record, or 0; taking it clears it */
+uint32_t zxnextTakeDmaHit(void) {
+  const uint32_t hit = zxnextDmaHitPresent;
+  zxnextDmaHitPresent = 0u;
+  zxnextDmaBreak = 0u;
+  return hit;
 }
 
 /* The DMA Port Log's exports (§11.1) */
@@ -719,6 +842,7 @@ static inline uint32_t zxnextDmaMore(void) {
 #define DMA_BUS_RELEASE_CLOCKS 3u
 static uint32_t zxnextDmaFinish(uint32_t busHeld) {
   dmaEndOfBlockN = 0;
+  if (zxnextDmaWatchKinds) zxnextDmaHit(ZXNEXT_DMAW_END, 0u, 0u, 0u, 1u);
   if (!dmaAutoRestart) {
     zxnextDmaGoIdle();
     return busHeld ? DMA_BUS_RELEASE_CLOCKS : 0u;
@@ -788,6 +912,7 @@ static uint32_t zxnextDmaTransferByte(void) {
   if (destIo && (dmaDest & 0xffu) == DMA_SPI_DATA_PORT) clocks += DMA_SPI_WAIT_CLOCKS;
 
   // --- TRANSFERING_WRITE_1: counter and addresses
+  const uint32_t writtenAt = dmaDest;
   dmaCounter = (uint16_t)(dmaCounter + 1u);
 #if ZXNEXT_CORE_VERSION >= 30300
   zxnextDmaStepAddress24(&dmaSrc, &dmaSrcHi, srcIsA ? dmaPortAAddrMode : dmaPortBAddrMode);
@@ -798,6 +923,7 @@ static uint32_t zxnextDmaTransferByte(void) {
   dmaDest = zxnextDmaStepAddress(dmaDest, srcIsA ? dmaPortBAddrMode : dmaPortAAddrMode);
 #endif
   dmaAtLeastOne = 1;
+  if (zxnextDmaWatchKinds) zxnextDmaWatchByte(destIo, writtenAt);
 
   // --- TRANSFERING_WRITE_4, the byte's last clock (`clocks - 1`, READ_1 being clock 0). READ_1 zeroes
   // --- the timer and every later clock adds `scale`, so a clock j sees (j - 1) x scale (dma.vhd ~245-255)

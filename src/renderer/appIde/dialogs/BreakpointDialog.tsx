@@ -35,6 +35,8 @@ import {
   isCopperKind,
   isFormValid,
   isInterruptKind,
+  isDmaKind,
+  dmaEventTakesArg,
   isSpriteKind,
   isNextRegKind,
   parseNumericInput,
@@ -90,6 +92,20 @@ const [SPRITE_OPTION]: RadioGroupOption[] = withLabels([
 const [INTERRUPT_OPTION]: RadioGroupOption[] = withLabels([
   { value: "interrupt", labelKey: "dialog.breakpoint.kind.interrupt" }
 ]);
+
+/** The tenth, on the same machines: a DMA event (NEXT_DMA_DEBUGGING_PLAN §12). */
+const [DMA_OPTION]: RadioGroupOption[] = withLabels([{ value: "dma", labelKey: "dialog.breakpoint.kind.dma" }]);
+
+/** The DMA stop's events (a function: labels are read at display) */
+const dmaEventOptions = (): DropdownOption[] => [
+  { value: "enable", label: translate("dialog.breakpoint.dma.event.enable") },
+  { value: "load", label: translate("dialog.breakpoint.dma.event.load") },
+  { value: "end", label: translate("dialog.breakpoint.dma.event.end") },
+  { value: "count", label: translate("dialog.breakpoint.dma.event.count") },
+  { value: "write", label: translate("dialog.breakpoint.dma.event.write") },
+  { value: "held", label: translate("dialog.breakpoint.dma.event.held") },
+  { value: "problem", label: translate("dialog.breakpoint.dma.event.problem") }
+];
 
 /** The interrupt stop's events (a function: labels are read at display) */
 const interruptEventOptions = (): DropdownOption[] => [
@@ -175,6 +191,7 @@ const PAGE_FIELDS: Record<BreakpointPage, (keyof BreakpointFormState | "form")[]
     "spriteAttrMask",
     "interruptSource",
     "interruptWait",
+    "dmaArg",
     "form"
   ],
   condition: ["condition", "hitCount"],
@@ -285,13 +302,14 @@ export const BreakpointDialog = ({
   const copperKind = isCopperKind(form.kind);
   const spriteKind = isSpriteKind(form.kind);
   const interruptKind = isInterruptKind(form.kind);
-  // --- The sixth to ninth types are offered only where they mean something.
+  const dmaKind = isDmaKind(form.kind);
+  // --- The sixth to tenth types are offered only where they mean something.
   // --- `validateBreakpointForm` refuses them anyway, but a type a machine cannot have should not be
   // --- on screen to choose.
   const kindOptions = useMemo(
     () =>
       env.supportsNextRegBreakpoints
-        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION, INTERRUPT_OPTION]
+        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION, INTERRUPT_OPTION, DMA_OPTION]
         : KIND_OPTIONS,
     [env.supportsNextRegBreakpoints]
   );
@@ -375,11 +393,13 @@ export const BreakpointDialog = ({
         ? form.spriteIndex
         : interruptKind
           ? (interruptEventOptions().find((o) => o.value === form.interruptEvent)?.label ?? "")
-          : form.address;
+          : dmaKind
+            ? (dmaEventOptions().find((o) => o.value === form.dmaEvent)?.label ?? "")
+            : form.address;
   // --- An interrupt stop's event names the type already ("An interrupt is taken")
   const triggerSummary = sourceMode
     ? sourceLocationText(form.source!)
-    : interruptKind
+    : interruptKind || dmaKind
       ? triggerValue
       : triggerValue.trim()
       ? t("dialog.breakpoint.summary.trigger", { kind: kindLabel, value: triggerValue.trim() })
@@ -424,7 +444,9 @@ export const BreakpointDialog = ({
           ? t("dialog.breakpoint.spriteStopNote")
           : interruptKind
             ? t("dialog.breakpoint.interrupt.stopNote")
-            : undefined;
+            : dmaKind
+              ? t("dialog.breakpoint.dma.stopNote")
+              : undefined;
 
   const triggerPage = sourceMode ? (
     <section className={styles.group}>
@@ -662,7 +684,58 @@ export const BreakpointDialog = ({
             </>
           )}
 
-          {!nextRegKind && !copperKind && !spriteKind && !interruptKind && (
+          {dmaKind && (
+            <>
+              <Field label={t("dialog.breakpoint.dma.eventLabel")}>
+                <Dropdown
+                  options={dmaEventOptions()}
+                  initialValue={form.dmaEvent}
+                  ariaLabel={t("dialog.breakpoint.dma.eventLabel")}
+                  width="34ch"
+                  onChanged={(dmaEvent) => {
+                    setTouched((t) => ({ ...t, dmaArg: false }));
+                    update({ dmaEvent: dmaEvent as BreakpointFormState["dmaEvent"], dmaArg: "" });
+                  }}
+                />
+              </Field>
+              {dmaEventTakesArg(form.dmaEvent) && (
+                <Field
+                  label={
+                    form.dmaEvent === "count"
+                      ? t("dialog.breakpoint.dma.countLabel")
+                      : form.dmaEvent === "write"
+                        ? t("dialog.breakpoint.dma.writeLabel")
+                        : t("dialog.breakpoint.dma.heldLabel")
+                  }
+                >
+                  <TextInput
+                    value={form.dmaArg}
+                    width={form.dmaEvent === "write" ? "16ch" : BYTE_FIELD}
+                    ariaLabel={t("dialog.breakpoint.dma.argLabel")}
+                    error={errorFor("dmaArg")}
+                    onChange={(dmaArg) => {
+                      setTouched((t) => ({ ...t, dmaArg: true }));
+                      update({ dmaArg });
+                    }}
+                  />
+                  <div className={styles.hint}>
+                    {form.dmaEvent === "count"
+                      ? t("dialog.breakpoint.dma.countHint")
+                      : form.dmaEvent === "write"
+                        ? t("dialog.breakpoint.dma.writeHint")
+                        : t("dialog.breakpoint.dma.heldHint")}
+                  </div>
+                </Field>
+              )}
+              {!dmaEventTakesArg(form.dmaEvent) && errorFor("dmaArg") && (
+                <div className={styles.error} role="alert">
+                  {errorFor("dmaArg")}
+                </div>
+              )}
+            </>
+          )}
+
+          {!nextRegKind && !copperKind && !spriteKind && !interruptKind && !dmaKind && (
             <>
               <Field label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
                 <TextInput

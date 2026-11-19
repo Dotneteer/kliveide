@@ -60,6 +60,7 @@ import {
   isEventBreakpoint,
   isNextRegBreakpoint,
   isInterruptStop,
+  isDmaStop,
   isSpriteBreakpoint,
   spriteAttrMaskOf,
   withScopeOwner
@@ -72,6 +73,15 @@ import {
   type InterruptWatch
 } from "@common/zxnext/interrupts/interruptStops";
 import type { NextIntEvent } from "@common/zxnext/interrupts/interruptState";
+import {
+  buildDmaWatch,
+  dmaStopOf,
+  matchesDmaStop,
+  type DmaHit,
+  type DmaStepMode,
+  type DmaStop,
+  type DmaWatch
+} from "@common/zxnext/dma/dmaStops";
 
 /**
  * Does a partition entry match what is paged? `ANY_PARTITION` is a bank breakpoint on a machine with
@@ -817,6 +827,38 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The ZX Spectrum Next's DMA-stop watch (`dma:`, NEXT_DMA_DEBUGGING_PLAN §12), built from every enabled
+   * DMA stop plus a pending DMA step's one-shot; `kinds` is 0 when nothing is armed. Asked once per
+   * debug-loop entry.
+   */
+  buildDmaWatch(step?: DmaStepMode): DmaWatch {
+    const stops: DmaStop[] = [];
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isDmaStop(bp) || bp.disabled) continue;
+      const stop = dmaStopOf(bp.dmaStop);
+      if (stop) stops.push(stop);
+    }
+    return buildDmaWatch(stops, step);
+  }
+
+  /**
+   * Does any DMA stop want to stop on this hit? Runs every matching definition through `handleHit`, so
+   * hit counts, conditions (on the registers at the stop), logpoints and one-shots apply.
+   */
+  hasDmaHit(hit: DmaHit, coreHeldLimit: number): boolean {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isDmaStop(bp) || bp.disabled) continue;
+      const parsed = dmaStopOf(bp.dmaStop);
+      if (!parsed || !matchesDmaStop(parsed, hit, coreHeldLimit)) continue;
+      if (this.handleHit(key, bp, "exec", hit.pc, undefined, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -960,6 +1002,8 @@ export class DebugSupport implements IDebugSupport {
         spriteAttrMask: bp.spriteAttrMask,
         // --- And the interrupt stop's event spec, its whole identity.
         interruptStop: bp.interruptStop,
+        // --- And the DMA stop's event spec.
+        dmaStop: bp.dmaStop,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.

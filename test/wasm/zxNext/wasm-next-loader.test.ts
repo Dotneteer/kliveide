@@ -110,6 +110,7 @@ function createViewExports(
     zxnextGetInterruptStatePtr: () => options.nextRegWatchOffset ?? 0,
     zxnextGetDmaStatePtr: () => options.nextRegWatchOffset ?? 0,
     zxnextDmaLogPtr: () => 0,
+    zxnextDmaHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextDmaLogGetCapacity: () => 0,
     zxnextIntHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextIntEventsPtr: () => 0,

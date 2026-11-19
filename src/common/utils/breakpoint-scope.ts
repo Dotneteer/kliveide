@@ -204,6 +204,11 @@ export function isInterruptStop(bp: BreakpointInfo): boolean {
   return bp?.interruptStop !== undefined;
 }
 
+/** Is this a ZX Spectrum Next DMA stop (`dma:`)? The event spec is the binding. */
+export function isDmaStop(bp: BreakpointInfo): boolean {
+  return bp?.dmaStop !== undefined;
+}
+
 /** The attribute bytes a sprite breakpoint watches, as a 5-bit mask (all five when unset). */
 export function spriteAttrMaskOf(bp: BreakpointInfo): number {
   const mask = (bp?.spriteAttrMask ?? 0x1f) & 0x1f;
@@ -216,7 +221,9 @@ export function spriteAttrMaskOf(bp: BreakpointInfo): number {
  * breakpoint and has no gutter.
  */
 export function isEventBreakpoint(bp: BreakpointInfo): boolean {
-  return isNextRegBreakpoint(bp) || isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp);
+  return (
+    isNextRegBreakpoint(bp) || isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) || isDmaStop(bp)
+  );
 }
 
 /**

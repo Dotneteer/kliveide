@@ -1,7 +1,7 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phases 1 and 2 shipped** (PRs #1664, #1665). **Phase 3, the port write log, implemented, in review**
-(2026-11-19, branch `dma-port-log`; §11). This plan
+Status: **Phases 1-3 shipped** (PRs #1664-#1666). **Phase 4, DMA stops and stepping, implemented, in review**
+(2026-11-19, branch `dma-stops`; §12). This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -472,3 +472,91 @@ rows. A setup header copies the setup as `.dma` source (`formatDmaCommand`).
   `DocumentPanels/DmaPortLog/`; `show-dma-log`/`hide-dma-log` in `DmaCommands.ts`; Debug › DMA Port Log;
   the DMA panel's footer link; tests `test/zxnext-hw/dma/dma-port-log.test.ts`; docs `guides/next/dma.mdx`
   (screenshot in the `guides-dma` recipe).
+
+## 12. Phase 4: DMA stops and stepping
+
+Mockup tool 5. Breakpoints bound to DMA events, and stepping the DMA a byte at a time. The interrupt
+stops are the template (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §5, §10): a spec on
+`BreakpointInfo`, a watch the host pushes into the core on every debug-loop entry, a latch the core
+sets and the in-core loop returns on (`Z80_DEBUG_LOOP_STOP`), and `DebugSupport` deciding hit counts,
+conditions and logpoints.
+
+### 12.1 Where a DMA stop stops
+
+Two places, because DMA events happen in two places:
+
+- **At a write to the DMA's port** (enable, load, a setup problem): inside the CPU's `OUT`, so the
+  machine stops at the end of that instruction, as an interrupt stop does.
+- **Inside a transfer** (a byte, the end of a block, a write to a watched range, the bus held too long,
+  the bus released): the CPU does not run while the DMA holds the bus, so `zxnextCpuRunDma` returns
+  **before the next instruction**, the DMA mid-transfer. This is the frame-end hold that already exists
+  (`zxnextCpuHeldAtFrameEnd`, "snoozed" in the CPU panel) reached by a watch instead of the frame's
+  end; resuming continues the transfer with its next byte. `zxnextCpuRunDma` returns 2 for it, and
+  the CPU step returns without executing.
+
+### 12.2 Stop kinds (`bp-set dma:<kind>[:<argument>]`)
+
+| Spec | Stops |
+|---|---|
+| `dma:enable` | at the end of the instruction that enabled the DMA (`$87`, WR3 D6) |
+| `dma:load` | at the end of the instruction that wrote `$CF` |
+| `dma:end` | after the byte that ends a block (an auto restart's wrap included), before the next instruction |
+| `dma:count:<n>` | after the byte that brings the block's bytes moved to *n* |
+| `dma:write:<addr>[-<addr>]` | after the DMA writes memory in the range (the Z80 address the MMU maps; physical-mode writes by their low 16 bits) |
+| `dma:held:<T>` | when one hold of the bus passes *T* CPU T-states |
+| `dma:problem` | at the end of the instruction whose write was a setup problem: written while deaf, the WR4 deaf trap, an ignored byte, an enable without a load |
+
+The core keeps up to four `count` targets and four `write` ranges (more are matched against the hit in
+TypeScript only when one of the four fires); `held` uses the smallest limit, as the interrupt WAIT does.
+Port breakpoints already stop on the DMA's port writes (they report "DMA").
+
+### 12.3 Stepping
+
+`step-dma` (one byte), `step-dma-block` (to the end of the block) and `step-dma-release` (until the DMA
+lets go of the bus) arm a one-shot watch and run the machine in debug mode, as Step Copper does. The DMA
+panel shows **Step byte**, **To end of block** and **Until the CPU has the bus** while the machine is
+paused and the DMA is active or holds the bus.
+
+### 12.4 Plumbing
+
+- Core (`zxnext-dma.c`, `zxnext-cpu.c`, `zxnext.c`): the watch (`zxnextSetDmaWatch`), the latch and a
+  16-byte hit record (`zxnextTakeDmaHit`, `zxnextDmaHitRecordPtr`), all volatile; the latch joins
+  `Z80_DEBUG_LOOP_STOP`. Every hook is behind the watch's armed flag.
+- `src/common/zxnext/dma/dmaStops.ts`: parse/format/match/describe and the watch builder.
+- `BreakpointInfo.dmaStop`, `isDmaStop`, the key `DMA:...`; `DebugSupport.buildDmaWatch`/`hasDmaHit`;
+  `ZxNextWasmV2Machine` (the watch on entry, the hit in `afterStep`, `lastDmaStop`, `requestDmaStep`);
+  `MachineController`'s stop line; `bp-set`/`bp-del`/`bp-en`; the breakpoint dialog's **DMA event** type;
+  the Breakpoints panel's **DMA stop** group.
+
+### 12.5 Done when
+
+- `test/wasm/zxNext/wasm-next-dma-stop.test.ts`: each kind stops where §12.1 says, in the core and
+  instruction by instruction alike (same PC, T-states, DMA counter); a stop inside a transfer resumes
+  with the next byte; a run stopped at every byte ends byte-identical to an unstopped run; hit counts and
+  conditions apply; nothing stops with no stop armed.
+- Unit tests for `dmaStops.ts` and the `bp-set dma:` command.
+- The export contract and layout tests pass; docs: the guide's breakpoint section.
+- Checked in the running app: a stop, the stop line, Step byte.
+
+### 12.6 As built (2026-11-19)
+
+- **`zxnextCpuRunDma` returns 2 on a hit inside a transfer**, and the CPU step returns before the
+  instruction; `zxnextCpuHeldAtFrameEnd` (the CPU panel's "snoozed") is set only when the DMA still has
+  the bus, so an `end` without auto restart or a `release` leaves the CPU free. The in-core loop leaves on
+  the latch (`zxnextDmaHitPresent` in `Z80_DEBUG_LOOP_STOP`); the instruction-by-instruction path takes
+  the same hit after the same call, so both stop at the same PC, T-states and DMA counter (the test runs
+  every kind both ways).
+- **A run stopped at every byte ends where an unstopped run does** (same frame, T-states, PC and memory):
+  returning early only splits the DMA's run between two calls of the CPU step.
+- **No CPU/DMA choice on memory breakpoints** (the mockup's): `dma:write` covers DMA writes to memory, and
+  port breakpoints already stop on the DMA's port writes.
+- **No Debug-menu items for the steps**: the DMA panel's buttons and the commands.
+- **Not measured**: the debug-overhead benchmark with no DMA stop armed (every hook is behind
+  `zxnextDmaWatchKinds`).
+- Files: `zxnext-dma.c` (the watch, `zxnextDmaHit`, the hooks), `zxnext-cpu.c` (`zxnextCpuRunDma`),
+  `zxnext.c` (`Z80_DEBUG_LOOP_STOP`), `build-zxnext-wasm.cjs`, `exportContract.ts`;
+  `src/common/zxnext/dma/dmaStops.ts`; `BreakpointInfo.dmaStop`, `isDmaStop`, the `DMA:` key;
+  `DebugSupport.buildDmaWatch`/`hasDmaHit`; `ZxNextWasmV2Machine` (`acceptWasmV2DmaHit`, `lastDmaStop`,
+  `requestDmaStep`); `MachineController`'s stop line; `bp-set dma:`; the dialog's **DMA event** type; the
+  Breakpoints panel's **DMA events** group; `step-dma`, `step-dma-block`, `step-dma-release` and the DMA
+  panel's buttons; tests `test/wasm/zxNext/wasm-next-dma-stop.test.ts`, `test/commands/DmaStopCommands.test.ts`.

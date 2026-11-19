@@ -9,6 +9,7 @@ import {
   isLabelAnchored,
   isNextRegBreakpoint,
   isInterruptStop,
+  isDmaStop,
   isSpriteBreakpoint
 } from "@common/utils/breakpoint-scope";
 import { isLogpoint } from "@common/utils/breakpoint-filters";
@@ -38,7 +39,8 @@ export type BreakpointGroup =
   | "nextRegWrite"
   | "copper"
   | "sprite"
-  | "interrupt";
+  | "interrupt"
+  | "dma";
 
 /** Group order, matching the dialog's type selector so the two read the same way. */
 export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
@@ -50,7 +52,8 @@ export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
   "nextRegWrite",
   "copper",
   "sprite",
-  "interrupt"
+  "interrupt",
+  "dma"
 ];
 
 /**
@@ -66,7 +69,8 @@ export const BREAKPOINT_GROUP_TITLES: Readonly<Record<BreakpointGroup, string>> 
   nextRegWrite: "debug.bpGroup.nextRegWrite",
   copper: "debug.bpGroup.copper",
   sprite: "debug.bpGroup.sprite",
-  interrupt: "debug.bpGroup.interrupt"
+  interrupt: "debug.bpGroup.interrupt",
+  dma: "debug.bpGroup.dma"
 });
 
 /**
@@ -84,7 +88,8 @@ export const BREAKPOINT_GROUP_ICONS: Record<BreakpointGroup, string> = {
   nextRegWrite: "bp-nextreg",
   copper: "bp-copper",
   sprite: "bp-sprite",
-  interrupt: "int-timeline"
+  interrupt: "int-timeline",
+  dma: "dma-log"
 };
 
 /** A header, or a breakpoint. One flat array, because `VirtualizedList` takes one. */
@@ -115,6 +120,7 @@ export function groupOf(bp: BreakpointInfo): BreakpointGroup {
   if (isCopperBreakpoint(bp)) return "copper";
   if (isSpriteBreakpoint(bp)) return "sprite";
   if (isInterruptStop(bp)) return "interrupt";
+  if (isDmaStop(bp)) return "dma";
   if (bp.memoryRead) return "memRead";
   if (bp.memoryWrite) return "memWrite";
   if (bp.ioRead) return "ioRead";
@@ -136,6 +142,7 @@ export function shapeRank(bp: BreakpointInfo): number {
   if (isCopperBreakpoint(bp)) return 0;
   if (isSpriteBreakpoint(bp)) return 0;
   if (isInterruptStop(bp)) return 0;
+  if (isDmaStop(bp)) return 0;
   if (isBankRelative(bp)) return 1;
   if (isLabelAnchored(bp)) return 2;
   return 3;

@@ -344,6 +344,16 @@ export type BreakpointInfo = {
   interruptStop?: string;
 
   /**
+   * A ZX Spectrum Next **DMA stop** (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §12): the DMA event this
+   * breakpoint stops on, as the normalized spec after `dma:` - `enable`, `end`, `count:256`,
+   * `write:$4000-$5aff`, `held:70000`, `problem` (`@common/zxnext/dma/dmaStops`).
+   *
+   * Like `interruptStop`, the spec is the binding, the discriminator and the identity. Use `isDmaStop`
+   * in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition and no gutter.
+   */
+  dmaStop?: string;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

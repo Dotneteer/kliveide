@@ -81,5 +81,6 @@ export function breakpointKind(bp: BreakpointInfo): string {
   if (bp.copperIndex !== undefined) return "copper";
   if (bp.spriteIndex !== undefined) return "sprite";
   if (bp.interruptStop !== undefined) return "interrupt";
+  if (bp.dmaStop !== undefined) return "dma";
   return "exec";
 }

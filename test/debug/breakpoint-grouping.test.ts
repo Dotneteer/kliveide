@@ -138,7 +138,8 @@ describe("groupBreakpoints - headers", () => {
       { nextReg: 0x07 },
       { copperIndex: 0x0b },
       { spriteIndex: 0x0c },
-      { interruptStop: "ack" }
+      { interruptStop: "ack" },
+      { dmaStop: "end" }
     ];
     expect(group(oneEach).filter((i) => i.kind === "header")).toHaveLength(
       BREAKPOINT_GROUP_ORDER.length

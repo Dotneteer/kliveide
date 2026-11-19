@@ -43,6 +43,14 @@ import {
 } from "@common/zxnext/interrupts/interruptState";
 import { decodeDmaState, type NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
+import {
+  buildDmaWatch,
+  decodeDmaHit,
+  DmaWatchKind,
+  DMA_WATCH_SLOTS,
+  type DmaHit,
+  type DmaStepMode
+} from "@common/zxnext/dma/dmaStops";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -1104,6 +1112,8 @@ export class ZxNextWasmV2Machine
     let watchesSprites = false;
     let watchesInterrupts = false;
     let interruptWaitLimit = 0;
+    let watchesDma = false;
+    let dmaHeldLimit = 0;
     const self = this;
     return {
       get executionContext() {
@@ -1229,6 +1239,22 @@ export class ZxNextWasmV2Machine
         this.lastInterruptStop = undefined;
 
         /*
+         * The DMA-stop watch (NEXT_DMA_DEBUGGING_PLAN §12): pushed on entry like the interrupt watch,
+         * with a pending DMA step's one-shot, and disarmed when nothing is armed. A hit at a port write
+         * stops at the end of its instruction; one inside a transfer returns from the CPU step before
+         * the next instruction (the DMA mid-transfer), and the core leaves its loop either way.
+         */
+        const dmaWatch = debugSupport?.buildDmaWatch?.(this.dmaStepPending) ?? buildDmaWatch([], this.dmaStepPending);
+        watchesDma = dmaWatch.kinds !== 0;
+        dmaHeldLimit = dmaWatch.heldLimit;
+        wasm.zxnextSetDmaWatch(dmaWatch.kinds, dmaWatch.heldLimit);
+        for (let slot = 0; slot < DMA_WATCH_SLOTS; slot++) {
+          const write = dmaWatch.writes[slot];
+          wasm.zxnextSetDmaWatchSlot(slot, dmaWatch.counts[slot] ?? 0, write?.from ?? 1, write?.to ?? 0);
+        }
+        this.lastDmaStop = undefined;
+
+        /*
          * Finish a reset the last run stopped in front of.
          *
          * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
@@ -1317,6 +1343,10 @@ export class ZxNextWasmV2Machine
         // --- A watched interrupt event happened during this instruction (an acknowledge stops at the
         // --- handler's first instruction)
         if (watchesInterrupts && wasm.zxnextTakeIntHit() && this.acceptWasmV2InterruptHit(runtime, interruptWaitLimit)) {
+          return FrameTerminationMode.DebugEvent;
+        }
+        // --- A watched DMA event, or a DMA step's one-shot (NEXT_DMA_DEBUGGING_PLAN §12)
+        if (watchesDma && wasm.zxnextTakeDmaHit() && this.acceptWasmV2DmaHit(runtime, dmaHeldLimit)) {
           return FrameTerminationMode.DebugEvent;
         }
 
@@ -1493,6 +1523,26 @@ export class ZxNextWasmV2Machine
     const event = decodeInterruptEvent(runtime.interruptHitRecord, 0, 0);
     if (!this.executionContext.debugSupport?.hasInterruptHit(event, coreWaitLimit)) return false;
     this.lastInterruptStop = { ...event, partition: this.getPartition(event.pc) };
+    return true;
+  }
+
+  /**
+   * A DMA hit the core latched: stop when it is the pending DMA step's one-shot, or when a `dma:` stop
+   * (hit count, condition) accepts it; keep it for the stop message and the Breakpoints panel.
+   */
+  private acceptWasmV2DmaHit(runtime: ZxNextWasmV2Runtime, coreHeldLimit: number): boolean {
+    const hit = decodeDmaHit(runtime.dmaHitRecord);
+    const step = this.dmaStepPending;
+    const isStep =
+      (step === "byte" && hit.kind === DmaWatchKind.Byte) ||
+      (step === "block" && hit.kind === DmaWatchKind.End) ||
+      (step === "release" && hit.kind === DmaWatchKind.Release);
+    if (isStep) {
+      this.dmaStepPending = undefined;
+    } else if (!this.executionContext.debugSupport?.hasDmaHit?.(hit, coreHeldLimit)) {
+      return false;
+    }
+    this.lastDmaStop = { ...hit, partition: this.getPartition(hit.pc) };
     return true;
   }
 
@@ -1995,6 +2045,17 @@ export class ZxNextWasmV2Machine
    */
   lastInterruptStop?: InterruptStopEvent;
 
+  /** The DMA event a `dma:` stop or a DMA step last stopped on. Set by the debug loop, cleared on resume. */
+  lastDmaStop?: DmaHit & { partition?: number };
+
+  /** A pending DMA step (NEXT_DMA_DEBUGGING_PLAN §12.3): the next debug run stops at its one-shot */
+  dmaStepPending?: DmaStepMode;
+
+  /** Arms (or cancels, with undefined) a DMA step for the next debug run. */
+  requestDmaStep(mode: DmaStepMode | undefined): void {
+    this.dmaStepPending = mode;
+  }
+
   /**
    * "Step Copper" is pending: the next debug run stops after the Z80 instruction during which the
    * Copper completes its next instruction, whatever its index (plan §4.6).
@@ -2017,7 +2078,8 @@ export class ZxNextWasmV2Machine
       lastNextRegWrite: this.lastNextRegWrite,
       lastCopperHit: this.lastCopperHit,
       lastSpriteWrite: this.lastSpriteWrite,
-      lastInterruptStop: this.lastInterruptStop
+      lastInterruptStop: this.lastInterruptStop,
+      lastDmaStop: this.lastDmaStop
     };
   }
 

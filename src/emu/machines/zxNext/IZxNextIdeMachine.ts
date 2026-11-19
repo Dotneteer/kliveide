@@ -14,6 +14,7 @@ import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zx
 import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
+import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
 
 /**
  * What the IDE reads from a ZX Spectrum Next.
@@ -72,6 +73,9 @@ export interface IZxNextIdeMachine {
 
   /** Forgets every recorded DMA port access. */
   clearDmaLog(): void;
+
+  /** Arms (or cancels) a DMA step: the next debug run stops after one byte, at the block's end, or when the DMA lets go of the bus (§12.3). */
+  requestDmaStep(mode: DmaStepMode | undefined): void;
 
   /** The interrupt event ring's records written since `since` (all held ones by default), oldest first. */
   getInterruptEvents(since?: number): NextInterruptEvents;
