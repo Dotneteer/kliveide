@@ -766,6 +766,15 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-dma-diag-warning": "var(--status-warning-subtle)",
   "--color-dma-progress": "var(--color-state-value)",
   "--bgcolor-dma-progress-track": "var(--surface-hover)",
+  /*
+   * The DMA Bus Timeline: the DMA's holds in the state panels' value colour (the DMA panel's progress
+   * bar), the CPU's running time a wash of the second accent and its held time the neutral hover surface,
+   * so the two lanes read as complements; a lost interrupt is the error hue.
+   */
+  "--color-dmabus-dma": "var(--color-state-value)",
+  "--color-dmabus-cpu": "var(--accent-secondary-subtle)",
+  "--color-dmabus-held": "var(--surface-hover)",
+  "--color-dmabus-lost": "var(--status-error)",
 
   // --- Execution History (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
   /*

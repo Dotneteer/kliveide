@@ -19,6 +19,7 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address);
 static inline void zxnextCpuDelayPortReadHead(uint32_t address);
 static inline void zxnextCpuDelayPortReadTail(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
+static inline uint32_t zxnextCpuPulseIntLow(void);
 static inline void zxnextCpuCaptureVideoInterrupts(void);
 
 /* zxnext.vhd ~1784: during a stackless NMI acknowledge (`z80_stackless_nmi`) the CPU's push cycles run
@@ -259,10 +260,30 @@ static uint32_t zxnextCpuRunDma(void) {
       if (zxnextCpuNextIsOneMCycle()) return 0;
     }
     zxnextDmaAcknowledgeBusIfRequested();
+    /* The bus timeline (§13.1): a hold opens when the bus is acknowledged */
+    if (zxnextDmaBusEnabled && dmaBusAcknowledged && !zxnextDmaBusOpen) zxnextDmaBusOpenHold(zxnextDmaSysTact());
     const uint32_t ticks = zxnextDmaStep();
     if (ticks > 0u) {
       zxnextCpuTactPlusDmaTicks(ticks);
       held = 1u;
+    }
+    if (zxnextDmaBusOpen) {
+      /* A pulse-mode interrupt seen and gone while the DMA holds the bus is lost (zxnext.vhd: the T80
+         samples /INT only at the end of an instruction) */
+      if (!hwIm2Mode) {
+        /* The pulse must begin inside the hold: 0 waits for /INT high (a pulse already running when the
+           hold began is not one the hold swallowed), 1 high seen, 2 low after high; high again is a loss */
+        const uint32_t low = zxnextCpuPulseIntLow();
+        if (zxnextDmaBusPulseSeen == 0u) {
+          if (!low) zxnextDmaBusPulseSeen = 1u;
+        } else if (zxnextDmaBusPulseSeen == 1u) {
+          if (low) zxnextDmaBusPulseSeen = 2u;
+        } else if (!low) {
+          zxnextDmaBusFlags |= ZXNEXT_DMABUSF_INT_LOST;
+          zxnextDmaBusPulseSeen = 1u;
+        }
+      }
+      if (!dmaBusAcknowledged) zxnextDmaBusCloseHold(zxnextDmaSysTact(), 0u);
     }
     if (zxnextDmaWatchKinds) {
       /* `held`: one hold of the bus longer than the limit, reported once per hold */
@@ -283,7 +304,10 @@ static uint32_t zxnextCpuRunDma(void) {
       }
     }
     if (!zxnextDmaBusRequested()) break;
-    if (frameCompleted) return 1;
+    if (frameCompleted) {
+      if (zxnextDmaBusOpen) zxnextDmaBusCloseHold(zxnextDmaSysTact(), 1u);
+      return 1;
+    }
   }
   /* `release`: the DMA let go of the bus after holding it in this call */
   if (held && zxnextDmaWatchKinds && !dmaBusAcknowledged) {
@@ -457,6 +481,19 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
     (lineInterruptEnabled && zxnextVideoLineIntActive(sampleTact < 0 ? 0u : (uint32_t)sampleTact)) ||
     zxnextInterruptsPulseActive() ||
     zxnextDmaGetIpSignal();
+}
+
+/*
+ * Pulse mode only: is /INT low now from a pulse - the ULA's frame interrupt, the line interrupt, or a
+ * started pulse (CTC, NextReg $20)? The raster-timed ones are worked out from the position, as
+ * zxnextCpuShouldRaiseInt does when the CPU samples them. Read by the bus timeline (§13.1) to find a pulse
+ * that came and went while the DMA held the bus; never changes the machine.
+ */
+static inline uint32_t zxnextCpuPulseIntLow(void) {
+  const int32_t sampleTact = zxnextCpuIntSampleTact();
+  return (!ulaInterruptDisabled && zxnextUlaPulseActiveAt(sampleTact)) ||
+    (lineInterruptEnabled && zxnextVideoLineIntActive(sampleTact < 0 ? 0u : (uint32_t)sampleTact)) ||
+    zxnextInterruptsPulseActive();
 }
 
 /* ~4472: in +3 timing banks 4-7 (MMU pages $08-$0F) are contended; the page is the MMU's */

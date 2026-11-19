@@ -418,6 +418,9 @@ export const DmaPanel = () => {
         <button type="button" className={styles.link} onClick={() => void ideCommandsService.executeCommand("show-dma-log")}>
           {t("panels.side.dma.openLog")}
         </button>
+        <button type="button" className={styles.link} onClick={() => void ideCommandsService.executeCommand("show-dma-timeline")}>
+          {t("panels.side.dma.openTimeline")}
+        </button>
       </DataRow>
     </DataPanel>
   );

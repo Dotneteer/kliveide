@@ -1786,6 +1786,11 @@ device is doing. The rule that settled, reusable for any device with a "what is 
 - **Actions that only make sense while paused appear only while paused, under the state they act on**
   (the DMA panel's step buttons, under the state badge), in the Interrupts panel's action-button look:
   raised surface, subtle border, secondary text until hovered.
+- **Two lanes that share one resource are complements, not two categories**: the DMA Bus Timeline draws
+  the DMA's holds in the state-value colour and the CPU's lane as a wash of the second accent, darkened
+  to the neutral hover surface where it waits, so the eye reads one bus passing between two masters.
+- **A chart of small shares scales to its largest value** (at least 10%) and says so on the axis: a
+  paced transfer's few percent drawn against 100% is a one-pixel line.
 - **A hardware name in a section heading keeps its case** (`zxnDDMA`): the headings are upper-cased by
   CSS, so such a name sits in a span with `text-transform: none`.
 

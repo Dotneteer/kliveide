@@ -137,6 +137,28 @@ While the machine is paused and the DMA has a transfer under way, the DMA panel 
 - **To end of block** runs until the block ends (`step-dma-block`).
 - **Until the CPU has the bus** runs until the DMA lets go of the bus (`step-dma-release`).
 
+## Who held the bus: the DMA Bus Timeline
+
+The **DMA Bus Timeline** shows, frame by frame, when the DMA held the bus. Open it with **Debug › DMA Bus
+Timeline**, the DMA panel's **Open the bus timeline** link, or `show-dma-timeline`; it records while it is
+open and shown, so open it, then run the program.
+
+<Shot src="guides/next/dma/dma-bus-timeline.webp" alt="The DMA Bus Timeline: an overview of the DMA's share of each frame, a detail of frame 352 with about 300 short holds spread over the frame, and the figures: 303 holds, 303 bytes, 3,030 T-states or 4.3% of the frame, a byte period of 226-234 T-states" caption="The sample player at prescaler 55: one short hold of the bus a byte, 226-234 T-states apart, 4.3% of each frame." width={900} />
+
+- **The overview** has one bar per frame: the share of the frame the DMA held the bus. A dot above a bar
+  marks a frame in which a pulse-mode interrupt came and went while the DMA held the bus, so the CPU
+  never saw it. Click a bar to look at that frame.
+- **The detail** draws the selected frame to scale in T-states: the DMA's holds on one lane, the CPU's
+  time on the other, darker where it waited. Click it to zoom in there; **×16** and **×128** zoom around
+  the frame's first hold.
+- **The figures** below give the frame's holds, the bytes moved, the DMA's bus time and share, and for a
+  paced transfer the byte period: the shortest and longest spacing of its bytes, and the average. The
+  spacing is a little longer than the prescaler's exact period, because the DMA gets the bus back only
+  at the end of the CPU's current machine cycle.
+
+A continuous transfer is one long hold; one that runs past the end of a frame is split there, and a
+16K copy at 3.5 MHz swallows the frame interrupt that falls inside it.
+
 ## What the program wrote: the DMA Port Log
 
 The panel shows where the DMA ended up; the **DMA Port Log** shows how it got there: every byte written

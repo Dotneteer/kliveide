@@ -108,6 +108,11 @@ const OVERRIDES: Record<string, ExportClass> = {
   SetDmaWatch: "debug",
   SetDmaWatchSlot: "debug",
   TakeDmaHit: "debug",
+  // --- The Next's DMA Bus Timeline (NEXT_DMA_DEBUGGING_PLAN §13.1): volatile, never changes the machine
+  DmaBusSetEnabled: "debug",
+  DmaBusClear: "debug",
+  DmaBusGetCount: "pure",
+  DmaBusGetEnabled: "pure",
   // --- The ZX81 auto-RUN watch lives in a non-volatile static
   ArmAutoRun: "journaled",
   // --- Reads that look like reads but have device side effects (status latches, FIFOs, counters)

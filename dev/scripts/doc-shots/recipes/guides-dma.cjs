@@ -6,7 +6,10 @@
  *   2,048 bytes from $C000 to the Specdrum DAC on port $DF, burst mode, prescaler 55, here with auto
  *   restart so the transfer is under way whenever the machine is paused;
  * - `dma/dma-port-log.webp` — the DMA Port Log document (§11), open before the program ran: the setup's
- *   16 bytes sent by OTIR, decoded, and the status read after it.
+ *   16 bytes sent by OTIR, decoded, and the status read after it;
+ * - `dma/dma-bus-timeline.webp` — the DMA Bus Timeline (§13): the DMA's small share of each frame and,
+ *   in the detail, one hold a byte about 226 T-states apart;
+ * - `dma/dma-stop.webp` — the Breakpoints panel with a `dma:count:100` stop that fired (§12).
  *
  * Like `guides-interrupts.cjs` it pokes a program into a paused Next (no NextZXOS needed). The setup
  * bytes are the chapter's `Prog`, with WR5 $A2 (auto restart) for $82.
@@ -78,7 +81,7 @@ module.exports = {
       await klive.cmd("em-pause", 1000);
       for (const [address, bytes] of CODE) await poke(klive, address, bytes);
       await klive.cmd("setz80reg pc $8000", 400);
-      // --- The port log records only while it is open
+      // --- The port log records only while it is open (and shown)
       await klive.cmd("show-dma-log", 2000);
       await klive.cmd("em-debug", 1500);
       await klive.cmd("em-pause", 1500);
@@ -106,6 +109,24 @@ module.exports = {
         await klive.shot(docs, "en/guides/next/dma/dma-port-log.webp", {
           displayWidth: 900,
           crop: { x: 0, y: 0, width: area.width, height: rows.y + rows.height - area.y + 12 }
+        });
+      });
+
+      await step(klive, "bus-timeline", async () => {
+        // --- The timeline records only while it is open and shown: open it, run a moment, pause
+        await klive.cmd("show-dma-timeline", 1500);
+        await klive.cmd("em-debug", 1500);
+        await klive.cmd("em-pause", 1500);
+        await h.hideEmu(klive);
+        await h.focusIde(klive);
+        await klive.cmd("show-dma-timeline", 1500);
+        await h.park(ide);
+        const docs = '[class*="_documentArea_"]';
+        const area = await ide.locator(docs).first().boundingBox();
+        const stats = await ide.locator(`${docs} [class*="_stats_"]`).first().boundingBox();
+        await klive.shot(docs, "en/guides/next/dma/dma-bus-timeline.webp", {
+          displayWidth: 900,
+          crop: { x: 0, y: 0, width: area.width, height: stats.y + stats.height - area.y + 12 }
         });
       });
 

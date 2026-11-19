@@ -1976,6 +1976,39 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next DMA Bus Timeline's holds written since `since`.
+   */
+  getDmaBus(since?: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getDmaBus(since);
+  }
+
+  /**
+   * Switches the ZX Spectrum Next DMA Bus Timeline's recording on or off.
+   */
+  setDmaBusRecording(enabled: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).setDmaBusRecording(enabled);
+  }
+
+  /**
+   * Forgets every recorded ZX Spectrum Next DMA bus hold.
+   */
+  clearDmaBus() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).clearDmaBus();
+  }
+
+  /**
    * Arms a DMA step and runs the machine in debug mode until it fires (NEXT_DMA_DEBUGGING_PLAN §12.3).
    */
   async stepDma(mode: DmaStepMode) {

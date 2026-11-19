@@ -93,6 +93,18 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextDmaHoldOpen",
   "zxnextDmaHoldReported",
   "zxnextDmaHoldStart",
+  // --- The DMA Bus Timeline (NEXT_DMA_DEBUGGING_PLAN §13.1)
+  "zxnextDmaBus",
+  "zxnextDmaBusCount",
+  "zxnextDmaBusEnabled",
+  "zxnextDmaBusOpen",
+  "zxnextDmaBusFlags",
+  "zxnextDmaBusContinued",
+  "zxnextDmaBusPulseSeen",
+  "zxnextDmaBusFrame",
+  "zxnextDmaBusPos",
+  "zxnextDmaBusStart",
+  "zxnextDmaBusBytes",
   "zxnextCopperWatch",
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
@@ -580,6 +592,12 @@ const productionExports = [
   "zxnextSetDmaWatchSlot",
   "zxnextDmaHitRecordPtr",
   "zxnextTakeDmaHit",
+  "zxnextDmaBusPtr",
+  "zxnextDmaBusGetCapacity",
+  "zxnextDmaBusGetCount",
+  "zxnextDmaBusSetEnabled",
+  "zxnextDmaBusGetEnabled",
+  "zxnextDmaBusClear",
 ];
 
 const buildModes = {

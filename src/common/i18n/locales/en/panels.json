@@ -1105,5 +1105,10 @@
   "@panels.document.dmaPortLog": {
     "context": "Name of the DMA Port Log document tab (ZX Spectrum Next): every write to and read from the DMA's ports.",
     "maxChars": 20
+  },
+  "panels.document.dmaBusTimeline": "DMA Bus Timeline",
+  "@panels.document.dmaBusTimeline": {
+    "context": "Name of the DMA Bus Timeline document tab (ZX Spectrum Next): when the DMA held the bus, frame by frame.",
+    "maxChars": 20
   }
 }

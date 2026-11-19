@@ -5209,6 +5209,11 @@
     "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Port Log document.",
     "maxChars": 24
   },
+  "panels.side.dma.openTimeline": "Open the bus timeline",
+  "@panels.side.dma.openTimeline": {
+    "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Bus Timeline document.",
+    "maxChars": 24
+  },
   "panels.side.dma.stepByte": "Step byte",
   "@panels.side.dma.stepByte": {
     "context": "Button in the DMA side-bar panel (ZX Spectrum Next), while paused: run until the DMA moves its next byte.",

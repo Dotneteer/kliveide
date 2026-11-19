@@ -1047,5 +1047,10 @@
   "@menu.next.dmaPortLog": {
     "context": "Debug menu (ZX Spectrum Next): opens the DMA Port Log document, which records every access to the DMA's ports.",
     "maxChars": 30
+  },
+  "menu.next.dmaBusTimeline": "DMA Bus Timeline",
+  "@menu.next.dmaBusTimeline": {
+    "context": "Debug menu (ZX Spectrum Next): opens the DMA Bus Timeline document, which records when the DMA holds the bus.",
+    "maxChars": 30
   }
 }

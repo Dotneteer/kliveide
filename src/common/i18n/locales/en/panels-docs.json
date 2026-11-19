@@ -2578,6 +2578,154 @@
     "context": "Switch label in the toolbar of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: record port accesses or not.",
     "maxChars": 12
   },
+  "panels.doc.dmaBus.notAvailable": "The DMA Bus Timeline is not available",
+  "@panels.doc.dmaBus.notAvailable": {
+    "context": "Empty state of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame when no machine is running or it is not a Next."
+  },
+  "panels.doc.dmaBus.record": "Record:",
+  "@panels.doc.dmaBus.record": {
+    "context": "Switch label in the toolbar of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaBus.recordTitle": "Records every hold of the bus by the DMA while on. It is on while the document is open.",
+  "@panels.doc.dmaBus.recordTitle": {
+    "context": "Tooltip of the Record switch in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.clear": "Clear the timeline",
+  "@panels.doc.dmaBus.clear": {
+    "context": "Tooltip of the toolbar button of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame that forgets every recorded hold."
+  },
+  "panels.doc.dmaBus.follow": "Follow:",
+  "@panels.doc.dmaBus.follow": {
+    "context": "Switch label in the toolbar of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: always show the newest frame with DMA activity.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaBus.followTitle": "Shows the newest frame in which the DMA held the bus",
+  "@panels.doc.dmaBus.followTitle": {
+    "context": "Tooltip of the Follow switch in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.zoomTitle": "How much of the frame the detail shows",
+  "@panels.doc.dmaBus.zoomTitle": {
+    "context": "Tooltip of the zoom buttons in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.zoomFrame": "Frame",
+  "@panels.doc.dmaBus.zoomFrame": {
+    "context": "Zoom button in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: show the whole frame.",
+    "maxChars": 8
+  },
+  "panels.doc.dmaBus.held": "{used} of {capacity} holds",
+  "@panels.doc.dmaBus.held": {
+    "context": "Toolbar text of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: recorded holds of the bus held, of how many it can keep.",
+    "placeholders": {
+      "used": "Holds held",
+      "capacity": "The most it can keep"
+    }
+  },
+  "panels.doc.dmaBus.waiting": "Run the program: holds of the bus by the DMA appear here",
+  "@panels.doc.dmaBus.waiting": {
+    "context": "Empty state of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame while recording and nothing has been recorded."
+  },
+  "panels.doc.dmaBus.paused": "Recording is off",
+  "@panels.doc.dmaBus.paused": {
+    "context": "Empty state of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame when recording is off and nothing is held."
+  },
+  "panels.doc.dmaBus.overview": "The DMA's share of each frame (click a frame)",
+  "@panels.doc.dmaBus.overview": {
+    "context": "Heading of the overview chart in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.overviewLabel": "Bar chart of the DMA's share of the bus in each frame; red dots mark frames whose interrupt was lost",
+  "@panels.doc.dmaBus.overviewLabel": {
+    "context": "Accessible description of the overview chart in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.frameTip": "Frame {frame}: the DMA held the bus {share}% of the time",
+  "@panels.doc.dmaBus.frameTip": {
+    "context": "Tooltip of a frame's bar in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "placeholders": {
+      "frame": "The frame number",
+      "share": "The percentage, e.g. '5.3'"
+    }
+  },
+  "panels.doc.dmaBus.frameNo": "frame {frame}",
+  "@panels.doc.dmaBus.frameNo": {
+    "context": "Axis label under the overview chart in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "placeholders": {
+      "frame": "The frame number"
+    }
+  },
+  "panels.doc.dmaBus.detail": "Frame {frame}, to scale in T-states (click to zoom in there)",
+  "@panels.doc.dmaBus.detail": {
+    "context": "Heading of the detail chart in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "placeholders": {
+      "frame": "The frame number"
+    }
+  },
+  "panels.doc.dmaBus.detailLabel": "The selected frame to scale: the DMA's holds of the bus above, the CPU's running and held time below",
+  "@panels.doc.dmaBus.detailLabel": {
+    "context": "Accessible description of the detail chart in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.holdTip": "At T-state {at}: the DMA held the bus for {length} T-states and moved {bytes, plural, one {# byte} other {# bytes}}",
+  "@panels.doc.dmaBus.holdTip": {
+    "context": "Tooltip of a hold in the detail chart of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "placeholders": {
+      "at": "The T-state in the frame",
+      "length": "The hold's length in T-states",
+      "bytes": "Bytes moved during it"
+    }
+  },
+  "panels.doc.dmaBus.legend": "DMA lane: the DMA holds the bus · CPU lane, darker: the CPU waits for it · marker: an interrupt lost",
+  "@panels.doc.dmaBus.legend": {
+    "context": "Legend under the detail chart of the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.stat.holds": "Holds",
+  "@panels.doc.dmaBus.stat.holds": {
+    "context": "Statistic label in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: how many times the DMA took the bus in the frame.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaBus.stat.bytes": "Bytes moved",
+  "@panels.doc.dmaBus.stat.bytes": {
+    "context": "Statistic label in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaBus.stat.busTime": "DMA bus time",
+  "@panels.doc.dmaBus.stat.busTime": {
+    "context": "Statistic label in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaBus.stat.busTimeValue": "{t} T · {share}%",
+  "@panels.doc.dmaBus.stat.busTimeValue": {
+    "context": "Statistic value in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: T-states the DMA held the bus and its share of the frame.",
+    "placeholders": {
+      "t": "T-states",
+      "share": "The percentage"
+    }
+  },
+  "panels.doc.dmaBus.stat.period": "Byte period",
+  "@panels.doc.dmaBus.stat.period": {
+    "context": "Statistic label in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: for a paced transfer, the T-states between bytes.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaBus.stat.periodValue": "{min}-{max} T, {average} on average",
+  "@panels.doc.dmaBus.stat.periodValue": {
+    "context": "Statistic value in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: the shortest and longest spacing of a paced transfer's bytes, and the average.",
+    "placeholders": {
+      "min": "T-states",
+      "max": "T-states",
+      "average": "T-states"
+    }
+  },
+  "panels.doc.dmaBus.stat.lost": "Lost interrupt",
+  "@panels.doc.dmaBus.stat.lost": {
+    "context": "Statistic label in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame: whether a pulse-mode interrupt came and went while the DMA held the bus.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaBus.stat.lostYes": "yes: a pulse came and went while the DMA held the bus",
+  "@panels.doc.dmaBus.stat.lostYes": {
+    "context": "Statistic value in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
+  "panels.doc.dmaBus.stat.lostNo": "no",
+  "@panels.doc.dmaBus.stat.lostNo": {
+    "context": "Statistic value in the DMA Bus Timeline document (ZX Spectrum Next), which shows when the DMA held the bus, frame by frame."
+  },
   "panels.doc.dmaLog.recordTitle": "Records every access to the DMA's ports while on. It is on while the document is open.",
   "@panels.doc.dmaLog.recordTitle": {
     "context": "Tooltip of the Record switch in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
