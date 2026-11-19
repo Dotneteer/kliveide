@@ -1,0 +1,172 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T185c,---
+description: "See the ZX Spectrum Next's DMA at a pause in the DMA panel: its dialect and mode, both ports' start and working addresses, the prescaler's rate, the status byte and read sequence, and warnings for the usual setup mistakes."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Debugging the DMA
+
+The ZX Spectrum Next's DMA moves bytes while the CPU waits. When a transfer copies the wrong bytes, never
+starts, or freezes the program, the cause is in the DMA's own registers, which the Z80 registers do not
+show and which a program can only read back one byte at a time. The **DMA** panel shows all of them at a
+pause, and names the usual mistakes with their evidence.
+
+*Applies to: ZX Spectrum Next.* How the DMA works is explained in
+[DMA: One Bus, Two Masters](/en/under-the-hood/emulator-internals/next-dma/).
+
+## Finding out what a transfer did
+
+<Steps>
+
+### Pause after the setup
+
+Run the program in debug mode and pause it after it has written its setup to the DMA, for example on a
+breakpoint after the `OTIR` that sends it.
+
+### Open the DMA panel
+
+Open the **Machine info** activity and expand the **DMA** header, below **Interrupts**.
+
+### Read the warnings
+
+The boxes under the **State** row name the usual causes with their evidence: an enable without a load,
+a register group still waiting for its bytes, a DMA left deaf by WR4 bit 4, auto restart that never
+gives the bus back, or a switched-off port.
+
+### Compare the start and working addresses
+
+**Start** is what WR0 and WR4 wrote; **Working** is where the next byte comes from and goes to. They
+differ until the next `$CF`, and during a transfer. A working address that has moved away from its start
+is shown in the second accent colour.
+
+</Steps>
+
+<Shot src="guides/next/dma/dma-panel.webp" alt="The DMA panel during a burst transfer to the Specdrum DAC: waiting with the bus free, 811 of 2,048 bytes moved, port A's working address past its start, prescaler 55 at 223 T-states a byte" caption="The DMA chapter's sample player, paused: the DMA waits for its prescaler with the bus free, and port A's working address has moved 811 bytes past its start." width={380} />
+
+## The DMA panel
+
+**State** is what the DMA is doing at the pause:
+
+| State | Meaning |
+|---|---|
+| **idle** | No transfer; **block finished** when the last block reached its end. |
+| **starting** | Enabled; the DMA takes the bus at the next instruction. |
+| **waiting, bus free** | Burst mode: the DMA waits for its prescaler and the CPU runs. |
+| **stepped aside** | The DMA let go of the bus so the CPU can take an interrupt enabled in NextRegs `$CC`-`$CE`. |
+| **holding the bus** | A transfer is under way and the CPU is stopped. |
+| **locked** | Auto restart in continuous mode: the CPU never gets the bus back. |
+| **deaf** | WR4 bit 4 without port B's address: the DMA ignores every byte until a reset. |
+
+<Callout type="info">
+A pause always falls between two CPU instructions, and Klive runs a transfer that keeps the bus to its
+end before the next instruction. So **holding the bus** appears only when the pause lands at the end of a
+frame in the middle of a long transfer.
+</Callout>
+
+**Transfer** shows the dialect (the port touched last: `$6B` moves *N* bytes for a block length of *N*,
+`$0B` moves *N* + 1), the operating mode (byte mode, and burst mode without a prescaler, behave as
+continuous), the direction, the bytes moved of the bytes to move, and auto restart.
+
+**Ports** shows port A and port B side by side: the start and working addresses, whether the port is
+memory or I/O, how its address steps after each byte, and the clocks its read or write cycle takes.
+
+**Pacing** appears when port B has a prescaler. **Nominal** is the formula's 875 kHz ÷ *P*; **Exact** is
+the period worked out for the current CPU speed, 32 × *P* clocks of 28 MHz and then three CPU clocks
+(4 × *P* + 3 T-states at 3.5 MHz), or **no effect at this speed** when the wait is shorter than a byte.
+Contention and the SD card port can make real bytes a little later.
+
+**Status and read-back** shows the status byte a read would give, `00E1101T`, with what its E and T bits
+mean; the read mask; which entry the next read of the port returns; and what the DMA expects as the next
+byte written to it. The panel works the status byte out without reading the port, so opening it never
+moves the read sequence.
+
+**Steps aside for** lists the interrupt sources enabled in NextRegs `$CC`-`$CE`.
+
+**zxnDDMA** appears on models with core 3.03: the `$DF` flags, bits 23-16 of both start addresses, the
+rectangle, the strides, the transparent colour and the fill value.
+
+## The warnings
+
+| Warning | What happened |
+|---|---|
+| **Enabled without a load ($CF)** | New start addresses were written after the last `$CF`, so the transfer used the old working addresses. |
+| **Enabled after a finished block** | An enable without `$CF` or `$D3` after a block ended moves one more byte, from just past the end. |
+| **WR*n* expects more bytes** | A register group is waiting for follow bytes; the next byte written is taken as one of them. |
+| **The DMA ignores every byte** | WR4 bit 4 without port B's address. Only a reset frees it. |
+| **The CPU will not get the bus back** | Auto restart in continuous mode. Only a reset, or an interrupt enabled in `$CC`-`$CE`, ends it. |
+| **The DMA keeps the bus while it waits** | A prescaler in continuous mode freezes the CPU for the whole block; the warning estimates for how many frames. |
+| **Port $6B (or $0B) is switched off** | NextReg `$82` bit 5 or `$85` bit 1 disables the port. |
+| **zxnDDMA settings stay on** | Flags from an earlier `$DF` still apply to the next transfer until a `$C3`. |
+
+Information notes also say when a prescaler has no effect at the current speed, when Z80 DMA mode moves
+one more byte, when a block length of 0 moves one byte, and when the step-aside enables need hardware IM2
+mode.
+
+## The `dma` command
+
+The `dma` command prints the same rows and warnings as text in the command output.
+
+## Related pages
+
+- [Debugging interrupts](/en/guides/next/interrupts/): the interrupts the DMA steps aside for.
+- [Next breakpoints](/en/guides/next/next-breakpoints/): port breakpoints also stop on writes the DMA
+  makes.a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Finding out what a transfer did","id":"finding-out-what-a-transfer-did","depth":2},{"value":"Pause after the setup","id":"pause-after-the-setup","depth":3},{"value":"Open the DMA panel","id":"open-the-dma-panel","depth":3},{"value":"Read the warnings","id":"read-the-warnings","depth":3},{"value":"Compare the start and working addresses","id":"compare-the-start-and-working-addresses","depth":3},{"value":"The DMA panel","id":"the-dma-panel","depth":2},{"value":"The warnings","id":"the-warnings","depth":2},{"value":[["$","$4",".0",{"children":["The ",["$","code",".1",{"className":"nextra-code","dir":"ltr","children":"dma"}]," command"]}]],"id":"the-dma-command","depth":2},{"value":"Related pages","id":"related-pages","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"See the ZX Spectrum Next's DMA at a pause in the DMA panel: its dialect and mode, both ports' start and working addresses, the prescaler's rate, the status byte and read sequence, and warnings for the usual setup mistakes.","title":"Debugging the DMA","filePath":"content/en/guides/next/dma.mdx","timestamp":1794936969000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/dma","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Debugging the DMA - Klive IDE"}],["$","meta","1",{"name":"description","content":"See the ZX Spectrum Next's DMA at a pause in the DMA panel: its dialect and mode, both ports' start and working addresses, the prescaler's rate, the status byte and read sequence, and warnings for the usual setup mistakes."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/dma/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"0reaYkG3AC-dsaRnMu4p9"}
+20:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+21:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+35:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Debugging the DMA","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX Spectrum Next’s DMA moves bytes while the CPU waits. When a transfer copies the wrong bytes, never\nstarts, or freezes the program, the cause is in the DMA’s own registers, which the Z80 registers do not\nshow and which a program can only read back one byte at a time. The ",["$","strong",null,{"children":"DMA"}]," panel shows all of them at a\npause, and names the usual mistakes with their evidence."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]," How the DMA works is explained in\n",["$","$L20",null,{"href":"/en/under-the-hood/emulator-internals/next-dma/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"DMA: One Bus, Two Masters"}],"."]}],"\n",["$","h2",null,{"id":"finding-out-what-a-transfer-did","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Finding out what a transfer did",["$","$L21",null,{"id":"finding-out-what-a-transfer-did"}]]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"pause-after-the-setup","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Pause after the setup",["$","$L21",null,{"id":"pause-after-the-setup"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Run the program in debug mode and pause it after it has written its setup to the DMA, for example on a\nbreakpoint after the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"OTIR"}]," that sends it."]}],["$","h3",null,{"id":"open-the-dma-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the DMA panel",["$","$L21",null,{"id":"open-the-dma-panel"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open the ",["$","strong",null,{"children":"Machine info"}]," activity and expand the ",["$","strong",null,{"children":"DMA"}]," header, below ",["$","strong",null,{"children":"Interrupts"}],"."]}],["$","h3",null,{"id":"read-the-warnings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Read the warnings",["$","$L21",null,{"id":"read-the-warnings"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The boxes under the ",["$","strong",null,{"children":"State"}]," row name the usual causes with their evidence: an enable without a load,\na register group still waiting for its bytes, a DMA left deaf by WR4 bit 4, auto restart that never\ngives the bus back, or a switched-off port."]}],["$","h3",null,{"id":"compare-the-start-and-working-addresses","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Compare the start and working addresses",["$","$L21",null,{"id":"compare-the-start-and-working-addresses"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Start"}]," is what WR0 and WR4 wrote; ",["$","strong",null,{"children":"Working"}]," is where the next byte comes from and goes to. They\ndiffer until the next ","$L22",", and during a transfer. A working address that has moved away from its start\nis shown in the second accent colour."]}]]}],"\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34"]]}]
+15:["$","$L35",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@36"}]}]
+1f:true
+9:300
+22:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CF"}]
+23:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"380px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"The DMA chapter's sample player, paused: the DMA waits for its prescaler with the bus free, and port A's working address has moved 811 bytes past its start."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/dma/dma-panel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/dma/dma-panel.webp","alt":"The DMA panel during a burst transfer to the Specdrum DAC: waiting with the bus free, 811 of 2,048 bytes moved, port A's working address past its start, prescaler 55 at 223 T-states a byte","loading":"lazy","decoding":"async"}],[]]}]]}]
+24:["$","h2",null,{"id":"the-dma-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The DMA panel",["$","$L21",null,{"id":"the-dma-panel"}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"State"}]," is what the DMA is doing at the pause:"]}]
+26:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"State","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Meaning","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"idle"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["No transfer; ",["$","strong",null,{"children":"block finished"}]," when the last block reached its end."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"starting"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Enabled; the DMA takes the bus at the next instruction.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"waiting, bus free"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Burst mode: the DMA waits for its prescaler and the CPU runs.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"stepped aside"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The DMA let go of the bus so the CPU can take an interrupt enabled in NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CC"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CE"}],"."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"holding the bus"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A transfer is under way and the CPU is stopped.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"locked"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Auto restart in continuous mode: the CPU never gets the bus back.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"deaf"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L37"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+27:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A pause always falls between two CPU instructions, and Klive runs a transfer that keeps the bus to its\nend before the next instruction. So ",["$","strong",null,{"children":"holding the bus"}]," appears only when the pause lands at the end of a\nframe in the middle of a long transfer."]}]}]]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Transfer"}]," shows the dialect (the port touched last: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," moves ",["$","em",null,{"children":"N"}]," bytes for a block length of ",["$","em",null,{"children":"N"}],",\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0B"}]," moves ",["$","em",null,{"children":"N"}]," + 1), the operating mode (byte mode, and burst mode without a prescaler, behave as\ncontinuous), the direction, the bytes moved of the bytes to move, and auto restart."]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Ports"}]," shows port A and port B side by side: the start and working addresses, whether the port is\nmemory or I/O, how its address steps after each byte, and the clocks its read or write cycle takes."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Pacing"}]," appears when port B has a prescaler. ",["$","strong",null,{"children":"Nominal"}]," is the formula’s 875 kHz ÷ ",["$","em",null,{"children":"P"}],"; ",["$","strong",null,{"children":"Exact"}]," is\nthe period worked out for the current CPU speed, 32 × ",["$","em",null,{"children":"P"}]," clocks of 28 MHz and then three CPU clocks\n(4 × ",["$","em",null,{"children":"P"}]," + 3 T-states at 3.5 MHz), or ",["$","strong",null,{"children":"no effect at this speed"}]," when the wait is shorter than a byte.\nContention and the SD card port can make real bytes a little later."]}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Status and read-back"}]," shows the status byte a read would give, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"00E1101T"}],", with what its E and T bits\nmean; the read mask; which entry the next read of the port returns; and what the DMA expects as the next\nbyte written to it. The panel works the status byte out without reading the port, so opening it never\nmoves the read sequence."]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Steps aside for"}]," lists the interrupt sources enabled in NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CC"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CE"}],"."]}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"zxnDDMA"}]," appears on models with core 3.03: the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$DF"}]," flags, bits 23-16 of both start addresses, the\nrectangle, the strides, the transparent colour and the fill value."]}]
+2e:["$","h2",null,{"id":"the-warnings","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The warnings",["$","$L21",null,{"id":"the-warnings"}]]}]
+2f:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Warning","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"What happened","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Enabled without a load ($CF)"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["New start addresses were written after the last ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CF"}],", so the transfer used the old working addresses."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Enabled after a finished block"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["An enable without ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CF"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D3"}]," after a block ended moves one more byte, from just past the end."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":["WR",["$","em",null,{"children":"n"}]," expects more bytes"]}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A register group is waiting for follow bytes; the next byte written is taken as one of them.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"The DMA ignores every byte"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"WR4 bit 4 without port B’s address. Only a reset frees it.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"The CPU will not get the bus back"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Auto restart in continuous mode. Only a reset, or an interrupt enabled in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CC"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CE"}],", ends it."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"The DMA keeps the bus while it waits"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"A prescaler in continuous mode freezes the CPU for the whole block; the warning estimates for how many frames.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L38","$L39"]}]]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Information notes also say when a prescaler has no effect at the current speed, when Z80 DMA mode moves\none more byte, when a block length of 0 moves one byte, and when the step-aside enables need hardware IM2\nmode."}]
+31:["$","h2",null,{"id":"the-dma-command","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":[["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"dma"}]," command"],["$","$L21",null,{"id":"the-dma-command"}]]}]
+32:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"dma"}]," command prints the same rows and warnings as text in the command output."]}]
+33:["$","h2",null,{"id":"related-pages","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related pages",["$","$L21",null,{"id":"related-pages"}]]}]
+34:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L20",null,{"href":"/en/guides/next/interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Debugging interrupts"}],": the interrupts the DMA steps aside for."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L20",null,{"href":"/en/guides/next/next-breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Next breakpoints"}],": port breakpoints also stop on writes the DMA\nmakes."]}],"\n"]}]
+36:null
+9:C
+37:["$","td",null,{"children":"WR4 bit 4 without port B’s address: the DMA ignores every byte until a reset.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+38:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Port $6B (or $0B) is switched off"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$82"}]," bit 5 or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$85"}]," bit 1 disables the port."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+39:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"zxnDDMA settings stay on"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Flags from an earlier ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$DF"}]," still apply to the next transfer until a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C3"}],"."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
