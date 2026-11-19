@@ -7,6 +7,7 @@ import { DataLabel, DataPanel, DataRow, DataSecondary, DataValue, EmptyState } f
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import {
   buildDmaModel,
   hex6,
@@ -131,6 +132,7 @@ const formatHz = (hz: number) => (hz >= 1000 ? `${(hz / 1000).toFixed(hz >= 100_
 export const DmaPanel = () => {
   const t = useT();
   const emuApi = useEmuApi();
+  const { ideCommandsService } = useAppServices();
   const [state, setState] = useState<NextDmaState>();
 
   const refresh = useCallback(async () => {
@@ -384,6 +386,13 @@ export const DmaPanel = () => {
           </FieldRow>
         </>
       )}
+
+      {/* --- The port log: what the program wrote to get here (§11.3) */}
+      <DataRow dense xclass={styles.footer}>
+        <button type="button" className={styles.link} onClick={() => void ideCommandsService.executeCommand("show-dma-log")}>
+          {t("panels.side.dma.openLog")}
+        </button>
+      </DataRow>
     </DataPanel>
   );
 };

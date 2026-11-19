@@ -888,7 +888,7 @@ export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
   { id: "next_layers_document", label: t("menu.next.layers"), click: ideCommand("show-layers") }
 ];
 
-/** Debug › Step Copper and Debug › Interrupt Timeline on the Next */
+/** Debug › Step Copper, Debug › Interrupt Timeline and Debug › DMA Port Log on the Next */
 export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   {
     id: "step_copper",
@@ -897,7 +897,9 @@ export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
     click: ideCommand("step-copper")
   },
   // --- The Interrupt Timeline (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §4.2): opening it starts recording
-  { id: "show_interrupt_timeline", label: t("menu.next.interruptTimeline"), click: ideCommand("show-int-timeline") }
+  { id: "show_interrupt_timeline", label: t("menu.next.interruptTimeline"), click: ideCommand("show-int-timeline") },
+  // --- The DMA Port Log (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §11.3): opening it starts recording
+  { id: "show_dma_port_log", label: t("menu.next.dmaPortLog"), click: ideCommand("show-dma-log") }
 ];
 
 /**

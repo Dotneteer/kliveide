@@ -106,6 +106,39 @@ mode.
 
 The `dma` command prints the same rows and warnings as text in the command output.
 
+## What the program wrote: the DMA Port Log
+
+The panel shows where the DMA ended up; the **DMA Port Log** shows how it got there: every byte written
+to or read from ports `$6B` and `$0B`, with the frame, the T-state, the PC of the instruction, and what
+the DMA did with the byte.
+
+<Steps>
+
+### Open it before the program runs
+
+Use **Debug › DMA Port Log**, the DMA panel's **Open the port log** link, or the `show-dma-log`
+command. It records while it is open, so open it before the setup you want to see.
+
+### Run, then pause
+
+Each setup, the writes up to the one that enables the DMA, gets a header with its first PC. Click a PC to
+open the disassembly there.
+
+### Read the rows
+
+A base byte names its register group and what it sets; its follow bytes are indented under it. The rows
+show what the DMA actually took: a byte the program meant as a new group but the DMA took as a follow
+byte of the group before it shows as that follow byte.
+
+</Steps>
+
+<Shot src="guides/next/dma/dma-port-log.webp" alt="The DMA Port Log: setup 1, 16 bytes from $800B, each byte decoded, from disable through WR0 with port A $C000 and length 2,048, WR2 with prescaler 55, WR4 burst to port $00DF, to load and enable, then a status read" caption="The sample player's setup, sent with OTIR from $800B, and the status read after it." width={900} />
+
+**Problems** filters the rows the DMA ignored or that did not do what they look like: a byte written while
+the DMA is deaf, the WR4 that made it deaf, a byte that matches no register group, an enable after new
+start addresses without `$CF`, and a zxnDDMA command sent to `$0B`. **Copy as .dma** in a setup's header
+copies it as `.dma` lines for the Klive assembler.
+
 ## Before the program runs
 
 When the program is written with the [`.dma` pragma](/en/reference/z80-assembler/zx-next-dma/), the

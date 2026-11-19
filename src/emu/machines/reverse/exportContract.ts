@@ -99,6 +99,11 @@ const OVERRIDES: Record<string, ExportClass> = {
   IntEventsClear: "debug",
   IntEventsGetCount: "pure",
   IntEventsGetEnabled: "pure",
+  // --- The Next's DMA Port Log (NEXT_DMA_DEBUGGING_PLAN §11.1): volatile, never changes the DMA
+  DmaLogSetEnabled: "debug",
+  DmaLogClear: "debug",
+  DmaLogGetCount: "pure",
+  DmaLogGetEnabled: "pure",
   // --- The ZX81 auto-RUN watch lives in a non-volatile static
   ArmAutoRun: "journaled",
   // --- Reads that look like reads but have device side effects (status latches, FIFOs, counters)

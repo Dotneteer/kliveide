@@ -455,6 +455,12 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetDmaAddressB: ZxNextWasmV2ExportFunction;
   zxnextGetDmaSeq: ZxNextWasmV2ExportFunction;
   zxnextGetDmaStatePtr: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogPtr: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogGetCapacity: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogGetCount: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogSetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogGetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextDmaLogClear: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -508,6 +514,8 @@ export type ZxNextWasmV2Runtime = {
   readonly interruptState: Uint8Array;
   /** The DMA panel's 64-byte snapshot, filled by `zxnextGetDmaStatePtr` (read only by the IDE) */
   readonly dmaState: Uint8Array;
+  /** The DMA Port Log's ring: 32K records of 16 bytes (NEXT_DMA_DEBUGGING_PLAN §11.1; read only by the IDE) */
+  readonly dmaLog: Uint8Array;
   /** The interrupt event ring: 64K records of 16 bytes (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1; read only by the IDE) */
   readonly interruptEvents: Uint8Array;
   /** The latched interrupt-stop hit's record, 16 bytes (read only by the IDE) */
@@ -956,6 +964,12 @@ const requiredV2Exports = [
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
   "zxnextGetDmaStatePtr",
+  "zxnextDmaLogPtr",
+  "zxnextDmaLogGetCapacity",
+  "zxnextDmaLogGetCount",
+  "zxnextDmaLogSetEnabled",
+  "zxnextDmaLogGetEnabled",
+  "zxnextDmaLogClear",
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,
@@ -1047,6 +1061,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "interruptState", exports.zxnextGetInterruptStatePtr(), 96, memoryBuffer);
   assertViewRange(artifactName, "dmaState", exports.zxnextGetDmaStatePtr(), 64, memoryBuffer);
+  assertViewRange(artifactName, "dmaLog", exports.zxnextDmaLogPtr(), exports.zxnextDmaLogGetCapacity() * 16, memoryBuffer);
   assertViewRange(artifactName, "interruptEvents", exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16, memoryBuffer);
   assertViewRange(artifactName, "interruptHitRecord", exports.zxnextIntHitRecordPtr(), 16, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
@@ -1071,6 +1086,7 @@ export function createZxNextWasmV2Views(
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     interruptState: new Uint8Array(memoryBuffer, exports.zxnextGetInterruptStatePtr(), 96),
     dmaState: new Uint8Array(memoryBuffer, exports.zxnextGetDmaStatePtr(), 64),
+    dmaLog: new Uint8Array(memoryBuffer, exports.zxnextDmaLogPtr(), exports.zxnextDmaLogGetCapacity() * 16),
     interruptEvents: new Uint8Array(memoryBuffer, exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16),
     interruptHitRecord: new Uint8Array(memoryBuffer, exports.zxnextIntHitRecordPtr(), 16),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),

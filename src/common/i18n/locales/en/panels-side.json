@@ -5170,6 +5170,11 @@
   "@panels.side.dma.notAvailable": {
     "context": "Empty state of the DMA side-bar panel (ZX Spectrum Next, Machine info activity) when no machine is running or it is not a Next."
   },
+  "panels.side.dma.openLog": "Open the port log",
+  "@panels.side.dma.openLog": {
+    "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Port Log document.",
+    "maxChars": 24
+  },
   "panels.side.dma.stateLabel": "State",
   "@panels.side.dma.stateLabel": {
     "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): what the DMA is doing now",

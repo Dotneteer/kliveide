@@ -13,6 +13,7 @@ import type {
 import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zxnext/layers/layerMix";
 import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
+import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 
 /**
  * What the IDE reads from a ZX Spectrum Next.
@@ -62,6 +63,15 @@ export interface IZxNextIdeMachine {
 
   /** The DMA: registers, working state and sequencers (NEXT_DMA_DEBUGGING_PLAN §3.2). Side-effect free. */
   getDmaState(): NextDmaState;
+
+  /** The DMA Port Log's records written since `since` (all held ones by default), oldest first (§11). */
+  getDmaLog(since?: number): NextDmaLog;
+
+  /** Switches the DMA Port Log's recording on or off. Never changes what the DMA does. */
+  setDmaLogRecording(enabled: boolean): void;
+
+  /** Forgets every recorded DMA port access. */
+  clearDmaLog(): void;
 
   /** The interrupt event ring's records written since `since` (all held ones by default), oldest first. */
   getInterruptEvents(since?: number): NextInterruptEvents;

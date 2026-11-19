@@ -1042,5 +1042,10 @@
   "@menu.next.interruptTimeline": {
     "context": "Debug menu (ZX Spectrum Next): opens the Interrupt Timeline document, which records the machine's interrupt events and draws them over frames.",
     "maxChars": 30
+  },
+  "menu.next.dmaPortLog": "DMA Port Log",
+  "@menu.next.dmaPortLog": {
+    "context": "Debug menu (ZX Spectrum Next): opens the DMA Port Log document, which records every access to the DMA's ports.",
+    "maxChars": 30
   }
 }

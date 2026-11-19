@@ -166,6 +166,7 @@
 /images/en/guides/next/dma/dma-editor.webp
 /images/en/guides/next/dma/dma-hover.webp
 /images/en/guides/next/dma/dma-panel.webp
+/images/en/guides/next/dma/dma-port-log.webp
 /images/en/guides/next/fw-files/fw-viewer.webp
 /images/en/guides/next/fw-files/test-card.webp
 /images/en/guides/next/interrupts/interrupt-stop.webp

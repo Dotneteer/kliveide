@@ -2569,6 +2569,181 @@
     "context": "Switch label in the Interrupt Timeline's toolbar: record interrupt events or not.",
     "maxChars": 12
   },
+  "panels.doc.dmaLog.notAvailable": "The DMA Port Log is not available",
+  "@panels.doc.dmaLog.notAvailable": {
+    "context": "Empty state of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B when no machine is running or it is not a Next."
+  },
+  "panels.doc.dmaLog.record": "Record:",
+  "@panels.doc.dmaLog.record": {
+    "context": "Switch label in the toolbar of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: record port accesses or not.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaLog.recordTitle": "Records every access to the DMA's ports while on. It is on while the document is open.",
+  "@panels.doc.dmaLog.recordTitle": {
+    "context": "Tooltip of the Record switch in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
+  },
+  "panels.doc.dmaLog.clear": "Clear the log",
+  "@panels.doc.dmaLog.clear": {
+    "context": "Tooltip of the toolbar button of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B that forgets every recorded access."
+  },
+  "panels.doc.dmaLog.filterTitle": "Which accesses to show",
+  "@panels.doc.dmaLog.filterTitle": {
+    "context": "Tooltip of the filter buttons in the toolbar of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
+  },
+  "panels.doc.dmaLog.filter.all": "All",
+  "@panels.doc.dmaLog.filter.all": {
+    "context": "Filter button in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: show every access.",
+    "maxChars": 10
+  },
+  "panels.doc.dmaLog.filter.writes": "Writes",
+  "@panels.doc.dmaLog.filter.writes": {
+    "context": "Filter button in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: show only writes (OUT).",
+    "maxChars": 10
+  },
+  "panels.doc.dmaLog.filter.reads": "Reads",
+  "@panels.doc.dmaLog.filter.reads": {
+    "context": "Filter button in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: show only reads (IN).",
+    "maxChars": 10
+  },
+  "panels.doc.dmaLog.filter.anomalies": "Problems ({count})",
+  "@panels.doc.dmaLog.filter.anomalies": {
+    "context": "Filter button in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: show only accesses with a problem (a byte the DMA ignored, an enable without a load, ...).",
+    "placeholders": {
+      "count": "How many rows have a problem"
+    },
+    "maxChars": 14
+  },
+  "panels.doc.dmaLog.group": "Setups:",
+  "@panels.doc.dmaLog.group": {
+    "context": "Switch label in the toolbar of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: group the writes into setups (runs of writes ending with an enable).",
+    "maxChars": 12
+  },
+  "panels.doc.dmaLog.groupTitle": "Groups the writes into setups: each setup ends with the write that enables the DMA",
+  "@panels.doc.dmaLog.groupTitle": {
+    "context": "Tooltip of the Setups switch in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
+  },
+  "panels.doc.dmaLog.held": "{used} of {capacity} accesses",
+  "@panels.doc.dmaLog.held": {
+    "context": "Toolbar text of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: how many recorded accesses it holds of how many it can.",
+    "placeholders": {
+      "used": "Accesses held",
+      "capacity": "The most it can hold"
+    }
+  },
+  "panels.doc.dmaLog.waiting": "Run the program: DMA port accesses appear here",
+  "@panels.doc.dmaLog.waiting": {
+    "context": "Empty state of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B while recording and nothing has been recorded."
+  },
+  "panels.doc.dmaLog.paused": "Recording is off",
+  "@panels.doc.dmaLog.paused": {
+    "context": "Empty state of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B when recording is switched off and nothing is held."
+  },
+  "panels.doc.dmaLog.olderHidden": "{count, plural, one {# older row is} other {# older rows are}} not shown",
+  "@panels.doc.dmaLog.olderHidden": {
+    "context": "Note above the table of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B when it shows only the newest rows.",
+    "placeholders": {
+      "count": "Rows not shown"
+    }
+  },
+  "panels.doc.dmaLog.col.frame": "Frame",
+  "@panels.doc.dmaLog.col.frame": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B.",
+    "maxChars": 8
+  },
+  "panels.doc.dmaLog.col.tState": "T-state",
+  "@panels.doc.dmaLog.col.tState": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the T-state in the frame.",
+    "maxChars": 8
+  },
+  "panels.doc.dmaLog.col.port": "Port",
+  "@panels.doc.dmaLog.col.port": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the access (OUT or IN) and the port.",
+    "maxChars": 8
+  },
+  "panels.doc.dmaLog.col.byte": "Byte",
+  "@panels.doc.dmaLog.col.byte": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the byte written or read.",
+    "maxChars": 6
+  },
+  "panels.doc.dmaLog.col.group": "Group",
+  "@panels.doc.dmaLog.col.group": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the DMA register group (WR0-WR6) a base byte starts.",
+    "maxChars": 6
+  },
+  "panels.doc.dmaLog.col.meaning": "Meaning",
+  "@panels.doc.dmaLog.col.meaning": {
+    "context": "Column heading in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: what the byte did to the DMA."
+  },
+  "panels.doc.dmaLog.setup": "Setup {index} · {count, plural, one {# byte} other {# bytes}}",
+  "@panels.doc.dmaLog.setup": {
+    "context": "Header row of a setup in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B.",
+    "placeholders": {
+      "index": "The setup's number",
+      "count": "How many bytes it wrote"
+    }
+  },
+  "panels.doc.dmaLog.setupFrom": "from {pc} to {port}",
+  "@panels.doc.dmaLog.setupFrom": {
+    "context": "In a setup's header row in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the PC of the instruction that wrote its first byte, and the port.",
+    "placeholders": {
+      "pc": "The address, e.g. '$8007'",
+      "port": "The port, '$6B' or '$0B'"
+    }
+  },
+  "panels.doc.dmaLog.setupHost": "written by the IDE or a test to {port}",
+  "@panels.doc.dmaLog.setupHost": {
+    "context": "In a setup's header row in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the bytes did not come from a CPU instruction.",
+    "placeholders": {
+      "port": "The port, '$6B' or '$0B'"
+    }
+  },
+  "panels.doc.dmaLog.setupEnables": "enables the DMA",
+  "@panels.doc.dmaLog.setupEnables": {
+    "context": "In a setup's header row in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the setup ends with the write that starts a transfer."
+  },
+  "panels.doc.dmaLog.setupOpen": "not enabled yet",
+  "@panels.doc.dmaLog.setupOpen": {
+    "context": "In a setup's header row in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: no enable has been written after these bytes."
+  },
+  "panels.doc.dmaLog.copy": "Copy as .dma",
+  "@panels.doc.dmaLog.copy": {
+    "context": "Link in a setup's header row in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: copies the setup as Klive assembler .dma lines. '.dma' is a pragma name, keep it.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaLog.copied": "Copied",
+  "@panels.doc.dmaLog.copied": {
+    "context": "Replaces the 'Copy as .dma' link of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B after the copy.",
+    "maxChars": 16
+  },
+  "panels.doc.dmaLog.host": "IDE",
+  "@panels.doc.dmaLog.host": {
+    "context": "In the PC column of the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: the access did not come from a CPU instruction but from the IDE or a test.",
+    "maxChars": 6
+  },
+  "panels.doc.dmaLog.pcTitle": "Show the instruction in the disassembly",
+  "@panels.doc.dmaLog.pcTitle": {
+    "context": "Tooltip of a PC in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
+  },
+  "panels.doc.dmaLog.anomaly.deaf": "ignored: the DMA is deaf until a reset",
+  "@panels.doc.dmaLog.anomaly.deaf": {
+    "context": "Problem text in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: a byte written after WR4 bit 4 left the DMA ignoring every write."
+  },
+  "panels.doc.dmaLog.anomaly.becomesDeaf": "WR4 bit 4 without port B's address: the DMA ignores every byte from here",
+  "@panels.doc.dmaLog.anomaly.becomesDeaf": {
+    "context": "Problem text in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B."
+  },
+  "panels.doc.dmaLog.anomaly.ignored": "ignored: matches no register group",
+  "@panels.doc.dmaLog.anomaly.ignored": {
+    "context": "Problem text in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: a base byte the DMA does not recognise."
+  },
+  "panels.doc.dmaLog.anomaly.enableWithoutLoad": "enabled without .dma load ($CF) after new start addresses",
+  "@panels.doc.dmaLog.anomaly.enableWithoutLoad": {
+    "context": "Problem text in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B. Keep '.dma load' and '$CF'."
+  },
+  "panels.doc.dmaLog.anomaly.ddmaOn0B": "a zxnDDMA command through $0B: the DMA does not know it there",
+  "@panels.doc.dmaLog.anomaly.ddmaOn0B": {
+    "context": "Problem text in the DMA Port Log document (ZX Spectrum Next), which lists every write to and read from the DMA's ports $6B and $0B: zxnDDMA commands work on port $6B only."
+  },
   "panels.doc.intTimeline.recordTitle": "Record interrupt events while the machine runs (only while this document is open)",
   "@panels.doc.intTimeline.recordTitle": {
     "context": "Tooltip of the Record switch in the Interrupt Timeline."

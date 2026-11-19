@@ -1100,5 +1100,10 @@
   "@panels.document.interruptTimeline": {
     "context": "Name of the Interrupt Timeline document tab (ZX Spectrum Next): the interrupt events drawn as swimlanes over frames.",
     "maxChars": 24
+  },
+  "panels.document.dmaPortLog": "DMA Port Log",
+  "@panels.document.dmaPortLog": {
+    "context": "Name of the DMA Port Log document tab (ZX Spectrum Next): every write to and read from the DMA's ports.",
+    "maxChars": 20
   }
 }

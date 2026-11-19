@@ -12,6 +12,8 @@ export const COPPER_EDITOR = "CopperList";
 // --- The ZX Spectrum Next Interrupt Timeline (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §4.2)
 export const INT_TIMELINE_PANEL_ID = "$intTimeline";
 export const INT_TIMELINE_EDITOR = "InterruptTimeline";
+export const DMA_LOG_PANEL_ID = "$dmaLog";
+export const DMA_LOG_EDITOR = "DmaPortLog";
 // --- The ZX Spectrum Next registers as a document, popped out of the Debug sidebar panel
 export const NEXTREGS_PANEL_ID = "$nextRegs";
 export const NEXTREGS_EDITOR = "NextRegisters";

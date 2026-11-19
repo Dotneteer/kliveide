@@ -194,3 +194,18 @@
   color: var(--text-disabled);
   text-decoration: line-through;
 }
+
+/* --- The footer's link to the DMA Port Log */
+.footer {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text);
+  cursor: pointer;
+  @include focus-ring;
+}

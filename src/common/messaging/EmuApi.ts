@@ -41,6 +41,7 @@ import type {
   NextInterruptState
 } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
+import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
   HistoricalCpuInfo,
@@ -865,6 +866,28 @@ class EmuApiImpl {
    * Reading it never changes the machine.
    */
   async getDmaState(): Promise<NextDmaState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the ZX Spectrum Next DMA Port Log's records written since `since` (all held ones by default),
+   * oldest first.
+   */
+  async getDmaLog(_since?: number): Promise<NextDmaLog> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Switches the ZX Spectrum Next DMA Port Log's recording on or off.
+   */
+  async setDmaLogRecording(_enabled: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Forgets every recorded ZX Spectrum Next DMA port access.
+   */
+  async clearDmaLog(): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

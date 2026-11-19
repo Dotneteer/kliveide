@@ -1,7 +1,7 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phase 1 shipped** (PR #1664). **Phase 2, editor support, implemented, in review** (2026-11-19,
-branch `dma-editor-support`; §10). This plan
+Status: **Phases 1 and 2 shipped** (PRs #1664, #1665). **Phase 3, the port write log, implemented, in review**
+(2026-11-19, branch `dma-port-log`; §11). This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -397,3 +397,78 @@ Z0390/Z0391 use the program's last WR4; without one, they are not checked.
   `src/renderer/appIde/services/dma-editor.ts` and `z80-providers.ts` (hover, code lens);
   tests `test/z80-assembler/dma-warnings.test.ts`, `dma-editor.test.ts`; docs `zx-next-dma.mdx`
   (Warnings, In the editor), `guides/next/dma.mdx` (screenshots: `guides-dma-editor` recipe).
+
+## 11. Phase 3: the DMA Port Log
+
+Mockup tool 2. A document that lists every write to and read from the DMA's ports, as the DMA took it,
+so a setup's mistake shows where it was made rather than later as a wrong transfer.
+
+### 11.1 Recording in the core
+
+A ring of port accesses in `zxnext-dma.c`, beside the sequencer whose state it records, recording only
+while the document is open (the interrupt ring's D4). 32K records of 16 bytes (512 KB); the count only
+grows, record `n` lives at `n % capacity`, read with `copyRingRecords`.
+
+| Offset | Field |
+|---|---|
+| +0 u32 | frame |
+| +4 u32 | position in the frame, 28 MHz clocks |
+| +8 u16 | PC of the instruction (every Z80 I/O instruction is two bytes, so `PC − 2` during its I/O cycle) |
+| +10 u8 | the byte written or read |
+| +11 u8 | flags: bit 0 read, bit 1 port `$0B`, bit 2 from the host (not an instruction: a test, the IDE), bits 5-4 CPU speed |
+| +12 u8 | write: the write sequencer before the byte; read: the read entry it returned |
+| +13 u8 | write: the write sequencer after the byte |
+| +14 u8 | write: the base byte of the group in progress after the byte (`dmaRegTemp`) |
+| +15 u8 | write: `dmaStartsSinceLoad` after the byte (bit 0) |
+
+Exports `zxnextDmaLogPtr`, `...GetCapacity`, `...GetCount`, `...SetEnabled`, `...GetEnabled`,
+`...Clear`; all statics volatile; classified in the export contract like the interrupt ring's. A write
+is recorded even when the sequencer ignores it (deaf, an unknown byte): that is the point.
+
+### 11.2 The model
+
+`src/common/zxnext/dma/dmaLog.ts` (pure): decodes records, then builds rows from them.
+
+- **Commands come from the sequencer, not from guessing.** A write whose sequencer-before is idle is a
+  base byte; the writes after it whose sequencer-before is not idle are its follow bytes, decoded together
+  with `decodeDmaCommand`. So a swallowed byte shows as the follow byte the DMA took it as.
+- **Setups**: a run of writes ending with an enable (`$87`, WR3 D6); the writes after the last enable are
+  an open setup. A setup's header names its first PC, its byte count and its dialect.
+- **Reads** are rows of their own: the entry the read returned (status, counter, port A/B) and, for the
+  status, what E and T say.
+- **Anomalies**, each a flag on the row: a write while deaf; a byte that matches no group (ignored); an
+  enable while start addresses were written after the last `$CF` (from +15); a WR4 that leaves the DMA
+  deaf.
+
+### 11.3 The document
+
+**DMA Port Log** (`$dmaLog`), opened by `show-dma-log` / closed by `hide-dma-log`, Debug › DMA Port Log
+on the Next, and a link in the DMA panel's footer. A header with recording on/off, Clear and the record
+count; filters All / Writes / Reads / Anomalies and "Group into setups"; a table with frame, T-state in
+the frame, PC (click: the disassembly there), port, byte, group and meaning, newest last, the last 1,000
+rows. A setup header copies the setup as `.dma` source (`formatDmaCommand`).
+
+### 11.4 Done when
+
+- Harness tests (`test/zxnext-hw/dma/dma-port-log.test.ts`, session `recordDmaLog`/`dmaLog`): an `OTIR`
+  setup recorded byte by byte with the `OTIR`'s PC; the sequencer states of a base byte and its
+  follow bytes; host writes flagged; reads with their entries; nothing recorded while off; recording
+  leaves the machine byte-identical; the ring wraps.
+- Unit tests for `dmaLog.ts` (commands, setups, anomalies, reads) and the export contract.
+- The guide `guides/next/dma.mdx` gains a section and a generated screenshot.
+- Checked in the running app.
+
+### 11.5 As built (2026-11-19)
+
+- **The PC is `PC − 2` at the I/O cycle**, as designed: the harness test checks every byte of an `OTIR`
+  setup carries the `OTIR`'s own address, and an `IN A,(C)` its own.
+- **The ring is 32K records (512 KB); the core's memory stays at 58 MB.**
+- **Read-back commands outside a setup stand alone.** A `$BF`, `$A7`, `$8B` or `$BB` (with its mask)
+  written when no setup is open is not configuration, so it does not open a setup of its own.
+- **A 16-bit value's two bytes are labelled low and high** (`portALo`/`portAHi`, ...).
+- **No `dma-log` text command**: the document and the harness's `dmaLog()` cover it.
+- Files: `zxnext-dma.c` (`zxnextDmaLog*`, the write/read wrappers), `build-zxnext-wasm.cjs`,
+  `exportContract.ts`; `src/common/zxnext/dma/dmaLog.ts`; machine, `EmuApi`, `MainToEmuProcessor`;
+  `DocumentPanels/DmaPortLog/`; `show-dma-log`/`hide-dma-log` in `DmaCommands.ts`; Debug › DMA Port Log;
+  the DMA panel's footer link; tests `test/zxnext-hw/dma/dma-port-log.test.ts`; docs `guides/next/dma.mdx`
+  (screenshot in the `guides-dma` recipe).
