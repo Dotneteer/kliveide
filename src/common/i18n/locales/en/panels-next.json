@@ -3385,7 +3385,7 @@
       "value": "Its 9-bit colour"
     }
   },
-  "panels.next.screenFile.paletteLegend": "solid: used · outlined: not used",
+  "panels.next.screenFile.paletteLegend": "plain: used · struck through: not used",
   "@panels.next.screenFile.paletteLegend": {
     "context": "Legend under the palette grid of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
   },

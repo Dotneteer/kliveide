@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import { useMemo } from "react";
+import { type CSSProperties, useMemo } from "react";
 
 import { PLUS3DOS_HEADER_SIZE } from "@common/diskfs/plus3dos";
 import { useT } from "@common/i18n/useT";
@@ -81,7 +81,7 @@ const PaletteGrid = ({
                     [styles.paletteUnused]: !isUsed,
                     [styles.selected]: highlight === i
                   })}
-                  style={isUsed ? { background: css } : { boxShadow: `inset 0 0 0 1px ${css}` }}
+                  style={{ "--cell-colour": css } as CSSProperties}
                   aria-pressed={highlight === i}
                   title={t(isUsed ? "panels.next.screenFile.paletteEntry" : "panels.next.screenFile.paletteEntryUnused", {
                     index: hex2(i),

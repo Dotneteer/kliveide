@@ -283,6 +283,12 @@ from the SD card (the README has the steps).
   shot for shot. The finding changed the viewer: `Plus3Header` keeps the type byte, the Header section
   names types 4 and 5 `LAYER 1` and `LAYER 2`, and only a CODE header shows a load address and the
   "not at the screen" warning (it fired wrongly on every LAYER 1 file).
+- **Save as PNG was checked in the running app**: the recipe answers the save dialog with a path (it
+  replaces `dialog.showSaveDialog` in the main process) and the file written there is a 256×192 PNG.
+- **The light theme was checked** (`SCREEN_FILES_THEME=light` runs the recipe in it). One fix: the
+  palette grid drew unused entries as an outline in their own colour, so white entries vanished on the
+  light panel. Every cell now has a neutral edge and an unused one is struck through (D6's "hollow"
+  became "struck through").
 - **Copy picture was checked in the running app**: the recipe clicks it and reads the system clipboard
   from Electron's main process, which holds a 256×192 PNG (also offered as macOS's PNG and TIFF
   pasteboard types). Electron 45's main-process `clipboard` has no `readImage`; `read()` returns

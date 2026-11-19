@@ -1486,6 +1486,11 @@ own sections; it draws no chrome of its own, so a new format is a view, not a ne
   other pixel through `IndexedImageCanvas`'s `dim` mask, and a toolbar chip names what is highlighted
   and stops it. Something the user switched on that changes how the picture reads must be visible
   and undoable from the toolbar, not only from the section that started it.
+- **A swatch of a machine colour carries a neutral edge, and "not used" is a mark, not an outline in
+  its own colour.** The palette grid's cells all have an inset `--border-default` edge, and an unused
+  entry is the colour struck through by a `--text-tertiary` diagonal, dimmed. The first version drew
+  unused entries as a 1px outline in their own colour: white and near-white entries vanished on the
+  light theme's panel, and black ones on the dark one. Check a swatch grid in both themes.
 - **A behaviour the file only encodes is shown on request**: FLASH is one **Blink FLASH** toggle,
   off by default (the file's bits as stored), and *which* cells flash is a highlight from the FLASH
   count, not outlines. Two toggles for one attribute bit (outline, animate) were not understood.

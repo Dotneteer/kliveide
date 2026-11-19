@@ -84,6 +84,12 @@ const RUNTIME_PROVIDED = new Set([
    */
   "--palette-rule",
   /*
+   * Set per element by the screen file viewer's palette grid (`features/screen-files/IndexedScreenViews.tsx`)
+   * to the palette entry the cell shows: a machine colour from the file, not a theme value, which the
+   * stylesheet paints as the cell and under the "not used" strike.
+   */
+  "--cell-colour",
+  /*
    * Set on the sprite editor's root from the height the user dragged the sheet pane to.
    *
    * Not a theme value in any tone: it is per-document view state, restored from the document's own
