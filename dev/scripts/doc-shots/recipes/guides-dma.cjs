@@ -9,6 +9,10 @@
  *   16 bytes sent by OTIR, decoded, and the status read after it;
  * - `dma/dma-bus-timeline.webp` — the DMA Bus Timeline (§13): the DMA's small share of each frame and,
  *   in the detail, one hold a byte about 226 T-states apart;
+ * - `dma/dma-transfers.webp` — the DMA Transfers document (§14) with the sample player's transfer
+ *   selected;
+ * - `dma/dma-memory-overlay.webp` — the Memory panel at that transfer's next byte, with its overlay: the
+ *   bytes the block under way has read tinted, the next one framed;
  * - `dma/dma-stop.webp` — the Breakpoints panel with a `dma:count:100` stop that fired (§12).
  *
  * Like `guides-interrupts.cjs` it pokes a program into a paused Next (no NextZXOS needed). The setup
@@ -128,6 +132,38 @@ module.exports = {
           displayWidth: 900,
           crop: { x: 0, y: 0, width: area.width, height: stats.y + stats.height - area.y + 12 }
         });
+      });
+
+      await step(klive, "transfers", async () => {
+        // --- The Transfers record while open (§14.1): open, run a moment, pause, select the transfer
+        await klive.cmd("show-dma-transfers", 1500);
+        await klive.cmd("em-debug", 1500);
+        await klive.cmd("em-pause", 1500);
+        await h.hideEmu(klive);
+        await h.focusIde(klive);
+        await klive.cmd("show-dma-transfers", 1500);
+        const docs = '[class*="_documentArea_"]';
+        await ide.locator(`${docs} table tbody tr`).first().click();
+        await klive.sleep(600);
+        await h.park(ide);
+        const area = await ide.locator(docs).first().boundingBox();
+        const rows = await ide.locator(`${docs} table tbody tr`).last().boundingBox();
+        await klive.shot(docs, "en/guides/next/dma/dma-transfers.webp", {
+          displayWidth: 900,
+          crop: { x: 0, y: 0, width: area.width, height: rows.y + rows.height - area.y + 12 }
+        });
+        // --- Show in memory: the Memory panel at the next byte, the block's bytes so far tinted
+        await ide.locator(`${docs} table tbody tr`).first().getByRole("button", { name: "Show in memory" }).click();
+        await klive.sleep(2000);
+        await h.park(ide);
+        const marks = async (cls) => ide.locator(`${docs} [class*="_${cls}_"]`).count();
+        console.log(`  overlay: ${await marks("dmaReadWash")} read washes, ${await marks("dmaNextByte")} next-byte frames`);
+        const memArea = await ide.locator(docs).first().boundingBox();
+        await klive.shot(docs, "en/guides/next/dma/dma-memory-overlay.webp", {
+          displayWidth: 900,
+          crop: { x: 0, y: 0, width: memArea.width, height: Math.min(memArea.height, 420) }
+        });
+        await klive.cmd("hide-dma-transfers", 800);
       });
 
       await step(klive, "dma-stop", async () => {

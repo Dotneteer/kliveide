@@ -2,10 +2,11 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
-import { DMA_LOG_PANEL_ID, DMA_TIMELINE_PANEL_ID } from "@common/state/common-ids";
+import { DMA_LOG_PANEL_ID, DMA_TIMELINE_PANEL_ID, DMA_TRANSFERS_PANEL_ID } from "@common/state/common-ids";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { buildDmaModel } from "@renderer/features/dma/dmaViewModel";
 import { formatDmaState } from "@renderer/features/dma/dmaText";
+import { setDmaOverlaySelection } from "@renderer/features/dma/dmaOverlayStore";
 import { IdeCommandBase, commandError, commandSuccess, writeMessage, writeSuccessMessage } from "@renderer/appIde/services/ide-commands";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
@@ -163,6 +164,48 @@ export class HideDmaTimelineCommand extends IdeCommandBase {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.closeDocument(DMA_TIMELINE_PANEL_ID);
+    return commandSuccess;
+  }
+}
+
+/** `show-dma-transfers`: opens the DMA Transfers document, which records while it is open (§14.2). */
+export class ShowDmaTransfersCommand extends IdeCommandBase {
+  readonly id = "show-dma-transfers";
+  get description() {
+    return t("commands.dma.showTransfersDescription");
+  }
+  readonly usage = "show-dma-transfers";
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
+    if (machineId !== MI_ZXNEXT) return commandError(t("commands.dma.nextOnly"));
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    if (documentHubService.isOpen(DMA_TRANSFERS_PANEL_ID)) {
+      await documentHubService.setActiveDocument(DMA_TRANSFERS_PANEL_ID);
+    } else {
+      await documentHubService.openDocument(createSpecialDocument(DMA_TRANSFERS_PANEL_ID), undefined, false);
+    }
+    return commandSuccess;
+  }
+}
+
+/** `hide-dma-transfers`: closes the DMA Transfers document, which stops its recording and the overlay. */
+export class HideDmaTransfersCommand extends IdeCommandBase {
+  readonly id = "hide-dma-transfers";
+  get description() {
+    return t("commands.dma.hideTransfersDescription");
+  }
+  readonly usage = "hide-dma-transfers";
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    setDmaOverlaySelection(undefined);
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(DMA_TRANSFERS_PANEL_ID);
+    try {
+      await context.emuApi.setDmaTransfersRecording(false);
+    } catch {
+      // --- not a Next, or no machine: nothing records
+    }
     return commandSuccess;
   }
 }

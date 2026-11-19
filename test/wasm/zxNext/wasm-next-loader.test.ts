@@ -112,6 +112,8 @@ function createViewExports(
     zxnextDmaLogPtr: () => 0,
     zxnextDmaBusPtr: () => 0,
     zxnextDmaBusGetCapacity: () => 0,
+    zxnextDmaXferPtr: () => 0,
+    zxnextDmaXferGetCapacity: () => 0,
     zxnextDmaHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextDmaLogGetCapacity: () => 0,
     zxnextIntHitRecordPtr: () => options.nextRegWatchOffset ?? 0,

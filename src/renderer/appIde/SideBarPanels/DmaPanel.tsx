@@ -421,6 +421,9 @@ export const DmaPanel = () => {
         <button type="button" className={styles.link} onClick={() => void ideCommandsService.executeCommand("show-dma-timeline")}>
           {t("panels.side.dma.openTimeline")}
         </button>
+        <button type="button" className={styles.link} onClick={() => void ideCommandsService.executeCommand("show-dma-transfers")}>
+          {t("panels.side.dma.openTransfers")}
+        </button>
       </DataRow>
     </DataPanel>
   );

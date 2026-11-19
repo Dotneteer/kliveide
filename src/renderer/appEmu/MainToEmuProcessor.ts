@@ -2009,6 +2009,39 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next DMA Transfers written since `since`.
+   */
+  getDmaTransfers(since?: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getDmaTransfers(since);
+  }
+
+  /**
+   * Switches the ZX Spectrum Next DMA Transfers' recording on or off.
+   */
+  setDmaTransfersRecording(enabled: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).setDmaTransfersRecording(enabled);
+  }
+
+  /**
+   * Forgets every recorded ZX Spectrum Next DMA transfer.
+   */
+  clearDmaTransfers() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).clearDmaTransfers();
+  }
+
+  /**
    * Arms a DMA step and runs the machine in debug mode until it fires (NEXT_DMA_DEBUGGING_PLAN §12.3).
    */
   async stepDma(mode: DmaStepMode) {

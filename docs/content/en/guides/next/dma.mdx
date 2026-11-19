@@ -159,6 +159,35 @@ open and shown, so open it, then run the program.
 A continuous transfer is one long hold; one that runs past the end of a frame is split there, and a
 16K copy at 3.5 MHz swallows the frame interrupt that falls inside it.
 
+## Where the bytes went: the DMA Transfers
+
+The **DMA Transfers** document lists every transfer, from its enable to its end. Open it with **Debug ›
+DMA Transfers**, the DMA panel's **Open the transfers** link, or `show-dma-transfers`. It records while it
+is open; a transfer already running when it opens is listed too, as started **before recording**.
+
+<Shot src="guides/next/dma/dma-transfers.webp" alt="The DMA Transfers document with one row: the sample player's transfer, burst mode at prescaler 55, from $C000-$C7FF to port $DF, running, restarted 11 times, with a Show in memory link" caption="The sample player's transfer: from the sample at $C000 to the DAC on port $DF, restarted at every block end." width={900} />
+
+Each row gives the instruction that enabled the transfer (click it to open the disassembly), its mode,
+what it read and wrote, the bytes moved (of the block, while it runs), how long it held the bus, and how
+it ended: **done** at the end of its block, **disabled** by `$83`, **DMA reset** by `$C3`, or still
+**running**. Two warnings can follow:
+
+- **INT lost**: a pulse-mode frame interrupt came and went while the transfer held the bus, so the CPU
+  never saw it.
+- **not loaded**: the transfer was enabled with start addresses written after the last `$CF`, so it used
+  the old working addresses.
+
+Select a row to tint its bytes in the Memory panel, and click **Show in memory** to open it there. The
+bytes it read have the second accent's wash, the bytes it wrote a green wash, and while it runs, a dashed
+frame marks the next byte. A running transfer shows the block under way, up to the byte the DMA has
+reached.
+
+<Shot src="guides/next/dma/dma-memory-overlay.webp" alt="The Machine Memory panel from $C140: the bytes up to $C186 tinted as read by the transfer, and $C187 framed as the next byte" caption="The sample player's block in the Memory panel: read up to $C186, the next byte at $C187." width={900} />
+
+The ranges are the addresses the transfer used. The Memory panel's 64K view shows them as they are, a
+bank view where the current paging puts them. Ports and zxnDDMA physical addresses are listed but not
+tinted.
+
 ## What the program wrote: the DMA Port Log
 
 The panel shows where the DMA ended up; the **DMA Port Log** shows how it got there: every byte written

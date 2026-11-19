@@ -1,0 +1,124 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The DMA Transfers document (NEXT_DMA_DEBUGGING_PLAN §14.2). The table is the Port Log's: values in the
+ * state panels' colour, numbers right-aligned; the selected row (the one the Memory panel tints) is the
+ * shared selected surface. A result is a pill: running in the DMA's colour, done neutral, a stopped
+ * transfer (disabled, reset) and "not loaded" in the warning hue, a lost interrupt in the error hue.
+ */
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--surface-panel);
+    color: var(--data-secondary);
+    text-align: left;
+    font-weight: normal;
+    padding: 0 1ch;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  td {
+    padding: 0 1ch;
+    white-space: nowrap;
+    color: var(--color-state-value);
+    vertical-align: top;
+  }
+}
+
+.row {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+.selected.selected {
+  background-color: var(--surface-selected);
+}
+
+.num.num {
+  text-align: right;
+}
+
+.text.text {
+  color: var(--text-primary);
+}
+
+.secondary.secondary {
+  color: var(--data-secondary);
+}
+
+.result {
+  display: flex;
+  gap: 1ch;
+  align-items: center;
+}
+
+.pill {
+  padding: 0 1ch;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.pillRun.pillRun {
+  color: var(--color-dma-progress);
+  border-color: var(--color-dma-progress);
+}
+
+.pillOk.pillOk {
+  color: var(--text-secondary);
+}
+
+.pillStop.pillStop,
+.pillWarn.pillWarn {
+  color: var(--status-warning);
+  border-color: var(--status-warning);
+}
+
+.pillBad.pillBad {
+  color: var(--status-error);
+  border-color: var(--status-error);
+}
+
+.pc,
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.pc {
+  color: var(--color-state-value);
+  text-decoration: underline dotted;
+}
+
+.link {
+  color: var(--accent-text);
+}
+
+.held {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.full {
+  color: var(--status-warning);
+}

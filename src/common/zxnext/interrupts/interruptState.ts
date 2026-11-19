@@ -329,18 +329,16 @@ export function copyRingRecords(
   ring: Uint8Array,
   capacity: number,
   count: number,
-  since = 0
+  since = 0,
+  recordSize = NEXT_INT_EVENT_RECORD_SIZE
 ): { firstSeq: number; records: Uint8Array } {
   const first = Math.max(since, count - capacity, 0);
   const n = Math.max(0, count - first);
-  const out = new Uint8Array(n * NEXT_INT_EVENT_RECORD_SIZE);
+  const out = new Uint8Array(n * recordSize);
   for (let k = 0; k < n; ) {
     const slot = (first + k) % capacity;
     const run = Math.min(n - k, capacity - slot);
-    out.set(
-      ring.subarray(slot * NEXT_INT_EVENT_RECORD_SIZE, (slot + run) * NEXT_INT_EVENT_RECORD_SIZE),
-      k * NEXT_INT_EVENT_RECORD_SIZE
-    );
+    out.set(ring.subarray(slot * recordSize, (slot + run) * recordSize), k * recordSize);
     k += run;
   }
   return { firstSeq: first, records: out };

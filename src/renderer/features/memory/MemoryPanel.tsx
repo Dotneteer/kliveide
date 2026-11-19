@@ -73,6 +73,8 @@ import {
 } from "@renderer/features/memoryMap/memoryMapModel";
 import { kindText } from "@renderer/features/memoryMap/partitionText";
 import { typeOverKey, valueBytes, writeMemoryEdit, type TypeOver } from "@renderer/features/memoryMap/memoryEdit";
+import { useDmaMemoryOverlay } from "@renderer/features/dma/dmaOverlayStore";
+import type { DmaRange } from "@common/zxnext/dma/dmaTransfers";
 
 /*
  * The Machine Memory document (`dev/plans/MEMORY_DISASSEMBLY_VIEWS_PLAN.md` §5): the shared frame -
@@ -385,6 +387,30 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     }
     return marks;
   }, [memoryRefresh.memBreakpoints, isFullView, slotPartitions, currentSegment, partitions, shownPartition]);
+
+  /*
+   * The selected DMA transfer's ranges (NEXT_DMA_DEBUGGING_PLAN §14.2) as view indexes. They are CPU
+   * addresses as the transfer used them: the 64K view shows them as they are, a bank view where the
+   * current paging puts them, 8K slot by 8K slot.
+   */
+  const dmaOverlay = useDmaMemoryOverlay(emuApi, memoryRefresh.memoryVersion);
+  const dmaMarks = useMemo(() => {
+    if (!dmaOverlay) return undefined;
+    const toView = (ranges: readonly DmaRange[]): [number, number][] => {
+      if (isFullView) return ranges.map((r) => [r.from, r.to]);
+      const out: [number, number][] = [];
+      for (const r of ranges) {
+        for (let from = r.from; from <= r.to; from = (from | 0x1fff) + 1) {
+          const to = Math.min(r.to, from | 0x1fff);
+          const at = partitionAt(slotPartitions, partitions, from);
+          if (at?.partition === currentSegment) out.push([at.offset, at.offset + (to - from)]);
+        }
+      }
+      return out;
+    };
+    const next = [dmaOverlay.nextRead, dmaOverlay.nextWrite].flatMap((a) => (a === undefined ? [] : toView([{ from: a, to: a }]).map(([v]) => v)));
+    return { read: toView(dmaOverlay.read), written: toView(dmaOverlay.written), next };
+  }, [dmaOverlay, isFullView, slotPartitions, partitions, currentSegment]);
 
   // --- The find matches as view addresses
   const findLength = findResult?.length ?? 0;
@@ -1144,7 +1170,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 currentMatch: findResult ? viewMatches[findIndex] : undefined,
                 breakpointBytes,
                 baseline,
-                bytes: memory
+                bytes: memory,
+                dmaRead: dmaMarks?.read,
+                dmaWritten: dmaMarks?.written,
+                dmaNext: dmaMarks?.next
               });
               // --- The label gutter: the row's first label and the registers pointing into it
               let gutterLabel: string | undefined;

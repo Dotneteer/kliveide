@@ -1960,5 +1960,13 @@
   "commands.interrupts.hideTimelineDescription": "Hides the Interrupt Timeline and stops recording interrupt events",
   "@commands.interrupts.hideTimelineDescription": {
     "context": "Description of the 'hide-int-timeline' interactive command, shown by 'help'."
+  },
+  "commands.dma.showTransfersDescription": "Opens the ZX Spectrum Next DMA Transfers, which records every DMA transfer while it is open",
+  "@commands.dma.showTransfersDescription": {
+    "context": "Description of the 'show-dma-transfers' IDE command."
+  },
+  "commands.dma.hideTransfersDescription": "Closes the ZX Spectrum Next DMA Transfers, which stops its recording and the Memory panel's overlay",
+  "@commands.dma.hideTransfersDescription": {
+    "context": "Description of the 'hide-dma-transfers' IDE command."
   }
 }

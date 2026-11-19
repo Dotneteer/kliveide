@@ -16,6 +16,8 @@ export const DMA_LOG_PANEL_ID = "$dmaLog";
 export const DMA_LOG_EDITOR = "DmaPortLog";
 export const DMA_TIMELINE_PANEL_ID = "$dmaTimeline";
 export const DMA_TIMELINE_EDITOR = "DmaBusTimeline";
+export const DMA_TRANSFERS_PANEL_ID = "$dmaTransfers";
+export const DMA_TRANSFERS_EDITOR = "DmaTransfers";
 // --- The ZX Spectrum Next registers as a document, popped out of the Debug sidebar panel
 export const NEXTREGS_PANEL_ID = "$nextRegs";
 export const NEXTREGS_EDITOR = "NextRegisters";

@@ -105,6 +105,14 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextDmaBusPos",
   "zxnextDmaBusStart",
   "zxnextDmaBusBytes",
+  // --- The DMA Transfers (NEXT_DMA_DEBUGGING_PLAN §14.1)
+  "zxnextDmaXfer",
+  "zxnextDmaXferCount",
+  "zxnextDmaXferEnabled",
+  "zxnextDmaXferOpen",
+  "zxnextDmaXferBytes",
+  "zxnextDmaXferHeld",
+  "zxnextDmaXferHeldPending",
   "zxnextCopperWatch",
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
@@ -598,6 +606,12 @@ const productionExports = [
   "zxnextDmaBusSetEnabled",
   "zxnextDmaBusGetEnabled",
   "zxnextDmaBusClear",
+  "zxnextDmaXferPtr",
+  "zxnextDmaXferGetCapacity",
+  "zxnextDmaXferGetCount",
+  "zxnextDmaXferSetEnabled",
+  "zxnextDmaXferGetEnabled",
+  "zxnextDmaXferClear",
 ];
 
 const buildModes = {

@@ -15,6 +15,7 @@ import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/int
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 import type { NextDmaBus } from "@common/zxnext/dma/dmaBus";
+import type { NextDmaTransfers } from "@common/zxnext/dma/dmaTransfers";
 import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
 
 /**
@@ -83,6 +84,15 @@ export interface IZxNextIdeMachine {
 
   /** Forgets every recorded bus hold. */
   clearDmaBus(): void;
+
+  /** The DMA Transfers written since `since` (all held ones by default), oldest first (§14). */
+  getDmaTransfers(since?: number): NextDmaTransfers;
+
+  /** Switches the DMA Transfers' recording on or off. Never changes the machine. */
+  setDmaTransfersRecording(enabled: boolean): void;
+
+  /** Forgets every recorded transfer. */
+  clearDmaTransfers(): void;
 
   /** Arms (or cancels) a DMA step: the next debug run stops after one byte, at the block's end, or when the DMA lets go of the bus (§12.3). */
   requestDmaStep(mode: DmaStepMode | undefined): void;

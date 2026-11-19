@@ -40,6 +40,7 @@ import {
   INT_TIMELINE_EDITOR,
   DMA_LOG_EDITOR,
   DMA_TIMELINE_EDITOR,
+  DMA_TRANSFERS_EDITOR,
   NEXTREGS_EDITOR,
   HISTORY_EDITOR,
   PROFILER_EDITOR,
@@ -71,6 +72,7 @@ import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createInterruptTimelinePanel } from "./appIde/DocumentPanels/InterruptTimeline/InterruptTimelinePanel";
 import { createDmaPortLogPanel } from "./appIde/DocumentPanels/DmaPortLog/DmaPortLogPanel";
 import { createDmaBusTimelinePanel } from "./appIde/DocumentPanels/DmaBusTimeline/DmaBusTimelinePanel";
+import { createDmaTransfersPanel } from "./appIde/DocumentPanels/DmaTransfers/DmaTransfersPanel";
 import { createNextRegDocumentPanel } from "./appIde/DocumentPanels/NextRegs/NextRegDocumentPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
@@ -548,6 +550,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: DMA_TIMELINE_EDITOR,
     renderer: createDmaBusTimelinePanel,
     icon: "int-timeline"
+  },
+  {
+    // --- The Next's DMA Transfers (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §14.2)
+    id: DMA_TRANSFERS_EDITOR,
+    renderer: createDmaTransfersPanel,
+    icon: "dma-log"
   },
   {
     // --- The Next Registers panel popped out into a document

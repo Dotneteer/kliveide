@@ -278,20 +278,88 @@ static void zxnextDmaBusOpenHold(uint64_t now) {
 
 /* Writes the open hold's record; `continues`: a frame end cut it, the next part starts the next frame */
 static void zxnextDmaBusCloseHold(uint64_t now, uint32_t continues) {
-  uint8_t *r = &zxnextDmaBus[(zxnextDmaBusCount % ZXNEXT_DMABUS_CAPACITY) * ZXNEXT_DMABUS_RECORD_SIZE];
-  const uint32_t f = zxnextDmaBusFrame;
-  const uint32_t p = zxnextDmaBusPos;
-  const uint32_t d = (uint32_t)(now - zxnextDmaBusStart);
-  const uint32_t flags = zxnextDmaBusFlags | (continues ? ZXNEXT_DMABUSF_CONTINUES : 0u) |
-    ((uint32_t)(cpuEffectiveSpeed & 0x03u) << 4);
-  r[0] = (uint8_t)f; r[1] = (uint8_t)(f >> 8); r[2] = (uint8_t)(f >> 16); r[3] = (uint8_t)(f >> 24);
-  r[4] = (uint8_t)p; r[5] = (uint8_t)(p >> 8); r[6] = (uint8_t)(p >> 16); r[7] = (uint8_t)(p >> 24);
-  r[8] = (uint8_t)d; r[9] = (uint8_t)(d >> 8); r[10] = (uint8_t)(d >> 16); r[11] = (uint8_t)(d >> 24);
-  r[12] = (uint8_t)zxnextDmaBusBytes; r[13] = (uint8_t)(zxnextDmaBusBytes >> 8);
-  r[14] = (uint8_t)flags; r[15] = 0u;
-  zxnextDmaBusCount++;
+  /* The hold tracker also runs for the transfers ring (§14.1), which writes no holds */
+  if (zxnextDmaBusEnabled) {
+    uint8_t *r = &zxnextDmaBus[(zxnextDmaBusCount % ZXNEXT_DMABUS_CAPACITY) * ZXNEXT_DMABUS_RECORD_SIZE];
+    const uint32_t f = zxnextDmaBusFrame;
+    const uint32_t p = zxnextDmaBusPos;
+    const uint32_t d = (uint32_t)(now - zxnextDmaBusStart);
+    const uint32_t flags = zxnextDmaBusFlags | (continues ? ZXNEXT_DMABUSF_CONTINUES : 0u) |
+      ((uint32_t)(cpuEffectiveSpeed & 0x03u) << 4);
+    r[0] = (uint8_t)f; r[1] = (uint8_t)(f >> 8); r[2] = (uint8_t)(f >> 16); r[3] = (uint8_t)(f >> 24);
+    r[4] = (uint8_t)p; r[5] = (uint8_t)(p >> 8); r[6] = (uint8_t)(p >> 16); r[7] = (uint8_t)(p >> 24);
+    r[8] = (uint8_t)d; r[9] = (uint8_t)(d >> 8); r[10] = (uint8_t)(d >> 16); r[11] = (uint8_t)(d >> 24);
+    r[12] = (uint8_t)zxnextDmaBusBytes; r[13] = (uint8_t)(zxnextDmaBusBytes >> 8);
+    r[14] = (uint8_t)flags; r[15] = 0u;
+    zxnextDmaBusCount++;
+  }
   zxnextDmaBusOpen = 0u;
   zxnextDmaBusContinued = continues ? 1u : 0u;
+}
+
+
+/*
+ * The DMA Transfers ring (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §14.1): one 64-byte record per transfer,
+ * from its enable to its end, the open one updated in place. Recording only while `zxnextDmaXferEnabled`
+ * is set; every static here is volatile, and nothing here changes the machine. The layout is the plan's
+ * table and `src/common/zxnext/dma/dmaTransfers.ts`'s `decodeDmaTransfers`.
+ */
+#define ZXNEXT_DMAXFER_CAPACITY 1024u
+#define ZXNEXT_DMAXFER_RECORD_SIZE 64u
+#define ZXNEXT_DMAXFER_RUNNING 0u
+#define ZXNEXT_DMAXFER_END_OF_BLOCK 1u
+#define ZXNEXT_DMAXFER_DISABLED 2u
+#define ZXNEXT_DMAXFER_RESET 3u
+#define ZXNEXT_DMAXFER_MACHINE_RESET 4u
+#define ZXNEXT_DMAXFER_STOPPED 5u
+#define ZXNEXT_DMAXFERF2_JOINED 0x01u
+#define ZXNEXT_DMAXFERF_INT_LOST 0x40u
+static uint8_t zxnextDmaXfer[ZXNEXT_DMAXFER_CAPACITY * ZXNEXT_DMAXFER_RECORD_SIZE];
+static uint32_t zxnextDmaXferCount;
+static uint8_t zxnextDmaXferEnabled;
+static uint8_t zxnextDmaXferOpen;
+static uint32_t zxnextDmaXferBytes;
+static uint32_t zxnextDmaXferHeld;
+/* The step that ended a transfer still adds its clocks to it (zxnextDmaXferAddHeld) */
+static uint8_t zxnextDmaXferHeldPending;
+
+static inline void zxnextDmaPut32(uint8_t *o, uint32_t v) {
+  o[0] = (uint8_t)v; o[1] = (uint8_t)(v >> 8); o[2] = (uint8_t)(v >> 16); o[3] = (uint8_t)(v >> 24);
+}
+
+/* The open transfer's record */
+static inline uint8_t* zxnextDmaXferRecord(void) {
+  return &zxnextDmaXfer[((zxnextDmaXferCount - 1u) % ZXNEXT_DMAXFER_CAPACITY) * ZXNEXT_DMAXFER_RECORD_SIZE];
+}
+
+/* Writes the running totals into the open record, after every byte and every step, so a read sees them */
+static inline void zxnextDmaXferUpdate(void) {
+  uint8_t *r = zxnextDmaXferRecord();
+  zxnextDmaPut32(r + 16, zxnextDmaXferBytes);
+  zxnextDmaPut32(r + 20, zxnextDmaXferHeld);
+}
+
+/* Ends the open transfer with a reason (ZXNEXT_DMAXFER_*) */
+static void zxnextDmaXferClose(uint32_t reason) {
+  if (!zxnextDmaXferOpen) return;
+  uint8_t *r = zxnextDmaXferRecord();
+  zxnextDmaXferUpdate();
+  zxnextDmaPut32(r + 8, frames);
+  zxnextDmaPut32(r + 12, frameTacts28);
+  r[36] = (uint8_t)reason;
+  zxnextDmaXferOpen = 0u;
+  zxnextDmaXferHeldPending = 1u;
+}
+
+static void zxnextDmaXferNoteIntLost(void) {
+  if (zxnextDmaXferOpen) zxnextDmaXferRecord()[34] |= ZXNEXT_DMAXFERF_INT_LOST;
+}
+
+/* An end of block with auto restart: one more block */
+static inline void zxnextDmaXferRestarted(void) {
+  if (!zxnextDmaXferOpen) return;
+  uint8_t *r = zxnextDmaXferRecord();
+  if (r[37] < 0xffu) r[37]++;
 }
 
 /* The note an enable latches */
@@ -364,8 +432,63 @@ static void zxnextDmaDdmaClear(void) {
 }
 #endif
 
+
+/* Opens a transfer's record at an enable (§14.1); the pending bus time of a closed one is dropped */
+static void zxnextDmaXferBegin(void) {
+  uint8_t *r = &zxnextDmaXfer[(zxnextDmaXferCount % ZXNEXT_DMAXFER_CAPACITY) * ZXNEXT_DMAXFER_RECORD_SIZE];
+  for (uint32_t i = 0; i < ZXNEXT_DMAXFER_RECORD_SIZE; i++) r[i] = 0u;
+  zxnextDmaXferCount++;
+  zxnextDmaXferOpen = 1u;
+  zxnextDmaXferHeldPending = 0u;
+  zxnextDmaXferBytes = 0u;
+  zxnextDmaXferHeld = 0u;
+  const uint32_t host = zxnextCpuInInstruction ? 0u : 1u;
+  const uint32_t pc = host ? 0u : ((z80GetPc() - 2u) & 0xffffu);
+  zxnextDmaPut32(r + 0, frames);
+  zxnextDmaPut32(r + 4, frameTacts28);
+  r[24] = (uint8_t)dmaPortAStart; r[25] = (uint8_t)(dmaPortAStart >> 8);
+  r[26] = (uint8_t)dmaPortBStart; r[27] = (uint8_t)(dmaPortBStart >> 8);
+  r[28] = (uint8_t)dmaBlockLength; r[29] = (uint8_t)(dmaBlockLength >> 8);
+  r[30] = (uint8_t)pc; r[31] = (uint8_t)(pc >> 8);
+  r[32] = (uint8_t)((dmaPortAIsIo ? 1u : 0u) | ((dmaPortAAddrMode & 0x03u) << 1));
+  r[33] = (uint8_t)((dmaPortBIsIo ? 1u : 0u) | ((dmaPortBAddrMode & 0x03u) << 1));
+  r[34] = (uint8_t)((dmaDirAtoB ? 0x01u : 0u) | ((dmaTransferMode & 0x03u) << 1) | (dmaAutoRestart ? 0x08u : 0u) |
+    (dmaMode ? 0x10u : 0u) | (host ? 0x20u : 0u) | (dmaStartsSinceLoad ? 0x80u : 0u));
+  r[35] = dmaPrescaler;
+  r[46] = (uint8_t)(cpuEffectiveSpeed & 0x03u);
+#if ZXNEXT_CORE_VERSION >= 30300
+  r[38] = dmaFlags;
+  r[39] = dmaExtA;
+  r[40] = dmaExtB;
+  r[41] = dmaFill;
+  r[42] = (uint8_t)dmaRowLength; r[43] = (uint8_t)(dmaRowLength >> 8);
+  r[44] = (uint8_t)dmaRowCount; r[45] = (uint8_t)(dmaRowCount >> 8);
+  r[48] = (uint8_t)dmaStrideA; r[49] = (uint8_t)(dmaStrideA >> 8);
+  r[50] = (uint8_t)dmaStrideB; r[51] = (uint8_t)(dmaStrideB >> 8);
+#endif
+}
+
+/* The bus time a transfer step took (zxnextCpuRunDma): its end of block may have closed the record */
+static inline void zxnextDmaXferAddHeld(uint32_t ticks) {
+  if (zxnextDmaXferOpen) {
+    zxnextDmaXferHeld += ticks;
+    zxnextDmaXferUpdate();
+  } else if (zxnextDmaXferHeldPending) {
+    zxnextDmaXferHeld += ticks;
+    zxnextDmaXferHeldPending = 0u;
+    zxnextDmaPut32(&zxnextDmaXfer[((zxnextDmaXferCount - 1u) % ZXNEXT_DMAXFER_CAPACITY) * ZXNEXT_DMAXFER_RECORD_SIZE] + 20,
+      zxnextDmaXferHeld);
+  }
+}
+
+/* An enable through $87 or WR3 D6: a new record unless one is open */
+static inline void zxnextDmaXferEnable(void) {
+  if (zxnextDmaXferEnabled && !zxnextDmaXferOpen) zxnextDmaXferBegin();
+}
+
 /* reset_i: what the VHDL resets; start addresses, length, direction and address modes stay */
 void zxnextDmaReset(void) {
+  zxnextDmaXferClose(ZXNEXT_DMAXFER_MACHINE_RESET);
   dmaMode = 0;
   dmaSeq = DMA_SEQ_IDLE;
   dmaCounter = 0;
@@ -453,6 +576,7 @@ static uint8_t zxnextDmaNextReadEntry(uint8_t from) {
 static void zxnextDmaCommand(uint8_t d) {
   switch (d) {
     case 0xc3u: // reset
+      zxnextDmaXferClose(ZXNEXT_DMAXFER_RESET);
       zxnextDmaGoIdle();
       dmaEndOfBlockN = 1;
       dmaPortATiming = 1;
@@ -495,11 +619,13 @@ static void zxnextDmaCommand(uint8_t d) {
       break;
     case 0x87u:
       if (zxnextDmaWatchKinds) zxnextDmaWatchEnable();
+      zxnextDmaXferEnable();
       zxnextDmaLatchEnableNote();
       dmaSeq = DMA_SEQ_START;
       dmaGrantAfterNextM1 = zxnextCpuInInstruction;
       break;
     case 0x83u:
+      zxnextDmaXferClose(ZXNEXT_DMAXFER_DISABLED);
       zxnextDmaGoIdle();
       break;
     case 0xbbu:
@@ -615,6 +741,7 @@ static void zxnextDmaWriteBase(uint8_t d) {
       dmaRegTemp = d;
       if (d & 0x40u) {
         if (zxnextDmaWatchKinds) zxnextDmaWatchEnable();
+        zxnextDmaXferEnable();
         zxnextDmaLatchEnableNote();
         dmaSeq = DMA_SEQ_START;
       }
@@ -792,12 +919,49 @@ uint32_t zxnextDmaBusPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaBus; }
 uint32_t zxnextDmaBusGetCapacity(void) { return ZXNEXT_DMABUS_CAPACITY; }
 uint32_t zxnextDmaBusGetCount(void) { return zxnextDmaBusCount; }
 void zxnextDmaBusSetEnabled(uint32_t enabled) {
+  /* Idempotent: the document switches it on at every refresh, which must not drop the open hold */
+  if ((enabled ? 1u : 0u) == zxnextDmaBusEnabled) return;
   zxnextDmaBusEnabled = enabled ? 1u : 0u;
   zxnextDmaBusOpen = 0u;
   zxnextDmaBusContinued = 0u;
 }
 uint32_t zxnextDmaBusGetEnabled(void) { return zxnextDmaBusEnabled; }
 void zxnextDmaBusClear(void) { zxnextDmaBusCount = 0u; }
+
+/* The DMA Transfers' exports (§14.1) */
+uint32_t zxnextDmaXferPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaXfer; }
+uint32_t zxnextDmaXferGetCapacity(void) { return ZXNEXT_DMAXFER_CAPACITY; }
+uint32_t zxnextDmaXferGetCount(void) { return zxnextDmaXferCount; }
+/*
+ * Idempotent: the document switches it on at every refresh. Switching on while a transfer runs opens a
+ * record for it at once, flagged "joined" (its PC and its bytes before now are unknown); switching off
+ * ends the open record as "recording stopped".
+ */
+void zxnextDmaXferSetEnabled(uint32_t enabled) {
+  const uint8_t on = enabled ? 1u : 0u;
+  if (on == zxnextDmaXferEnabled) return;
+  if (!on) zxnextDmaXferClose(ZXNEXT_DMAXFER_STOPPED);
+  zxnextDmaXferEnabled = on;
+  zxnextDmaXferOpen = 0u;
+  zxnextDmaXferHeldPending = 0u;
+  if (!zxnextDmaBusEnabled) {
+    zxnextDmaBusOpen = 0u;
+    zxnextDmaBusContinued = 0u;
+  }
+  if (on && dmaSeq != DMA_SEQ_IDLE) {
+    zxnextDmaXferBegin();
+    uint8_t *r = zxnextDmaXferRecord();
+    r[34] &= (uint8_t)~0x20u; /* not the host's enable: one before the recording */
+    r[30] = 0u; r[31] = 0u;
+    r[47] = ZXNEXT_DMAXFERF2_JOINED;
+  }
+}
+uint32_t zxnextDmaXferGetEnabled(void) { return zxnextDmaXferEnabled; }
+void zxnextDmaXferClear(void) {
+  zxnextDmaXferCount = 0u;
+  zxnextDmaXferOpen = 0u;
+  zxnextDmaXferHeldPending = 0u;
+}
 
 /* The DMA Port Log's exports (§11.1) */
 uint32_t zxnextDmaLogPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaLog; }
@@ -911,6 +1075,8 @@ static inline uint32_t zxnextDmaMore(void) {
 static uint32_t zxnextDmaFinish(uint32_t busHeld) {
   dmaEndOfBlockN = 0;
   if (zxnextDmaWatchKinds) zxnextDmaHit(ZXNEXT_DMAW_END, 0u, 0u, 0u, 1u);
+  if (dmaAutoRestart) zxnextDmaXferRestarted();
+  else zxnextDmaXferClose(ZXNEXT_DMAXFER_END_OF_BLOCK);
   if (!dmaAutoRestart) {
     zxnextDmaGoIdle();
     return busHeld ? DMA_BUS_RELEASE_CLOCKS : 0u;
@@ -993,6 +1159,10 @@ static uint32_t zxnextDmaTransferByte(void) {
   dmaAtLeastOne = 1;
   if (zxnextDmaWatchKinds) zxnextDmaWatchByte(destIo, writtenAt);
   if (zxnextDmaBusOpen) zxnextDmaBusBytes++;
+  if (zxnextDmaXferOpen) {
+    zxnextDmaXferBytes++;
+    zxnextDmaXferUpdate();
+  }
 
   // --- TRANSFERING_WRITE_4, the byte's last clock (`clocks - 1`, READ_1 being clock 0). READ_1 zeroes
   // --- the timer and every later clock adds `scale`, so a clock j sees (j - 1) x scale (dma.vhd ~245-255)

@@ -1,7 +1,8 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phases 1-4 shipped** (PRs #1664-#1667). **Phase 5, the bus timeline, implemented, in review**
-(2026-11-19, branch `dma-bus-timeline`; §13). This plan
+Status: **Phases 1-5 shipped** (PRs #1664-#1668). **Phase 6, the transfers and the memory overlay,
+implemented, in review** (2026-11-19, branch `dma-transfers`; §14): with it every tool of §8 is built,
+and the plan is complete. This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -278,7 +279,7 @@ In the order the mockup page suggests, each reusing what the earlier ones add:
    per-byte trace with request, grant and release times; check first how much the Execution History's
    DMA hold records already give.
 6. **Transfers and memory overlay**: one row per transfer, and the source and destination tinted in the
-   Memory panel. No core work beyond 3 and 5.
+   Memory panel. No core work beyond 3 and 5. (Done as Phase 6, §14, with a small core ring after all.)
 
 ## 9. As built (2026-11-19, Phase 1)
 
@@ -631,3 +632,93 @@ and a link in the DMA panel:
   `show-dma-timeline`/`hide-dma-timeline`; Debug › DMA Bus Timeline; the DMA panel's link;
   `--*-dmabus-*` aliases; tests `test/zxnext-hw/dma/dma-bus-timeline.test.ts`, `test/renderer/dmaBus.test.ts`;
   the DMA guide's section and screenshot (`guides-dma` recipe).
+
+## 14. Phase 6: DMA Transfers and the memory overlay
+
+Mockup tool 4 (§8's item 6). A document with one row per transfer, from its enable to its end of block
+(or until it was disabled or reset), and the source and destination of the selected one tinted in the
+Memory panel.
+
+### 14.1 What the core records: one record per transfer
+
+§8 said "no core work beyond 3 and 5", but neither ring can rebuild a transfer on its own: the port log
+holds the bytes written, not the registers they produce, and only from when it was switched on; the bus
+ring holds holds, not which transfer they belong to. A transfer ring is small and exact, so the core
+keeps one of 1,024 records (the core's 58 MB leaves no room for more), recording only while the
+document is open (like the other two):
+
+| Offset | Field |
+|---|---|
+| +0 u32, +4 u32 | frame and 28 MHz position of the enable |
+| +8 u32, +12 u32 | frame and position of the end (0 while running) |
+| +16 u32 | bytes moved, every block of an auto-restarting transfer included |
+| +20 u32 | 28 MHz clocks the DMA held the bus for it |
+| +24 u16, +26 u16, +28 u16 | port A start, port B start, block length |
+| +30 u16 | PC of the enabling instruction (0 for the host) |
+| +32 u8, +33 u8 | port A, port B: bit 0 I/O, bits 2-1 address mode |
+| +34 u8 | bit 0 A → B, bits 2-1 transfer mode, bit 3 auto restart, bit 4 Zilog mode ($0B), bit 5 enabled by the host, bit 6 a pulse interrupt was lost, bit 7 enabled with start addresses not loaded |
+| +35 u8 | prescaler |
+| +36 u8 | end: 0 running, 1 end of block, 2 disabled ($83), 3 reset ($C3), 4 machine reset, 5 recording stopped |
+| +37 u8 | blocks restarted (saturating) |
+| +38 u8, +39 u8, +40 u8, +41 u8 | zxnDDMA: flags, $D7 and $DB extension bytes, fill value |
+| +42 u16, +44 u16 | zxnDDMA: row length, rows |
+| +46 u8 | CPU speed at the enable |
+| +47 u8 | bit 0 joined: already running when the recording started (PC and earlier bytes unknown) |
+| +48 u16, +50 u16 | zxnDDMA: port A and port B stride |
+
+An enable while a transfer is open does not start a new one. The bus time is the sum of the clocks
+`zxnextDmaStep` returned; a lost interrupt comes from the bus timeline's hold tracker, which now runs
+while either document records.
+
+### 14.2 The document and the overlay
+
+**DMA Transfers** (`$dmaTransfers`), `show-dma-transfers`/`hide-dma-transfers`, Debug › DMA Transfers,
+and a link in the DMA panel. Columns: #, frame, started by (PC and source line), mode, from, to, bytes
+(moved / block), bus held (T-states), result (running, done, auto restart × n, disabled, reset, INT
+lost). A zxnDDMA physical address shows as page and offset; a rectangle as its row length × rows.
+
+Selecting a row tints its ranges in the Memory panel: the source as read, the destination as written,
+and, while it runs, a frame around the next source and destination byte (the working addresses). The
+ranges are CPU addresses as the transfer used them; the panel tints them in the 64K view and, in a bank
+view, where the current mapping puts them. A physical (zxnDDMA) transfer and I/O ports are not tinted.
+
+### 14.3 Done when
+
+- Harness tests: a copy is one record with its ranges, bytes, bus time and end; an auto-restarting
+  transfer counts its blocks; $83 and $C3 end it with their reasons; a re-enable while running does
+  not start a new one; nothing while off; byte-identical with recording on.
+- Unit tests for the model (decoding, ranges for increment, decrement, fixed, wrap and rectangle).
+- A guide section with a generated screenshot; checked in the running app.
+
+### 14.4 As built (2026-11-19)
+
+- **A transfer already running when the recording starts is joined**: its record opens at once,
+  flagged, with no PC and only the bytes moved from then on. Without it, the document opened over the
+  sample player's auto-restarting transfer stayed empty for good.
+- **Switching a recording on is idempotent** (the transfers' and the bus timeline's): the documents
+  switch it on at every refresh, and the old non-idempotent switch reset the open hold each time.
+  Switching the transfers off ends the open record as "recording stopped".
+- **A running transfer's overlay is the block under way**, up to the DMA's counter (from the DMA state),
+  so an auto-restarting one shows its progress instead of a whole block tinted; a finished one shows
+  what it moved (one block's worth after a restart).
+- **The selection outlives the document**: a document is mounted only while it is the active tab, so the
+  selected transfer is in a small store (`features/dma/dmaOverlayStore.ts`) the Memory panel reads, and
+  the recording stays on while a transfer is selected. The Memory panel drops the overlay (and the
+  recording) once the Transfers document is closed; the overlay refreshes on the panel's own refresh,
+  so the panel keeps one state listener.
+- **Show in memory** reveals a running transfer a few rows before its next byte, so the cursor does not
+  cover the next byte's frame.
+- **1,024 records**: the 58 MB core had about 18 KB left, so the ring is 64 KB, not the 256 KB first
+  planned. A ring this size still holds every transfer of a long session; the oldest drop first.
+- Not built: the mockup's "Last DMA write here" in the Memory panel's context menu
+  (`lastTransferWriting` exists in the model for it), and the "DMA deaf" row for an enable the DMA
+  ignored (the Port Log shows those). A transfer's source line is its PC, as in the Port Log.
+- Files: `zxnext-dma.c` (`zxnextDmaXfer*`), `zxnext-cpu.c`, `build-zxnext-wasm.cjs`, `exportContract.ts`,
+  the loader; `src/common/zxnext/dma/dmaTransfers.ts`; machine, `EmuApi`, `MainToEmuProcessor`, harness
+  `recordDmaTransfers`/`dmaTransfers`; `DocumentPanels/DmaTransfers/`; `features/dma/dmaOverlayStore.ts`;
+  the Memory panel's marks (`byteMarks.ts`, `MemoryDumpSection`, `MemoryPanel`); `show-dma-transfers`/
+  `hide-dma-transfers`; Debug › DMA Transfers; the DMA panel's link; `--*-memmap-dma-*` aliases; tests
+  `test/zxnext-hw/dma/dma-transfers.test.ts`, `test/renderer/dmaTransfers.test.ts`; the DMA guide's
+  section and two screenshots (`guides-dma` recipe).
+
+With this phase every tool of §8 is built: the plan is complete.

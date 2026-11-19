@@ -901,7 +901,9 @@ export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   // --- The DMA Port Log (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §11.3): opening it starts recording
   { id: "show_dma_port_log", label: t("menu.next.dmaPortLog"), click: ideCommand("show-dma-log") },
   // --- The DMA Bus Timeline (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §13.2): opening it starts recording
-  { id: "show_dma_bus_timeline", label: t("menu.next.dmaBusTimeline"), click: ideCommand("show-dma-timeline") }
+  { id: "show_dma_bus_timeline", label: t("menu.next.dmaBusTimeline"), click: ideCommand("show-dma-timeline") },
+  // --- The DMA Transfers (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §14.2): opening it starts recording
+  { id: "show_dma_transfers", label: t("menu.next.dmaTransfers"), click: ideCommand("show-dma-transfers") }
 ];
 
 /**

@@ -75,6 +75,10 @@ export type ByteMarks = {
   changed?: readonly boolean[];
   /** Digits typed over the cursor byte, not yet written */
   editText?: string;
+  /** The selected DMA transfer (NEXT_DMA_DEBUGGING_PLAN §14.2): ranges read and written, the next bytes */
+  dmaRead?: readonly [number, number][];
+  dmaWritten?: readonly [number, number][];
+  dmaNext?: readonly number[];
 };
 
 export type MemoryCharacterInfo = {
@@ -496,8 +500,9 @@ const HexValuesComponent = ({
 
   /*
    * The live view's marks (§5): each a box at the byte's `ch` position, like the hover overlay -
-   * the row stays one text node. The selection and find matches are washes behind the text
-   * (z-index -1, as the heat cells); the cursor an outline; a breakpoint's bytes an underline; a
+   * the row stays one text node. The selection, find matches and a selected DMA transfer's ranges are
+   * washes behind the text (z-index -1, as the heat cells); the cursor an outline, the DMA's next byte a
+   * dashed one; a breakpoint's bytes an underline; a
    * byte changed since the previous stop the shared dot in its corner; a pointed byte (a register
    * holds its address) an underline in the register hue.
    */
@@ -514,6 +519,8 @@ const HexValuesComponent = ({
         width: `${(to - from) * stride + width + 1}ch`,
         text
       });
+    marks?.dmaRead?.forEach(([from, to], i) => span(from, to, styles.dmaReadWash, `dr${i}`));
+    marks?.dmaWritten?.forEach(([from, to], i) => span(from, to, styles.dmaWrittenWash, `dw${i}`));
     if (marks?.selection) span(marks.selection[0], marks.selection[1], styles.selectionWash, "sel");
     marks?.found?.forEach(([from, to], i) => span(from, to, styles.foundWash, `f${i}`));
     if (marks?.foundCurrent) span(marks.foundCurrent[0], marks.foundCurrent[1], styles.foundCurrent, "fc");
@@ -528,6 +535,9 @@ const HexValuesComponent = ({
         boxes.push({ key: `p${i}`, className: styles.pointedMark, left: `${i * stride}ch`, width: `${width}ch` });
       }
     }
+    marks?.dmaNext?.forEach((i) =>
+      boxes.push({ key: `dn${i}`, className: styles.dmaNextByte, left: `${i * stride}ch`, width: `${width}ch` })
+    );
     if (marks?.cursor !== undefined) {
       boxes.push({
         key: "cur",

@@ -1052,5 +1052,10 @@
   "@menu.next.dmaBusTimeline": {
     "context": "Debug menu (ZX Spectrum Next): opens the DMA Bus Timeline document, which records when the DMA holds the bus.",
     "maxChars": 30
+  },
+  "menu.next.dmaTransfers": "DMA Transfers",
+  "@menu.next.dmaTransfers": {
+    "context": "Debug menu (ZX Spectrum Next): opens the DMA Transfers document, which lists every DMA transfer and tints the selected one's bytes in the Memory panel.",
+    "maxChars": 30
   }
 }

@@ -43,6 +43,7 @@ import type {
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 import type { NextDmaBus } from "@common/zxnext/dma/dmaBus";
+import type { NextDmaTransfers } from "@common/zxnext/dma/dmaTransfers";
 import type { DmaHit, DmaStepMode } from "@common/zxnext/dma/dmaStops";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
@@ -912,6 +913,27 @@ class EmuApiImpl {
    * Forgets every recorded ZX Spectrum Next DMA bus hold.
    */
   async clearDmaBus(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the ZX Spectrum Next DMA Transfers written since `since` (all held ones by default), oldest first.
+   */
+  async getDmaTransfers(_since?: number): Promise<NextDmaTransfers> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Switches the ZX Spectrum Next DMA Transfers' recording on or off.
+   */
+  async setDmaTransfersRecording(_enabled: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Forgets every recorded ZX Spectrum Next DMA transfer.
+   */
+  async clearDmaTransfers(): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
