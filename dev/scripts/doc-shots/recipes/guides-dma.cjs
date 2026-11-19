@@ -109,6 +109,29 @@ module.exports = {
         });
       });
 
+      await step(klive, "dma-stop", async () => {
+        // --- A DMA stop (§12): the 100th byte of the block, inside the transfer
+        await klive.cmd("bp-set dma:count:100", 600);
+        await klive.cmd("em-debug", 2500);
+        await h.hideEmu(klive);
+        await h.focusIde(klive);
+        await h.activity(klive, "Debug");
+        await h.sections(ide, ["Breakpoints"]);
+        await h.park(ide);
+        await panelShot(klive, "Breakpoints", "en/guides/next/dma/dma-stop.webp", { displayWidth: 380, maxHeight: 300 });
+        // --- Step byte in the DMA panel: the progress moves on by one
+        await h.activity(klive, "Machine info");
+        await h.sections(ide, ["DMA"]);
+        const dma = h.sectionLocator(ide, "DMA");
+        const before = await dma.innerText();
+        await dma.getByRole("button", { name: "Step byte" }).click();
+        await klive.sleep(2500);
+        const after = await dma.innerText();
+        const progress = (text) => (/(\d+) \/ 2048/.exec(text) ?? [])[1];
+        console.log(`  step byte: progress ${progress(before)} -> ${progress(after)}`);
+        await klive.cmd("bp-del dma:count:100", 600);
+      });
+
       await klive.cmd("em-stop", 2000);
       reportFailures();
     } finally {

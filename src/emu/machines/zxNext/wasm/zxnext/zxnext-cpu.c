@@ -243,8 +243,15 @@ static inline uint32_t zxnextCpuNextIsOneMCycle(void) {
   }
 }
 
+/*
+ * Runs the DMA while it holds or requests the bus. Returns 0 when the CPU may run its instruction, 1
+ * when the frame ended with the DMA holding the bus, and 2 when a DMA stop (zxnext-dma.c, plan §12)
+ * fired inside the transfer: the CPU step returns before the instruction, as at a frame end, and the
+ * next call carries on with the transfer.
+ */
 static uint32_t zxnextCpuRunDma(void) {
   if (!zxnextDmaIsActive()) return 0;
+  uint32_t held = 0u;
   for (uint32_t step = 0; step < 0x20000u; step++) {
     if (dmaGrantAfterNextM1) {
       /* a request first seen in the next instruction's M1 (zxnext-dma.c dmaGrantAfterNextM1) */
@@ -253,9 +260,39 @@ static uint32_t zxnextCpuRunDma(void) {
     }
     zxnextDmaAcknowledgeBusIfRequested();
     const uint32_t ticks = zxnextDmaStep();
-    if (ticks > 0u) zxnextCpuTactPlusDmaTicks(ticks);
+    if (ticks > 0u) {
+      zxnextCpuTactPlusDmaTicks(ticks);
+      held = 1u;
+    }
+    if (zxnextDmaWatchKinds) {
+      /* `held`: one hold of the bus longer than the limit, reported once per hold */
+      if (dmaBusAcknowledged && (zxnextDmaWatchKinds & (1u << ZXNEXT_DMAW_HELD))) {
+        if (!zxnextDmaHoldOpen) {
+          zxnextDmaHoldOpen = 1u;
+          zxnextDmaHoldReported = 0u;
+          zxnextDmaHoldStart = cpu.tacts - (ticks > 0u ? ticks / zxnextDmaClockScale() : 0u);
+        } else if (!zxnextDmaHoldReported && cpu.tacts - zxnextDmaHoldStart > zxnextDmaWatchHeldLimit) {
+          zxnextDmaHoldReported = 1u;
+          zxnextDmaHit(ZXNEXT_DMAW_HELD, 0u, 0u, cpu.tacts - zxnextDmaHoldStart, 1u);
+        }
+      }
+      if (!dmaBusAcknowledged) zxnextDmaHoldOpen = 0u;
+      if (zxnextDmaBreak) {
+        zxnextDmaBreak = 0u;
+        return 2;
+      }
+    }
     if (!zxnextDmaBusRequested()) break;
     if (frameCompleted) return 1;
+  }
+  /* `release`: the DMA let go of the bus after holding it in this call */
+  if (held && zxnextDmaWatchKinds && !dmaBusAcknowledged) {
+    zxnextDmaHoldOpen = 0u;
+    zxnextDmaHit(ZXNEXT_DMAW_RELEASE, 0u, 0u, 0u, 1u);
+    if (zxnextDmaBreak) {
+      zxnextDmaBreak = 0u;
+      return 2;
+    }
   }
   return 0;
 }
@@ -527,7 +564,9 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   }
 #endif
   if (dmaHeld) {
-    zxnextCpuHeldAtFrameEnd = 1u;
+    /* 1: the frame ended mid-transfer; 2: a DMA stop fired mid-transfer (the CPU is held only if the
+       DMA still has the bus: a `release` or an `end` without auto restart leaves it free) */
+    zxnextCpuHeldAtFrameEnd = dmaHeld == 1u ? 1u : dmaBusAcknowledged;
     return zxnextSharedCpuExecutedInstructions;
   }
   zxnextCpuHeldAtFrameEnd = 0u;

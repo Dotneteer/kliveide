@@ -26,6 +26,7 @@ import type {
 } from "@common/messaging/EmuApi";
 import { describeSpriteStop } from "@common/zxnext/sprites/spriteBreakpoints";
 import { describeInterruptStop } from "@common/zxnext/interrupts/interruptStops";
+import { describeDmaStop, type DmaHit } from "@common/zxnext/dma/dmaStops";
 import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
 import {
   decodeCopperWord,
@@ -2578,6 +2579,10 @@ export class MachineController implements IMachineController {
     const interruptStop = (this.machine as { lastInterruptStop?: InterruptStopEvent }).lastInterruptStop;
     if (interruptStop) {
       return describeInterruptStop(interruptStop, this.machine.getPartitionLabels?.());
+    }
+    const dmaStop = (this.machine as { lastDmaStop?: DmaHit & { partition?: number } }).lastDmaStop;
+    if (dmaStop) {
+      return describeDmaStop(dmaStop, this.machine.getPartitionLabels?.());
     }
     const spriteWrite = (this.machine as { lastSpriteWrite?: SpriteWriteEvent }).lastSpriteWrite;
     if (spriteWrite) {

@@ -209,3 +209,28 @@
   cursor: pointer;
   @include focus-ring;
 }
+
+/* --- The DMA step buttons (§12.3), the Interrupts panel's action-button look */
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+}
+
+.stepButton {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  padding: 0 1ch;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  @include focus-ring;
+}

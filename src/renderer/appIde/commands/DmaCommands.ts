@@ -6,7 +6,10 @@ import { DMA_LOG_PANEL_ID } from "@common/state/common-ids";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { buildDmaModel } from "@renderer/features/dma/dmaViewModel";
 import { formatDmaState } from "@renderer/features/dma/dmaText";
-import { IdeCommandBase, commandError, commandSuccess, writeMessage } from "@renderer/appIde/services/ide-commands";
+import { IdeCommandBase, commandError, commandSuccess, writeMessage, writeSuccessMessage } from "@renderer/appIde/services/ide-commands";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
+import type { MessageKey } from "@common/i18n/keys.generated";
 import { t } from "@common/i18n/i18n";
 
 /**
@@ -65,4 +68,65 @@ export class HideDmaLogCommand extends IdeCommandBase {
     await documentHubService.closeDocument(DMA_LOG_PANEL_ID);
     return commandSuccess;
   }
+}
+
+/** Why a DMA step cannot start now, or undefined when it can (§12.3) */
+async function dmaStepRefusal(context: IdeCommandContext, mode: DmaStepMode): Promise<MessageKey | undefined> {
+  const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
+  if (machineId !== MI_ZXNEXT) return "commands.dma.nextOnly";
+  const emuState = context.store.getState().emulatorState;
+  if (emuState?.machineState === MachineControllerState.Running && !emuState?.isDebugging) {
+    return "commands.dma.stepRunningNormal";
+  }
+  const state = await context.emuApi.getDmaState();
+  const active = state.seq !== "idle" || state.busRequested;
+  if (mode === "release" ? !state.busAcknowledged && !active : !active) return "commands.dma.stepIdle";
+  return undefined;
+}
+
+/** The three DMA steps: one command class, three ids */
+abstract class DmaStepCommandBase extends IdeCommandBase {
+  protected abstract readonly mode: DmaStepMode;
+  protected abstract readonly stepping: MessageKey;
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const refused = await dmaStepRefusal(context, this.mode);
+    if (refused) return commandError(t(refused));
+    await context.emuApi.stepDma(this.mode);
+    writeSuccessMessage(context.output, t(this.stepping));
+    return commandSuccess;
+  }
+}
+
+/** `step-dma`: runs the machine in debug mode until the DMA moves its next byte (§12.3). */
+export class StepDmaCommand extends DmaStepCommandBase {
+  readonly id = "step-dma";
+  get description() {
+    return t("commands.dma.stepDescription");
+  }
+  readonly usage = "step-dma";
+  protected readonly mode = "byte" as const;
+  protected readonly stepping = "commands.dma.steppingByte" as const;
+}
+
+/** `step-dma-block`: runs the machine in debug mode until the DMA ends its block (§12.3). */
+export class StepDmaBlockCommand extends DmaStepCommandBase {
+  readonly id = "step-dma-block";
+  get description() {
+    return t("commands.dma.stepBlockDescription");
+  }
+  readonly usage = "step-dma-block";
+  protected readonly mode = "block" as const;
+  protected readonly stepping = "commands.dma.steppingBlock" as const;
+}
+
+/** `step-dma-release`: runs the machine in debug mode until the DMA lets go of the bus (§12.3). */
+export class StepDmaReleaseCommand extends DmaStepCommandBase {
+  readonly id = "step-dma-release";
+  get description() {
+    return t("commands.dma.stepReleaseDescription");
+  }
+  readonly usage = "step-dma-release";
+  protected readonly mode = "release" as const;
+  protected readonly stepping = "commands.dma.steppingRelease" as const;
 }

@@ -76,5 +76,9 @@
   "commands.usage.bpSet.interrupt": "int:<kind>: (ZX Spectrum Next) stop on an interrupt event - int:ack[:<source>] when the CPU takes one, int:lost[:<source>] when a pulse is missed, int:retn / int:reti when a handler's return releases nothing, int:wait:<T>[:<source>] when a request waits longer, int:nmi[:multiface|divmmc]; e.g. bp-set int:ack:line",
   "@commands.usage.bpSet.interrupt": {
     "context": "Line of the IDE command help (the 'help <command>' output) explaining one argument of bp-set. Keep option names, placeholders in <angle brackets>, the specs and the example command exactly as they are."
+  },
+  "commands.usage.bpSet.dma": "dma:<kind>: (ZX Spectrum Next) stop on a DMA event - dma:enable, dma:load, dma:end at a block's end, dma:count:<n> after n bytes, dma:write:<address>[-<address>] when the DMA writes there, dma:held:<T> when it holds the bus longer, dma:problem on a setup mistake; e.g. bp-set dma:end",
+  "@commands.usage.bpSet.dma": {
+    "context": "Line of the IDE command help explaining one argument of bp-set. Keep option names, placeholders in <angle brackets>, the specs and the example command exactly as they are."
   }
 }

@@ -15,6 +15,7 @@ import {
   breakpointMatchesScope,
   isCopperBreakpoint,
   isInterruptStop,
+  isDmaStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint
 } from "./breakpoint-scope";
@@ -209,6 +210,12 @@ function buildBreakpointKey(
    */
   if (isInterruptStop(bp)) {
     return `INT:${bp.interruptStop!.toUpperCase()}`;
+  }
+
+  // --- A DMA stop is named by its event spec (NEXT_DMA_DEBUGGING_PLAN §12): `DMA:END`, `DMA:COUNT:256`.
+  // --- `M` is not a hex digit, so `DMA` cannot be a partition label.
+  if (isDmaStop(bp)) {
+    return `DMA:${bp.dmaStop!.toUpperCase()}`;
   }
 
   if (bp.address !== undefined) {

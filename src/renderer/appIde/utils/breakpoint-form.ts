@@ -10,6 +10,7 @@ import {
   isBankRelative,
   isCopperBreakpoint,
   isInterruptStop,
+  isDmaStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint,
   spriteAttrMaskOf
@@ -23,6 +24,15 @@ import {
   type InterruptStopKind
 } from "@common/zxnext/interrupts/interruptStops";
 import { NEXT_INT_SOURCE_IDS } from "@common/zxnext/interrupts/interruptState";
+import { dmaStopOf, formatDmaStop, parseDmaStop, type DmaStop, type DmaStopKind } from "@common/zxnext/dma/dmaStops";
+
+/** A DMA stop's form fields (the empty ones for any other breakpoint) */
+function dmaFieldsOf(bp: BreakpointInfo): Pick<BreakpointFormState, "dmaEvent" | "dmaArg"> {
+  const stop = dmaStopOf(bp.dmaStop);
+  if (!stop) return { dmaEvent: "end", dmaArg: "" };
+  const arg = formatDmaStop(stop).split(":").slice(1).join(":");
+  return { dmaEvent: stop.kind, dmaArg: arg.toUpperCase() };
+}
 
 /** An interrupt stop's form fields (the empty ones for any other breakpoint) */
 function interruptFieldsOf(
@@ -103,7 +113,9 @@ export type BreakpointKind =
   /** The ZX Spectrum Next's `sp:<sprite>`: an attribute byte of a sprite is written. */
   | "sprite"
   /** The ZX Spectrum Next's `int:<kind>`: an interrupt event (NEXT_INTERRUPTS_DEBUGGING_PLAN §5). */
-  | "interrupt";
+  | "interrupt"
+  /** The ZX Spectrum Next's `dma:<kind>`: a DMA event (NEXT_DMA_DEBUGGING_PLAN §12). */
+  | "dma";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -156,6 +168,10 @@ export type BreakpointFormState = {
   interruptSource: string;
   /** Raw input, interrupt kind only: the wait limit in T-states, for `wait`. */
   interruptWait: string;
+  /** DMA kind only: which event stops (`enable`, `load`, `end`, `count`, `write`, `held`, `problem`). */
+  dmaEvent: DmaStopKind;
+  /** Raw input, DMA kind only: the byte count (`count`), the address or range (`write`) or the T-states (`held`). */
+  dmaArg: string;
   disabled: boolean;
   /**
    * "Remove after it stops" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
@@ -287,6 +303,7 @@ export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean 
     isCopperBreakpoint(bp ?? {}) ||
     isSpriteBreakpoint(bp ?? {}) ||
     isInterruptStop(bp ?? {}) ||
+    isDmaStop(bp ?? {}) ||
     isBankRelative(bp ?? {})
   );
 }
@@ -358,6 +375,8 @@ export function createEmptyForm(): BreakpointFormState {
     interruptEvent: "ack",
     interruptSource: "",
     interruptWait: "",
+    dmaEvent: "end",
+    dmaArg: "",
     disabled: false,
     oneShot: false,
     length: "",
@@ -392,6 +411,23 @@ const COPPER_INDEX_MAX = 0x3ff;
 /** True for the kind bound to a sprite's attribute writes rather than to a place. */
 export function isSpriteKind(kind: BreakpointKind): boolean {
   return kind === "sprite";
+}
+
+/** True for the kind bound to a DMA event. */
+export function isDmaKind(kind: BreakpointKind): boolean {
+  return kind === "dma";
+}
+
+/** The DMA events that take an argument */
+export function dmaEventTakesArg(event: DmaStopKind): boolean {
+  return event === "count" || event === "write" || event === "held";
+}
+
+/** The DMA form's fields as a stop, or `{ field: "dmaArg" }` when the argument does not parse. */
+export function dmaStopFromForm(form: Pick<BreakpointFormState, "dmaEvent" | "dmaArg">): DmaStop | { field: "dmaArg" } {
+  const arg = form.dmaArg.trim().replace(/\s+/g, "");
+  const parsed = parseDmaStop(dmaEventTakesArg(form.dmaEvent) ? `${form.dmaEvent}:${arg}` : form.dmaEvent);
+  return "error" in parsed ? { field: "dmaArg" } : parsed;
 }
 
 /** True for the kind bound to an interrupt event rather than to a place. */
@@ -443,6 +479,7 @@ export function applyKindChange(
   const copper = isCopperKind(kind);
   const sprite = isSpriteKind(kind);
   const interrupt = isInterruptKind(kind);
+  const dma = isDmaKind(kind);
   return {
     ...form,
     kind,
@@ -452,11 +489,13 @@ export function applyKindChange(
     interruptEvent: interrupt ? form.interruptEvent : "ack",
     interruptSource: interrupt ? form.interruptSource : "",
     interruptWait: interrupt ? form.interruptWait : "",
+    dmaEvent: dma ? form.dmaEvent : "end",
+    dmaArg: dma ? form.dmaArg : "",
     // --- A NextReg breakpoint has no address and no partition; the address field is not merely
     // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
     // --- unreachable.
-    address: nextReg || copper || sprite || interrupt ? "" : form.address,
-    partition: isIoKind(kind) || nextReg || copper || sprite || interrupt ? undefined : form.partition,
+    address: nextReg || copper || sprite || interrupt || dma ? "" : form.address,
+    partition: isIoKind(kind) || nextReg || copper || sprite || interrupt || dma ? undefined : form.partition,
     ioMask: isIoKind(kind) ? form.ioMask : "",
     nextReg: nextReg ? form.nextReg : "",
     filterValue: nextReg ? form.filterValue : false,
@@ -599,6 +638,20 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     };
   }
 
+  // --- A DMA stop: an event kind, bound to a DMA event
+  if (isDmaKind(form.kind)) {
+    const stop = dmaStopFromForm(form);
+    return {
+      dmaStop: "field" in stop ? undefined : formatDmaStop(stop),
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   // --- An interrupt stop: an event kind, bound to an interrupt event
   if (isInterruptKind(form.kind)) {
     const stop = interruptStopFromForm(form);
@@ -688,6 +741,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
       ? "sprite"
       : isInterruptStop(bp)
       ? "interrupt"
+      : isDmaStop(bp)
+      ? "dma"
       : bp.memoryRead
       ? "memRead"
       : bp.memoryWrite
@@ -712,6 +767,7 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     spriteIndex: bp.spriteIndex === undefined ? "" : `$${toHexa2(bp.spriteIndex & SPRITE_INDEX_MAX)}`,
     spriteAttrMask: bp.spriteIndex === undefined ? SPRITE_ATTR_ALL : spriteAttrMaskOf(bp),
     ...interruptFieldsOf(bp),
+    ...dmaFieldsOf(bp),
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -819,6 +875,22 @@ export function validateBreakpointForm(
       } else if (index.value < 0 || index.value > COPPER_INDEX_MAX) {
         errors.copperIndex = t("panels.breakpointForm.copperRange");
       }
+    }
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
+  // --- The DMA stop's rules, on their own path like the interrupt ones
+  if (isDmaKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.dmaArg = t("panels.breakpointForm.dmaUnsupported");
+    } else if ("field" in dmaStopFromForm(form)) {
+      errors.dmaArg =
+        form.dmaEvent === "count"
+          ? t("panels.breakpointForm.dmaCount")
+          : form.dmaEvent === "write"
+            ? t("panels.breakpointForm.dmaWrite")
+            : t("panels.breakpointForm.dmaHeld");
     }
     addDuplicateKeyError(errors, form, env);
     return errors;

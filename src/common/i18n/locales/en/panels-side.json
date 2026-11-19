@@ -5138,9 +5138,27 @@
       "target": "The stop's spec, e.g. 'INT:ACK:ULA' (syntax, not translated)"
     }
   },
+  "panels.side.breakpoints.title.dma": "DMA stop {target}",
+  "@panels.side.breakpoints.title.dma": {
+    "context": "First tooltip line of a ZX Spectrum Next DMA stop in the Breakpoints panel.",
+    "placeholders": {
+      "target": "The stop's spec, e.g. 'DMA:END' (syntax, not translated)"
+    }
+  },
+  "panels.side.breakpoints.title.dmaLog": "DMA logpoint {target}",
+  "@panels.side.breakpoints.title.dmaLog": {
+    "context": "First tooltip line of a ZX Spectrum Next DMA stop that only logs (a logpoint).",
+    "placeholders": {
+      "target": "The stop's spec, e.g. 'DMA:END' (syntax, not translated)"
+    }
+  },
   "panels.side.breakpoints.interruptContract": "Stops right after the event: an acknowledge at the handler's first instruction, the others after the instruction that caused them. A condition reads the registers there.",
   "@panels.side.breakpoints.interruptContract": {
     "context": "Tooltip line of an interrupt stop in the Breakpoints panel: where the machine stops."
+  },
+  "panels.side.breakpoints.dmaContract": "An enable, a load or a setup problem stops after the instruction that wrote it; the other events stop inside the transfer, before the CPU's next instruction.",
+  "@panels.side.breakpoints.dmaContract": {
+    "context": "Tooltip line of a DMA stop row in the Breakpoints panel (ZX Spectrum Next): where it stops."
   },
   "panels.breakpointForm.interruptUnsupported": "Interrupt stops are supported on the ZX Spectrum Next only",
   "@panels.breakpointForm.interruptUnsupported": {
@@ -5153,6 +5171,22 @@
   "panels.breakpointForm.interruptWait": "Enter a limit of 1 T-state or more, e.g. 228",
   "@panels.breakpointForm.interruptWait": {
     "context": "Validation error in the breakpoint dialog: the interrupt wait limit is missing or not a positive number."
+  },
+  "panels.breakpointForm.dmaUnsupported": "DMA stops exist only on the ZX Spectrum Next",
+  "@panels.breakpointForm.dmaUnsupported": {
+    "context": "Error in the breakpoint dialog when a DMA stop is chosen on another machine."
+  },
+  "panels.breakpointForm.dmaCount": "A number of bytes from 1 to 65536, e.g. 256 or $100",
+  "@panels.breakpointForm.dmaCount": {
+    "context": "Error under the Bytes field of a DMA stop in the breakpoint dialog."
+  },
+  "panels.breakpointForm.dmaWrite": "An address or a range from $0000 to $FFFF, e.g. $4000-$5AFF",
+  "@panels.breakpointForm.dmaWrite": {
+    "context": "Error under the Range field of a DMA stop in the breakpoint dialog."
+  },
+  "panels.breakpointForm.dmaHeld": "A number of T-states from 1 to 16777215",
+  "@panels.breakpointForm.dmaHeld": {
+    "context": "Error under the T-states field of a DMA stop in the breakpoint dialog."
   },
   "panels.side.interrupts.diag.disabled.title": "{count, plural, one {Interrupts are disabled while {sources} waits} other {Interrupts are disabled while {sources} wait}}",
   "@panels.side.interrupts.diag.disabled.title": {
@@ -5174,6 +5208,21 @@
   "@panels.side.dma.openLog": {
     "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Port Log document.",
     "maxChars": 24
+  },
+  "panels.side.dma.stepByte": "Step byte",
+  "@panels.side.dma.stepByte": {
+    "context": "Button in the DMA side-bar panel (ZX Spectrum Next), while paused: run until the DMA moves its next byte.",
+    "maxChars": 14
+  },
+  "panels.side.dma.stepBlock": "To end of block",
+  "@panels.side.dma.stepBlock": {
+    "context": "Button in the DMA side-bar panel (ZX Spectrum Next), while paused: run until the DMA ends its block.",
+    "maxChars": 18
+  },
+  "panels.side.dma.stepRelease": "Until the CPU has the bus",
+  "@panels.side.dma.stepRelease": {
+    "context": "Button in the DMA side-bar panel (ZX Spectrum Next), while paused: run until the DMA lets go of the bus.",
+    "maxChars": 28
   },
   "panels.side.dma.stateLabel": "State",
   "@panels.side.dma.stateLabel": {

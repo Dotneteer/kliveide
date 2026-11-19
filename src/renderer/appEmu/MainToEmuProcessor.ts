@@ -1,3 +1,4 @@
+import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
 import type { RomSource } from "@common/roms/romIdentity";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
@@ -170,7 +171,14 @@ export function setEmuRecordingManager(mgr: RecordingManager | null): void {
  */
 export function historicalCpuState(live: Z80CpuState, historical: HistoricalState): Z80CpuState {
   const { record, info, pcPartition } = historical;
-  const { lastNextRegWrite: _w, lastCopperHit: _c, lastSpriteWrite: _s, lastInterruptStop: _i, ...rest } = live;
+  const {
+    lastNextRegWrite: _w,
+    lastCopperHit: _c,
+    lastSpriteWrite: _s,
+    lastInterruptStop: _i,
+    lastDmaStop: _dma,
+    ...rest
+  } = live;
   return {
     ...rest,
     ...record.regs,
@@ -1965,6 +1973,20 @@ class EmuMessageProcessor {
       noController();
     }
     return requireZxNextIdeMachine(controller.machine).probePixel(x, y);
+  }
+
+  /**
+   * Arms a DMA step and runs the machine in debug mode until it fires (NEXT_DMA_DEBUGGING_PLAN §12.3).
+   */
+  async stepDma(mode: DmaStepMode) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).requestDmaStep(mode);
+    if (controller.state !== MachineControllerState.Running) {
+      await controller.startDebug();
+    }
   }
 
   /**

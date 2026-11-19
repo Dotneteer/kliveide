@@ -104,6 +104,10 @@ const OVERRIDES: Record<string, ExportClass> = {
   DmaLogClear: "debug",
   DmaLogGetCount: "pure",
   DmaLogGetEnabled: "pure",
+  // --- The Next's DMA-stop watch (NEXT_DMA_DEBUGGING_PLAN §12): volatile, never changes the DMA
+  SetDmaWatch: "debug",
+  SetDmaWatchSlot: "debug",
+  TakeDmaHit: "debug",
   // --- The ZX81 auto-RUN watch lives in a non-volatile static
   ArmAutoRun: "journaled",
   // --- Reads that look like reads but have device side effects (status latches, FIFOs, counters)

@@ -81,6 +81,18 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextDmaLog",
   "zxnextDmaLogCount",
   "zxnextDmaLogEnabled",
+  // --- The DMA-stop watch and latch (NEXT_DMA_DEBUGGING_PLAN §12)
+  "zxnextDmaWatchKinds",
+  "zxnextDmaWatchCounts",
+  "zxnextDmaWatchWriteLo",
+  "zxnextDmaWatchWriteHi",
+  "zxnextDmaWatchHeldLimit",
+  "zxnextDmaHitPresent",
+  "zxnextDmaHitRecord",
+  "zxnextDmaBreak",
+  "zxnextDmaHoldOpen",
+  "zxnextDmaHoldReported",
+  "zxnextDmaHoldStart",
   "zxnextCopperWatch",
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
@@ -564,6 +576,10 @@ const productionExports = [
   "zxnextDmaLogSetEnabled",
   "zxnextDmaLogGetEnabled",
   "zxnextDmaLogClear",
+  "zxnextSetDmaWatch",
+  "zxnextSetDmaWatchSlot",
+  "zxnextDmaHitRecordPtr",
+  "zxnextTakeDmaHit",
 ];
 
 const buildModes = {

@@ -74,10 +74,12 @@ import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
 import {
   isCopperBreakpoint,
   isInterruptStop,
+  isDmaStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint,
   spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
+import { dmaStopOf, matchesDmaStop, type DmaHit } from "@common/zxnext/dma/dmaStops";
 import { interruptStopOf, matchesInterruptStop } from "@common/zxnext/interrupts/interruptStops";
 import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
 import {
@@ -141,6 +143,17 @@ const spriteWriteOf = (state?: CpuState): SpriteWriteEvent | undefined =>
 const interruptStopOfState = (state?: CpuState): InterruptStopEvent | undefined =>
   state && "lastInterruptStop" in state ? state.lastInterruptStop : undefined;
 
+/** The DMA event the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
+const dmaStopOfState = (state?: CpuState): (DmaHit & { partition?: number }) | undefined =>
+  state && "lastDmaStop" in state ? state.lastDmaStop : undefined;
+
+/** Did the machine stop on an event this DMA stop matches? */
+const isDmaStopCurrent = (bp: BreakpointInfo, state?: CpuState): boolean => {
+  const hit = dmaStopOfState(state);
+  const stop = dmaStopOf(bp.dmaStop);
+  return !!hit && !!stop && matchesDmaStop(stop, hit, Number.MAX_SAFE_INTEGER);
+};
+
 /** Did the machine stop on an event this interrupt stop matches? */
 const isInterruptStopCurrent = (bp: BreakpointInfo, state?: CpuState): boolean => {
   const event = interruptStopOfState(state);
@@ -164,9 +177,20 @@ const nextRegName = (t: TFunction, reg: number | undefined): string => {
 };
 
 /** The first tooltip line of each breakpoint kind, as a breakpoint and as a logpoint */
-type BreakpointKindId = "nextReg" | "copper" | "sprite" | "interrupt" | "memRead" | "memWrite" | "ioRead" | "ioWrite" | "exec";
+type BreakpointKindId =
+  | "nextReg"
+  | "copper"
+  | "sprite"
+  | "interrupt"
+  | "dma"
+  | "memRead"
+  | "memWrite"
+  | "ioRead"
+  | "ioWrite"
+  | "exec";
 const KIND_TITLES: Record<BreakpointKindId, { breakpoint: MessageKey; logpoint: MessageKey }> = {
   interrupt: { breakpoint: "panels.side.breakpoints.title.interrupt", logpoint: "panels.side.breakpoints.title.interruptLog" },
+  dma: { breakpoint: "panels.side.breakpoints.title.dma", logpoint: "panels.side.breakpoints.title.dmaLog" },
   nextReg: { breakpoint: "panels.side.breakpoints.title.nextReg", logpoint: "panels.side.breakpoints.title.nextRegLog" },
   copper: { breakpoint: "panels.side.breakpoints.title.copper", logpoint: "panels.side.breakpoints.title.copperLog" },
   sprite: { breakpoint: "panels.side.breakpoints.title.sprite", logpoint: "panels.side.breakpoints.title.spriteLog" },
@@ -205,6 +229,8 @@ const breakpointTooltip = (
         ? "sprite"
         : isInterruptStop(bp)
           ? "interrupt"
+          : isDmaStop(bp)
+          ? "dma"
           : bp.memoryRead
           ? "memRead"
           : bp.memoryWrite
@@ -247,6 +273,9 @@ const breakpointTooltip = (
   }
   if (isInterruptStop(bp)) {
     lines.push(t("panels.side.breakpoints.interruptContract"));
+  }
+  if (isDmaStop(bp)) {
+    lines.push(t("panels.side.breakpoints.dmaContract"));
   }
   if (copperKind) {
     if (instruction) lines.push(instruction);
@@ -919,13 +948,15 @@ export const BreakpointsPanel = () => {
                   isCurrent = spriteWriteOf(lastCpuState)?.sprite === bp.spriteIndex;
                 } else if (isInterruptStop(bp)) {
                   isCurrent = isInterruptStopCurrent(bp, lastCpuState);
+                } else if (isDmaStop(bp)) {
+                  isCurrent = isDmaStopCurrent(bp, lastCpuState);
                 }
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
               const instruction =
                 bp.instruction ||
-                (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) ? "" : "???");
+                (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) || isDmaStop(bp) ? "" : "???");
 
               return (
                 <BreakpointRow
@@ -1097,6 +1128,22 @@ export const BreakpointsPanel = () => {
                       )}
                     </>
                   )}
+                  {isDmaStop(bp) &&
+                    machineState === MachineControllerState.Paused &&
+                    isDmaStopCurrent(bp, lastCpuState) &&
+                    (() => {
+                      const hit = dmaStopOfState(lastCpuState)!;
+                      return (
+                        <Value
+                          text={
+                            `@ $${toHexa4(hit.pc)}` +
+                            (hit.partition === undefined ? "" : ` ${partitionLabels?.[hit.partition] ?? hit.partition}`)
+                          }
+                          width="auto"
+                          className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                        />
+                      );
+                    })()}
                   {isInterruptStop(bp) &&
                     machineState === MachineControllerState.Paused &&
                     isInterruptStopCurrent(bp, lastCpuState) &&

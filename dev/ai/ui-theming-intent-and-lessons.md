@@ -1783,6 +1783,9 @@ device is doing. The rule that settled, reusable for any device with a "what is 
 - **Start and working addresses side by side: the working one takes `--color-state-value-alt` only once
   it differs from its start.** Two pointers into the same space get two accents only when they disagree,
   which is exactly when the reader needs to look.
+- **Actions that only make sense while paused appear only while paused, under the state they act on**
+  (the DMA panel's step buttons, under the state badge), in the Interrupts panel's action-button look:
+  raised surface, subtle border, secondary text until hovered.
 - **A hardware name in a section heading keeps its case** (`zxnDDMA`): the headings are upper-cased by
   CSS, so such a name sits in a span with `text-transform: none`.
 

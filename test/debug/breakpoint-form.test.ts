@@ -405,6 +405,8 @@ describe("helpers", () => {
       interruptEvent: "ack",
       interruptSource: "",
       interruptWait: "",
+      dmaEvent: "end",
+      dmaArg: "",
       disabled: false,
       oneShot: false,
       length: "",

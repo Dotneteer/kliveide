@@ -8,6 +8,8 @@ import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
   buildDmaModel,
   hex6,
@@ -133,6 +135,7 @@ export const DmaPanel = () => {
   const t = useT();
   const emuApi = useEmuApi();
   const { ideCommandsService } = useAppServices();
+  const paused = useSelector((s) => s.emulatorState?.machineState) === MachineControllerState.Paused;
   const [state, setState] = useState<NextDmaState>();
 
   const refresh = useCallback(async () => {
@@ -163,6 +166,29 @@ export const DmaPanel = () => {
         <span className={classnames(styles.badge, styles[`badge_${model.header}`])}>{t(HEADER_KEYS[model.header])}</span>
         {model.header === "idle" && model.finished && <DataSecondary text={t("panels.side.dma.blockFinished")} />}
       </FieldRow>
+
+      {/* --- DMA steps (§12.3): while paused with the DMA working */}
+      {paused && (model.active || state.busAcknowledged) && (
+        <div className={styles.steps}>
+          <button type="button" className={styles.stepButton} onClick={() => void ideCommandsService.executeCommand("step-dma")}>
+            {t("panels.side.dma.stepByte")}
+          </button>
+          <button
+            type="button"
+            className={styles.stepButton}
+            onClick={() => void ideCommandsService.executeCommand("step-dma-block")}
+          >
+            {t("panels.side.dma.stepBlock")}
+          </button>
+          <button
+            type="button"
+            className={styles.stepButton}
+            onClick={() => void ideCommandsService.executeCommand("step-dma-release")}
+          >
+            {t("panels.side.dma.stepRelease")}
+          </button>
+        </div>
+      )}
 
       {/* --- Diagnostics */}
       {model.diagnostics.length > 0 && (

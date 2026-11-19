@@ -9,6 +9,7 @@ import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditi
 import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import type { InterruptWatch } from "@common/zxnext/interrupts/interruptStops";
+import type { DmaHit, DmaStepMode, DmaWatch } from "@common/zxnext/dma/dmaStops";
 import type { NextIntEvent } from "@common/zxnext/interrupts/interruptState";
 
 /**
@@ -133,6 +134,19 @@ export interface IDebugSupport {
    * @param coreWaitLimit The WAIT limit the core was armed with
    */
   hasInterruptHit(event: NextIntEvent, coreWaitLimit: number): boolean;
+
+  /**
+   * The ZX Spectrum Next DMA-stop watch (`dma:`) to arm in the core, with a pending DMA step's one-shot;
+   * `kinds` is 0 when nothing is armed. Optional: only the Next's debug support needs it.
+   */
+  buildDmaWatch?(step?: DmaStepMode): DmaWatch;
+
+  /**
+   * Does any DMA stop want to stop on this hit? Optional, like `buildDmaWatch`.
+   * @param hit The hit the core latched
+   * @param coreHeldLimit The `held` limit the core was armed with
+   */
+  hasDmaHit?(hit: DmaHit, coreHeldLimit: number): boolean;
 
   /**
    * Gets IO read breakpoint information for the specified port

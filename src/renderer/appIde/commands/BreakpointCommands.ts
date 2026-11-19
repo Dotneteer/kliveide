@@ -64,6 +64,16 @@ import {
   stopSourceIds,
   type InterruptStopParseError
 } from "@common/zxnext/interrupts/interruptStops";
+import { formatDmaStop, parseDmaStop, type DmaStopParseError } from "@common/zxnext/dma/dmaStops";
+
+/** The `dma:` spec's errors (keys at definition, text at display) */
+const DMA_STOP_ERRORS: Record<DmaStopParseError, MessageKey> = {
+  kind: "commands.bp.dma.kind",
+  count: "commands.bp.dma.count",
+  address: "commands.bp.dma.address",
+  limit: "commands.bp.dma.limit",
+  extra: "commands.bp.dma.extra"
+};
 
 /** The `int:` spec's errors (keys at definition, text at display) */
 const INTERRUPT_STOP_ERRORS: Record<InterruptStopParseError, MessageKey> = {
@@ -209,6 +219,8 @@ export type BreakpointWithAddressArgs = {
   "-attr"?: string;
   /** The normalized event spec of an `int:` stop (ZX Spectrum Next only): `ack:ula`, `wait:300`, ... */
   interruptStop?: string;
+  /** The normalized event spec of a `dma:` stop (ZX Spectrum Next only): `end`, `count:256`, ... */
+  dmaStop?: string;
   /** Also break on copper writes (NextReg breakpoints only). */
   "-c"?: boolean;
   /** Break only on this written value (NextReg breakpoints only); `-m` masks the comparison. */
@@ -265,6 +277,7 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
   const isCopper = args.copperIndex !== undefined;
   const isSprite = args.spriteIndex !== undefined;
   const isInterrupt = args.interruptStop !== undefined;
+  const isDma = args.dmaStop !== undefined;
   const attrMask = isSprite && args["-attr"] !== undefined ? parseSpriteAttrList(args["-attr"]) : undefined;
   return {
     address: args.address,
@@ -286,7 +299,8 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     // --- All five bytes is the default, so it is not stored
     spriteAttrMask: attrMask !== undefined && attrMask !== SPRITE_ATTR_ALL ? attrMask : undefined,
     interruptStop: args.interruptStop,
-    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper || isSprite || isInterrupt),
+    dmaStop: args.dmaStop,
+    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper || isSprite || isInterrupt || isDma),
     memoryRead: args["-r"],
     memoryWrite: args["-w"],
     ioRead: args["-i"],
@@ -428,6 +442,24 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
              * or three segments, so before the two-segment specs; `int` cannot shadow a partition
              * label (`i`, `n`, `t` are not hex digits).
              */
+            /*
+             * `dma:<kind>[:<argument>]` - a DMA stop (NEXT_DMA_DEBUGGING_PLAN §12). `M` is not a hex
+             * digit, so `dma` cannot be a partition label either.
+             */
+            if (segments[0] === "dma" && segments.length >= 2) {
+              const { machine } = context.service.machineService.getMachineInfo();
+              if (machine.machineId !== MI_ZXNEXT) {
+                messages = [validationError(t("commands.dma.nextOnly"))];
+                break;
+              }
+              const parsed = parseDmaStop(segments.slice(1).join(":"));
+              if ("error" in parsed) {
+                messages = [validationError(t(DMA_STOP_ERRORS[parsed.error]))];
+                break;
+              }
+              args.dmaStop = formatDmaStop(parsed);
+              break;
+            }
             if (segments[0] === "int" && segments.length >= 2) {
               const { machine } = context.service.machineService.getMachineInfo();
               if (machine.machineId !== MI_ZXNEXT) {
@@ -764,6 +796,12 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
     ) {
       return [validationError(t("commands.bp.interrupt.noAccessOptions"))];
     }
+    if (
+      args.dmaStop !== undefined &&
+      (bpOptions > 0 || args["-c"] || args["-v"] !== undefined || args["-m"] !== undefined || args["-attr"] !== undefined)
+    ) {
+      return [validationError(t("commands.bp.dma.noAccessOptions"))];
+    }
     if (args["-attr"] !== undefined) {
       if (args.spriteIndex === undefined) {
         return [validationError(t("commands.bp.attr.spriteOnly"))];
@@ -839,6 +877,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       t("commands.usage.bpSet.copper"),
       t("commands.usage.bpSet.sprite"),
       t("commands.usage.bpSet.interrupt"),
+      t("commands.usage.bpSet.dma"),
       t("commands.usage.bpSet.once"),
       t("commands.usage.bpSet.log", { example: '-log "[LOOP] B={B} HL={HL:hex16}"' }),
       t("commands.usage.bpSet.hit"),

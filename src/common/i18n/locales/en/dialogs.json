@@ -3205,5 +3205,85 @@
   "dialog.breakpoint.interrupt.stopNote": "An acknowledge stops at the handler's first instruction; the other events stop after the instruction that caused them. A condition reads the registers there.",
   "@dialog.breakpoint.interrupt.stopNote": {
     "context": "Note on the Action page of the breakpoint dialog, under Stop / Log message, for an interrupt stop: where the machine stops."
+  },
+  "dialog.breakpoint.kind.dma": "DMA event",
+  "@dialog.breakpoint.kind.dma": {
+    "context": "Breakpoint type option in the breakpoint dialog (ZX Spectrum Next): stop on a DMA event rather than at an address.",
+    "maxChars": 24
+  },
+  "dialog.breakpoint.dma.eventLabel": "Event",
+  "@dialog.breakpoint.dma.eventLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next DMA stops): which DMA event stops.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.dma.event.enable": "The DMA is enabled",
+  "@dialog.breakpoint.dma.event.enable": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops).",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.load": "The DMA loads its addresses ($CF)",
+  "@dialog.breakpoint.dma.event.load": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops). Keep '$CF'.",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.end": "A block ends",
+  "@dialog.breakpoint.dma.event.end": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops): the transfer reaches the end of its block.",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.count": "A number of bytes has moved",
+  "@dialog.breakpoint.dma.event.count": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops).",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.write": "The DMA writes a memory range",
+  "@dialog.breakpoint.dma.event.write": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops).",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.held": "The DMA holds the bus too long",
+  "@dialog.breakpoint.dma.event.held": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops).",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.event.problem": "A setup problem",
+  "@dialog.breakpoint.dma.event.problem": {
+    "context": "Event option in the breakpoint dialog (ZX Spectrum Next DMA stops): a byte written to the DMA that it ignores or that leaves it deaf, or an enable without a load.",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.dma.countLabel": "Bytes",
+  "@dialog.breakpoint.dma.countLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next DMA stops) for the 'number of bytes' event.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.dma.writeLabel": "Range",
+  "@dialog.breakpoint.dma.writeLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next DMA stops) for the 'writes a memory range' event.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.dma.heldLabel": "T-states",
+  "@dialog.breakpoint.dma.heldLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next DMA stops) for the 'holds the bus too long' event.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.dma.argLabel": "DMA event value",
+  "@dialog.breakpoint.dma.argLabel": {
+    "context": "Accessible name of the value field in the breakpoint dialog (ZX Spectrum Next DMA stops)."
+  },
+  "dialog.breakpoint.dma.countHint": "Stops after the byte that brings the block's count to this number.",
+  "@dialog.breakpoint.dma.countHint": {
+    "context": "Hint under the Bytes field in the breakpoint dialog (ZX Spectrum Next DMA stops)."
+  },
+  "dialog.breakpoint.dma.writeHint": "An address or a range, e.g. $4000-$5AFF: the Z80 address the DMA writes.",
+  "@dialog.breakpoint.dma.writeHint": {
+    "context": "Hint under the Range field in the breakpoint dialog (ZX Spectrum Next DMA stops). Keep the example."
+  },
+  "dialog.breakpoint.dma.heldHint": "Stops when one hold of the bus passes this many CPU T-states. A frame is about 70,000 at 3.5 MHz.",
+  "@dialog.breakpoint.dma.heldHint": {
+    "context": "Hint under the T-states field in the breakpoint dialog (ZX Spectrum Next DMA stops)."
+  },
+  "dialog.breakpoint.dma.stopNote": "An enable, a load or a setup problem stops after the instruction that wrote it; the other events stop inside the transfer, before the CPU's next instruction. A condition reads the registers there.",
+  "@dialog.breakpoint.dma.stopNote": {
+    "context": "Note in the breakpoint dialog (ZX Spectrum Next DMA stops): where a DMA stop stops."
   }
 }

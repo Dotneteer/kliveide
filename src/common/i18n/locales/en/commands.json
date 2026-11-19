@@ -1913,6 +1913,38 @@
   "@commands.dma.hideLogDescription": {
     "context": "Description of the 'hide-dma-log' IDE command."
   },
+  "commands.dma.stepRunningNormal": "Pause the machine or start it in debug mode before stepping the DMA",
+  "@commands.dma.stepRunningNormal": {
+    "context": "Error of the step-dma commands while the machine runs without the debugger."
+  },
+  "commands.dma.stepIdle": "The DMA has no transfer to step",
+  "@commands.dma.stepIdle": {
+    "context": "Error of the step-dma commands when the DMA is idle."
+  },
+  "commands.dma.stepDescription": "Runs the ZX Spectrum Next in debug mode until the DMA moves its next byte",
+  "@commands.dma.stepDescription": {
+    "context": "Description of the 'step-dma' IDE command."
+  },
+  "commands.dma.stepBlockDescription": "Runs the ZX Spectrum Next in debug mode until the DMA ends its block",
+  "@commands.dma.stepBlockDescription": {
+    "context": "Description of the 'step-dma-block' IDE command."
+  },
+  "commands.dma.stepReleaseDescription": "Runs the ZX Spectrum Next in debug mode until the DMA lets go of the bus",
+  "@commands.dma.stepReleaseDescription": {
+    "context": "Description of the 'step-dma-release' IDE command."
+  },
+  "commands.dma.steppingByte": "Running to the DMA's next byte",
+  "@commands.dma.steppingByte": {
+    "context": "Output of the 'step-dma' command when it starts."
+  },
+  "commands.dma.steppingBlock": "Running to the end of the DMA's block",
+  "@commands.dma.steppingBlock": {
+    "context": "Output of the 'step-dma-block' command when it starts."
+  },
+  "commands.dma.steppingRelease": "Running until the DMA lets go of the bus",
+  "@commands.dma.steppingRelease": {
+    "context": "Output of the 'step-dma-release' command when it starts."
+  },
   "commands.interrupts.showTimelineDescription": "Displays the Interrupt Timeline and starts recording interrupt events",
   "@commands.interrupts.showTimelineDescription": {
     "context": "Description of the 'show-int-timeline' interactive command, shown by 'help'."
