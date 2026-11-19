@@ -26,7 +26,7 @@ import { StaticMemoryView } from "../StaticMemoryView";
 import { decodeBasicProgram } from "../basicListing";
 import { BasicLineDisplay } from "../BasicPanel";
 import basicStyles from "../BasicPanel.module.scss";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { CodeStartDialog } from "./CodeStartDialog";
 import { openTapeBlockView } from "../Tape/TapeBlockViewerPanel";
 import { DskSurfaceView } from "./DskSurfaceView";

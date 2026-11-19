@@ -382,7 +382,7 @@ function screenSamples(FONT) {
       half[scrOffset(byteCol >> 1, y)] |= 0x80 >> (x & 7);
     };
     drawText(pset, "TIMEX HI-RES", 64, 24, 4);
-    drawText(pset, "512x192: EACH 16-PIXEL WORD IS ONE BYTE FROM $4000 AND ONE FROM $6000", 0, 80);
+    drawText(pset, "512x192: EACH 16-PIXEL WORD = A $4000 BYTE + A $6000 BYTE", 32, 80);
     for (let x = 0; x < 512; x += 2) for (let y = 100; y < 120; y++) pset(x, y); // one-pixel stripes
     for (let x = 0; x < 512; x++) for (let y = 130; y < 190; y++) if (((x >> 3) & 1) === 0) pset(x, y); // byte columns alternate
     return concat(a, b);

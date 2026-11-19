@@ -1,7 +1,7 @@
 # Screen File Viewers Modernization Plan
 
-Status: **reviewed, ready to implement** (2026-11-19, branch `plan/screen-file-viewers`). The
-author answered the open questions (§6); nothing is implemented yet.
+Status: **implemented** (2026-11-19, branch `plan/screen-file-viewers`): all six phases. The as-built
+notes and the deviations from the sketch below are §9.
 
 Mockup: `dev/plans/screen-file-viewers/mockup.html`. Open it in a browser, or serve `dev/plans/`
 with the `plan-mockups` entry of `.claude/launch.json` and open `/screen-file-viewers/mockup.html`.
@@ -95,7 +95,7 @@ become a decoder each (Phase 5).
   The facts follow the data hierarchy: a file's facts are neutral. Bytes and addresses are values in
   `--color-state-value`, as in the other Next inspectors.
 - **D7. The status strip is the probe.** Hover writes one line:
-  - SCR: `x 132 y 47 · cell 16,5 · pixel $4AF0 (+0AF0) · attr $58B0 (+18B0) = $47 INK 7 PAPER 0
+  - SCR: `x 132 y 47 · cell 16,5 · pixel $47B0 (+07B0) · attr $58B0 (+18B0) = $47 INK 7 PAPER 0
     BRIGHT`.
   - Layer 2: `x 132 y 47 · index $E3 · RGB 7,0,7 · bank +1 $2F84 (+6F84)`.
 
@@ -137,9 +137,11 @@ become a decoder each (Phase 5).
   (0-7, swatches), black on white by default (port `$FF` = 0), kept in the view state. The Picture
   section says where the colour comes from.
 - **D14. Colours the files do not carry** (Q5). SCR and hi-colour draw with the 48K colours
-  (`SPECTRUM_48_COLORS`), also in a Next project. LoRes draws with the Next's default ULA palette as
-  the core resets it (one source with the emulator, not a copy); the mockup approximates it with
-  RGB332.
+  (`SPECTRUM_48_COLORS`), also in a Next project. LoRes draws with the Next's ULA palette as the core
+  resets it: the 16 colours repeated in every block of 16. NextZXOS leaves it so after `LAYER 1,0`
+  (checked by booting NextZXOS in the harness and reading the palette), so that is what a `.slr`
+  loaded from NextBASIC looks like. LoRes artwork is usually drawn for RGB332 (the Layer 2 default),
+  so the toolbar switches between **ULA palette** and **RGB332**.
 
 ## 3. Formats
 
@@ -247,3 +249,41 @@ and `.shr` ones need Phase 5.
 They are Klive's own reading of the layouts. Before Phase 5 closes, also open files the Next writes
 itself: in Klive's emulated Next, draw on each layer in NextBASIC, save it, and open the saved file
 from the SD card (the README has the steps).
+
+## 9. As built
+
+- **Phase 1.** The decoders are `src/common/screenFiles/` (`zxScreen.ts`, `timexScreen.ts`,
+  `loresScreen.ts`, `screenFile.ts`), pure, with `test/screen-files/decoders.test.ts`. The PLUS3DOS
+  header split is one function, `splitPlus3Header` in `diskfs/plus3dos.ts`, used by these and by
+  `layer2File.ts`, which now keeps the header for the viewer's Header section. The six previews that
+  drew a `.scr` (tape, disk, hard disk, file manager, snapshot) import `createScrPixelData` from
+  `zxScreen.ts`. No separate `layer2Probe` was needed: the view composes `layer2ByteOffset` and
+  `layer2Index`.
+- **Phases 2-5** landed together, the frame being small once the formats shared it:
+  `src/renderer/features/screen-files/` holds the frame (`ScreenFileViewer.tsx`), its overlay canvas,
+  the error card, the attribute formats (`AttrScreenView.tsx`: `.scr`, `.shc`) and the palette formats
+  (`IndexedScreenViews.tsx`: Layer 2, LoRes, hi-res). The registry opens all six extensions through
+  one file, `DocumentPanels/Next/ScreenFileViewerPanels.tsx`; the old `ScrFileViewerPanel`,
+  `Layer2FileViewerPanel` and the three stubs are deleted. The default ULA palette is a table in
+  `loresScreen.ts`, citing the core's.
+- **Show bytes** needed no change to the dump: `openStaticMemoryDump` already takes a `topAddress`.
+  **Copy picture** writes a PNG through `navigator.clipboard`; a refusal says so in the probe strip.
+- **The FLASH redesign (D9)** is as the review asked: one Blink FLASH toggle and a highlight link on
+  the FLASH count; no outlines.
+- **Checked in the running app** with a doc-shots recipe, `dev/scripts/doc-shots/recipes/screen-file-viewers.cjs`,
+  which opens every sample (by its upper-case name) and a narrow layout, staged under
+  `.local/doc-shots/dev/screen-files/`. The hi-res sample's long text line was cut off at 512 pixels
+  and was shortened.
+- **Files written by NextZXOS itself (§8) were checked**, in the harness rather than by hand: SPI-014
+  (`test/zxnext-hw/sd/nextzxos-save-layer.test.ts`, slow tier, 45 s) boots NextZXOS 2.08, draws a
+  circle on each layer in NextBASIC, saves it with `SAVE ... LAYER`, reads the files off the card and
+  decodes them with the viewers' readers. Every file has a PLUS3DOS header: the ULA screen is CODE
+  (6,912 bytes at `$4000`); LoRes, Timex hi-res and hi-colour are **type 4** and Layer 2 **type 5**
+  (12,288 and 49,152 bytes), with load address 0. The decoded pictures matched the machine's screen
+  shot for shot. The finding changed the viewer: `Plus3Header` keeps the type byte, the Header section
+  names types 4 and 5 `LAYER 1` and `LAYER 2`, and only a CODE header shows a load address and the
+  "not at the screen" warning (it fired wrongly on every LAYER 1 file).
+- **Copy picture was checked in the running app**: the recipe clicks it and reads the system clipboard
+  from Electron's main process, which holds a 256×192 PNG (also offered as macOS's PNG and TIFF
+  pasteboard types). Electron 45's main-process `clipboard` has no `readImage`; `read()` returns
+  ClipboardItems.

@@ -7,7 +7,7 @@ import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { decodeBasicProgram } from "../basicListing";
 import { BasicLineDisplay } from "../BasicPanel";
 import basicStyles from "../BasicPanel.module.scss";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { StaticMemoryView } from "../StaticMemoryView";
 import type { FileManagerIntent } from "./FileManagerController";
 import type { ViewerVm } from "./FileManagerViewModel";

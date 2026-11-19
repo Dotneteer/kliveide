@@ -21,7 +21,7 @@ import { RenameDialog, type RenameDialogResult } from "@renderer/appIde/dialogs/
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { carriesFiles, droppedFilePaths } from "@renderer/features/explorer/projectFileDrag";
 import { StaticMemoryView } from "../StaticMemoryView";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { failureText } from "./diskErrorText";
 import { failureOf, type DiskActionFailure } from "./diskExplorerActions";
 import styles from "./DiskExplorerPanel.module.scss";

@@ -507,7 +507,23 @@ export function detectSpec (disk: DiskInformation): Plus3DosSpec {
 // -----------------------------------------------------------------------------------------------
 // Names and the PLUS3DOS header
 
-type Plus3Header = { kind: DiskFileKind; length: number; param1: number; param2: number; fileLength: number };
+/**
+ * A PLUS3DOS header: the BASIC header's kind, length and two parameters, and the file's length.
+ * `type` is the BASIC header's type byte as written: 0-3 are the +3's kinds; NextZXOS's
+ * `SAVE ... LAYER` writes 4 for a LAYER 1 picture (LoRes, Timex hi-res, hi-colour) and 5 for a
+ * Layer 2 one, both with load address 0 (observed in the harness), which `kind` calls "raw".
+ */
+export type Plus3Header = {
+  kind: DiskFileKind;
+  type: number;
+  length: number;
+  param1: number;
+  param2: number;
+  fileLength: number;
+};
+
+/** The size of a PLUS3DOS header */
+export const PLUS3DOS_HEADER_SIZE = HEADER_SIZE;
 
 /** The PLUS3DOS header of a file's first bytes, if it has a valid one */
 export function parseHeader (bytes: Uint8Array): Plus3Header | undefined {
@@ -520,11 +536,21 @@ export function parseHeader (bytes: Uint8Array): Plus3Header | undefined {
   const type = bytes[15];
   return {
     kind: KIND_BY_TYPE[type] ?? "raw",
+    type,
     length: bytes[16] | (bytes[17] << 8),
     param1: bytes[18] | (bytes[19] << 8),
     param2: bytes[20] | (bytes[21] << 8),
     fileLength: (bytes[11] | (bytes[12] << 8) | (bytes[13] << 16) | (bytes[14] << 24)) >>> 0
   };
+}
+
+/**
+ * A file's bytes without its PLUS3DOS header: a valid header (signature and checksum) is split off,
+ * a file without one is all body. +3 BASIC and NextBASIC put one in front of every file they save.
+ */
+export function splitPlus3Header (bytes: Uint8Array): { header?: Plus3Header; body: Uint8Array } {
+  const header = parseHeader(bytes);
+  return header ? { header, body: bytes.subarray(HEADER_SIZE) } : { body: bytes };
 }
 
 /** A file's bytes with its PLUS3DOS header in front */

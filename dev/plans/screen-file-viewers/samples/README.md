@@ -37,33 +37,34 @@ section).
 | `HIRES.SHR` | 12,288 | Timex hi-res 512×192, one colour pair | A large "TIMEX HI-RES", a line of 64-column text, one-pixel stripes, then 8-pixel bars. A layout error shows as letters split or swapped in 8-pixel slices |
 | `HIRES-HEADER.SHR` | 12,416 | The same after a PLUS3DOS header | The same picture |
 
-**Today**, before the plan is implemented:
-- every `.scr`, `.sl2` and `.nxi` above opens, except `BROKEN.SCR`, which is refused;
-- `HIRES.NXI` opens as 320×256 until you switch it to 640×256;
-- the `.slr`, `.shc` and `.shr` viewers say "not implemented".
+All of them open in the screen file viewer. Two things to know when checking them:
+
+- `HIRES.NXI` opens as 320×256 (garbage) until you switch it to 640×256: the size cannot tell.
+- `LORES.SLR` is drawn for RGB332. With the default **ULA palette** (what NextBASIC shows after
+  `LOAD ... LAYER`) only the low 4 bits of each index count, so it shows 16 colours; switch to
+  **RGB332** to see the rings as drawn.
 
 ## Files the Next writes itself
 
-NextBASIC saves the current picture of a layer with `SAVE "name" LAYER`. To get one file of each
-kind written by NextZXOS:
+NextBASIC saves the current picture of a layer with `SAVE "name" LAYER`. The slow-tier test SPI-014
+(`test/zxnext-hw/sd/nextzxos-save-layer.test.ts`) does this for every layer in the harness and reads
+the files back; to do it by hand in Klive's emulated Next:
 
-1. In Klive, start the ZX Spectrum Next machine and wait for NextBASIC.
-2. For each layer, select it, draw something, and save it to the SD card. Draw with `PLOT`/`CIRCLE`,
-   or load one of the samples above with `LOAD "..." LAYER`.
+1. Start the ZX Spectrum Next machine and choose NextBASIC from the menu.
+2. Select a layer, then draw and save **on one line**: NextBASIC's editor clears the screen when you
+   start typing a new line after a report, so a `SAVE` on its own line saves an empty picture.
 
-   | Format | Commands |
-   |---|---|
-   | ULA | `LAYER 0: CIRCLE 128,88,60: SAVE "ula.scr" LAYER` |
-   | LoRes | `LAYER 1,0: CIRCLE 64,48,40: SAVE "lores.slr" LAYER` |
-   | Hi-res | `LAYER 1,2: CIRCLE 256,96,80: SAVE "hires.shr" LAYER` |
-   | Hi-colour | `LAYER 1,3: CIRCLE 128,96,60: SAVE "hicol.shc" LAYER` |
-   | Layer 2 | `LAYER 2,1: CIRCLE 128,96,60: SAVE "l2.sl2" LAYER` |
+   | Format | First line | Second line |
+   |---|---|---|
+   | ULA | `LAYER 0` | `INK 2: CIRCLE 40,40,30: SAVE "ULA.SCR" LAYER` |
+   | LoRes | `LAYER 1,0` | `CIRCLE 40,40,30: SAVE "LORES.SLR" LAYER` |
+   | Timex hi-res | `LAYER 1,2` | `CIRCLE 40,40,30: SAVE "HIRES.SHR" LAYER` |
+   | Timex hi-colour | `LAYER 1,3` | `INK 4: CIRCLE 40,40,30: SAVE "HICOL.SHC" LAYER` |
+   | Layer 2 | `LAYER 2,1` | `CIRCLE 40,40,30: SAVE "L2.SL2" LAYER` |
 
-3. Copy the files out of the SD card image (the Disk Explorer or the file manager) and open them in
-   Klive.
-4. Compare each with what the machine showed. Check the file sizes: does NextZXOS write a PLUS3DOS
-   header?
+3. Copy the files off the SD card image (the Disk Explorer or the file manager) and open them.
 
-The exact `LAYER` mode numbers and `PLOT`/`CIRCLE` coordinate ranges are from the NextZXOS
-documentation as summarised in `dev/research/next-graphics-assets/README.md`. They have not been
-tried yet; correct this table when you do.
+What NextZXOS 2.08 writes (checked): a 128-byte PLUS3DOS header on every file. The ULA screen's is
+CODE, 6,912 bytes at `$4000`. LoRes, hi-res and hi-colour have header type 4 and Layer 2 type 5,
+with load address 0; the viewer names them `LAYER 1` and `LAYER 2`. The pictures after the header are
+the layouts above.

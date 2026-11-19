@@ -699,7 +699,8 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 | SPI-006 | Multi-block read/write | S | 2 | `sd` | CMD18/CMD25 with stop token. | ◐ `sd/sd-card` - CMD18 + CMD12 (B86 fixed: the first block lost CMD18's R1); CMD25 is not modelled by either core |
 | SPI-007 | Card 1 vs card 0 | S | 3 | `sd` | Deselect returns `$FF`. | ✅ `sd/sd-card` (empty slot 1 and a deselected card read $FF; B86 fixed) |
 | SPI-008 | Flash read ID | S | 3 | | Flash chip select in config mode returns flash ID per emulator model. | ✅ `sd/sd-card` (documented: no flash model, a JEDEC ID read gives $FF) |
-| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | ✅ `sd/nextzxos-boot` - headless, both cores, from a clone of `~/Klive/ks2.cim` (skipped without it): menu up, both cores identical including the RTC date line (same `setRtcTime`); the browser tier boots it too |
+| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | ✅ `sd/nextzxos-boot` - headless, from a clone of the 2.08 base card (`bootNextZxos`, which passes a fresh card's welcome pages with SPACE): menu up with the RTC date line; the browser tier boots it too |
+| SPI-014 | NextZXOS `SAVE ... LAYER` | V | 2 | `sd` | Each layer saved from NextBASIC reads back in the screen file viewers' readers. | ✅ `sd/nextzxos-save-layer` (slow tier) - ULA, LoRes, Timex hi-res and hi-colour, Layer 2: PLUS3DOS header types 3/4/4/4/5, sizes, and the drawn circle decoded |
 
 ### 4.29 `UART` – UART
 

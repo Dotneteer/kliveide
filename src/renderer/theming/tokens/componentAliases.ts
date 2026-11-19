@@ -892,6 +892,14 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-layer2-label": "var(--surface-canvas)",
   "--color-layer2-role-displayed": "var(--accent-text)",
   "--color-layer2-role-shadow": "var(--accent-secondary-text)",
+  // --- Screen file viewers (`dev/plans/SCREEN_FILE_VIEWERS_PLAN.md`, D3): chrome over a file's picture
+  "--color-screenfile-grid": "var(--border-strong)",
+  "--color-screenfile-bank": "var(--border-strong)",
+  "--color-screenfile-hover": "var(--text-primary)",
+  "--color-screenfile-pin": "var(--accent-solid)",
+  "--color-screenfile-label": "var(--text-primary)",
+  "--bgcolor-screenfile-label": "var(--surface-canvas)",
+  "--bgcolor-screenfile-stage": "var(--surface-stage)",
 
   // --- Next layer composition (`dev/plans/LAYER_COMPOSITION_PLAN.md` §4.5) ----------------------------
   /*

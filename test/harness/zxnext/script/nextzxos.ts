@@ -27,6 +27,8 @@ const WELCOME_FRAMES = 150;
 export type NextZxosBoot = {
   /** The session, at the NextZXOS main menu */
   s: NextTestSession;
+  /** The card clone the machine reads and writes: what NextZXOS saves lands here */
+  cardPath: string;
   /** Closes the card clone and deletes it; call it in a `finally` */
   close: () => void;
 };
@@ -71,7 +73,7 @@ export async function bootNextZxos(rtc: RtcTime, card?: string): Promise<NextZxo
       s.keyUp("SPACE");
       await s.runFramesAsync(WELCOME_FRAMES);
     }
-    return { s, close };
+    return { s, cardPath: path, close };
   } catch (e) {
     close();
     throw e;

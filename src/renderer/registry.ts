@@ -143,11 +143,13 @@ import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spect
 import { createRzxViewerPanel } from "./appIde/DocumentPanels/Spectrum/RzxViewerPanel";
 import { getRzxContextMenuInfo, rzxLaunchCommandBarRenderer } from "@renderer/features/documents/RzxLaunchMenu";
 import { readSpectrumBankBytes } from "./appIde/DocumentPanels/Spectrum/spectrumBankDocument";
-import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileViewerPanel";
-import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
-import { createShrFileViewerPanel } from "./appIde/DocumentPanels/Next/ShrFileViewerPanel";
-import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/Next/SlrFileViewerPanel";
-import { createLayer2FileViewerPanel } from "./appIde/DocumentPanels/Next/Layer2FileViewerPanel";
+import {
+  createLayer2FileViewerPanel,
+  createScrFileViewerPanel,
+  createShcFileViewerPanel,
+  createShrFileViewerPanel,
+  createSlrFileViewerPanel
+} from "./appIde/DocumentPanels/Next/ScreenFileViewerPanels";
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
 import { createSprFileEditorPanel } from "@renderer/features/sprite-editor/SprFileEditorPanel";
 import { createPatternSnapshotPanel } from "@renderer/features/sprites/PatternSnapshotPanel";

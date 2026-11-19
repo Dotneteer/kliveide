@@ -19,10 +19,9 @@ changes are written back to the file as you make them.
 | `.spr` | The sprite editor | Yes |
 | `.pal` | The palette editor | Yes |
 | `.npl` | The palette editor, with a transparency colour | Yes |
-| `.sl2`, `.nxi` | The Layer 2 picture viewer | No |
-| `.scr` | The ULA screen viewer | No |
+| `.scr`, `.sl2`, `.nxi`, `.slr`, `.shc`, `.shr` | The [screen file viewer](#screen-files) | No |
 | `.nex` | The [NEX viewer](/en/guides/next/nex-files/), which shows the file's palette and loading screens | No |
-| `.shc`, `.shr`, `.slr`, `.vid` | A placeholder that says *Not implemented yet* | No |
+| `.vid` | A placeholder that says *Not implemented yet* | No |
 
 ## The sprite editor
 
@@ -117,15 +116,41 @@ of the editor lists these keys.
 To see the palettes the machine is using right now rather than a file, open the
 [Next Palettes panel](/en/guides/next/next-registers/#the-next-palettes-panel).
 
-## Picture files
+## Screen files
 
-- **`.scr`**: a 6,912-byte ULA screen, shown as the Spectrum displays it. **Display screen data dump**
-  opens its bytes as a dump. A file of any other length is reported as invalid.
-- **`.sl2`** and **`.nxi`**: a Layer 2 picture. The size gives the resolution, with a toggle between
-  320×256 and 640×256 where the size cannot tell them apart, and **Banks** outlines the 16K banks the
-  picture fills. See [Layer 2 picture files](/en/guides/next/layer2-inspector/#layer-2-picture-files).
-- **`.shc`** (Timex HiColor), **`.shr`** (Timex HiRes), **`.slr`** (LoRes) and **`.vid`**: these open,
-  but their viewers are not written yet.
+One viewer shows every screen format Klive reads. The extension may be in any case (`SCREEN.SCR`
+opens as well as `screen.scr`), and any of these files may start with the 128-byte PLUS3DOS header
+that +3 BASIC and NextBASIC write when they save a file.
+
+| Extension | What it holds | Colours |
+|---|---|---|
+| `.scr` | A ZX Spectrum screen: 256×192, an attribute for each 8×8 cell (6,912 bytes) | The 48K colours |
+| `.sl2`, `.nxi` | A Layer 2 picture: 256×192, 320×256 or 640×256 (see [Layer 2 picture files](/en/guides/next/layer2-inspector/#layer-2-picture-files)) | The file's palette, or the Next's default |
+| `.slr` | A LoRes picture: 128×96, a palette index for each pixel (12,288 bytes) | The Next's ULA palette, or RGB332 |
+| `.shc` | A Timex hi-colour screen: 256×192, an attribute for each 8×1 strip (12,288 bytes) | The 48K colours |
+| `.shr` | A Timex hi-res screen: 512×192 in one colour pair (12,288 bytes) | The ink you choose |
+
+The viewer has three parts:
+
+- **The toolbar** says what the picture is and holds its controls: the resolution of an 80K Layer 2
+  file, which the size cannot tell; **Grid**, which outlines the 8×8 cells of a `.scr`; **Banks**,
+  which outlines a Layer 2 picture's 16K banks; **Blink FLASH**, which shows `FLASH` cells swapping
+  `INK` and `PAPER` about three times a second as the machine does (the file only stores the bit); the
+  palette of a LoRes picture; and the ink of a hi-res one, which the machine takes from port `$FF`,
+  not from the file. **Fit** zooms the picture to the window; 1× to 4× are fixed zooms.
+- **The inspector** beside the picture lists the file, its header, the picture's format, and the
+  colours or palette entries it uses. Click a colour to highlight the pixels that use it; the others
+  dim until you click the **Highlight** chip in the toolbar. For a `.scr` or `.shc`, **highlight**
+  after the FLASH count shows which cells blink. The buttons at the top of the inspector open the
+  file's bytes in a memory dump, save the picture as PNG and copy it to the clipboard.
+- **The strip under the picture** describes the pixel under the mouse: for a `.scr`, its pixel and
+  attribute bytes with their screen addresses and offsets in the file, and the decoded `INK`, `PAPER`,
+  `BRIGHT` and `FLASH`; for Layer 2, the palette index, its colour and the bank holding the byte. Click
+  a pixel to pin it: the **Pixel** section shows it in full, and **Show bytes** opens the dump at its
+  byte.
+
+In a narrow window the inspector moves under the picture and the toolbar's switches fold into its
+**⋯** menu. A file whose size fits no format shows that size, the sizes allowed, and **Show bytes**.
 
 <Callout type="info">
 A NEX file's loading screens are shown by the NEX viewer itself, in all the formats a NEX can carry.

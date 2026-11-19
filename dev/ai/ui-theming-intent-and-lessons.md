@@ -1470,6 +1470,34 @@ editor's help) is built from `controls/data/FileFacts`. The old `ExpandableRow` 
 - **A command inside a label stays on the label's line**: a `dt` holding a button is an inline flex
   row (the RZX segment's Play), otherwise the button breaks the label in two.
 
+## A Screen File Viewer Is One Frame
+
+Every screen file (`.scr`, `.sl2`, `.nxi`, `.slr`, `.shc`, `.shr`) opens in one frame,
+`features/screen-files/ScreenFileViewer.tsx`: a one-line toolbar, the picture on the stage beside a
+`34ch` inspector of `FileFacts` sections, and a probe strip under it. A format hands the frame a
+decoded picture (palette indices and an ABGR table), its controls, its overlays, its probe and its
+own sections; it draws no chrome of its own, so a new format is a view, not a new layout.
+
+- **The picture is the machine's colours; everything over it is chrome** on one `ScreenOverlayCanvas`,
+  from `--color-screenfile-*` (grid and bank outlines `--border-strong`, the hover box
+  `--text-primary`, the pinned pixel the primary accent, framed one pixel wider each way). The stage
+  behind it is `--surface-stage`.
+- **A highlight dims, it never tints**: a colour or the FLASH cells chosen in the inspector dim every
+  other pixel through `IndexedImageCanvas`'s `dim` mask, and a toolbar chip names what is highlighted
+  and stops it. Something the user switched on that changes how the picture reads must be visible
+  and undoable from the toolbar, not only from the section that started it.
+- **A behaviour the file only encodes is shown on request**: FLASH is one **Blink FLASH** toggle,
+  off by default (the file's bits as stored), and *which* cells flash is a highlight from the FLASH
+  count, not outlines. Two toggles for one attribute bit (outline, animate) were not understood.
+- **A colour the file does not carry is chosen in the toolbar and stated in the Picture section**
+  (a hi-res picture's ink, a LoRes picture's palette), never guessed silently.
+- **Toggles fold, controls stay**: below `70ch` the format's toggles go into a `⋯` `ContextMenu`
+  with the actions; controls the picture cannot be read without (an 80K Layer 2 file's resolution)
+  stay on the strip. Below `100ch` the inspector stacks under the stage, its sections side by side.
+- **A token that does not exist drops its declaration silently** (`--font-size-75` looks like a step of
+  the scale and is not one): `test/theming/token-contract.test.ts` catches it; run `npm test -- test/theming`
+  after any stylesheet work.
+
 ## A Header Action The Machine State Forbids Stays, Disabled, And Its Tooltip Says Why
 
 A document-header action that cannot run in the current machine state (the Execution History's

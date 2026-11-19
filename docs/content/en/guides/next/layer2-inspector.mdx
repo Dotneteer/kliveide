@@ -155,11 +155,14 @@ included) without side effects, so opening it never changes the machine.
 
 ## Layer 2 Picture Files
 
-`.sl2` and `.nxi` files open in a viewer built on the same decoder. The size gives the resolution:
-49,152 bytes is 256×192, and 81,920 bytes is 320×256 or 640×256; the size cannot tell those two
-apart, so the toolbar switches between them. A file 512 bytes longer starts with a palette (two bytes
-an entry, in NextReg `$44` order); without one the picture uses the Next's default Layer 2 palette,
-and the toolbar says which. **Banks** outlines the 16K banks the picture fills.
+`.sl2` and `.nxi` files open in the [screen file viewer](/en/guides/next/sprite-palette-editors/#screen-files),
+which decodes them as this inspector does. The size gives the resolution: 49,152 bytes is 256×192,
+and 81,920 bytes is 320×256 or 640×256; the size cannot tell those two apart, so the toolbar switches
+between them. A file 512 bytes longer starts with a palette (two bytes an entry, in NextReg `$44`
+order); without one the picture uses the Next's default Layer 2 palette, and the toolbar says which.
+A file saved by NextBASIC also starts with a 128-byte PLUS3DOS header. **Banks** outlines the 16K
+banks the picture fills, and the strip under the picture names the bank and offset of the byte under
+the mouse.
 
 ## Related
 
