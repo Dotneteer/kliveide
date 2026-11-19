@@ -19,7 +19,7 @@ import { setIdeStatusMessageAction } from "@state/actions";
 import { BasicLineDisplay } from "../BasicPanel";
 import basicStyles from "../BasicPanel.module.scss";
 import { basicListingText, decodeBasicProgram } from "../basicListing";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { decodeZx8081Program } from "../zx8081BasicListing";
 import { decodeHt1080zProgram } from "../ht1080zBasicListing";
 import { decodeTvcProgram } from "../tvcBasicListing";

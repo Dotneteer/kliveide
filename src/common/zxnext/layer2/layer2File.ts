@@ -12,13 +12,12 @@
  * PLUS3DOS header (https://wiki.specnext.dev/File_Formats). A valid header - signature and checksum -
  * is skipped before the size is judged; a file without one is read as it is.
  */
-import { parseHeader } from "@common/diskfs/plus3dos";
+import { splitPlus3Header, type Plus3Header } from "@common/diskfs/plus3dos";
 import type { Layer2Resolution } from "./layer2Decode";
 
 export const LAYER2_FILE_SMALL = 0xc000;
 export const LAYER2_FILE_WIDE = 0x14000;
 export const LAYER2_FILE_PALETTE = 512;
-export const PLUS3DOS_HEADER_SIZE = 128;
 
 export type Layer2File = {
   /** The pixel bytes, without the palette */
@@ -28,6 +27,8 @@ export type Layer2File = {
   /** 256 9-bit RRRGGGBBB entries, from the file or the default */
   palette: number[];
   paletteFromFile: boolean;
+  /** The PLUS3DOS header in front of the picture, if there is one */
+  header?: Plus3Header;
 };
 
 /** The Next's Layer 2 palette after power-on (`zxnextPaletteHardReset`): index i is RGB332 i. */
@@ -41,14 +42,14 @@ export function readPaletteBlock(bytes: Uint8Array): number[] {
 }
 
 export function parseLayer2File(raw: Uint8Array): { file?: Layer2File; error?: string } {
-  const contents = parseHeader(raw) ? raw.subarray(PLUS3DOS_HEADER_SIZE) : raw;
+  const { header, body: contents } = splitPlus3Header(raw);
   const sizes: [number, Layer2Resolution[]][] = [
     [LAYER2_FILE_SMALL, [0]],
     [LAYER2_FILE_WIDE, [1, 2]]
   ];
   for (const [size, resolutions] of sizes) {
     if (contents.length === size) {
-      return { file: { data: contents, resolutions, palette: defaultLayer2Palette(), paletteFromFile: false } };
+      return { file: { data: contents, resolutions, palette: defaultLayer2Palette(), paletteFromFile: false, header } };
     }
     if (contents.length === size + LAYER2_FILE_PALETTE) {
       return {
@@ -56,7 +57,8 @@ export function parseLayer2File(raw: Uint8Array): { file?: Layer2File; error?: s
           data: contents.subarray(LAYER2_FILE_PALETTE),
           resolutions,
           palette: readPaletteBlock(contents.subarray(0, LAYER2_FILE_PALETTE)),
-          paletteFromFile: true
+          paletteFromFile: true,
+          header
         }
       };
     }

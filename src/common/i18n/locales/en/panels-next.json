@@ -174,26 +174,6 @@
   "@panels.next.layer2.resolution": {
     "context": "Accessible name of the Layer 2 picture viewer's resolution switch (320×256 or 640×256)."
   },
-  "panels.next.layer2.res8bit": "8 bits a pixel",
-  "@panels.next.layer2.res8bit": {
-    "context": "Tooltip of the 320×256 button in the Layer 2 picture viewer: each byte is one pixel."
-  },
-  "panels.next.layer2.res4bit": "4 bits a pixel, two pixels a byte",
-  "@panels.next.layer2.res4bit": {
-    "context": "Tooltip of the 640×256 button in the Layer 2 picture viewer."
-  },
-  "panels.next.layer2.paletteFromFile": "palette from the file",
-  "@panels.next.layer2.paletteFromFile": {
-    "context": "Note in the Layer 2 picture viewer's toolbar: the colours come from the file's own palette. Lower-case on purpose."
-  },
-  "panels.next.layer2.paletteDefault": "default Layer 2 palette (the file has none)",
-  "@panels.next.layer2.paletteDefault": {
-    "context": "Note in the Layer 2 picture viewer's toolbar: the file has no palette, so the Next's default one is used. Lower-case on purpose."
-  },
-  "panels.next.layer2.overlays": "Overlays",
-  "@panels.next.layer2.overlays": {
-    "context": "Accessible name of the Layer 2 picture viewer's group of overlay switches."
-  },
   "panels.next.layer2.banks": "Banks",
   "@panels.next.layer2.banks": {
     "context": "Toggle button of the Layer 2 picture viewer that outlines the 16K memory banks the picture fills.",
@@ -203,23 +183,11 @@
   "@panels.next.layer2.banksTitle": {
     "context": "Tooltip of the Layer 2 picture viewer's Banks toggle."
   },
-  "panels.next.scr.showDump": "Display screen data dump",
-  "@panels.next.scr.showDump": {
-    "context": "Tooltip of the button in the .scr (ZX Spectrum screen file) viewer that opens the file's bytes as a memory dump."
-  },
   "panels.next.dumpTitle.dump": "{source} - Dump",
   "@panels.next.dumpTitle.dump": {
     "context": "Title of the document tab that shows a screen file's bytes as a memory dump.",
     "placeholders": {
       "source": "The file's name or project path"
-    }
-  },
-  "panels.next.scr.invalidSize": "Invalid file size ({size} bytes): an .SCR file is {expected} bytes long, optionally after a 128-byte PLUS3DOS header.",
-  "@panels.next.scr.invalidSize": {
-    "context": "Error shown instead of the .scr (ZX Spectrum screen file) viewer when the file has the wrong length.",
-    "placeholders": {
-      "size": "The file's length in bytes",
-      "expected": "The required length, 6912"
     }
   },
   "panels.next.palette.undo": "Undo",
@@ -2844,5 +2812,792 @@
   "panels.next.fw.pictureMissing": "The screens block is too short to hold the test card picture.",
   "@panels.next.fw.pictureMissing": {
     "context": "Warning in the Test card section of the TBBLUE.FW viewer (the ZX Spectrum Next firmware file: a map of modules, each a small program or data block)."
+  },
+  "panels.next.screenFile.fit": "Fit",
+  "@panels.next.screenFile.fit": {
+    "context": "Zoom button in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): the largest zoom at which the whole picture fits. Beside 1×, 2×, 3×, 4×.",
+    "maxChars": 6
+  },
+  "panels.next.screenFile.fitTitle": "The largest zoom at which the whole picture fits",
+  "@panels.next.screenFile.fitTitle": {
+    "context": "Tooltip of the Fit zoom button in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.grid": "Grid",
+  "@panels.next.screenFile.grid": {
+    "context": "Toggle in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) that draws the 8×8 attribute cells over a ZX Spectrum screen.",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.gridTitle": "Outline the 8×8 cells that each have one attribute (INK, PAPER, BRIGHT, FLASH)",
+  "@panels.next.screenFile.gridTitle": {
+    "context": "Tooltip of the Grid toggle of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). INK, PAPER, BRIGHT and FLASH are Sinclair BASIC keywords: keep them."
+  },
+  "panels.next.screenFile.blink": "Blink FLASH",
+  "@panels.next.screenFile.blink": {
+    "context": "Toggle in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): shows the picture blinking as the machine does. FLASH is a Sinclair BASIC keyword: keep it.",
+    "maxChars": 14
+  },
+  "panels.next.screenFile.blinkTitle": "FLASH makes the machine swap INK and PAPER in a cell about three times a second. The file only stores the FLASH bit; Blink FLASH shows the picture as it looks on the machine.",
+  "@panels.next.screenFile.blinkTitle": {
+    "context": "Tooltip of the Blink FLASH toggle of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). FLASH, INK and PAPER are Sinclair BASIC keywords: keep them."
+  },
+  "panels.next.screenFile.highlighting": "Highlight: {what}",
+  "@panels.next.screenFile.highlighting": {
+    "context": "Toolbar chip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) while some pixels are highlighted (the rest dimmed); clicking it stops highlighting.",
+    "placeholders": {
+      "what": "What is highlighted: a colour name (\"bright red\"), a palette index ($E3) or \"FLASH cells\""
+    },
+    "maxChars": 30
+  },
+  "panels.next.screenFile.stopHighlight": "Stop highlighting",
+  "@panels.next.screenFile.stopHighlight": {
+    "context": "Tooltip of the Highlight chip in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.flashCellsLabel": "FLASH cells",
+  "@panels.next.screenFile.flashCellsLabel": {
+    "context": "What the Highlight chip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) names when the cells that blink are highlighted. FLASH is a Sinclair BASIC keyword.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.more": "More",
+  "@panels.next.screenFile.more": {
+    "context": "Tooltip of the ⋯ button of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)'s toolbar, shown when the document is narrow: it opens the toggles and actions that do not fit.",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.ink": "Ink",
+  "@panels.next.screenFile.ink": {
+    "context": "Label before the eight colour buttons in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Timex hi-res picture: the colour its set pixels are drawn in.",
+    "maxChars": 8
+  },
+  "panels.next.screenFile.inkTitle": "Hi-res has one ink for the whole screen, set by port $FF (bits 3-5), not stored in the file; the paper is its complement.",
+  "@panels.next.screenFile.inkTitle": {
+    "context": "Tooltip of the Ink choice of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Timex hi-res picture. $FF is a port number: keep it."
+  },
+  "panels.next.screenFile.inkChoice": "INK {ink} ({inkName}) on PAPER {paper} ({paperName})",
+  "@panels.next.screenFile.inkChoice": {
+    "context": "Tooltip of one colour button of the Ink choice of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). INK and PAPER are Sinclair BASIC keywords.",
+    "placeholders": {
+      "ink": "The ink's colour number, 0-7",
+      "inkName": "The ink's colour name",
+      "paper": "The paper's colour number, 0-7",
+      "paperName": "The paper's colour name"
+    }
+  },
+  "panels.next.screenFile.loresUla": "ULA palette",
+  "@panels.next.screenFile.loresUla": {
+    "context": "Segment of the palette choice in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a LoRes picture: draw it with the Next's ULA palette, as NextBASIC shows it.",
+    "maxChars": 14
+  },
+  "panels.next.screenFile.loresUlaTitle": "The Next's ULA palette as it resets: what NextBASIC shows after LOAD ... LAYER",
+  "@panels.next.screenFile.loresUlaTitle": {
+    "context": "Tooltip of the ULA palette segment of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). LOAD ... LAYER is a NextBASIC command: keep it."
+  },
+  "panels.next.screenFile.loresRgb332": "RGB332",
+  "@panels.next.screenFile.loresRgb332": {
+    "context": "Segment of the palette choice in the toolbar of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a LoRes picture: draw it with the RGB332 palette (index = colour). RGB332 is a technical name: keep it.",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.loresRgb332Title": "Each index is its own RRRGGGBB colour, the Layer 2 default most LoRes artwork is drawn for",
+  "@panels.next.screenFile.loresRgb332Title": {
+    "context": "Tooltip of the RGB332 segment of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.resolutionAmbiguous": "An 80K file is 320×256 (8 bits a pixel) or 640×256 (4 bits): its size cannot tell",
+  "@panels.next.screenFile.resolutionAmbiguous": {
+    "context": "Tooltip of the resolution buttons of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for an 80K Layer 2 file."
+  },
+  "panels.next.screenFile.describe.scr": "ZX Spectrum screen",
+  "@panels.next.screenFile.describe.scr": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file.",
+    "maxChars": 30
+  },
+  "panels.next.screenFile.describe.shc": "Timex hi-colour · 8×1 attributes",
+  "@panels.next.screenFile.describe.shc": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file (Timex hi-colour mode).",
+    "maxChars": 40
+  },
+  "panels.next.screenFile.describe.shr": "Timex hi-res · one colour pair",
+  "@panels.next.screenFile.describe.shr": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shr file (Timex 512×192 mode).",
+    "maxChars": 40
+  },
+  "panels.next.screenFile.describe.slr": "LoRes · 8 bits a pixel",
+  "@panels.next.screenFile.describe.slr": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .slr file (ZX Spectrum Next LoRes, 128×96).",
+    "maxChars": 30
+  },
+  "panels.next.screenFile.describe.layer2File": "Layer 2 · palette from the file",
+  "@panels.next.screenFile.describe.layer2File": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 file that carries its own palette.",
+    "maxChars": 40
+  },
+  "panels.next.screenFile.describe.layer2Default": "Layer 2 · Next default palette",
+  "@panels.next.screenFile.describe.layer2Default": {
+    "context": "Toolbar description of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 file with no palette.",
+    "maxChars": 40
+  },
+  "panels.next.screenFile.section.file": "File",
+  "@panels.next.screenFile.section.file": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.section.header": "Header",
+  "@panels.next.screenFile.section.header": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.section.picture": "Picture",
+  "@panels.next.screenFile.section.picture": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.section.colours": "Colours",
+  "@panels.next.screenFile.section.colours": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.section.palette": "Palette",
+  "@panels.next.screenFile.section.palette": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.section.pixel": "Pixel",
+  "@panels.next.screenFile.section.pixel": {
+    "context": "Section title in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.clickToHighlight": "click to highlight",
+  "@panels.next.screenFile.clickToHighlight": {
+    "context": "Quiet note after the Colours or Palette section title of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): clicking a colour highlights the pixels that use it.",
+    "maxChars": 24
+  },
+  "panels.next.screenFile.pinned": "pinned",
+  "@panels.next.screenFile.pinned": {
+    "context": "Quiet note after the Pixel section title of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) while a pixel is pinned (clicked).",
+    "maxChars": 12
+  },
+  "panels.next.screenFile.pinHint": "Click the picture to pin a pixel.",
+  "@panels.next.screenFile.pinHint": {
+    "context": "Body of the empty Pixel section of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.probeHint": "Hover the picture to read a pixel; click to pin it.",
+  "@panels.next.screenFile.probeHint": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse."
+  },
+  "panels.next.screenFile.pinnedMark": "● pinned",
+  "@panels.next.screenFile.pinnedMark": {
+    "context": "Start of the probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) when it shows the pinned pixel rather than the one under the mouse.",
+    "maxChars": 12
+  },
+  "panels.next.screenFile.fact.name": "Name",
+  "@panels.next.screenFile.fact.name": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.folder": "Folder",
+  "@panels.next.screenFile.fact.folder": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.size": "Size",
+  "@panels.next.screenFile.fact.size": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.kind": "Kind",
+  "@panels.next.screenFile.fact.kind": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.length": "Length",
+  "@panels.next.screenFile.fact.length": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.loadAddress": "Load address",
+  "@panels.next.screenFile.fact.loadAddress": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.checksum": "Checksum",
+  "@panels.next.screenFile.fact.checksum": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.format": "Format",
+  "@panels.next.screenFile.fact.format": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.resolution": "Resolution",
+  "@panels.next.screenFile.fact.resolution": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.bytes": "Bytes",
+  "@panels.next.screenFile.fact.bytes": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.layout": "Layout",
+  "@panels.next.screenFile.fact.layout": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.colours": "Colours",
+  "@panels.next.screenFile.fact.colours": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.palette": "Palette",
+  "@panels.next.screenFile.fact.palette": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.position": "Position",
+  "@panels.next.screenFile.fact.position": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.cell": "Cell",
+  "@panels.next.screenFile.fact.cell": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.strip": "Strip",
+  "@panels.next.screenFile.fact.strip": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.pixelByte": "Pixel byte",
+  "@panels.next.screenFile.fact.pixelByte": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.bit": "Bit",
+  "@panels.next.screenFile.fact.bit": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.attribute": "Attribute",
+  "@panels.next.screenFile.fact.attribute": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.decoded": "Decoded",
+  "@panels.next.screenFile.fact.decoded": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.paletteIndex": "Palette index",
+  "@panels.next.screenFile.fact.paletteIndex": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.colour": "Colour",
+  "@panels.next.screenFile.fact.colour": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.byte": "Byte",
+  "@panels.next.screenFile.fact.byte": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.fileOffset": "File offset",
+  "@panels.next.screenFile.fact.fileOffset": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.address": "Address",
+  "@panels.next.screenFile.fact.address": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.half": "Half",
+  "@panels.next.screenFile.fact.half": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.indicesUsed": "Indices used",
+  "@panels.next.screenFile.fact.indicesUsed": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.brightCells": "BRIGHT cells",
+  "@panels.next.screenFile.fact.brightCells": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.brightStrips": "BRIGHT strips",
+  "@panels.next.screenFile.fact.brightStrips": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.flashCells": "FLASH cells",
+  "@panels.next.screenFile.fact.flashCells": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.fact.flashStrips": "FLASH strips",
+  "@panels.next.screenFile.fact.flashStrips": {
+    "context": "Label of a fact in the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). BRIGHT and FLASH are Sinclair BASIC keywords.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.next.screenFile.bytes": {
+    "context": "A size in bytes in the inspector of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "count": "The number of bytes"
+    }
+  },
+  "panels.next.screenFile.headerKind": "PLUS3DOS, {kind}",
+  "@panels.next.screenFile.headerKind": {
+    "context": "Kind of the 128-byte PLUS3DOS header in front of a file, in the screen file viewer. PLUS3DOS is the header's name; the kind is a BASIC file type (CODE, BASIC) or the picture NextZXOS's SAVE ... LAYER writes (LAYER 1, LAYER 2): keep both untranslated.",
+    "placeholders": {
+      "kind": "The header's type: CODE, BASIC, LAYER 1, LAYER 2, or #n"
+    }
+  },
+  "panels.next.screenFile.checksumValid": "valid",
+  "@panels.next.screenFile.checksumValid": {
+    "context": "Value of the Checksum fact of the PLUS3DOS header in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 12
+  },
+  "panels.next.screenFile.loadsElsewhere": "The header loads the file at {address}, not at the screen ({screen}).",
+  "@panels.next.screenFile.loadsElsewhere": {
+    "context": "Warning under the Header section of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) when a screen file's header names another load address.",
+    "placeholders": {
+      "address": "The header's load address, $8000",
+      "screen": "The screen's address, $4000"
+    }
+  },
+  "panels.next.screenFile.format.scr": "ZX Spectrum screen",
+  "@panels.next.screenFile.format.scr": {
+    "context": "Format fact and picture name in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file."
+  },
+  "panels.next.screenFile.format.shc": "Timex hi-colour screen",
+  "@panels.next.screenFile.format.shc": {
+    "context": "Format fact and picture name in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file."
+  },
+  "panels.next.screenFile.format.shr": "Timex hi-res screen",
+  "@panels.next.screenFile.format.shr": {
+    "context": "Format fact and picture name in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shr file."
+  },
+  "panels.next.screenFile.format.slr": "LoRes screen",
+  "@panels.next.screenFile.format.slr": {
+    "context": "Format fact and picture name in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .slr file (ZX Spectrum Next LoRes)."
+  },
+  "panels.next.screenFile.resolution.scr": "256×192, 32×24 cells",
+  "@panels.next.screenFile.resolution.scr": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file."
+  },
+  "panels.next.screenFile.resolution.shc": "256×192, an attribute per 8×1 strip",
+  "@panels.next.screenFile.resolution.shc": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file."
+  },
+  "panels.next.screenFile.resolution.shr": "512×192, one colour pair",
+  "@panels.next.screenFile.resolution.shr": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shr file."
+  },
+  "panels.next.screenFile.resolution.slr": "128×96, 8 bits a pixel",
+  "@panels.next.screenFile.resolution.slr": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .slr file."
+  },
+  "panels.next.screenFile.resolution.layer2Bits8": "{size}, 8 bits a pixel",
+  "@panels.next.screenFile.resolution.layer2Bits8": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 picture.",
+    "placeholders": {
+      "size": "The resolution, 256×192"
+    }
+  },
+  "panels.next.screenFile.resolution.layer2Bits4": "{size}, 4 bits a pixel",
+  "@panels.next.screenFile.resolution.layer2Bits4": {
+    "context": "Resolution fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a 640×256 Layer 2 picture.",
+    "placeholders": {
+      "size": "The resolution, 640×256"
+    }
+  },
+  "panels.next.screenFile.layout.scr": "6,144 pixels + 768 attributes",
+  "@panels.next.screenFile.layout.scr": {
+    "context": "Bytes fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file."
+  },
+  "panels.next.screenFile.layout.shc": "6,144 pixels ($4000) + 6,144 attributes ($6000)",
+  "@panels.next.screenFile.layout.shc": {
+    "context": "Bytes fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file. $4000 and $6000 are addresses: keep them."
+  },
+  "panels.next.screenFile.layout.shr": "2 × 6,144: each 16-pixel word's left byte at $4000, its right byte at $6000",
+  "@panels.next.screenFile.layout.shr": {
+    "context": "Bytes fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shr file. Keep the addresses."
+  },
+  "panels.next.screenFile.layout.slr": "2 × 6,144: rows 0-47 at $4000, rows 48-95 at $6000",
+  "@panels.next.screenFile.layout.slr": {
+    "context": "Bytes fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .slr file. Keep the addresses."
+  },
+  "panels.next.screenFile.layout.rows": "rows (row-major)",
+  "@panels.next.screenFile.layout.rows": {
+    "context": "Layout fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a 256×192 Layer 2 picture: its bytes go row by row."
+  },
+  "panels.next.screenFile.layout.columns": "columns (column-major)",
+  "@panels.next.screenFile.layout.columns": {
+    "context": "Layout fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a 320×256 or 640×256 Layer 2 picture: its bytes go column by column."
+  },
+  "panels.next.screenFile.layout.banks": "{bytes, number} in {banks} × 16K banks",
+  "@panels.next.screenFile.layout.banks": {
+    "context": "Bytes fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 picture.",
+    "placeholders": {
+      "bytes": "The picture's size in bytes",
+      "banks": "How many 16K banks it fills: 3 or 5"
+    }
+  },
+  "panels.next.screenFile.colours48k": "the 48K colours (the file has none)",
+  "@panels.next.screenFile.colours48k": {
+    "context": "Colours fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for .scr and .shc files."
+  },
+  "panels.next.screenFile.paletteFromFile": "from the file (512 bytes)",
+  "@panels.next.screenFile.paletteFromFile": {
+    "context": "Palette fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 file with its own palette."
+  },
+  "panels.next.screenFile.paletteDefault": "the Next's default (none in the file)",
+  "@panels.next.screenFile.paletteDefault": {
+    "context": "Palette fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a Layer 2 file with no palette."
+  },
+  "panels.next.screenFile.loresPaletteUla": "the Next's ULA palette (none in the file)",
+  "@panels.next.screenFile.loresPaletteUla": {
+    "context": "Palette fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a LoRes picture drawn with the ULA palette."
+  },
+  "panels.next.screenFile.loresPaletteRgb332": "RGB332 (none in the file)",
+  "@panels.next.screenFile.loresPaletteRgb332": {
+    "context": "Palette fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a LoRes picture drawn with the RGB332 palette."
+  },
+  "panels.next.screenFile.shrColours": "INK {ink} ({inkName}) on PAPER {paper} ({paperName}), chosen in the toolbar; on the machine, port $FF sets them",
+  "@panels.next.screenFile.shrColours": {
+    "context": "Colours fact in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shr file. INK, PAPER and $FF: keep them.",
+    "placeholders": {
+      "ink": "Ink colour number",
+      "inkName": "Ink colour name",
+      "paper": "Paper colour number",
+      "paperName": "Paper colour name"
+    }
+  },
+  "panels.next.screenFile.colour.black": "black",
+  "@panels.next.screenFile.colour.black": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.blue": "blue",
+  "@panels.next.screenFile.colour.blue": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.red": "red",
+  "@panels.next.screenFile.colour.red": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.magenta": "magenta",
+  "@panels.next.screenFile.colour.magenta": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.green": "green",
+  "@panels.next.screenFile.colour.green": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.cyan": "cyan",
+  "@panels.next.screenFile.colour.cyan": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.yellow": "yellow",
+  "@panels.next.screenFile.colour.yellow": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.colour.white": "white",
+  "@panels.next.screenFile.colour.white": {
+    "context": "A ZX Spectrum colour's name, lower case, in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.brightColour": "bright {colour}",
+  "@panels.next.screenFile.brightColour": {
+    "context": "A ZX Spectrum BRIGHT colour's name in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "colour": "The colour's name, lower case"
+    },
+    "maxChars": 18
+  },
+  "panels.next.screenFile.colourUseCells": "{colour}: INK in {ink} cells, PAPER in {paper}",
+  "@panels.next.screenFile.colourUseCells": {
+    "context": "Tooltip of a colour swatch in the Colours section of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file. INK and PAPER are BASIC keywords.",
+    "placeholders": {
+      "colour": "The colour's name",
+      "ink": "Cells using it as INK",
+      "paper": "Cells using it as PAPER"
+    }
+  },
+  "panels.next.screenFile.colourUseStrips": "{colour}: INK in {ink} strips, PAPER in {paper}",
+  "@panels.next.screenFile.colourUseStrips": {
+    "context": "Tooltip of a colour swatch in the Colours section of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file (an attribute per 8×1 strip).",
+    "placeholders": {
+      "colour": "The colour's name",
+      "ink": "Strips using it as INK",
+      "paper": "Strips using it as PAPER"
+    }
+  },
+  "panels.next.screenFile.swatchLegendCells": "top: normal · bottom: BRIGHT · number: cells",
+  "@panels.next.screenFile.swatchLegendCells": {
+    "context": "Legend under the colour swatches of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .scr file."
+  },
+  "panels.next.screenFile.swatchLegendStrips": "top: normal · bottom: BRIGHT · number: strips",
+  "@panels.next.screenFile.swatchLegendStrips": {
+    "context": "Legend under the colour swatches of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .shc file."
+  },
+  "panels.next.screenFile.none": "none",
+  "@panels.next.screenFile.none": {
+    "context": "Value of the FLASH cells fact of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) when no cell flashes.",
+    "maxChars": 10
+  },
+  "panels.next.screenFile.highlight": "highlight",
+  "@panels.next.screenFile.highlight": {
+    "context": "Link after the FLASH cells count in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): highlights the cells that blink.",
+    "maxChars": 12
+  },
+  "panels.next.screenFile.highlighted": "highlighted",
+  "@panels.next.screenFile.highlighted": {
+    "context": "The same link while the FLASH cells are highlighted (clicking it again stops).",
+    "maxChars": 14
+  },
+  "panels.next.screenFile.highlightFlashTitle": "Highlight the cells that blink on the machine",
+  "@panels.next.screenFile.highlightFlashTitle": {
+    "context": "Tooltip of the FLASH cells link of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.paletteEntry": "{index} = {value}",
+  "@panels.next.screenFile.paletteEntry": {
+    "context": "Tooltip of a palette entry in the Palette section of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "index": "The palette index, $E3",
+      "value": "Its 9-bit colour, $1C7"
+    }
+  },
+  "panels.next.screenFile.paletteEntryUnused": "{index} = {value} (not used)",
+  "@panels.next.screenFile.paletteEntryUnused": {
+    "context": "Tooltip of a palette entry the picture does not use.",
+    "placeholders": {
+      "index": "The palette index",
+      "value": "Its 9-bit colour"
+    }
+  },
+  "panels.next.screenFile.paletteLegend": "solid: used · outlined: not used",
+  "@panels.next.screenFile.paletteLegend": {
+    "context": "Legend under the palette grid of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi)."
+  },
+  "panels.next.screenFile.indicesUsed": "{used} of {total}",
+  "@panels.next.screenFile.indicesUsed": {
+    "context": "Value of the Indices used fact of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "used": "Palette entries the picture uses",
+      "total": "Entries it could use: 256, or 16 for a 4-bit picture"
+    }
+  },
+  "panels.next.screenFile.probe.xy": "x {x} y {y}",
+  "@panels.next.screenFile.probe.xy": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse.",
+    "placeholders": {
+      "x": "Pixel column",
+      "y": "Pixel row"
+    },
+    "maxChars": 16
+  },
+  "panels.next.screenFile.probe.cell": "cell {column},{row}",
+  "@panels.next.screenFile.probe.cell": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse.",
+    "placeholders": {
+      "column": "Cell column",
+      "row": "Cell row"
+    },
+    "maxChars": 16
+  },
+  "panels.next.screenFile.probe.pixel": "pixel",
+  "@panels.next.screenFile.probe.pixel": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse. Before the pixel byte's address.",
+    "maxChars": 8
+  },
+  "panels.next.screenFile.probe.attr": "attr",
+  "@panels.next.screenFile.probe.attr": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse. Before the attribute byte's address; short for attribute.",
+    "maxChars": 6
+  },
+  "panels.next.screenFile.probe.index": "index",
+  "@panels.next.screenFile.probe.index": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse. Before a palette index.",
+    "maxChars": 8
+  },
+  "panels.next.screenFile.probe.bank": "bank +{bank}",
+  "@panels.next.screenFile.probe.bank": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse. The 16K bank of the picture holding the pixel's byte.",
+    "placeholders": {
+      "bank": "Bank number within the picture, 0-4"
+    },
+    "maxChars": 10
+  },
+  "panels.next.screenFile.probe.byte": "byte",
+  "@panels.next.screenFile.probe.byte": {
+    "context": "Probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): one monospaced line under the picture describing the pixel under the mouse. Keep it terse. Before the address of the byte holding the pixel.",
+    "maxChars": 6
+  },
+  "panels.next.screenFile.cellAt": "column {column}, row {row}",
+  "@panels.next.screenFile.cellAt": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "column": "Cell column 0-31",
+      "row": "Cell row 0-23"
+    }
+  },
+  "panels.next.screenFile.stripAt": "8×1 at column {column}, row {row}",
+  "@panels.next.screenFile.stripAt": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). A hi-colour attribute covers 8×1 pixels.",
+    "placeholders": {
+      "column": "Strip column 0-31",
+      "row": "Pixel row 0-191"
+    }
+  },
+  "panels.next.screenFile.atFileOffset": "{address}, file +{offset}",
+  "@panels.next.screenFile.atFileOffset": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "address": "An address, $47B0, or address and value",
+      "offset": "The byte's offset in the file, hexadecimal"
+    }
+  },
+  "panels.next.screenFile.bitInk": "{bit} (ink)",
+  "@panels.next.screenFile.bitInk": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "bit": "Bit number 0-7, 7 the leftmost pixel"
+    }
+  },
+  "panels.next.screenFile.bitPaper": "{bit} (paper)",
+  "@panels.next.screenFile.bitPaper": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "bit": "Bit number 0-7"
+    }
+  },
+  "panels.next.screenFile.attrLong": "INK {ink} ({inkName}), PAPER {paper} ({paperName})",
+  "@panels.next.screenFile.attrLong": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). INK and PAPER are BASIC keywords.",
+    "placeholders": {
+      "ink": "Ink number",
+      "inkName": "Ink name",
+      "paper": "Paper number",
+      "paperName": "Paper name"
+    }
+  },
+  "panels.next.screenFile.attrLongFlags": "INK {ink} ({inkName}), PAPER {paper} ({paperName}), {flags}",
+  "@panels.next.screenFile.attrLongFlags": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). INK and PAPER are BASIC keywords.",
+    "placeholders": {
+      "ink": "Ink number",
+      "inkName": "Ink name",
+      "paper": "Paper number",
+      "paperName": "Paper name",
+      "flags": "BRIGHT and/or FLASH (keywords)"
+    }
+  },
+  "panels.next.screenFile.bankOffset": "bank +{bank}, {offset}",
+  "@panels.next.screenFile.bankOffset": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "bank": "Bank within the picture",
+      "offset": "Offset in the bank, $2F84"
+    }
+  },
+  "panels.next.screenFile.nibbleHigh": "high nibble",
+  "@panels.next.screenFile.nibbleHigh": {
+    "context": "After a Layer 2 640×256 pixel's byte in the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): the pixel is the byte's high 4 bits.",
+    "maxChars": 14
+  },
+  "panels.next.screenFile.nibbleLow": "low nibble",
+  "@panels.next.screenFile.nibbleLow": {
+    "context": "After a Layer 2 640×256 pixel's byte: the pixel is the byte's low 4 bits.",
+    "maxChars": 14
+  },
+  "panels.next.screenFile.loresTop": "{address} (top half)",
+  "@panels.next.screenFile.loresTop": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). A LoRes pixel in rows 0-47.",
+    "placeholders": {
+      "address": "The byte's address"
+    }
+  },
+  "panels.next.screenFile.loresBottom": "{address} (bottom half)",
+  "@panels.next.screenFile.loresBottom": {
+    "context": "Label of a fact in the Pixel section of the inspector column of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi). A LoRes pixel in rows 48-95.",
+    "placeholders": {
+      "address": "The byte's address"
+    }
+  },
+  "panels.next.screenFile.wordLeft": "left byte of word {word}",
+  "@panels.next.screenFile.wordLeft": {
+    "context": "Hi-res probe of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): the pixel's byte is the left one of a 16-pixel word.",
+    "placeholders": {
+      "word": "Word column 0-31"
+    }
+  },
+  "panels.next.screenFile.wordRight": "right byte of word {word}",
+  "@panels.next.screenFile.wordRight": {
+    "context": "Hi-res probe: the pixel's byte is the right one of a 16-pixel word.",
+    "placeholders": {
+      "word": "Word column 0-31"
+    }
+  },
+  "panels.next.screenFile.showBytes": "Show bytes",
+  "@panels.next.screenFile.showBytes": {
+    "context": "Action of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) (inspector File section, ⋯ menu, error card): opens the file in a memory dump.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.showBytesAtPin": "Show bytes, at the pinned pixel's byte",
+  "@panels.next.screenFile.showBytesAtPin": {
+    "context": "Tooltip of the Show bytes button of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) while a pixel is pinned."
+  },
+  "panels.next.screenFile.savePng": "Save as PNG…",
+  "@panels.next.screenFile.savePng": {
+    "context": "Action of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): saves the picture as a PNG file.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.savePngTitle": "Save the picture as PNG",
+  "@panels.next.screenFile.savePngTitle": {
+    "context": "Title of the file dialog the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) opens to save a PNG."
+  },
+  "panels.next.screenFile.copy": "Copy picture",
+  "@panels.next.screenFile.copy": {
+    "context": "Action of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi): copies the picture to the clipboard.",
+    "maxChars": 16
+  },
+  "panels.next.screenFile.copied": "Picture copied",
+  "@panels.next.screenFile.copied": {
+    "context": "Brief note in the probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) after Copy picture."
+  },
+  "panels.next.screenFile.copyFailed": "The picture could not be copied",
+  "@panels.next.screenFile.copyFailed": {
+    "context": "Brief note in the probe strip of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) when the clipboard refused the picture."
+  },
+  "panels.next.screenFile.errorTitle": "This file cannot be shown as a screen",
+  "@panels.next.screenFile.errorTitle": {
+    "context": "Title of the card the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) shows instead of a picture when the file has the wrong size."
+  },
+  "panels.next.screenFile.invalidSize": "It is {size, number} bytes long. A {extension} file is {expected, number} bytes, or {withHeader, number} with a 128-byte PLUS3DOS header.",
+  "@panels.next.screenFile.invalidSize": {
+    "context": "Message on the error card of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi).",
+    "placeholders": {
+      "size": "The file's size",
+      "extension": "The extension, .scr",
+      "expected": "The size the format needs",
+      "withHeader": "The same with the header"
+    }
+  },
+  "panels.next.screenFile.invalidSizeLayer2": "It is {size, number} bytes long. A Layer 2 picture is 49,152 bytes (256×192) or 81,920 bytes (320×256 or 640×256), either after a 512-byte palette, and any of them after a 128-byte PLUS3DOS header.",
+  "@panels.next.screenFile.invalidSizeLayer2": {
+    "context": "Message on the error card of the screen file viewer (the document that shows a ZX Spectrum or ZX Spectrum Next screen file: .scr, .slr, .shc, .shr, .sl2, .nxi) for a .sl2 or .nxi file.",
+    "placeholders": {
+      "size": "The file's size"
+    }
   }
 }

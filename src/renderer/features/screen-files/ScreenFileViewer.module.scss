@@ -1,0 +1,302 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The screen file viewer (`dev/plans/SCREEN_FILE_VIEWERS_PLAN.md`): a one-line toolbar, the picture
+ * on the stage beside a 34ch inspector, and the probe strip. The document lays itself out by its own
+ * width (D10): narrow, the inspector stacks under the stage with its sections side by side, and the
+ * toolbar's toggles fold into the `⋯` menu.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  // --- A size container takes no width from its content: the root sets its own (width above)
+  container-type: inline-size;
+  font-family: var(--main-font-family);
+  font-size: var(--panel-font-size);
+}
+
+// ─── Toolbar ─────────────────────────────────────────────────────────────────
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+}
+
+.note {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+}
+
+.separator {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 16px;
+  background: var(--border-default);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.more {
+  display: none;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--border-strong);
+  vertical-align: -1px;
+}
+
+// ─── Body: the stage and the inspector ──────────────────────────────────────
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34ch;
+  min-height: 0;
+}
+
+.stage {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bgcolor-screenfile-stage);
+}
+
+.stageContent {
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+
+.picture {
+  position: relative;
+  line-height: 0;
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: crosshair;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.inspector {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--space-2);
+}
+
+.path {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--monospace-font);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  margin: 0;
+  padding: var(--space-1) var(--space-3) var(--space-2);
+  color: var(--text-tertiary);
+}
+
+// ─── Probe strip ─────────────────────────────────────────────────────────────
+
+.probe {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  white-space: nowrap;
+
+  .hint {
+    padding: 0;
+    font-family: var(--main-font-family);
+  }
+}
+
+.pinMark {
+  color: var(--accent-text);
+}
+
+/** A value in the probe line or a fact */
+.v {
+  color: var(--color-state-value);
+}
+
+/** The line's second kind of number (an attribute byte beside its address) */
+.a {
+  color: var(--color-state-value-alt);
+}
+
+// ─── Colours ─────────────────────────────────────────────────────────────────
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  padding: var(--space-1) var(--space-3) var(--space-2);
+}
+
+.colour {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  height: 26px;
+  padding: 1px 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  @include focus-ring;
+
+  > span {
+    padding: 0 2px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+  }
+}
+
+.unused {
+  opacity: 0.28;
+}
+
+.selected {
+  outline: 2px solid var(--accent-solid);
+  outline-offset: 1px;
+}
+
+.legend {
+  padding: 0 var(--space-3) var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-50);
+}
+
+.link {
+  padding: 0 0 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--main-font-family);
+  @include focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// ─── Palette grid ───────────────────────────────────────────────────────────
+
+.paletteGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-1) var(--space-3) var(--space-2) var(--space-2);
+}
+
+.paletteRow {
+  display: grid;
+  grid-template-columns: 2ch repeat(16, minmax(0, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.paletteRowLabel {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-50);
+  text-align: right;
+  padding-right: 2px;
+}
+
+.paletteCell {
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.paletteUnused {
+  opacity: 0.7;
+}
+
+// ─── Layouts by the document's own width (D10) ─────────────────────────────
+
+@container (max-width: 100ch) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(20ch, 1fr) minmax(0, 45%);
+  }
+
+  .inspector {
+    border-top: 1px solid var(--border-default);
+    border-left: 0;
+  }
+
+  .sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30ch, 1fr));
+    align-items: start;
+  }
+}
+
+@container (max-width: 70ch) {
+  .foldable {
+    display: none;
+  }
+
+  .more {
+    display: inline-flex;
+  }
+}

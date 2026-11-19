@@ -1,14 +1,12 @@
 /**
  * What an unimplemented file viewer says.
  *
- * Six `.nex`-family viewers (`.SHC`, `.SHR`, `.SLR`, `.SL2`, `.VID`, `.NXI`) are headers
- * over nothing: opening one gave a title bar above an empty rectangle, with no indication that the
- * viewer does not exist yet rather than that the file failed to load.
+ * A viewer that does not exist yet (`.VID`) shows this rather than a title bar over an empty
+ * rectangle, which read as a file that failed to load. The screen formats that once said it
+ * (`.SHC`, `.SHR`, `.SLR`, `.SL2`, `.NXI`) are viewers now (`ScreenFileViewerPanels.tsx`).
  *
- * The words live here rather than in each panel because these seven are the app's strongest
- * candidate for a seventh being written by copying a sixth — which is exactly how the NEX
- * annotation dialog family drifted into three spellings of the same thing. One function, and the
- * seventh inherits the wording for free.
+ * The words live here rather than in each panel, so a new placeholder inherits them rather than
+ * copying them.
  */
 import { t } from "@common/i18n/i18n";
 

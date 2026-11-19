@@ -33,7 +33,7 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { useSelector } from "@renderer/core/RendererProvider";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { spectrumBankDumpId, spectrumBankDumpTitle } from "./spectrumBankDocument";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";

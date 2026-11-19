@@ -164,6 +164,8 @@ export const E2E_KBASIC_TESTS: string[] = [
  * cheaper. Exact paths, no globs, so a new test never lands here by accident.
  */
 export const E2E_SLOW_TESTS: string[] = [
+  // --- NextZXOS saving every layer from NextBASIC (45 s; `dev/plans/SCREEN_FILE_VIEWERS_PLAN.md` §8)
+  "test/zxnext-hw/sd/nextzxos-save-layer.test.ts",
   // --- The ZX Spectrum timing test kit: the community's test programs on the cores
   // --- (`dev/plans/SPECTRUM_ULA_ACCURACY_PLAN.md` Phase 0)
   "test/spectrum-kit/timing-tests-48k.test.ts",

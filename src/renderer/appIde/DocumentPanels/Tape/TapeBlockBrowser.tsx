@@ -16,7 +16,7 @@ import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { ZxSpectrumChars } from "@common/machines/char-codes";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { decodeBasicProgram } from "../basicListing";
-import { createScrPixelData } from "../Next/ScrFileViewerPanel";
+import { createScrPixelData } from "@common/screenFiles/zxScreen";
 import { TapeTimeline } from "./TapeTimeline";
 import { TapeHeaderBytes } from "./TapeHeaderBytes";
 import { uiLocale } from "@common/i18n/i18n";

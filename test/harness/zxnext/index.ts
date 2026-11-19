@@ -26,6 +26,8 @@ export {
 } from "./script/session";
 export { forEachProfile } from "./script/profiles";
 export { MemorySdCard, SD_SECTOR_BYTES, type SdCardBacking } from "./script/sd-card";
+export { bootNextZxos, nextZxosMenuShown, type NextZxosBoot } from "./script/nextzxos";
+export { nextSdBaseImage } from "./core/sdCards";
 export { type UartFrame, type UartIndex } from "./script/uart-peer";
 export { piI2sWord, type PiI2sSamples } from "./script/pi-i2s";
 export { type MouseButton, type MouseEvent } from "./script/mouse";
