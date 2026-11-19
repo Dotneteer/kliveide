@@ -1037,5 +1037,10 @@
   "@menu.next.nextRegisters": {
     "context": "Item of View › Machine Views on the ZX Spectrum Next: opens the Next Registers document.",
     "maxChars": 30
+  },
+  "menu.next.interruptTimeline": "Interrupt Timeline",
+  "@menu.next.interruptTimeline": {
+    "context": "Debug menu (ZX Spectrum Next): opens the Interrupt Timeline document, which records the machine's interrupt events and draws them over frames.",
+    "maxChars": 30
   }
 }

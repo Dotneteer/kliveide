@@ -16,6 +16,8 @@ static uint32_t zxnextNmiGetStacklessProcessed(void);
 static void zxnextNmiMarkAccepted(void);
 static void zxnextNmiAfterRetn(void);
 static uint32_t zxnextNmiAcceptCause(void);
+static void zxnextNmiSnapshot(uint8_t *o);
+static uint32_t zxnextNmiEventSource(void);
 static void zxnextNmiRequestMultiface(void);
 static void zxnextNmiRequestDivMmc(void);
 static void zxnextNmiBeforeOpcodeFetch(uint32_t pc);

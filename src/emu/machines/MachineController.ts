@@ -25,6 +25,8 @@ import type {
   SpriteWriteEvent
 } from "@common/messaging/EmuApi";
 import { describeSpriteStop } from "@common/zxnext/sprites/spriteBreakpoints";
+import { describeInterruptStop } from "@common/zxnext/interrupts/interruptStops";
+import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
 import {
   decodeCopperWord,
   formatCopperIndex,
@@ -2572,6 +2574,10 @@ export class MachineController implements IMachineController {
     const copperHit = (this.machine as { lastCopperHit?: CopperHitEvent }).lastCopperHit;
     if (copperHit) {
       return describeCopperStop(copperHit, this.machine.getPartitionLabels?.());
+    }
+    const interruptStop = (this.machine as { lastInterruptStop?: InterruptStopEvent }).lastInterruptStop;
+    if (interruptStop) {
+      return describeInterruptStop(interruptStop, this.machine.getPartitionLabels?.());
     }
     const spriteWrite = (this.machine as { lastSpriteWrite?: SpriteWriteEvent }).lastSpriteWrite;
     if (spriteWrite) {

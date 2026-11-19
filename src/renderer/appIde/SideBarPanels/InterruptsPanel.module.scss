@@ -1,0 +1,247 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Interrupts side-bar panel (NEXT_INTERRUPTS_DEBUGGING_PLAN §3). A `DataPanel`, so font, size and
+ * leading come from `Data.module.scss`; this file lays out the field rows, the diagnostics, the chain
+ * table and the footer. Widths are `ch` (M2); colours are L4 aliases (`--*-int-*`).
+ */
+.interruptsPanel {
+  padding-block: var(--space-1);
+}
+
+.fieldRow {
+  padding-inline: var(--space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  color: var(--data-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sectionHint {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* --- Diagnostics: a hint with its evidence, never an error dialog (D6) */
+.diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) var(--space-2);
+}
+
+.diag {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid var(--border-int-diag-info);
+  background-color: var(--bgcolor-int-diag-info);
+}
+
+.info {
+  border-left-color: var(--border-int-diag-info);
+  background-color: var(--bgcolor-int-diag-info);
+}
+
+.warning {
+  border-left-color: var(--border-int-diag-warning);
+  background-color: var(--bgcolor-int-diag-warning);
+}
+
+.error {
+  border-left-color: var(--border-int-diag-error);
+  background-color: var(--bgcolor-int-diag-error);
+}
+
+.diagTitle {
+  color: var(--text-primary);
+}
+
+.diagDetail {
+  color: var(--data-secondary);
+}
+
+/* --- The chain table: index, source, EN, ST, state, vector, handler, actions */
+.chainRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5ch 11ch 3ch 3ch 11ch 3ch minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.5ch;
+  padding-inline: var(--space-2);
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+
+  &:hover .actions {
+    display: flex;
+  }
+}
+
+.chainHeader {
+  color: var(--data-secondary);
+
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.idx {
+  color: var(--data-secondary);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip {
+  width: 1ch;
+  height: 1ch;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.laneLine { background-color: var(--color-int-lane-line); }
+.laneUartRx { background-color: var(--color-int-lane-uart-rx); }
+.laneCtc { background-color: var(--color-int-lane-ctc); }
+.laneUla { background-color: var(--color-int-lane-ula); }
+.laneUartTx { background-color: var(--color-int-lane-uart-tx); }
+
+.on {
+  color: var(--color-state-value);
+}
+
+.off {
+  color: var(--text-tertiary);
+}
+
+.stateIdle {
+  color: var(--text-tertiary);
+}
+
+.stateRequesting {
+  color: var(--color-int-requesting);
+}
+
+.stateInService {
+  color: var(--color-int-in-service);
+}
+
+.vector {
+  color: var(--color-state-value);
+}
+
+.handlerCell {
+  overflow: hidden;
+}
+
+.handler {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-state-value);
+  cursor: pointer;
+  text-decoration: underline dotted;
+
+  &:hover {
+    text-decoration-style: solid;
+  }
+
+  @include focus-ring;
+}
+
+.suspect {
+  color: var(--status-error);
+}
+
+/* The rows the blocker holds: hatched, the names dimmed */
+.blocked {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    var(--bgcolor-int-blocked) 6px 12px
+  );
+
+  .name,
+  .idx {
+    opacity: 0.6;
+  }
+}
+
+.blockBar {
+  margin-inline: var(--space-2);
+  padding-left: 5ch;
+  border-top: 1px dashed var(--border-int-blocker);
+  color: var(--color-int-requesting);
+}
+
+.reserved,
+.busRow {
+  opacity: 0.6;
+}
+
+/* Ring / Clear: shown on hover, only while paused (D5) */
+.actions {
+  position: absolute;
+  right: var(--space-2);
+  display: none;
+  gap: var(--space-1);
+}
+
+.action {
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background-color: var(--surface-raised);
+  padding: 0 var(--space-1);
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  @include focus-ring;
+}
+
+.footer {
+  margin-top: var(--space-1);
+  padding-inline: var(--space-2);
+  justify-content: space-between;
+}
+
+.summary {
+  color: var(--data-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include focus-ring;
+}

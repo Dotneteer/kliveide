@@ -4810,5 +4810,397 @@
   "panels.feature.memory.goToDisassemblyTitle": "An address of the listing; $ for hexadecimal with Dec on",
   "@panels.feature.memory.goToDisassemblyTitle": {
     "context": "Tooltip of the Go to box in a popped-out bank's disassembly view."
+  },
+  "panels.side.interrupts.notAvailable": "The interrupt state is not available",
+  "@panels.side.interrupts.notAvailable": {
+    "context": "Empty state of the ZX Spectrum Next Interrupts side-bar panel when no machine is running or it is not a Next."
+  },
+  "panels.side.interrupts.modeLabel": "Mode",
+  "@panels.side.interrupts.modeLabel": {
+    "context": "Row label in the Interrupts panel: how the Next drives the CPU's interrupt line (pulse mode or hardware IM2 mode).",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.modeTooltip": "NextReg $C0 bit 0: pulse mode shares one short /INT pulse between every source; hardware IM2 mode gives each source its own vector and a daisy chain",
+  "@panels.side.interrupts.modeTooltip": {
+    "context": "Tooltip of the Mode row in the Interrupts panel. '/INT' is the Z80's interrupt pin, 'IM2' a Z80 interrupt mode; keep both."
+  },
+  "panels.side.interrupts.mode.hwIm2": "Hardware IM2",
+  "@panels.side.interrupts.mode.hwIm2": {
+    "context": "Value of the Mode row: the ZX Spectrum Next's hardware IM2 mode (each interrupt source supplies its own vector). 'IM2' is a Z80 term, keep it.",
+    "maxChars": 20
+  },
+  "panels.side.interrupts.mode.pulse": "Pulse",
+  "@panels.side.interrupts.mode.pulse": {
+    "context": "Value of the Mode row: the Spectrum-compatible pulse mode, where every source shares one short interrupt pulse.",
+    "maxChars": 20
+  },
+  "panels.side.interrupts.cpuTooltip": "The CPU's interrupt mode and its two interrupt enable flip-flops",
+  "@panels.side.interrupts.cpuTooltip": {
+    "context": "Tooltip of the CPU row (IM, IFF1, IFF2) in the Interrupts panel."
+  },
+  "panels.side.interrupts.intTooltip": "The maskable interrupt line as the CPU sees it now",
+  "@panels.side.interrupts.intTooltip": {
+    "context": "Tooltip of the /INT row in the Interrupts panel."
+  },
+  "panels.side.interrupts.low": "low",
+  "@panels.side.interrupts.low": {
+    "context": "Value of the /INT row: the interrupt line is active (pulled low).",
+    "maxChars": 8
+  },
+  "panels.side.interrupts.high": "high",
+  "@panels.side.interrupts.high": {
+    "context": "Value of the /INT row: the interrupt line is inactive.",
+    "maxChars": 8
+  },
+  "panels.side.interrupts.pulseLength": "pulse {length} T",
+  "@panels.side.interrupts.pulseLength": {
+    "context": "Secondary text of the /INT row: how long a pulse-mode interrupt pulse lasts, in T-states ('T').",
+    "placeholders": {
+      "length": "The pulse length in CPU T-states: 32 or 36"
+    }
+  },
+  "panels.side.interrupts.vectors": "Vectors",
+  "@panels.side.interrupts.vectors": {
+    "context": "Row label in the Interrupts panel: the range of interrupt vectors the sources supply.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.vectorsTooltip": "In hardware IM2 mode a source's vector is NextReg $C0 bits 7-5, its index and a 0; in pulse mode the bus reads $FF",
+  "@panels.side.interrupts.vectorsTooltip": {
+    "context": "Tooltip of the Vectors row in the Interrupts panel."
+  },
+  "panels.side.interrupts.lastVector": "last {vector}",
+  "@panels.side.interrupts.lastVector": {
+    "context": "Secondary text of the Vectors row: the vector the last interrupt acknowledge read.",
+    "placeholders": {
+      "vector": "A hex byte, e.g. '$B6'"
+    }
+  },
+  "panels.side.interrupts.table": "Table",
+  "@panels.side.interrupts.table": {
+    "context": "Row label in the Interrupts panel: where the IM 2 vector table starts (I * 256 + the vector base), or the IM 1 handler address.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.tableTooltip": "Where the CPU reads a handler's address in IM 2: I * 256 + the vector",
+  "@panels.side.interrupts.tableTooltip": {
+    "context": "Tooltip of the Table row in the Interrupts panel. 'I' is the Z80 register, keep it."
+  },
+  "panels.side.interrupts.chain": "Daisy chain (priority order)",
+  "@panels.side.interrupts.chain": {
+    "context": "Section heading in the Interrupts panel: the fourteen interrupt sources, highest priority first."
+  },
+  "panels.side.interrupts.col.source": "Source",
+  "@panels.side.interrupts.col.source": {
+    "context": "Column heading of the interrupt chain table: the interrupt source (Line, CTC 0, ULA, ...).",
+    "maxChars": 10
+  },
+  "panels.side.interrupts.col.state": "State",
+  "@panels.side.interrupts.col.state": {
+    "context": "Column heading of the interrupt chain table: idle, requesting or in service.",
+    "maxChars": 10
+  },
+  "panels.side.interrupts.col.vector": "Vec",
+  "@panels.side.interrupts.col.vector": {
+    "context": "Column heading of the interrupt chain table: the source's interrupt vector byte. Very narrow column.",
+    "maxChars": 3
+  },
+  "panels.side.interrupts.col.handler": "Handler",
+  "@panels.side.interrupts.col.handler": {
+    "context": "Column heading of the interrupt chain table: the address of the source's interrupt handler read from the vector table.",
+    "maxChars": 10
+  },
+  "panels.side.interrupts.state.idle": "idle",
+  "@panels.side.interrupts.state.idle": {
+    "context": "Interrupt source state in the chain table: nothing requested.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.state.requesting": "requesting",
+  "@panels.side.interrupts.state.requesting": {
+    "context": "Interrupt source state in the chain table: it asked for an interrupt and waits to be taken.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.state.inService": "in service",
+  "@panels.side.interrupts.state.inService": {
+    "context": "Interrupt source state in the chain table: the CPU took it and its handler has not executed RETI yet.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.state.statusSet": "status set",
+  "@panels.side.interrupts.state.statusSet": {
+    "context": "Interrupt source state in pulse mode: its status bit is set (pulse mode has no chain states).",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.state.reserved": "reserved",
+  "@panels.side.interrupts.state.reserved": {
+    "context": "State of the CTC 4-7 row: these chain places exist but have no hardware and never fire.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.reservedTooltip": "CTC channels 4-7 have places in the chain but no hardware: they never fire",
+  "@panels.side.interrupts.reservedTooltip": {
+    "context": "Tooltip of the CTC 4-7 row in the Interrupts panel. 'CTC' is the timer chip's name, keep it."
+  },
+  "panels.side.interrupts.expansionBus": "Exp. bus",
+  "@panels.side.interrupts.expansionBus": {
+    "context": "Name of the expansion bus interrupt row (a peripheral on the edge connector), last in the chain. Narrow column.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.notEmulated": "not emulated",
+  "@panels.side.interrupts.notEmulated": {
+    "context": "State of the expansion bus row: Klive does not emulate devices on the expansion bus.",
+    "maxChars": 12
+  },
+  "panels.side.interrupts.blockedTooltip": "Blocked: {blocker} is in service above it",
+  "@panels.side.interrupts.blockedTooltip": {
+    "context": "Tooltip of a chain row the daisy chain holds back because a higher-priority source is still in service.",
+    "placeholders": {
+      "blocker": "The source in service, e.g. 'ULA' or 'Line'"
+    }
+  },
+  "panels.side.interrupts.blockBar": "{source} is in service: the sources below wait for its RETI",
+  "@panels.side.interrupts.blockBar": {
+    "context": "Divider under the highest-priority source in service in the chain table. 'RETI' is a Z80 instruction, keep it.",
+    "placeholders": {
+      "source": "The source in service, e.g. 'ULA'"
+    }
+  },
+  "panels.side.interrupts.handlerTooltip": "The word in the vector table for this source. Click to open the disassembly there.",
+  "@panels.side.interrupts.handlerTooltip": {
+    "context": "Tooltip of a handler address in the chain table."
+  },
+  "panels.side.interrupts.ring": "Ring",
+  "@panels.side.interrupts.ring": {
+    "context": "Small button on a chain row (paused machine only): requests this interrupt by writing NextReg $20, as a program can.",
+    "maxChars": 6
+  },
+  "panels.side.interrupts.ringTooltip": "Request this interrupt now: writes {bit} to NextReg $20 (ignores the enable)",
+  "@panels.side.interrupts.ringTooltip": {
+    "context": "Tooltip of the Ring button in the chain table.",
+    "placeholders": {
+      "bit": "The value written, a hex byte such as '$40'"
+    }
+  },
+  "panels.side.interrupts.clear": "Clear",
+  "@panels.side.interrupts.clear": {
+    "context": "Small button on a chain row (paused machine only): clears the source's status bit.",
+    "maxChars": 6
+  },
+  "panels.side.interrupts.clearTooltip": "Clear the status bit: writes {value} to NextReg {reg}",
+  "@panels.side.interrupts.clearTooltip": {
+    "context": "Tooltip of the Clear button in the chain table.",
+    "placeholders": {
+      "value": "The value written, a hex byte such as '$01'",
+      "reg": "The NextReg written, e.g. '$C8'"
+    }
+  },
+  "panels.side.interrupts.nmi.arbiter": "Arbiter",
+  "@panels.side.interrupts.nmi.arbiter": {
+    "context": "Row label in the NMI section: the state of the NMI arbiter (IDLE, FETCH, HOLD, END).",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.nmi.arbiterTooltip": "The NMI arbiter picks one source at a time and waits for its handler to finish",
+  "@panels.side.interrupts.nmi.arbiterTooltip": {
+    "context": "Tooltip of the NMI Arbiter row in the Interrupts panel."
+  },
+  "panels.side.interrupts.nmi.multiface": "Multiface",
+  "@panels.side.interrupts.nmi.multiface": {
+    "context": "The NMI's chosen device: the Multiface. A product name, keep it.",
+    "maxChars": 12
+  },
+  "panels.side.interrupts.nmi.divmmc": "DivMMC",
+  "@panels.side.interrupts.nmi.divmmc": {
+    "context": "The NMI's chosen device: the DivMMC. A product name, keep it.",
+    "maxChars": 12
+  },
+  "panels.side.interrupts.nmi.allowed": "Allowed",
+  "@panels.side.interrupts.nmi.allowed": {
+    "context": "Row label in the NMI section: whether the M1 and DRIVE buttons may raise an NMI.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.nmi.allowedTooltip": "NextReg $06 bits 3 (M1, Multiface) and 4 (DRIVE, DivMMC)",
+  "@panels.side.interrupts.nmi.allowedTooltip": {
+    "context": "Tooltip of the NMI Allowed row. 'M1' and 'DRIVE' are button names, keep them."
+  },
+  "panels.side.interrupts.nmi.ioTrap": "I/O trap",
+  "@panels.side.interrupts.nmi.ioTrap": {
+    "context": "Row label in the NMI section: the +3 disk port trap that raises a Multiface NMI.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.nmi.ioTrapTooltip": "NextReg $D8 bit 0: touching the +3's disk ports raises a Multiface NMI",
+  "@panels.side.interrupts.nmi.ioTrapTooltip": {
+    "context": "Tooltip of the NMI I/O trap row."
+  },
+  "panels.side.interrupts.nmi.stackless": "Stackless",
+  "@panels.side.interrupts.nmi.stackless": {
+    "context": "Row label in the NMI section: whether the stackless NMI (no return address on the stack) is on.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.nmi.stacklessTooltip": "NextReg $C0 bit 3: the NMI's return address goes to NextRegs $C2/$C3, not the stack",
+  "@panels.side.interrupts.nmi.stacklessTooltip": {
+    "context": "Tooltip of the NMI Stackless row."
+  },
+  "panels.side.interrupts.nmi.return": "Return",
+  "@panels.side.interrupts.nmi.return": {
+    "context": "Row label in the NMI section: the NMI return address recorded in NextRegs $C2/$C3.",
+    "maxChars": 11
+  },
+  "panels.side.interrupts.nmi.returnTooltip": "NextRegs $C2/$C3: recorded on every NMI",
+  "@panels.side.interrupts.nmi.returnTooltip": {
+    "context": "Tooltip of the NMI Return row."
+  },
+  "panels.side.interrupts.on": "on",
+  "@panels.side.interrupts.on": {
+    "context": "Value of an enable flag in the Interrupts panel: switched on.",
+    "maxChars": 5
+  },
+  "panels.side.interrupts.off": "off",
+  "@panels.side.interrupts.off": {
+    "context": "Value of an enable flag in the Interrupts panel: switched off.",
+    "maxChars": 5
+  },
+  "panels.side.interrupts.recording": "{count, plural, one {Timeline: # event recorded} other {Timeline: # events recorded}}",
+  "@panels.side.interrupts.recording": {
+    "context": "Footer of the Interrupts panel while the Interrupt Timeline records events.",
+    "placeholders": {
+      "count": "How many interrupt events were recorded since the last clear"
+    }
+  },
+  "panels.side.interrupts.notRecording": "Timeline: not recording",
+  "@panels.side.interrupts.notRecording": {
+    "context": "Footer of the Interrupts panel while the Interrupt Timeline does not record events."
+  },
+  "panels.side.interrupts.openTimeline": "Timeline",
+  "@panels.side.interrupts.openTimeline": {
+    "context": "Link in the Interrupts panel's footer that opens the Interrupt Timeline document.",
+    "maxChars": 12
+  },
+  "panels.side.interrupts.diag.im1.title": "Hardware IM2 mode is on, but the CPU is in IM {im}",
+  "@panels.side.interrupts.diag.im1.title": {
+    "context": "Diagnostic in the Interrupts panel. 'IM2'/'IM' are Z80 terms, keep them.",
+    "placeholders": {
+      "im": "The CPU's interrupt mode, 0 or 1"
+    }
+  },
+  "panels.side.interrupts.diag.im1.detail": "{count, plural, =0 {Only the ULA still rings, as a pulse. The other sources wait for IM 2.} one {Only the ULA still rings, as a pulse. # source is requesting and waits for IM 2.} other {Only the ULA still rings, as a pulse. # sources are requesting and wait for IM 2.}}",
+  "@panels.side.interrupts.diag.im1.detail": {
+    "context": "Explanation under the IM 1 diagnostic.",
+    "placeholders": {
+      "count": "How many sources are requesting"
+    }
+  },
+  "panels.side.interrupts.diag.stuck.title": "{source} is in service, but no handler is running",
+  "@panels.side.interrupts.diag.stuck.title": {
+    "context": "Diagnostic in the Interrupts panel: a source stays in service with no interrupt frame on the Call Stack.",
+    "placeholders": {
+      "source": "The interrupt source, e.g. 'ULA'"
+    }
+  },
+  "panels.side.interrupts.diag.stuck.detail": "Its handler most likely ended with RETN or RET, which release nothing. It and every source below it stay blocked until a RETI.",
+  "@panels.side.interrupts.diag.stuck.detail": {
+    "context": "Explanation under the stuck-source diagnostic. 'RETN', 'RET', 'RETI' are Z80 instructions, keep them."
+  },
+  "panels.side.interrupts.diag.waiting.title": "{source} is waiting behind {blocker}",
+  "@panels.side.interrupts.diag.waiting.title": {
+    "context": "Diagnostic in the Interrupts panel: a lower-priority source is requesting while a higher one is in service.",
+    "placeholders": {
+      "source": "The waiting source",
+      "blocker": "The source in service"
+    }
+  },
+  "panels.side.interrupts.diag.waiting.detail": "It rings as soon as {blocker}'s handler executes RETI.",
+  "@panels.side.interrupts.diag.waiting.detail": {
+    "context": "Explanation under the waiting diagnostic.",
+    "placeholders": {
+      "blocker": "The source in service"
+    }
+  },
+  "panels.side.interrupts.diag.hole.title": "{source}'s vector table entry is empty",
+  "@panels.side.interrupts.diag.hole.title": {
+    "context": "Diagnostic in the Interrupts panel: an enabled source's handler address in the IM 2 table is $0000 or $FFFF.",
+    "placeholders": {
+      "source": "The interrupt source"
+    }
+  },
+  "panels.side.interrupts.diag.hole.detail": "{address} holds {handler}: when it fires, the CPU jumps there.",
+  "@panels.side.interrupts.diag.hole.detail": {
+    "context": "Explanation under the empty vector table diagnostic.",
+    "placeholders": {
+      "address": "The table entry's address, e.g. '$BEA8'",
+      "handler": "The word it holds, '$0000' or '$FFFF'"
+    }
+  },
+  "panels.side.interrupts.diag.polled.title": "{count, plural, one {Polled mode: {sources}} other {Polled mode: {sources}}}",
+  "@panels.side.interrupts.diag.polled.title": {
+    "context": "Diagnostic in the Interrupts panel: sources whose status bit is set while their interrupt is off.",
+    "placeholders": {
+      "count": "How many sources",
+      "sources": "A comma-separated list of source names"
+    }
+  },
+  "panels.side.interrupts.diag.polled.detail": "Their status bits are set with the interrupt off. This is fine when the program polls NextRegs $C9/$CA.",
+  "@panels.side.interrupts.diag.polled.detail": {
+    "context": "Explanation under the polled-mode diagnostic."
+  },
+  "panels.side.interrupts.diag.lost.title": "{source}'s interrupt was lost in frame {frame}",
+  "@panels.side.interrupts.diag.lost.title": {
+    "context": "Diagnostic in the Interrupts panel (needs the Interrupt Timeline's recording): a pulse-mode interrupt ended before the CPU took it.",
+    "placeholders": {
+      "source": "The interrupt source",
+      "frame": "The frame number"
+    }
+  },
+  "panels.side.interrupts.diag.lost.detail": "The pulse ended while interrupts were disabled. Only its status bit remembers it.",
+  "@panels.side.interrupts.diag.lost.detail": {
+    "context": "Explanation under the lost interrupt diagnostic."
+  },
+  "panels.side.interrupts.diag.nmiStackless.title": "A stackless NMI is in progress",
+  "@panels.side.interrupts.diag.nmiStackless.title": {
+    "context": "Diagnostic in the Interrupts panel."
+  },
+  "panels.side.interrupts.diag.nmiStackless.detail": "Nothing was written to the stack. RETN returns to {address} from NextRegs $C2/$C3.",
+  "@panels.side.interrupts.diag.nmiStackless.detail": {
+    "context": "Explanation under the stackless NMI diagnostic.",
+    "placeholders": {
+      "address": "The return address, e.g. '$9015'"
+    }
+  },
+  "panels.side.breakpoints.title.interrupt": "Interrupt stop {target}",
+  "@panels.side.breakpoints.title.interrupt": {
+    "context": "First tooltip line of a ZX Spectrum Next interrupt stop in the Breakpoints panel.",
+    "placeholders": {
+      "target": "The stop's spec, e.g. 'INT:ACK:ULA' (syntax, not translated)"
+    }
+  },
+  "panels.side.breakpoints.title.interruptLog": "Interrupt logpoint {target}",
+  "@panels.side.breakpoints.title.interruptLog": {
+    "context": "First tooltip line of a ZX Spectrum Next interrupt stop that only logs (a logpoint).",
+    "placeholders": {
+      "target": "The stop's spec, e.g. 'INT:ACK:ULA' (syntax, not translated)"
+    }
+  },
+  "panels.side.breakpoints.interruptContract": "Stops right after the event: an acknowledge at the handler's first instruction, the others after the instruction that caused them. A condition reads the registers there.",
+  "@panels.side.breakpoints.interruptContract": {
+    "context": "Tooltip line of an interrupt stop in the Breakpoints panel: where the machine stops."
+  },
+  "panels.breakpointForm.interruptUnsupported": "Interrupt stops are supported on the ZX Spectrum Next only",
+  "@panels.breakpointForm.interruptUnsupported": {
+    "context": "Validation error in the breakpoint dialog when the Interrupt event type is used on another machine."
+  },
+  "panels.breakpointForm.interruptSource": "Pick a source from the list",
+  "@panels.breakpointForm.interruptSource": {
+    "context": "Validation error in the breakpoint dialog: the interrupt source is not one the stop accepts."
+  },
+  "panels.breakpointForm.interruptWait": "Enter a limit of 1 T-state or more, e.g. 228",
+  "@panels.breakpointForm.interruptWait": {
+    "context": "Validation error in the breakpoint dialog: the interrupt wait limit is missing or not a positive number."
+  },
+  "panels.side.interrupts.diag.disabled.title": "{count, plural, one {Interrupts are disabled while {sources} waits} other {Interrupts are disabled while {sources} wait}}",
+  "@panels.side.interrupts.diag.disabled.title": {
+    "context": "Diagnostic in the Interrupts panel: the CPU has interrupts disabled (IFF1 = 0), outside any handler, while sources are requesting.",
+    "placeholders": {
+      "count": "How many sources are requesting",
+      "sources": "Their names, comma-separated, e.g. 'Line, ULA'"
+    }
+  },
+  "panels.side.interrupts.diag.disabled.detail": "A handler most likely returned without EI: an acknowledge clears IFF1 and IFF2, and RETI or RETN copies IFF2 back to IFF1.",
+  "@panels.side.interrupts.diag.disabled.detail": {
+    "context": "Explanation under the interrupts-disabled diagnostic. 'EI', 'RETI', 'RETN', 'IFF1', 'IFF2' are Z80 terms, keep them."
   }
 }

@@ -7,6 +7,12 @@ import type { NextMachine, NextRtcOptions } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import type { NextProfileId } from "@emu/machines/zxNext/nextProfiles";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import {
+  decodeInterruptEvent,
+  decodeInterruptEvents,
+  type NextInterruptState,
+  type NextIntEvent
+} from "@common/zxnext/interrupts/interruptState";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
   CopperState,
@@ -1235,6 +1241,65 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getCopperState();
+  }
+
+  /**
+   * The interrupt system as the IDE's Interrupts panel reads it (`IZxNextIdeMachine.getInterruptState`,
+   * NEXT_INTERRUPTS_DEBUGGING_PLAN §3.2): each source's enable, status, pending and in-service bits and
+   * its vector table word, the modes, the CPU's IM/IFF/I, the NMI arbiter. No side effects.
+   */
+  interruptState(): NextInterruptState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getInterruptState();
+  }
+
+  /** Switches the interrupt event ring on or off, as the Interrupt Timeline document does (§4.1). */
+  recordInterrupts(on: boolean): this {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    m.setInterruptRecording(on);
+    return this;
+  }
+
+  /** Forgets the interrupt event ring's records. */
+  clearInterruptEvents(): this {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    m.clearInterruptEvents();
+    return this;
+  }
+
+  /** The interrupt events recorded since `since` (all held ones by default), decoded, oldest first. */
+  interruptEvents(since?: number): NextIntEvent[] {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return decodeInterruptEvents(m.getInterruptEvents(since));
+  }
+
+  /**
+   * Arms the core's interrupt-stop watch, as interrupt stops do (§5): the event kinds
+   * (`NextIntEventKind`), the chain sources an acknowledge must come from, the NMI devices (bit 0
+   * Multiface, 1 DivMMC, 2 other) and a WAIT limit in CPU T-states. No kinds disarms it. Clears a
+   * latched hit.
+   */
+  watchInterrupts({
+    kinds = [],
+    ackSources = [],
+    nmiSources = 0x07,
+    waitLimit = 0
+  }: { kinds?: number[]; ackSources?: number[]; nmiSources?: number; waitLimit?: number } = {}): this {
+    const kindMask = kinds.reduce((m, k) => m | (1 << k), 0);
+    const sourceMask = ackSources.reduce((m, s) => m | (1 << s), 0);
+    this.machine.wasmV2Runtime!.exports.zxnextSetIntWatch(kindMask, sourceMask, nmiSources, waitLimit);
+    return this;
+  }
+
+  /** The first watched interrupt event since last taken, or `undefined`. */
+  takeInterruptHit(): NextIntEvent | undefined {
+    const runtime = this.machine.wasmV2Runtime!;
+    if (!runtime.exports.zxnextTakeIntHit()) return undefined;
+    return decodeInterruptEvent(runtime.interruptHitRecord, 0, 0);
   }
 
   /**

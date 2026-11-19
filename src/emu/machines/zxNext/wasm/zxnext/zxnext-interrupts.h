@@ -16,6 +16,10 @@ static void zxnextInterruptsSetDaisyStatus(uint32_t index, uint32_t active);
 static void zxnextInterruptsSetDaisyEnabled(uint32_t index, uint32_t active);
 static uint32_t zxnextInterruptsShouldAcceptInt(void);
 static uint32_t zxnextInterruptsAcknowledge(void);
-static void zxnextInterruptsReti(void);
+static void zxnextInterruptsReti(uint32_t pc, uint32_t sp);
+static void zxnextInterruptsRetn(uint32_t pc, uint32_t sp);
+static void zxnextInterruptsCheckWait(uint32_t pc, uint32_t sp);
+static uint32_t zxnextInterruptsFirstInService(void);
+static uint32_t zxnextInterruptsSnapshot(void);
 
 #endif

@@ -1892,5 +1892,17 @@
   "commands.nextRegs.nextOnly": "The Next registers exist on the ZX Spectrum Next only",
   "@commands.nextRegs.nextOnly": {
     "context": "Error of the 'show-nextregs' IDE command when the current machine is not a ZX Spectrum Next."
+  },
+  "commands.interrupts.nextOnly": "The interrupt debugging views are available only on the ZX Spectrum Next",
+  "@commands.interrupts.nextOnly": {
+    "context": "Error of the 'show-int-timeline' command and of 'int:' breakpoints on a machine other than the Next."
+  },
+  "commands.interrupts.showTimelineDescription": "Displays the Interrupt Timeline and starts recording interrupt events",
+  "@commands.interrupts.showTimelineDescription": {
+    "context": "Description of the 'show-int-timeline' interactive command, shown by 'help'."
+  },
+  "commands.interrupts.hideTimelineDescription": "Hides the Interrupt Timeline and stops recording interrupt events",
+  "@commands.interrupts.hideTimelineDescription": {
+    "context": "Description of the 'hide-int-timeline' interactive command, shown by 'help'."
   }
 }

@@ -333,6 +333,17 @@ export type BreakpointInfo = {
   spriteAttrMask?: number;
 
   /**
+   * A ZX Spectrum Next **interrupt stop** (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §5): the
+   * interrupt event this breakpoint stops on, as the normalized spec after `int:` - `ack`, `ack:ula`,
+   * `lost`, `retn`, `reti`, `wait:300`, `nmi:divmmc` (`@common/zxnext/interrupts/interruptStops`).
+   *
+   * Like `spriteIndex`, the spec is the binding, the discriminator and the identity. Use
+   * `isInterruptStop` in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition and
+   * no gutter.
+   */
+  interruptStop?: string;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

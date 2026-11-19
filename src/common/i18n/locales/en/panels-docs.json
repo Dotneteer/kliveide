@@ -2559,5 +2559,413 @@
   "panels.doc.binViewer.goToTitle": "An offset in the file; $ for hexadecimal with Dec on",
   "@panels.doc.binViewer.goToTitle": {
     "context": "Tooltip of the binary file viewer's Go to box."
+  },
+  "panels.doc.intTimeline.notAvailable": "The interrupt events are not available",
+  "@panels.doc.intTimeline.notAvailable": {
+    "context": "Empty state of the ZX Spectrum Next Interrupt Timeline document when no Next is running."
+  },
+  "panels.doc.intTimeline.record": "Record:",
+  "@panels.doc.intTimeline.record": {
+    "context": "Switch label in the Interrupt Timeline's toolbar: record interrupt events or not.",
+    "maxChars": 12
+  },
+  "panels.doc.intTimeline.recordTitle": "Record interrupt events while the machine runs (only while this document is open)",
+  "@panels.doc.intTimeline.recordTitle": {
+    "context": "Tooltip of the Record switch in the Interrupt Timeline."
+  },
+  "panels.doc.intTimeline.clear": "Forget the recorded events",
+  "@panels.doc.intTimeline.clear": {
+    "context": "Tooltip of the trash button in the Interrupt Timeline's toolbar."
+  },
+  "panels.doc.intTimeline.prevFrame": "Previous frame",
+  "@panels.doc.intTimeline.prevFrame": {
+    "context": "Tooltip of the left arrow button in the Interrupt Timeline's toolbar."
+  },
+  "panels.doc.intTimeline.nextFrame": "Next frame",
+  "@panels.doc.intTimeline.nextFrame": {
+    "context": "Tooltip of the right arrow button in the Interrupt Timeline's toolbar."
+  },
+  "panels.doc.intTimeline.frame": "Frame {frame}",
+  "@panels.doc.intTimeline.frame": {
+    "context": "The frame shown, in the toolbar and over a frame in the chart.",
+    "placeholders": {
+      "frame": "The frame number"
+    },
+    "maxChars": 16
+  },
+  "panels.doc.intTimeline.frames": "Frames {first}-{last}",
+  "@panels.doc.intTimeline.frames": {
+    "context": "The frames shown when the view holds more than one.",
+    "placeholders": {
+      "first": "The first frame number",
+      "last": "The last frame number"
+    },
+    "maxChars": 20
+  },
+  "panels.doc.intTimeline.framePartial": "Frame {frame} · partial: older events overwritten",
+  "@panels.doc.intTimeline.framePartial": {
+    "context": "Label over the oldest frame in the chart when the event ring has overwritten its first events.",
+    "placeholders": {
+      "frame": "The frame number"
+    }
+  },
+  "panels.doc.intTimeline.follow": "Follow:",
+  "@panels.doc.intTimeline.follow": {
+    "context": "Switch label in the Interrupt Timeline's toolbar: always show the newest frames.",
+    "maxChars": 12
+  },
+  "panels.doc.intTimeline.followTitle": "Show the newest frames as they are recorded",
+  "@panels.doc.intTimeline.followTitle": {
+    "context": "Tooltip of the Follow switch in the Interrupt Timeline."
+  },
+  "panels.doc.intTimeline.framesInView": "Frames in view",
+  "@panels.doc.intTimeline.framesInView": {
+    "context": "Tooltip of the 1 / 2 / 4 frames buttons in the Interrupt Timeline."
+  },
+  "panels.doc.intTimeline.nFrames": "{count, plural, one {# frame} other {#}}",
+  "@panels.doc.intTimeline.nFrames": {
+    "context": "A button choosing how many frames the Interrupt Timeline shows: '1 frame', then just '2' and '4'.",
+    "placeholders": {
+      "count": "1, 2 or 4"
+    },
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.zoom": "Zoom inside the view",
+  "@panels.doc.intTimeline.zoom": {
+    "context": "Tooltip of the zoom buttons (All, ¼, 1/16) in the Interrupt Timeline."
+  },
+  "panels.doc.intTimeline.zoomAll": "All",
+  "@panels.doc.intTimeline.zoomAll": {
+    "context": "Zoom button: show the whole view (no zoom).",
+    "maxChars": 5
+  },
+  "panels.doc.intTimeline.lateOnly": "Late only:",
+  "@panels.doc.intTimeline.lateOnly": {
+    "context": "Switch label in the Interrupt Timeline's toolbar: show only interrupts taken later than the budget.",
+    "maxChars": 12
+  },
+  "panels.doc.intTimeline.lateOnlyTitle": "Show only the acknowledges that came more than {budget} T-states after their request",
+  "@panels.doc.intTimeline.lateOnlyTitle": {
+    "context": "Tooltip of the Late only switch.",
+    "placeholders": {
+      "budget": "The latency budget in T-states, 41"
+    }
+  },
+  "panels.doc.intTimeline.heldTitle": "What the event ring holds: it keeps the newest 65,536 events, so a busy program keeps fewer frames",
+  "@panels.doc.intTimeline.heldTitle": {
+    "context": "Tooltip of the held-frames summary in the Interrupt Timeline's toolbar."
+  },
+  "panels.doc.intTimeline.empty": "No events recorded",
+  "@panels.doc.intTimeline.empty": {
+    "context": "Toolbar summary while the event ring is empty."
+  },
+  "panels.doc.intTimeline.held": "Held: frames {first}-{last} ({frames}) · {used} / {capacity} events",
+  "@panels.doc.intTimeline.held": {
+    "context": "Toolbar summary: which frames the event ring holds, and how full it is.",
+    "placeholders": {
+      "first": "The oldest frame",
+      "last": "The newest frame",
+      "frames": "How many frames",
+      "used": "Events held",
+      "capacity": "The ring's capacity, 65536"
+    }
+  },
+  "panels.doc.intTimeline.heldWrapped": "Held: frames {first}-{last} ({frames}) · {used} / {capacity} events, the oldest overwritten",
+  "@panels.doc.intTimeline.heldWrapped": {
+    "context": "Toolbar summary when the event ring is full and has overwritten older events.",
+    "placeholders": {
+      "first": "The oldest complete frame",
+      "last": "The newest frame",
+      "frames": "How many complete frames",
+      "used": "Events held",
+      "capacity": "The ring's capacity, 65536"
+    }
+  },
+  "panels.doc.intTimeline.waiting": "Recording: run the machine to see its interrupts",
+  "@panels.doc.intTimeline.waiting": {
+    "context": "Empty state of the Interrupt Timeline while it records but nothing happened yet."
+  },
+  "panels.doc.intTimeline.paused": "Recording is off",
+  "@panels.doc.intTimeline.paused": {
+    "context": "Empty state of the Interrupt Timeline with recording switched off and no events."
+  },
+  "panels.doc.intTimeline.chartLabel": "Interrupt timeline: one lane per interrupt source",
+  "@panels.doc.intTimeline.chartLabel": {
+    "context": "Accessible label of the swimlane chart."
+  },
+  "panels.doc.intTimeline.legend": "▲ request   ● acknowledge (red: late)   ◆ return   ✕ lost / RETN / ignored RETI   hatched: in service, interrupted",
+  "@panels.doc.intTimeline.legend": {
+    "context": "Legend under the swimlane chart. Keep the symbols; 'RETN'/'RETI' are Z80 instructions."
+  },
+  "panels.doc.intTimeline.lane.main": "Main program",
+  "@panels.doc.intTimeline.lane.main": {
+    "context": "Lane label in the chart: the code that runs when no interrupt handler does.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.line": "Line",
+  "@panels.doc.intTimeline.lane.line": {
+    "context": "Lane label: the line interrupt.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.uartRx": "UART Rx",
+  "@panels.doc.intTimeline.lane.uartRx": {
+    "context": "Lane label: both UARTs' receive interrupts. 'UART' is a chip name, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.ctc": "CTC",
+  "@panels.doc.intTimeline.lane.ctc": {
+    "context": "Lane label: the CTC timer channels' interrupts. 'CTC' is a chip name, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.ula": "ULA",
+  "@panels.doc.intTimeline.lane.ula": {
+    "context": "Lane label: the ULA's frame interrupt. 'ULA' is a chip name, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.uartTx": "UART Tx",
+  "@panels.doc.intTimeline.lane.uartTx": {
+    "context": "Lane label: both UARTs' transmit interrupts.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.lane.nmi": "NMI",
+  "@panels.doc.intTimeline.lane.nmi": {
+    "context": "Lane label: the non-maskable interrupt. A Z80 term, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.kind.request": "request",
+  "@panels.doc.intTimeline.kind.request": {
+    "context": "Event kind in the list: a source asked for an interrupt.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.ack": "acknowledge",
+  "@panels.doc.intTimeline.kind.ack": {
+    "context": "Event kind: the CPU took the interrupt and its handler starts.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.end": "return",
+  "@panels.doc.intTimeline.kind.end": {
+    "context": "Event kind: the handler returned to the code it interrupted.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.reti": "RETI",
+  "@panels.doc.intTimeline.kind.reti": {
+    "context": "Event kind: a RETI released the source in service. A Z80 instruction, keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.retiIgnored": "RETI ignored",
+  "@panels.doc.intTimeline.kind.retiIgnored": {
+    "context": "Event kind: a RETI executed outside IM 2 released nothing.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.retnInService": "RETN in ISR",
+  "@panels.doc.intTimeline.kind.retnInService": {
+    "context": "Event kind: a RETN while a maskable source was in service; it releases nothing. 'ISR' = interrupt service routine.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.lost": "lost",
+  "@panels.doc.intTimeline.kind.lost": {
+    "context": "Event kind: a pulse-mode interrupt ended before the CPU took it.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.wait": "waited too long",
+  "@panels.doc.intTimeline.kind.wait": {
+    "context": "Event kind: a request waited longer than an interrupt stop's limit.",
+    "maxChars": 16
+  },
+  "panels.doc.intTimeline.kind.nmi": "NMI",
+  "@panels.doc.intTimeline.kind.nmi": {
+    "context": "Event kind: the CPU took a non-maskable interrupt.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.kind.nmiEnd": "NMI RETN",
+  "@panels.doc.intTimeline.kind.nmiEnd": {
+    "context": "Event kind: the NMI handler's RETN.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.selection": "Selection",
+  "@panels.doc.intTimeline.selection": {
+    "context": "Heading of the pane that shows the selected event's details."
+  },
+  "panels.doc.intTimeline.selectHint": "Click an event on the timeline or in the list.",
+  "@panels.doc.intTimeline.selectHint": {
+    "context": "The selection pane's text when nothing is selected."
+  },
+  "panels.doc.intTimeline.info.event": "Event",
+  "@panels.doc.intTimeline.info.event": {
+    "context": "Label in the selection pane: the source and kind of the event.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.frame": "Frame",
+  "@panels.doc.intTimeline.info.frame": {
+    "context": "Label in the selection pane.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.tState": "Frame T",
+  "@panels.doc.intTimeline.info.tState": {
+    "context": "Label in the selection pane: when in the frame, in 3.5 MHz T-states (the frame's own clock, whatever the CPU speed).",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.beam": "Beam",
+  "@panels.doc.intTimeline.info.beam": {
+    "context": "Label in the selection pane: where the display beam was.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.pc": "PC",
+  "@panels.doc.intTimeline.info.pc": {
+    "context": "Label in the selection pane: the program counter. A register name, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.sp": "SP",
+  "@panels.doc.intTimeline.info.sp": {
+    "context": "Label in the selection pane: the stack pointer. A register name, keep it.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.vector": "Vector",
+  "@panels.doc.intTimeline.info.vector": {
+    "context": "Label in the selection pane: the interrupt vector read.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.latency": "Latency",
+  "@panels.doc.intTimeline.info.latency": {
+    "context": "Label in the selection pane: T-states from the request to the handler's start.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.interrupted": "Interrupted",
+  "@panels.doc.intTimeline.info.interrupted": {
+    "context": "Label in the selection pane: the address the interrupt interrupted.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.info.ran": "Handler ran",
+  "@panels.doc.intTimeline.info.ran": {
+    "context": "Label in the selection pane: how long the handler took.",
+    "maxChars": 13
+  },
+  "panels.doc.intTimeline.beamValue": "line {line}, HC {hc}",
+  "@panels.doc.intTimeline.beamValue": {
+    "context": "The beam position in the selection pane. 'HC' is the horizontal counter, keep it.",
+    "placeholders": {
+      "line": "The raster line",
+      "hc": "The horizontal position"
+    }
+  },
+  "panels.doc.intTimeline.latencyT": "{t} T",
+  "@panels.doc.intTimeline.latencyT": {
+    "context": "A duration in T-states.",
+    "placeholders": {
+      "t": "A number of T-states"
+    }
+  },
+  "panels.doc.intTimeline.pulse": "pulse",
+  "@panels.doc.intTimeline.pulse": {
+    "context": "In place of a vector: the interrupt came through pulse mode (no vector of its own).",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.software": "NextReg $20",
+  "@panels.doc.intTimeline.software": {
+    "context": "Detail of a request raised by a program writing NextReg $20. Keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.statusSet": "status set",
+  "@panels.doc.intTimeline.statusSet": {
+    "context": "Detail of a hardware request: its status bit was set and the interrupt is enabled.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.disabled": "disabled",
+  "@panels.doc.intTimeline.disabled": {
+    "context": "Detail of a request whose interrupt is switched off: only its status bit was set.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.goInterrupted": "Go to the interrupted code",
+  "@panels.doc.intTimeline.goInterrupted": {
+    "context": "Link in the selection pane: opens the disassembly at the interrupted address."
+  },
+  "panels.doc.intTimeline.goPc": "Go to PC",
+  "@panels.doc.intTimeline.goPc": {
+    "context": "Link in the selection pane: opens the disassembly at the event's PC."
+  },
+  "panels.doc.intTimeline.latencyTitle": "{frames, plural, one {Latency over # frame} other {Latency over # frames}}",
+  "@panels.doc.intTimeline.latencyTitle": {
+    "context": "Heading of the latency table: request to handler start, over the complete frames held.",
+    "placeholders": {
+      "frames": "How many complete frames"
+    }
+  },
+  "panels.doc.intTimeline.budget": "Budget: up to 22 T for the running instruction and 19 T of IM 2 acknowledge, {budget} T in all. More means the source waited behind the chain or DI.",
+  "@panels.doc.intTimeline.budget": {
+    "context": "Note under the latency table. 'IM 2', 'DI' and 'T' (T-states) are Z80 terms, keep them.",
+    "placeholders": {
+      "budget": "The budget in T-states, 41"
+    }
+  },
+  "panels.doc.intTimeline.eventsTitle": "Events in view",
+  "@panels.doc.intTimeline.eventsTitle": {
+    "context": "Heading of the event list."
+  },
+  "panels.doc.intTimeline.more": "{count, plural, one {… and # more event} other {… and # more events}}",
+  "@panels.doc.intTimeline.more": {
+    "context": "Under the event list when it shows only the first rows.",
+    "placeholders": {
+      "count": "How many rows are not shown"
+    }
+  },
+  "panels.doc.intTimeline.col.source": "Source",
+  "@panels.doc.intTimeline.col.source": {
+    "context": "Column heading: the interrupt source.",
+    "maxChars": 10
+  },
+  "panels.doc.intTimeline.col.taken": "Taken",
+  "@panels.doc.intTimeline.col.taken": {
+    "context": "Column heading of the latency table: how many interrupts were taken.",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.col.min": "Min",
+  "@panels.doc.intTimeline.col.min": {
+    "context": "Column heading: the smallest latency.",
+    "maxChars": 6
+  },
+  "panels.doc.intTimeline.col.avg": "Avg",
+  "@panels.doc.intTimeline.col.avg": {
+    "context": "Column heading: the average latency.",
+    "maxChars": 6
+  },
+  "panels.doc.intTimeline.col.max": "Max",
+  "@panels.doc.intTimeline.col.max": {
+    "context": "Column heading: the largest latency.",
+    "maxChars": 6
+  },
+  "panels.doc.intTimeline.col.jitter": "Jitter",
+  "@panels.doc.intTimeline.col.jitter": {
+    "context": "Column heading: max minus min latency.",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.col.late": "Late",
+  "@panels.doc.intTimeline.col.late": {
+    "context": "Column heading: how many were over the budget.",
+    "maxChars": 6
+  },
+  "panels.doc.intTimeline.col.frame": "Frame",
+  "@panels.doc.intTimeline.col.frame": {
+    "context": "Column heading of the event list.",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.col.tState": "Frame T",
+  "@panels.doc.intTimeline.col.tState": {
+    "context": "Column heading of the event list: when in the frame, in 3.5 MHz T-states (the frame's own clock, whatever the CPU speed).",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.col.beam": "Beam",
+  "@panels.doc.intTimeline.col.beam": {
+    "context": "Column heading of the event list: line:HC.",
+    "maxChars": 8
+  },
+  "panels.doc.intTimeline.col.event": "Event",
+  "@panels.doc.intTimeline.col.event": {
+    "context": "Column heading of the event list: the event's kind.",
+    "maxChars": 14
+  },
+  "panels.doc.intTimeline.col.detail": "Detail",
+  "@panels.doc.intTimeline.col.detail": {
+    "context": "Column heading of the event list.",
+    "maxChars": 14
   }
 }

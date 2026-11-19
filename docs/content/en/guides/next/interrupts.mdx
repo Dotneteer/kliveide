@@ -1,0 +1,155 @@
+---
+description: "See and debug the ZX Spectrum Next's interrupts: the daisy chain at a pause in the Interrupts panel, the events over frames in the Interrupt Timeline, and interrupt stops."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Debugging Interrupts
+
+The ZX Spectrum Next has fourteen maskable interrupt sources in a daisy chain, a pulse mode and a
+hardware IM2 mode, and an NMI with its own arbiter. When an interrupt does not fire, fires late or
+fires once and never again, the cause is in state the Z80 registers do not show. Klive shows it in three
+places: the **Interrupts** panel for the state at a pause, the **Interrupt Timeline** for what happened
+over the last frames, and **interrupt stops** that pause the machine on an interrupt event.
+
+*Applies to: ZX Spectrum Next.*
+
+## Finding out why an interrupt does not fire
+
+<Steps>
+
+### Pause where it should have fired
+
+Run the program in debug mode and pause it where the interrupt should have run.
+
+### Open the Interrupts panel
+
+Open the Debug activity and expand the **Interrupts** header, below **Copper**.
+
+### Read the diagnostics
+
+The boxes under the mode rows name the usual causes with their evidence: a source stuck in service
+because its handler ended with `RETN`, interrupts left disabled by a handler that returned without
+`EI`, hardware IM2 mode with the CPU still in IM 1, or an empty vector table entry.
+
+### Read the chain
+
+Find your source's row. **requesting** means it waits to be taken; if the rows from it down are
+hatched, a higher-priority source is still in service and the divider under that source says so.
+**EN** 0 means the source's interrupt is off; **ST** 1 with **EN** 0 is polled mode.
+
+</Steps>
+
+<Shot src="guides/next/interrupts/interrupts-panel.webp" alt="The Interrupts panel, paused in the line interrupt's handler nested inside the ULA's: Line and ULA in service, the sources between them and below hatched" caption="Stopped in the line interrupt's handler, which runs inside the ULA's: both are in service, and every source below the line interrupt waits for its RETI." width={380} />
+
+## The Interrupts Panel
+
+| Row | Shows |
+|---|---|
+| **Mode** | **Hardware IM2** or **Pulse** (NextReg `$C0` bit 0). |
+| **CPU** | The CPU's interrupt mode and its IFF1 and IFF2 flip-flops. |
+| **/INT** | Whether the interrupt line is low now, and the pulse length (32 or 36 T-states). |
+| **Vectors** | In hardware IM2 mode, the vectors the sources supply (`$C0` bits 7-5) and the last one read; `$FF` in pulse mode. |
+| **Table** | In IM 2, where the CPU reads handler addresses (`I` × 256 + the vector base); `$0038` in IM 1. |
+
+**The daisy chain** lists the sources in priority order, the line interrupt first: the index, the
+source, its enable (**EN**, NextRegs `$C4`-`$C6`), its status bit (**ST**, `$C8`-`$CA`), its state
+(**idle**, **requesting**, **in service**), its vector, and in IM 2 the **Handler** word read from the
+vector table. Click a handler address to open the disassembly there. CTC channels 4-7 have places in
+the chain but no hardware, so they share one **reserved** row.
+
+While the machine is paused, hovering a row shows two buttons:
+
+- **Ring** requests the interrupt by writing NextReg `$20`, as a program can. It ignores the enable.
+  Available for the line interrupt, the ULA and CTC channels 0-3.
+- **Clear** clears the source's status bit by writing a 1 to `$C8`-`$CA`.
+
+Both are real writes to the machine: the Next Registers panel shows them like a program's.
+
+**NMI** shows the NMI arbiter's state (IDLE, FETCH, HOLD, END) and the device it chose, whether the M1
+and DRIVE buttons may raise an NMI (`$06` bits 3 and 4), the +3 disk port trap (`$D8` bit 0), the
+stackless NMI (`$C0` bit 3) and the return address in `$C2`/`$C3`.
+
+## Watching interrupts over time
+
+<Steps>
+
+### Open the Interrupt Timeline
+
+Use **Debug › Interrupt Timeline**, the Interrupts panel's **Timeline** link, or the
+`show-int-timeline` command. The document records interrupt events while it is open.
+
+### Run the program
+
+Let it run for a few frames, then pause it. With **Follow** on, the document shows the newest frames.
+
+### Read the lanes
+
+Each source has a lane, with the main program at the top. A solid bar is a handler running; a hatched
+bar is a handler in service while a nested one runs. ▲ marks a request, ● an acknowledge (late ones are
+highlighted), ◆ a return, ✕ a lost interrupt or a return that released nothing.
+
+### Look at one event
+
+Click a marker or a row of the event list. The **Selection** pane shows the frame, the beam position,
+the latency from the request, the interrupted address and how long the handler ran.
+
+</Steps>
+
+<Shot src="guides/next/interrupts/interrupt-timeline.webp" alt="The Interrupt Timeline over two frames: the ULA's handler bar in each frame with the line interrupt's short handler nested inside it, and the latency table below" caption="Two frames of a program whose line interrupt rings inside the ULA's handler. The latency table compares every acknowledge with the budget." width={900} />
+
+Drag the splitter between the chart and the tables to give either more room; the lanes follow the
+chart's height, and the document remembers the position. The toolbar picks **1**, **2** or **4** frames in view, zooms inside the view (**All**, **¼**, **1/16**),
+and with **Late only** shows only the acknowledges that came later than the budget. The trash button
+forgets the recorded events.
+
+**How many frames the timeline holds** depends on the program. The recorder keeps the newest 65,536
+events, so a program with a frame interrupt and two line interrupts keeps thousands of frames, while a
+sample player with a CTC interrupt on every raster line keeps about seventy. The toolbar's summary says
+which frames are held. When the recorder is full, the oldest frame has lost its first events: it is
+labelled **partial**, its lost part is hatched, and it is left out of the latency table.
+
+**Latency** is counted from the request to the handler's first instruction, in the CPU's own T-states
+at its speed at the time. The budget is 41 T: up to 22 T to finish the running instruction and 19 T for
+the IM 2 acknowledge. A latency above it means the source waited behind the chain or a `DI`.
+
+<Callout type="info">
+Frame positions (the **Frame T** column and the axis) are in 3.5 MHz T-states, the frame's own clock,
+whatever the CPU speed. Latencies and handler times are in the CPU's T-states.
+</Callout>
+
+## Stopping on an interrupt
+
+An interrupt stop is a breakpoint bound to an interrupt event. Add one in the Breakpoints panel's
+dialog with the **Interrupt event** type, or with `bp-set`:
+
+| Spec | Stops when |
+|---|---|
+| `int:ack`, `int:ack:<source>` | the CPU takes an interrupt (from that source), at the handler's first instruction |
+| `int:lost`, `int:lost:<source>` | a pulse-mode interrupt ends before the CPU takes it |
+| `int:retn` | a `RETN` executes while a maskable source is in service: nothing is released |
+| `int:reti` | a `RETI` executes outside IM 2 while a source is in service: nothing is released |
+| `int:wait:<T>`, `int:wait:<T>:<source>` | a request waits longer than T T-states before it is taken |
+| `int:nmi`, `int:nmi:multiface`, `int:nmi:divmmc` | the CPU takes an NMI |
+
+The sources are `line`, `uart0rx`, `uart1rx`, `ctc0`-`ctc3`, `ula`, `uart0tx` and `uart1tx`. For
+example, `bp-set int:ack:line` stops every time the line interrupt's handler starts, and
+`bp-set int:wait:228:ula` stops when the frame interrupt has waited more than a raster line.
+
+Interrupt stops take conditions, hit counts and log messages like other breakpoints; a condition reads
+the registers where the machine stops. The Emulator output pane names the event, for example
+`Interrupt stop: Line taken (vector $A0), interrupting $9005 in 04`.
+
+<Shot src="guides/next/interrupts/interrupt-stop.webp" alt="The breakpoint dialog with the Interrupt event type, Stop when An interrupt is taken, From Line" caption="An interrupt stop in the breakpoint dialog." width={480} />
+
+<Callout type="info">
+With several `int:wait` stops, the machine checks every waiting request against the smallest limit,
+so each of them stops at that limit.
+</Callout>
+
+## Related
+
+- [Interrupts: Fourteen Voices, Two Wires](/en/under-the-hood/emulator-internals/next-interrupts/)
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [The Copper view](/en/guides/next/copper/)

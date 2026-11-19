@@ -37,6 +37,7 @@ import {
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   COPPER_EDITOR,
+  INT_TIMELINE_EDITOR,
   NEXTREGS_EDITOR,
   HISTORY_EDITOR,
   PROFILER_EDITOR,
@@ -65,6 +66,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
+import { createInterruptTimelinePanel } from "./appIde/DocumentPanels/InterruptTimeline/InterruptTimelinePanel";
 import { createNextRegDocumentPanel } from "./appIde/DocumentPanels/NextRegs/NextRegDocumentPanel";
 import { createExecutionHistoryPanel } from "./appIde/DocumentPanels/ExecutionHistoryPanel";
 import { createProfilerPanel } from "./appIde/DocumentPanels/ProfilerPanel";
@@ -208,6 +210,7 @@ import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { NextRegPanel, NextRegPanelActions } from "./appIde/SideBarPanels/NextRegPanel";
 import { CopperPanel } from "./appIde/SideBarPanels/CopperPanel";
+import { InterruptsPanel } from "./appIde/SideBarPanels/InterruptsPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
 import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
@@ -317,6 +320,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: CopperPanel,
     restrictTo: [MI_ZXNEXT]
   },
+  withTexts({
+    // --- Beside the Copper (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §3)
+    id: "nextInterruptsPanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: InterruptsPanel,
+    restrictTo: [MI_ZXNEXT]
+  }, { title: "panels.sideBar.interrupts" }),
   {
     id: "ulaPanel",
     title: "ULA & I/O",
@@ -516,6 +526,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: COPPER_EDITOR,
     renderer: createCopperListPanel,
     icon: "bp-copper"
+  },
+  {
+    id: INT_TIMELINE_EDITOR,
+    renderer: createInterruptTimelinePanel,
+    icon: "int-timeline"
   },
   {
     // --- The Next Registers panel popped out into a document

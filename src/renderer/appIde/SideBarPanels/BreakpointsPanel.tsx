@@ -73,10 +73,13 @@ import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
 import {
   isCopperBreakpoint,
+  isInterruptStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint,
   spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
+import { interruptStopOf, matchesInterruptStop } from "@common/zxnext/interrupts/interruptStops";
+import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
 import {
   describeSpriteWriteOrigin,
   formatSpriteAttrList,
@@ -134,6 +137,17 @@ const copperHitOf = (state?: CpuState): CopperHitEvent | undefined =>
 const spriteWriteOf = (state?: CpuState): SpriteWriteEvent | undefined =>
   state && "lastSpriteWrite" in state ? state.lastSpriteWrite : undefined;
 
+/** The interrupt event the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
+const interruptStopOfState = (state?: CpuState): InterruptStopEvent | undefined =>
+  state && "lastInterruptStop" in state ? state.lastInterruptStop : undefined;
+
+/** Did the machine stop on an event this interrupt stop matches? */
+const isInterruptStopCurrent = (bp: BreakpointInfo, state?: CpuState): boolean => {
+  const event = interruptStopOfState(state);
+  const stop = interruptStopOf(bp.interruptStop);
+  return !!event && !!stop && matchesInterruptStop(stop, event, Number.MAX_SAFE_INTEGER);
+};
+
 /** What a sprite breakpoint watches, for its row and tooltip: `attr 0,1 (X, Y)` or `all attributes`. */
 const spriteAttrText = (t: TFunction, bp: BreakpointInfo): string => {
   const mask = spriteAttrMaskOf(bp);
@@ -150,8 +164,9 @@ const nextRegName = (t: TFunction, reg: number | undefined): string => {
 };
 
 /** The first tooltip line of each breakpoint kind, as a breakpoint and as a logpoint */
-type BreakpointKindId = "nextReg" | "copper" | "sprite" | "memRead" | "memWrite" | "ioRead" | "ioWrite" | "exec";
+type BreakpointKindId = "nextReg" | "copper" | "sprite" | "interrupt" | "memRead" | "memWrite" | "ioRead" | "ioWrite" | "exec";
 const KIND_TITLES: Record<BreakpointKindId, { breakpoint: MessageKey; logpoint: MessageKey }> = {
+  interrupt: { breakpoint: "panels.side.breakpoints.title.interrupt", logpoint: "panels.side.breakpoints.title.interruptLog" },
   nextReg: { breakpoint: "panels.side.breakpoints.title.nextReg", logpoint: "panels.side.breakpoints.title.nextRegLog" },
   copper: { breakpoint: "panels.side.breakpoints.title.copper", logpoint: "panels.side.breakpoints.title.copperLog" },
   sprite: { breakpoint: "panels.side.breakpoints.title.sprite", logpoint: "panels.side.breakpoints.title.spriteLog" },
@@ -188,7 +203,9 @@ const breakpointTooltip = (
       ? "copper"
       : spriteKind
         ? "sprite"
-        : bp.memoryRead
+        : isInterruptStop(bp)
+          ? "interrupt"
+          : bp.memoryRead
           ? "memRead"
           : bp.memoryWrite
             ? "memWrite"
@@ -227,6 +244,9 @@ const breakpointTooltip = (
           : t("panels.side.breakpoints.spriteHit", args)
       );
     }
+  }
+  if (isInterruptStop(bp)) {
+    lines.push(t("panels.side.breakpoints.interruptContract"));
   }
   if (copperKind) {
     if (instruction) lines.push(instruction);
@@ -897,12 +917,15 @@ export const BreakpointsPanel = () => {
                   isCurrent = copperHitOf(lastCpuState)?.index === bp.copperIndex;
                 } else if (isSpriteBreakpoint(bp)) {
                   isCurrent = spriteWriteOf(lastCpuState)?.sprite === bp.spriteIndex;
+                } else if (isInterruptStop(bp)) {
+                  isCurrent = isInterruptStopCurrent(bp, lastCpuState);
                 }
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
               const instruction =
-                bp.instruction || (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) ? "" : "???");
+                bp.instruction ||
+                (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) ? "" : "???");
 
               return (
                 <BreakpointRow
@@ -1074,6 +1097,22 @@ export const BreakpointsPanel = () => {
                       )}
                     </>
                   )}
+                  {isInterruptStop(bp) &&
+                    machineState === MachineControllerState.Paused &&
+                    isInterruptStopCurrent(bp, lastCpuState) &&
+                    (() => {
+                      const hit = interruptStopOfState(lastCpuState)!;
+                      return (
+                        <Value
+                          text={
+                            `@ $${toHexa4(hit.pc)}` +
+                            (hit.partition === undefined ? "" : ` ${partitionLabels?.[hit.partition] ?? hit.partition}`)
+                          }
+                          width="auto"
+                          className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                        />
+                      );
+                    })()}
                   {isSpriteBreakpoint(bp) &&
                     (() => {
                       const hit =

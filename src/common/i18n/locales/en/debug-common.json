@@ -926,5 +926,10 @@
   "debug.wpmem.notConstant": "not a constant",
   "@debug.wpmem.notConstant": {
     "context": "Reason a WPMEM comment's address or length is not a constant expression; shown inside a build warning (Errors panel)."
+  },
+  "debug.bpGroup.interrupt": "Interrupt stop",
+  "@debug.bpGroup.interrupt": {
+    "context": "Group header in the Breakpoints side-bar panel (Debug activity) above the ZX Spectrum Next interrupt stops (breakpoints on an interrupt event: taken, lost, waiting, NMI); sentence case, matching the breakpoint dialog's type selector.",
+    "maxChars": 24
   }
 }

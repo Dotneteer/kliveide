@@ -9,6 +9,9 @@
 /* Defined later in the unity build (z80.c through zxnext-cpu.c, zxnext-ctc.c). */
 uint32_t z80GetTacts(void);
 uint32_t z80GetInterruptMode(void);
+uint32_t z80GetIff1(void);
+uint32_t z80GetIff2(void);
+uint32_t z80GetIr(void);
 uint32_t zxnextGetCtcIntEnabled(uint32_t channel);
 void zxnextCtcSetIntEnabled(uint32_t channel, uint32_t enabled);
 static uint64_t zxnextUartSync(void);
@@ -35,7 +38,11 @@ static uint32_t intPulseEnd;
 static uint8_t daisyEnabled[ZXNEXT_DAISY_DEVICE_COUNT];
 static uint8_t lastInterruptVector;
 
+/* Set around a NextReg $20 write, so the event ring can tell a software request from the hardware's */
+static uint8_t zxnextInterruptsSoftwareRequest;
+
 static void zxnextInterruptsReset(void) {
+  zxnextIntEventsReset();
   intSignalActive = 0;
   ulaInterruptDisabled = 0;
   lineInterruptEnabled = 0;
@@ -94,6 +101,17 @@ static void zxnextInterruptsRequest(uint32_t index, uint32_t enabled, uint32_t p
   daisyStatus[index] = 1;
   if (index == ZXNEXT_INT_LINE) lineInterruptStatus = 1;
   if (index == ZXNEXT_INT_ULA) ulaInterruptStatus = 1;
+  if (zxnextIntEventsActive) {
+    /* Debugging only: what this edge does, worked out before it does it. The ULA and the line interrupt
+       start their raster-timed pulse whenever they request in pulse mode (`pulse` = 0 only means the
+       raster, not this call, drives /INT), and the ULA's EXCEPTION pulses in hardware IM2 mode outside IM 2. */
+    uint32_t pending = enabled && hwIm2Mode && !daisyPending[index];
+    uint32_t raster = index == ZXNEXT_INT_LINE || index == ZXNEXT_INT_ULA;
+    uint32_t pulseStarted = enabled && (hwIm2Mode
+      ? (index == ZXNEXT_INT_ULA && z80GetInterruptMode() != 2u)
+      : (pulse || raster));
+    zxnextIntEventRequest(index, enabled, zxnextInterruptsSoftwareRequest, pulseStarted, pending);
+  }
   if (!enabled) return;
   if (hwIm2Mode) {
     daisyPending[index] = 1;
@@ -191,9 +209,11 @@ static void zxnextInterruptsSetNextRegister(uint32_t reg, uint32_t value) {
   switch (reg & 0xffu) {
     case 0x20:
       /* ~1902 im2_int_unq: line (7), ULA (6), CTC 3-0 (3-0), ignoring the enables */
+      zxnextInterruptsSoftwareRequest = 1u;
       if (byteValue & 0x80u) zxnextInterruptsRequest(ZXNEXT_INT_LINE, 1, 1);
       if (byteValue & 0x40u) zxnextInterruptsRequest(ZXNEXT_INT_ULA, 1, 1);
       for (uint32_t i = 0; i < 4u; i++) if (byteValue & (1u << i)) zxnextInterruptsRequest(ZXNEXT_INT_CTC0 + i, 1, 1);
+      zxnextInterruptsSoftwareRequest = 0u;
       break;
     case 0x22:
       /* ~5272-5275: bit 7 reads the pulse /INT (~5938) and is read-only; a write stores bits 2-0 only */
@@ -335,15 +355,109 @@ static uint32_t zxnextInterruptsDmaRequestActive(void) {
   return (cc & 0x80u) && zxnextNmiIsActivated();
 }
 
-static void zxnextInterruptsReti(void) {
+/* The highest-priority source in service, or ZXNEXT_DAISY_DEVICE_COUNT when none is */
+static uint32_t zxnextInterruptsFirstInService(void) {
+  for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) if (daisyInService[i]) return i;
+  return ZXNEXT_DAISY_DEVICE_COUNT;
+}
+
+static void zxnextInterruptsReti(uint32_t pc, uint32_t sp) {
   /* im2_device ~124: S_ISR -> S_0 needs i_im2_mode, so a RETI outside IM 2 releases nothing */
-  if (z80GetInterruptMode() != 2u) return;
+  if (z80GetInterruptMode() != 2u) {
+    if (zxnextIntEventsActive) {
+      uint32_t first = zxnextInterruptsFirstInService();
+      if (first < ZXNEXT_DAISY_DEVICE_COUNT) zxnextIntEvent(ZXNEXT_IEV_RETI_IGNORED, first, 0xffu, 0u, pc, sp);
+    }
+    return;
+  }
   for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
     if (daisyInService[i]) {
       /* S_ISR -> S_0: im2_isr_serviced clears the pending request */
       daisyInService[i] = 0;
       daisyPending[i] = 0;
+      if (zxnextIntEventsActive) zxnextIntEvent(ZXNEXT_IEV_RETI, i, 0xffu, 0u, pc, sp);
       return;
     }
   }
+}
+
+/* A RETN (ED 45) while a maskable source is in service releases nothing (only RETI does) */
+static void zxnextInterruptsRetn(uint32_t pc, uint32_t sp) {
+  if (!zxnextIntEventsActive || !hwIm2Mode) return;
+  uint32_t first = zxnextInterruptsFirstInService();
+  if (first < ZXNEXT_DAISY_DEVICE_COUNT) zxnextIntEvent(ZXNEXT_IEV_RETN_ISR, first, 0xffu, 0u, pc, sp);
+}
+
+/* WAIT: a request pending, not yet acknowledged, for longer than the stop's limit (reported once) */
+static void zxnextInterruptsCheckWait(uint32_t pc, uint32_t sp) {
+  if (!hwIm2Mode || !(zxnextIntWatchKinds & (1u << ZXNEXT_IEV_WAIT)) || zxnextIntWatchWaitLimit == 0u) return;
+  uint32_t now = z80GetTacts();
+  for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
+    if (daisyPending[i] && !daisyInService[i] && !zxnextIntWaitReported[i] &&
+        (uint32_t)(now - zxnextIntReqTacts[i]) > zxnextIntWatchWaitLimit) {
+      zxnextIntWaitReported[i] = 1u;
+      zxnextIntEvent(ZXNEXT_IEV_WAIT, i, 0xffu, 0u, pc, sp);
+    }
+  }
+}
+
+/*
+ * The IDE's snapshot of the interrupt system (plan §3.2), read without side effects: no UART or CTC
+ * sync, no latching. 96 bytes:
+ *   +0..13   per source: bit 0 enabled, bit 1 status, bit 2 pending (requesting or in service),
+ *            bit 3 in service
+ *   +16 hwIm2Mode, +17 im2TopBits, +18 last vector, +19 /INT signal, +20 pulse active,
+ *   +21 ULA disabled, +22 line enabled, +23 expansion bus enabled, +24-25 line interrupt line,
+ *   +26 NMI state (0 IDLE .. 3 END), +27 NMI source (bit 0 Multiface, bit 1 DivMMC),
+ *   +28 NMI pending (bit 0 Multiface, bit 1 DivMMC), +29 NMI signal, +30 stackless on,
+ *   +31 stackless return armed, +32-33 NMI return address, +34 CPU IM, +35 IFF1, +36 IFF2,
+ *   +37 the pulse length in CPU tacts, +38 the I register,
+ *   +40..67 per source, the IM 2 vector table's word at I * 256 + the source's vector (peeked: no bus
+ *   activity, no DivMMC automap)
+ */
+#define ZXNEXT_IDE_INT_STATE_SIZE 96u
+static uint8_t zxnextIdeInterruptState[ZXNEXT_IDE_INT_STATE_SIZE];
+
+static uint32_t zxnextInterruptsSnapshot(void) {
+  uint8_t *o = zxnextIdeInterruptState;
+  uint8_t c6 = zxnextNextRegs[0xc6u];
+  for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
+    uint32_t en;
+    if (i == ZXNEXT_INT_LINE) en = lineInterruptEnabled;
+    else if (i == ZXNEXT_INT_ULA) en = !ulaInterruptDisabled;
+    else if (i >= ZXNEXT_INT_CTC0 && i < ZXNEXT_INT_CTC0 + 4u) en = zxnextGetCtcIntEnabled(i - ZXNEXT_INT_CTC0);
+    else if (i == 1u) en = (c6 & 0x03u) != 0u;
+    else if (i == 2u) en = (c6 & 0x30u) != 0u;
+    else if (i == 12u) en = (c6 & 0x04u) != 0u;
+    else if (i == 13u) en = (c6 & 0x40u) != 0u;
+    else en = 0u;
+    o[i] = (uint8_t)((en ? 0x01u : 0u) | (zxnextInterruptsStatus(i) ? 0x02u : 0u) |
+      (daisyPending[i] ? 0x04u : 0u) | (daisyInService[i] ? 0x08u : 0u));
+  }
+  o[14] = 0u; o[15] = 0u;
+  o[16] = hwIm2Mode;
+  o[17] = im2TopBits;
+  o[18] = lastInterruptVector;
+  o[19] = intSignalActive;
+  o[20] = (uint8_t)zxnextInterruptsPulseActive();
+  o[21] = ulaInterruptDisabled;
+  o[22] = lineInterruptEnabled;
+  o[23] = expBusInterruptEnabled;
+  o[24] = (uint8_t)lineInterrupt; o[25] = (uint8_t)(lineInterrupt >> 8);
+  zxnextNmiSnapshot(&o[26]);
+  o[34] = (uint8_t)z80GetInterruptMode();
+  o[35] = (uint8_t)z80GetIff1();
+  o[36] = (uint8_t)z80GetIff2();
+  o[37] = (uint8_t)zxnextTimingIntPulseCycles;
+  uint32_t iReg = (z80GetIr() >> 8) & 0xffu;
+  o[38] = (uint8_t)iReg;
+  o[39] = 0u;
+  for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
+    uint32_t address = (iReg << 8) | (im2TopBits | (i << 1));
+    uint32_t word = zxnextMemoryPeekMapped(address & 0xffffu) | (zxnextMemoryPeekMapped((address + 1u) & 0xffffu) << 8);
+    o[40u + i * 2u] = (uint8_t)word;
+    o[41u + i * 2u] = (uint8_t)(word >> 8);
+  }
+  for (uint32_t i = 68u; i < ZXNEXT_IDE_INT_STATE_SIZE; i++) o[i] = 0u;
+  return (uint32_t)(uintptr_t)o;
 }

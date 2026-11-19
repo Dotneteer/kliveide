@@ -91,6 +91,14 @@ const OVERRIDES: Record<string, ExportClass> = {
   SetSpriteWatchArmed: "debug",
   TakeSpriteHit: "debug",
   TakeAutoRunHit: "debug",
+  // --- The Next's interrupt event ring and interrupt-stop watch (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1,
+  // --- §5): all volatile, and recording never changes what the machine does
+  SetIntWatch: "debug",
+  TakeIntHit: "debug",
+  IntEventsSetEnabled: "debug",
+  IntEventsClear: "debug",
+  IntEventsGetCount: "pure",
+  IntEventsGetEnabled: "pure",
   // --- The ZX81 auto-RUN watch lives in a non-volatile static
   ArmAutoRun: "journaled",
   // --- Reads that look like reads but have device side effects (status latches, FIFOs, counters)

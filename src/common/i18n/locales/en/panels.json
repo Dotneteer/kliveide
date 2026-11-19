@@ -1090,5 +1090,15 @@
   "@panels.document.nextRegisters": {
     "context": "Name of the Next Registers document tab (the ZX Spectrum Next's hardware registers), opened from the Debug sidebar's Next Registers panel or View › Machine Views.",
     "maxChars": 24
+  },
+  "panels.sideBar.interrupts": "Interrupts",
+  "@panels.sideBar.interrupts": {
+    "context": "Side-bar panel heading (Debug activity, ZX Spectrum Next only): the interrupt system - the daisy chain of interrupt sources, the modes and the NMI.",
+    "maxChars": 20
+  },
+  "panels.document.interruptTimeline": "Interrupt Timeline",
+  "@panels.document.interruptTimeline": {
+    "context": "Name of the Interrupt Timeline document tab (ZX Spectrum Next): the interrupt events drawn as swimlanes over frames.",
+    "maxChars": 24
   }
 }

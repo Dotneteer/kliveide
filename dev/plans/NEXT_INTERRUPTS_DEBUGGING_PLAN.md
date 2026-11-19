@@ -1,6 +1,8 @@
 # ZX Spectrum Next Interrupt Debugging Plan
 
-Status: **proposed** (2026-11-18, branch `next-interrupts-debugging-plan`). Nothing is implemented.
+Status: **implemented, in review** (2026-11-18, branch `next-interrupts-debugging-plan`). All three
+phases are built; §10 records what was built where it differs from the text below, and the answers
+taken for §7.
 Mockups: `dev/plans/next-interrupts/mockups.html` (open in a browser; every value is synthetic, the
 timeline comes from a small daisy-chain simulation).
 Background: the article *Interrupts: Fourteen Voices, Two Wires*
@@ -221,3 +223,54 @@ Docs: a section in `docs/content/en/guides/next/next-breakpoints.mdx`.
 A changeset (`feature`) for the whole plan in the commit that completes it; the comparison table (§2)
 and gap table (§4) of `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` gain an "interrupt debugging"
 line; all UI text through `t()` with translator context (`dev/ai/i18n-guide.md`).
+
+## 10. As built (2026-11-18)
+
+**Answers taken for §7** (change them in review): (1) its own panel, below Copper; (2) recording only
+while the Interrupt Timeline is open, which the timeline's toolbar says; (3) the expansion bus has a
+dimmed row saying "not emulated"; (4) Ring and Clear exist, only while paused, as real NextReg writes.
+
+**Where it lives**
+
+| Part | Files |
+|---|---|
+| Core: snapshot, event ring, stop watch | `zxnext-int-events.c` (new), `zxnext-interrupts.c` (`zxnextInterruptsSnapshot`, RETI/RETN/WAIT events), `zxnext-cpu.c` (ACK, NMI, END, LOST hooks), `zxnext-nmi.c` (`zxnextNmiSnapshot`), `zxnext.c` (exports, `Z80_DEBUG_LOOP_STOP`) |
+| Types and decoding | `src/common/zxnext/interrupts/interruptState.ts`, `interruptStops.ts` |
+| Machine and messaging | `ZxNextWasmV2Machine` (`getInterruptState`, `getInterruptEvents`, `setInterruptRecording`, `clearInterruptEvents`, `writeInterruptNextReg`, the debug loop's watch), `IZxNextIdeMachine`, `EmuApi`, `MainToEmuProcessor` |
+| Panel | `SideBarPanels/InterruptsPanel.tsx`, `features/interrupts/interruptsViewModel.ts` |
+| Timeline | `DocumentPanels/InterruptTimeline/`, `features/interrupts/timelineModel.ts`, `show-int-timeline` / `hide-int-timeline` |
+| Stops | `BreakpointInfo.interruptStop`, `bp-set int:...`, the dialog's **Interrupt event** type, `DebugSupport.buildInterruptWatch` / `hasInterruptHit`, the Breakpoints panel's **Interrupt stop** group |
+| Tests | `test/zxnext-hw/interrupts/interrupt-debugging.test.ts`, `test/wasm/zxNext/wasm-next-interrupt-stop.test.ts`, `test/debug/interruptStops.test.ts`, `test/debug/interruptViews.test.ts`, `test/commands/InterruptStopCommands.test.ts` |
+| Docs | `docs/content/en/guides/next/interrupts.mdx` (screenshots: `dev/scripts/doc-shots/recipes/guides-interrupts.cjs`) |
+
+**Differences from the text above**
+
+- **An END event** joins the kinds: the handler returned to the address it interrupted (the core keeps
+  a small stack of acknowledged handlers and their return SP). The timeline's bars run from ACK to END,
+  so pulse-mode handlers ending in `EI; RET` and handlers ending in `RETN` get bars too; RETI stays a
+  separate event because it is about the chain, not the handler.
+- **ACK is recorded after the acknowledge cycle**, at the handler's first instruction, so latency is
+  request to handler start. The record carries the **CPU speed** (flags bits 5-4): latencies and handler
+  times are in the CPU's own T-states, frame positions in 3.5 MHz T-states (the frame's clock). At
+  28 MHz a measured acknowledge latency is about 30 T (memory reads wait a clock).
+- **The snapshot is 96 bytes**, with the I register and the 14 vector-table words peeked in the core.
+- **D-STUCK compares the sources in service with the Z80 core's interrupt depth** (the same count the
+  Call Stack shows), not with call-stack frames read separately. **D-DI** was added after the first run
+  in the app: interrupts disabled outside any handler while sources wait (a handler that returned
+  without `EI`). **D-POLL leaves the UART transmitters out**: their status is set whenever the buffer
+  is empty.
+- **Stops keep the in-core debug loop.** The core latches the first watched event; the latch is part of
+  `Z80_DEBUG_LOOP_STOP`, so `ExecuteUntilStop` returns at the end of that instruction and `afterStep`
+  asks `DebugSupport.hasInterruptHit` (hit counts, conditions, logpoints). No stop-table candidate was
+  needed. `wasm-next-interrupt-stop.test.ts` checks the in-core and instruction-by-instruction runs stop
+  at the same PC, T-states and SP.
+- **A condition on an interrupt stop is an execution condition** (registers, memory, flags at the stop);
+  `VAL` and `ADDR` mean nothing for it.
+- **Several `int:wait` stops share the smallest limit** (the core keeps one limit); the dialog's hint
+  says so.
+- **The core's memory grew from 56 to 58 MB** for the 1 MB ring. Every new static is volatile, and the
+  export contract classifies the new exports (`SetIntWatch`, `TakeIntHit`, `IntEventsSetEnabled`,
+  `IntEventsClear` debug; `IntEventsGetCount`, `IntEventsGetEnabled` pure).
+
+**Not done**: the debug-overhead benchmark with recording off (D4's budget) is to be run before the
+merge; the timeline's event list shows the first 500 rows rather than a virtualized list.

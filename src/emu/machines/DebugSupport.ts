@@ -59,10 +59,19 @@ import {
   isCopperBreakpoint,
   isEventBreakpoint,
   isNextRegBreakpoint,
+  isInterruptStop,
   isSpriteBreakpoint,
   spriteAttrMaskOf,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
+import {
+  buildInterruptWatch,
+  interruptStopOf,
+  matchesInterruptStop,
+  type InterruptStop,
+  type InterruptWatch
+} from "@common/zxnext/interrupts/interruptStops";
+import type { NextIntEvent } from "@common/zxnext/interrupts/interruptState";
 
 /**
  * Does a partition entry match what is paged? `ANY_PARTITION` is a bank breakpoint on a machine with
@@ -776,6 +785,38 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The ZX Spectrum Next's interrupt-stop watch (`int:`, NEXT_INTERRUPTS_DEBUGGING_PLAN §5), built from
+   * every enabled interrupt stop; `kinds` is 0 when there is none. Asked once per debug-loop entry.
+   */
+  buildInterruptWatch(): InterruptWatch {
+    const stops: InterruptStop[] = [];
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isInterruptStop(bp) || bp.disabled) continue;
+      const stop = interruptStopOf(bp.interruptStop);
+      if (stop) stops.push(stop);
+    }
+    return buildInterruptWatch(stops);
+  }
+
+  /**
+   * Does any interrupt stop want to stop on this event? Runs every matching definition through
+   * `handleHit`, so hit counts, conditions (on the registers after the event), logpoints and one-shots
+   * apply. `coreWaitLimit` is the limit the core used for a WAIT event.
+   */
+  hasInterruptHit(event: NextIntEvent, coreWaitLimit: number): boolean {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isInterruptStop(bp) || bp.disabled) continue;
+      const parsed = interruptStopOf(bp.interruptStop);
+      if (!parsed || !matchesInterruptStop(parsed, event, coreWaitLimit)) continue;
+      if (this.handleHit(key, bp, "exec", event.pc, undefined, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -917,6 +958,8 @@ export class DebugSupport implements IDebugSupport {
         // --- And the sprite, with the attribute bytes it watches.
         spriteIndex: bp.spriteIndex,
         spriteAttrMask: bp.spriteAttrMask,
+        // --- And the interrupt stop's event spec, its whole identity.
+        interruptStop: bp.interruptStop,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.

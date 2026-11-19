@@ -170,7 +170,7 @@ export function setEmuRecordingManager(mgr: RecordingManager | null): void {
  */
 export function historicalCpuState(live: Z80CpuState, historical: HistoricalState): Z80CpuState {
   const { record, info, pcPartition } = historical;
-  const { lastNextRegWrite: _w, lastCopperHit: _c, lastSpriteWrite: _s, ...rest } = live;
+  const { lastNextRegWrite: _w, lastCopperHit: _c, lastSpriteWrite: _s, lastInterruptStop: _i, ...rest } = live;
   return {
     ...rest,
     ...record.regs,
@@ -1804,6 +1804,61 @@ class EmuMessageProcessor {
       noController();
     }
     return requireZxNextIdeMachine(controller.machine).getCopperState();
+  }
+
+  /**
+   * Gets the ZX Spectrum Next interrupt system's state (the Interrupts panel's snapshot).
+   */
+  getInterruptState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getInterruptState();
+  }
+
+  /**
+   * Gets the ZX Spectrum Next interrupt event ring's records written since `since`.
+   */
+  getInterruptEvents(since?: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getInterruptEvents(since);
+  }
+
+  /**
+   * Switches the ZX Spectrum Next interrupt event ring's recording on or off.
+   */
+  setInterruptRecording(enabled: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).setInterruptRecording(enabled);
+  }
+
+  /**
+   * Forgets the ZX Spectrum Next interrupt event ring's records.
+   */
+  clearInterruptEvents() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).clearInterruptEvents();
+  }
+
+  /**
+   * The Interrupts panel's Ring / Clear status write (NextReg `$20`, `$C8`-`$CA` only).
+   */
+  writeInterruptNextReg(reg: number, value: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).writeInterruptNextReg(reg, value);
   }
 
   /**

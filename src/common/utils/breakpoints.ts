@@ -14,6 +14,7 @@ import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import {
   breakpointMatchesScope,
   isCopperBreakpoint,
+  isInterruptStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint
 } from "./breakpoint-scope";
@@ -200,6 +201,14 @@ function buildBreakpointKey(
    */
   if (isSpriteBreakpoint(bp)) {
     return `SP:$${toHexa2(bp.spriteIndex! & 0x7f)}`;
+  }
+
+  /*
+   * An interrupt stop is named by its event spec (NEXT_INTERRUPTS_DEBUGGING_PLAN §5): `INT:ACK:ULA`,
+   * `INT:WAIT:300`. `INT` cannot collide with a partition label (`I`, `N`, `T` are not hex digits).
+   */
+  if (isInterruptStop(bp)) {
+    return `INT:${bp.interruptStop!.toUpperCase()}`;
   }
 
   if (bp.address !== undefined) {

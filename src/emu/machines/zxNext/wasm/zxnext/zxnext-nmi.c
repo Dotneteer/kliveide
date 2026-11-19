@@ -41,6 +41,25 @@ static void zxnextNmiReset(void) {
   nmiNextReg02DivMmc = 0;
 }
 
+/* The IDE's NMI snapshot (8 bytes, see zxnextInterruptsSnapshot), read without side effects */
+static void zxnextNmiSnapshot(uint8_t *o) {
+  o[0] = nmiState;
+  o[1] = (uint8_t)((nmiSourceMf ? 0x01u : 0u) | (nmiSourceDivMmc ? 0x02u : 0u));
+  o[2] = (uint8_t)((nmiPendingMf ? 0x01u : 0u) | (nmiPendingDivMmc ? 0x02u : 0u));
+  o[3] = nmiSignalActive;
+  o[4] = stacklessNmiEnabled;
+  o[5] = stacklessNmiProcessed;
+  o[6] = (uint8_t)nmiReturnAddress;
+  o[7] = (uint8_t)(nmiReturnAddress >> 8);
+}
+
+/* The device an NMI being taken now belongs to, for the event ring */
+static uint32_t zxnextNmiEventSource(void) {
+  if (nmiSourceMf) return 0x20u;
+  if (nmiSourceDivMmc) return 0x21u;
+  return 0x22u;
+}
+
 static uint32_t zxnextNmiAcceptCause(void) {
   return nmiState == ZXNEXT_NMI_IDLE || nmiState == ZXNEXT_NMI_FETCH;
 }

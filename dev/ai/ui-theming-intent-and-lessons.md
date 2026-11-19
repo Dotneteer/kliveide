@@ -1717,6 +1717,33 @@ marked rows. The rules it settled:
   `--status-error-subtle` when anything was skipped, failed or cancelled; it stays until dismissed or
   the next job, never a timed toast, because it is the only record of what the job did.
 
+## Interrupt Views: A Source Keeps One Hue Everywhere; Being Held Is A Hatch
+
+The Next's Interrupts panel and Interrupt Timeline (`--*-int-*` aliases in `componentAliases.ts`)
+settled four rules worth reusing for any view of competing hardware sources:
+
+- **A source's hue is a category, so it is fixed and shared.** The lanes borrow the audio mixer's group
+  hues (`--audio-group-*`), which are fixed across accents and apart in hue. The panel's chip beside a
+  source's name and the timeline's lane are the same alias, so the reader matches a row to a lane by
+  colour without reading. The main program is neutral (`--text-tertiary`), the NMI the error hue.
+- **State is colour, relation is texture.** A row's own state takes a colour (in service is a value,
+  `--color-state-value`; requesting is waiting, `--status-warning`). Being *held by another source* is
+  not a state of the row but a relation to the blocker, so it is a hatch over the rows and a dashed
+  divider under the blocker naming it - never a third colour. The timeline draws an interrupted
+  handler the same way: a hatched bar in its own lane's hue.
+- **A diagnostic is a left rule and a subtle fill in its status hue**, with the evidence in the text.
+  There is no `--status-info-subtle`, so an info box takes `--accent-subtle`; do not invent one.
+- **An inline SVG chart takes its colours from classes**, each class one alias (`fill:
+  var(--color-int-lane-ula)`), never a `fill="#..."` literal, so it follows the theme like the rest.
+  Text inside the SVG is sized in viewBox units, so it scales with the chart's width.
+- **A chart under a splitter fills its box by its rows, not by stretching.** The viewBox keeps a fixed
+  width, its height is the box's height in those units (a resize observer), and the lanes divide it
+  between a minimum and a maximum; bars, markers and text keep their size, centred in their lane.
+  `preserveAspectRatio="none"` would stretch the text, and a fixed-aspect chart leaves the split's extra
+  height empty. Below the lanes' minimum the chart scales down (`meet`) rather than clipping.
+- **One scroller per region.** A document with a chart and lists splits them with a `SplitPanel`; the
+  body never scrolls, and each list scrolls in its own `ScrollViewer` filling its pane.
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

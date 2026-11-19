@@ -34,6 +34,7 @@ import {
   isBankRelativeInput,
   isCopperKind,
   isFormValid,
+  isInterruptKind,
   isSpriteKind,
   isNextRegKind,
   parseNumericInput,
@@ -42,6 +43,8 @@ import {
 // --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
 import { nextRegUnion } from "@emu/machines/zxNext/nextRegSets";
 import { SPRITE_ATTRIBUTE_LABELS } from "@common/zxnext/sprites/spriteBreakpoints";
+import { stopSourceIds } from "@common/zxnext/interrupts/interruptStops";
+import { NEXT_INT_SOURCE_IDS, NEXT_INT_SOURCE_NAMES } from "@common/zxnext/interrupts/interruptState";
 import styles from "./BreakpointDialog.module.scss";
 import { t as translate } from "@common/i18n/i18n";
 import { useT } from "@common/i18n/useT";
@@ -82,6 +85,33 @@ const [COPPER_OPTION]: RadioGroupOption[] = withLabels([
 const [SPRITE_OPTION]: RadioGroupOption[] = withLabels([
   { value: "sprite", labelKey: "dialog.breakpoint.kind.sprite" }
 ]);
+
+/** The ninth, on the same machines: an interrupt event (NEXT_INTERRUPTS_DEBUGGING_PLAN §5). */
+const [INTERRUPT_OPTION]: RadioGroupOption[] = withLabels([
+  { value: "interrupt", labelKey: "dialog.breakpoint.kind.interrupt" }
+]);
+
+/** The interrupt stop's events (a function: labels are read at display) */
+const interruptEventOptions = (): DropdownOption[] => [
+  { value: "ack", label: translate("dialog.breakpoint.interrupt.event.ack") },
+  { value: "lost", label: translate("dialog.breakpoint.interrupt.event.lost") },
+  { value: "retn", label: translate("dialog.breakpoint.interrupt.event.retn") },
+  { value: "reti", label: translate("dialog.breakpoint.interrupt.event.reti") },
+  { value: "wait", label: translate("dialog.breakpoint.interrupt.event.wait") },
+  { value: "nmi", label: translate("dialog.breakpoint.interrupt.event.nmi") }
+];
+
+/** The sources an event may be narrowed to: the chain's for ack/lost/wait, the NMI devices for nmi */
+const interruptSourceOptions = (event: string): DropdownOption[] => {
+  const any = { value: "", label: translate("dialog.breakpoint.interrupt.anySource") };
+  if (event === "nmi") {
+    return [any, { value: "multiface", label: "Multiface" }, { value: "divmmc", label: "DivMMC" }];
+  }
+  return [
+    any,
+    ...stopSourceIds().map((id) => ({ value: id, label: NEXT_INT_SOURCE_NAMES[NEXT_INT_SOURCE_IDS.indexOf(id as never)] }))
+  ];
+};
 
 /**
  * The Copper index field's hint: the instruction at that index in the live list RAM, decoded, or
@@ -221,13 +251,14 @@ export const BreakpointDialog = ({
   const nextRegKind = isNextRegKind(form.kind);
   const copperKind = isCopperKind(form.kind);
   const spriteKind = isSpriteKind(form.kind);
-  // --- The sixth to eighth types are offered only where they mean something.
+  const interruptKind = isInterruptKind(form.kind);
+  // --- The sixth to ninth types are offered only where they mean something.
   // --- `validateBreakpointForm` refuses them anyway, but a type a machine cannot have should not be
   // --- on screen to choose.
   const kindOptions = useMemo(
     () =>
       env.supportsNextRegBreakpoints
-        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION]
+        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION, INTERRUPT_OPTION]
         : KIND_OPTIONS,
     [env.supportsNextRegBreakpoints]
   );
@@ -307,7 +338,7 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
-      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && !spriteKind && (
+      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && !spriteKind && !interruptKind && (
         <DialogRow rows={true} label={t("dialog.breakpoint.partitionLabel")}>
           {/*
             * Opt in, rather than a "(none)" entry in the picker.
@@ -505,7 +536,61 @@ export const BreakpointDialog = ({
         </>
       )}
 
-      {!sourceMode && !nextRegKind && !copperKind && !spriteKind && (
+      {!sourceMode && interruptKind && (
+        <>
+          <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.eventLabel")}>
+            <Dropdown
+              options={interruptEventOptions()}
+              initialValue={form.interruptEvent}
+              ariaLabel={t("dialog.breakpoint.interrupt.eventLabel")}
+              width="34ch"
+              onChanged={(interruptEvent) => {
+                setTouched((t) => ({ ...t, interruptSource: true }));
+                update({ interruptEvent: interruptEvent as BreakpointFormState["interruptEvent"], interruptSource: "" });
+              }}
+            />
+          </DialogRow>
+          {form.interruptEvent !== "retn" && form.interruptEvent !== "reti" && (
+            <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.sourceLabel")}>
+              <Dropdown
+                key={form.interruptEvent === "nmi" ? "nmi" : "chain"}
+                options={interruptSourceOptions(form.interruptEvent)}
+                initialValue={form.interruptSource}
+                ariaLabel={t("dialog.breakpoint.interrupt.sourceLabel")}
+                width="20ch"
+                onChanged={(interruptSource) => {
+                  setTouched((t) => ({ ...t, interruptSource: true }));
+                  update({ interruptSource });
+                }}
+              />
+              {errorFor("interruptSource") && (
+                <div className={styles.error} role="alert">
+                  {errorFor("interruptSource")}
+                </div>
+              )}
+            </DialogRow>
+          )}
+          {form.interruptEvent === "wait" && (
+            <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.waitLabel")}>
+              <TextInput
+                value={form.interruptWait}
+                width={WORD_FIELD}
+                error={errorFor("interruptWait")}
+                onChange={(interruptWait) => {
+                  setTouched((t) => ({ ...t, interruptWait: true }));
+                  update({ interruptWait });
+                }}
+              />
+              <div className={styles.hint}>{t("dialog.breakpoint.interrupt.waitHint")}</div>
+            </DialogRow>
+          )}
+          <DialogRow rows={true}>
+            <div className={styles.hint}>{t("dialog.breakpoint.interrupt.stopNote")}</div>
+          </DialogRow>
+        </>
+      )}
+
+      {!sourceMode && !nextRegKind && !copperKind && !spriteKind && !interruptKind && (
       <DialogRow rows={true} label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
         <TextInput
           value={form.address}

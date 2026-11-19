@@ -51,6 +51,30 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextNextRegHitNew",
   "zxnextNextRegHitOld",
   "zxnextNextRegHitReg",
+  // --- The interrupt event ring and stop watch (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1, §5)
+  "zxnextIntEvents",
+  "zxnextIntEventCount",
+  "zxnextIntEventsEnabled",
+  "zxnextIntEventsActive",
+  "zxnextIntWatchKinds",
+  "zxnextIntWatchAckSources",
+  "zxnextIntWatchNmiSources",
+  "zxnextIntWatchWaitLimit",
+  "zxnextIntHitPresent",
+  "zxnextIntHitRecord",
+  "zxnextIntReqTacts",
+  "zxnextIntWaitReported",
+  "zxnextIntPulseOpen",
+  "zxnextIntPulseSource",
+  "zxnextIntPulseSoftware",
+  "zxnextIntPulseStart",
+  "zxnextIntFrameCount",
+  "zxnextIntFrameSource",
+  "zxnextIntFramePc",
+  "zxnextIntFrameSp",
+  "zxnextIntNmiOpen",
+  "zxnextInterruptsSoftwareRequest",
+  "zxnextIdeInterruptState",
   "zxnextCopperWatch",
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
@@ -205,6 +229,16 @@ const productionExports = [
   "zxnextSetDaisyStatus",
   "zxnextSetDaisyEnabled",
   "zxnextGetDaisyInService",
+  "zxnextGetInterruptStatePtr",
+  "zxnextIntEventsPtr",
+  "zxnextIntEventsGetCapacity",
+  "zxnextIntEventsGetCount",
+  "zxnextIntEventsSetEnabled",
+  "zxnextIntEventsGetEnabled",
+  "zxnextIntEventsClear",
+  "zxnextSetIntWatch",
+  "zxnextIntHitRecordPtr",
+  "zxnextTakeIntHit",
   "zxnextSetTacts",
   ...cpuExports("zxnext", { accessLog: true, accessLogOverflows: true, lastPort: true }),
   // --- The debugger's in-core loop (`z80-debug-loop.c`)
@@ -526,8 +560,9 @@ const buildModes = {
     sources: [source],
     // --- 40 MB: the 8 MB execution-history ring did not fit beside the frame trace in 32 MB
     // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6). 56 MB: the access profile adds its 2 MB of flags
-    // --- and its 12 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5)
-    initialMemory: 56 * 1024 * 1024
+    // --- and its 12 MB counter pool (CODE_COVERAGE_AND_HEAT_MAP_PLAN D5). 58 MB: the 1 MB interrupt
+    // --- event ring (NEXT_INTERRUPTS_DEBUGGING_PLAN D8)
+    initialMemory: 58 * 1024 * 1024
   }
 };
 
