@@ -3290,5 +3290,167 @@
   "@panels.doc.intTimeline.col.detail": {
     "context": "Column heading of the event list.",
     "maxChars": 14
+  },
+  "panels.doc.dmaXfer.notAvailable": "The DMA Transfers are not available",
+  "@panels.doc.dmaXfer.notAvailable": {
+    "context": "Shown instead of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end, when the machine cannot record them."
+  },
+  "panels.doc.dmaXfer.record": "Record:",
+  "@panels.doc.dmaXfer.record": {
+    "context": "Label of the recording switch of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.recordTitle": "Records every DMA transfer while on. It is on while the document is open.",
+  "@panels.doc.dmaXfer.recordTitle": {
+    "context": "Tooltip of the recording switch of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.dmaXfer.clear": "Clear the list",
+  "@panels.doc.dmaXfer.clear": {
+    "context": "Tooltip of the button that forgets every recorded transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.dmaXfer.selectHint": "Select a transfer to tint its bytes in the Memory panel",
+  "@panels.doc.dmaXfer.selectHint": {
+    "context": "Toolbar hint of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: clicking a row marks the bytes the transfer read and wrote in the Memory panel."
+  },
+  "panels.doc.dmaXfer.held": "{used} of {capacity} transfers",
+  "@panels.doc.dmaXfer.held": {
+    "context": "Toolbar text of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: how many recorded transfers it holds of how many it can.",
+    "placeholders": {
+      "used": "Transfers held",
+      "capacity": "The most it can hold"
+    }
+  },
+  "panels.doc.dmaXfer.waiting": "Run the program: DMA transfers appear here",
+  "@panels.doc.dmaXfer.waiting": {
+    "context": "Empty state of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end while recording and nothing has been recorded."
+  },
+  "panels.doc.dmaXfer.paused": "Recording is off",
+  "@panels.doc.dmaXfer.paused": {
+    "context": "Empty state of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end while recording is switched off."
+  },
+  "panels.doc.dmaXfer.col.frame": "Frame",
+  "@panels.doc.dmaXfer.col.frame": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the frame number the transfer was enabled in.",
+    "maxChars": 10
+  },
+  "panels.doc.dmaXfer.col.startedBy": "Started by",
+  "@panels.doc.dmaXfer.col.startedBy": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the address of the instruction that enabled the transfer.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.col.mode": "Mode",
+  "@panels.doc.dmaXfer.col.mode": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the transfer mode (continuous, burst, byte) and its prescaler.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.col.from": "From",
+  "@panels.doc.dmaXfer.col.from": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the address range, port or fill value the transfer read.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.col.to": "To",
+  "@panels.doc.dmaXfer.col.to": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the address range or port the transfer wrote.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.col.bytes": "Bytes",
+  "@panels.doc.dmaXfer.col.bytes": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: bytes moved (of the block, while running).",
+    "maxChars": 10
+  },
+  "panels.doc.dmaXfer.col.busHeld": "Bus held",
+  "@panels.doc.dmaXfer.col.busHeld": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: how long the DMA held the CPU's bus for the transfer, in T-states.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.col.result": "Result",
+  "@panels.doc.dmaXfer.col.result": {
+    "context": "Column header of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: how the transfer ended, and its warnings.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.host": "host",
+  "@panels.doc.dmaXfer.host": {
+    "context": "Started-by cell of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the transfer was enabled by the IDE or a script, not by a CPU instruction.",
+    "maxChars": 8
+  },
+  "panels.doc.dmaXfer.pcTitle": "Show this instruction in the disassembly",
+  "@panels.doc.dmaXfer.pcTitle": {
+    "context": "Tooltip of an instruction address in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.dmaXfer.tStates": "{t} T",
+  "@panels.doc.dmaXfer.tStates": {
+    "context": "Bus-held cell of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: a duration in CPU T-states, the unit abbreviated.",
+    "placeholders": {
+      "t": "The number of T-states, formatted"
+    }
+  },
+  "panels.doc.dmaXfer.end.running": "running",
+  "@panels.doc.dmaXfer.end.running": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that has not ended yet.",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.end.done": "done",
+  "@panels.doc.dmaXfer.end.done": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that reached its end of block.",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.end.disabled": "disabled",
+  "@panels.doc.dmaXfer.end.disabled": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that the program stopped with the disable command ($83).",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.end.reset": "DMA reset",
+  "@panels.doc.dmaXfer.end.reset": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that the program stopped with the DMA's reset command ($C3).",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.end.machineReset": "machine reset",
+  "@panels.doc.dmaXfer.end.machineReset": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that a reset of the whole machine stopped.",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.restarts": "restarted ×{times}",
+  "@panels.doc.dmaXfer.restarts": {
+    "context": "Result pill of an auto-restarting transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: how many times its block started again.",
+    "placeholders": {
+      "times": "How many times, as digits (\"255+\" when it stopped counting)"
+    }
+  },
+  "panels.doc.dmaXfer.intLost": "INT lost",
+  "@panels.doc.dmaXfer.intLost": {
+    "context": "Result pill of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: a frame interrupt came and went while the transfer held the bus, so the CPU never saw it.",
+    "maxChars": 12
+  },
+  "panels.doc.dmaXfer.intLostTitle": "A pulse-mode interrupt began and ended while this transfer held the bus: the CPU never saw it",
+  "@panels.doc.dmaXfer.intLostTitle": {
+    "context": "Tooltip of the 'INT lost' pill of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.dmaXfer.notLoaded": "not loaded",
+  "@panels.doc.dmaXfer.notLoaded": {
+    "context": "Result pill of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the transfer was enabled with start addresses written after the last load command ($CF).",
+    "maxChars": 14
+  },
+  "panels.doc.dmaXfer.notLoadedTitle": "Start addresses were written after the last load ($CF): this transfer used the old working addresses",
+  "@panels.doc.dmaXfer.notLoadedTitle": {
+    "context": "Tooltip of the 'not loaded' pill of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.dmaXfer.showInMemory": "Show in memory",
+  "@panels.doc.dmaXfer.showInMemory": {
+    "context": "Link in the selected row of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: opens the Memory panel at the transfer's bytes, tinted.",
+    "maxChars": 20
+  },
+  "panels.doc.dmaXfer.end.stopped": "recording stopped",
+  "@panels.doc.dmaXfer.end.stopped": {
+    "context": "Result of a transfer in the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end that was still running when its recording was switched off: how it ended is unknown.",
+    "maxChars": 18
+  },
+  "panels.doc.dmaXfer.joined": "before recording",
+  "@panels.doc.dmaXfer.joined": {
+    "context": "Started-by cell of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end: the transfer was already running when the recording started, so what enabled it is unknown.",
+    "maxChars": 18
+  },
+  "panels.doc.dmaXfer.joinedTitle": "This transfer was running when the recording started: what enabled it and the bytes it moved before are unknown",
+  "@panels.doc.dmaXfer.joinedTitle": {
+    "context": "Tooltip of the 'before recording' cell of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
   }
 }

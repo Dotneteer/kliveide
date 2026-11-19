@@ -1126,6 +1126,14 @@ export const componentAliases: Record<string, string> = {
   "--color-memmap-cursor": "var(--accent-solid)",
   "--bgcolor-memmap-found": "var(--status-warning-subtle)",
   "--color-memmap-found": "var(--status-warning)",
+  /*
+   * A selected DMA transfer's bytes (NEXT_DMA_DEBUGGING_PLAN §14.2): read in the second accent's wash,
+   * written in the success wash (where it landed), the next byte a dashed second-accent outline. None
+   * of them is the primary accent, which the selection and the cursor already use.
+   */
+  "--bgcolor-memmap-dma-read": "var(--accent-secondary-subtle)",
+  "--bgcolor-memmap-dma-written": "var(--status-success-subtle)",
+  "--color-memmap-dma-next": "var(--accent-secondary-solid)",
   /* A byte a memory breakpoint watches */
   "--color-memmap-breakpoint": "var(--color-breakpoint-binary)",
   /*

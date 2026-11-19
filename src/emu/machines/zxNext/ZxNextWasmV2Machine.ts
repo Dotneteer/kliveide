@@ -44,6 +44,7 @@ import {
 import { decodeDmaState, type NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 import type { NextDmaBus } from "@common/zxnext/dma/dmaBus";
+import { NEXT_DMA_TRANSFER_RECORD_SIZE, type NextDmaTransfers } from "@common/zxnext/dma/dmaTransfers";
 import {
   buildDmaWatch,
   decodeDmaHit,
@@ -2226,6 +2227,32 @@ export class ZxNextWasmV2Machine
   /** Forgets every recorded bus hold */
   clearDmaBus(): void {
     this.requireWasmV2Runtime().exports.zxnextDmaBusClear();
+  }
+
+  /** The DMA Transfers written since `since` (all held ones by default), oldest first (§14.1) */
+  getDmaTransfers(since?: number): NextDmaTransfers {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const capacity = ex.zxnextDmaXferGetCapacity();
+    const count = ex.zxnextDmaXferGetCount() >>> 0;
+    const { firstSeq, records } = copyRingRecords(
+      runtime.dmaTransfers,
+      capacity,
+      count,
+      since ?? 0,
+      NEXT_DMA_TRANSFER_RECORD_SIZE
+    );
+    return { enabled: ex.zxnextDmaXferGetEnabled() !== 0, capacity, count, firstSeq, records };
+  }
+
+  /** Switches the DMA Transfers' recording on or off */
+  setDmaTransfersRecording(enabled: boolean): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaXferSetEnabled(enabled ? 1 : 0);
+  }
+
+  /** Forgets every recorded transfer */
+  clearDmaTransfers(): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaXferClear();
   }
 
   /** Switches the DMA Port Log's recording on or off */

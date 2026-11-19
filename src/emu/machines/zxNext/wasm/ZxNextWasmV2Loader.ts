@@ -471,6 +471,12 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextDmaBusSetEnabled: ZxNextWasmV2ExportFunction;
   zxnextDmaBusGetEnabled: ZxNextWasmV2ExportFunction;
   zxnextDmaBusClear: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferPtr: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferGetCapacity: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferGetCount: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferSetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferGetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextDmaXferClear: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -534,6 +540,8 @@ export type ZxNextWasmV2Runtime = {
   readonly dmaHitRecord: Uint8Array;
   /** The DMA Bus Timeline's ring: 32K holds of 16 bytes (NEXT_DMA_DEBUGGING_PLAN §13.1; read only by the IDE) */
   readonly dmaBus: Uint8Array;
+  /** The DMA Transfers ring: 1K transfers of 64 bytes (NEXT_DMA_DEBUGGING_PLAN §14.1; read only by the IDE) */
+  readonly dmaTransfers: Uint8Array;
   /** The sprite attribute slots, 128 x 5 bytes (read only by the IDE) */
   readonly spriteAttributes: Uint8Array;
   /**
@@ -994,6 +1002,12 @@ const requiredV2Exports = [
   "zxnextDmaBusSetEnabled",
   "zxnextDmaBusGetEnabled",
   "zxnextDmaBusClear",
+  "zxnextDmaXferPtr",
+  "zxnextDmaXferGetCapacity",
+  "zxnextDmaXferGetCount",
+  "zxnextDmaXferSetEnabled",
+  "zxnextDmaXferGetEnabled",
+  "zxnextDmaXferClear",
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,
@@ -1090,6 +1104,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "interruptHitRecord", exports.zxnextIntHitRecordPtr(), 16, memoryBuffer);
   assertViewRange(artifactName, "dmaHitRecord", exports.zxnextDmaHitRecordPtr(), 16, memoryBuffer);
   assertViewRange(artifactName, "dmaBus", exports.zxnextDmaBusPtr(), exports.zxnextDmaBusGetCapacity() * 16, memoryBuffer);
+  assertViewRange(artifactName, "dmaTransfers", exports.zxnextDmaXferPtr(), exports.zxnextDmaXferGetCapacity() * 64, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
   assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
@@ -1117,6 +1132,7 @@ export function createZxNextWasmV2Views(
     interruptHitRecord: new Uint8Array(memoryBuffer, exports.zxnextIntHitRecordPtr(), 16),
     dmaHitRecord: new Uint8Array(memoryBuffer, exports.zxnextDmaHitRecordPtr(), 16),
     dmaBus: new Uint8Array(memoryBuffer, exports.zxnextDmaBusPtr(), exports.zxnextDmaBusGetCapacity() * 16),
+    dmaTransfers: new Uint8Array(memoryBuffer, exports.zxnextDmaXferPtr(), exports.zxnextDmaXferGetCapacity() * 64),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
     spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),
     frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes),

@@ -5868,5 +5868,10 @@
   "panels.feature.dmaLens.swallowed": "This line's first byte is taken as a follow byte of an earlier register group.",
   "@panels.feature.dmaLens.swallowed": {
     "context": "In the hover of a .dma line in the Klive assembler editor, when the DMA would not read the line's first byte as a new register group (the build shows warning Z0388 there)."
+  },
+  "panels.side.dma.openTransfers": "Open the transfers",
+  "@panels.side.dma.openTransfers": {
+    "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Transfers document.",
+    "maxChars": 24
   }
 }

@@ -166,9 +166,11 @@
 /images/en/guides/next/dma/dma-bus-timeline.webp
 /images/en/guides/next/dma/dma-editor.webp
 /images/en/guides/next/dma/dma-hover.webp
+/images/en/guides/next/dma/dma-memory-overlay.webp
 /images/en/guides/next/dma/dma-panel.webp
 /images/en/guides/next/dma/dma-port-log.webp
 /images/en/guides/next/dma/dma-stop.webp
+/images/en/guides/next/dma/dma-transfers.webp
 /images/en/guides/next/fw-files/fw-viewer.webp
 /images/en/guides/next/fw-files/test-card.webp
 /images/en/guides/next/interrupts/interrupt-stop.webp

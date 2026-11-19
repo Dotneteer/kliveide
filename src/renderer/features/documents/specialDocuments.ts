@@ -9,6 +9,8 @@ import {
   DMA_LOG_PANEL_ID,
   DMA_TIMELINE_EDITOR,
   DMA_TIMELINE_PANEL_ID,
+  DMA_TRANSFERS_EDITOR,
+  DMA_TRANSFERS_PANEL_ID,
   NEXTREGS_EDITOR,
   NEXTREGS_PANEL_ID,
   DISASSEMBLY_EDITOR,
@@ -45,6 +47,7 @@ export type SpecialDocumentId =
   | typeof INT_TIMELINE_PANEL_ID
   | typeof DMA_LOG_PANEL_ID
   | typeof DMA_TIMELINE_PANEL_ID
+  | typeof DMA_TRANSFERS_PANEL_ID
   | typeof NEXTREGS_PANEL_ID
   | typeof SPRITES_PANEL_ID
   | typeof TILEMAP_PANEL_ID
@@ -109,6 +112,13 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "int-timeline",
     workspaceRestorable: true
   }, { name: "panels.document.dmaBusTimeline" }),
+  // --- The ZX Spectrum Next DMA Transfers (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §14.2)
+  [DMA_TRANSFERS_PANEL_ID]: withTexts({
+    id: DMA_TRANSFERS_PANEL_ID,
+    type: DMA_TRANSFERS_EDITOR,
+    iconName: "dma-log",
+    workspaceRestorable: true
+  }, { name: "panels.document.dmaTransfers" }),
   // --- The ZX Spectrum Next registers, popped out of the Debug sidebar's Next Registers panel
   [NEXTREGS_PANEL_ID]: withTexts({
     id: NEXTREGS_PANEL_ID,

@@ -274,7 +274,9 @@
  */
 .selectionWash,
 .foundWash,
-.foundCurrent {
+.foundCurrent,
+.dmaReadWash,
+.dmaWrittenWash {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -294,6 +296,29 @@
 .foundCurrent {
   background: var(--bgcolor-memmap-found);
   outline: 1px solid var(--color-memmap-found);
+}
+
+/*
+ * The DMA Transfers' overlay (NEXT_DMA_DEBUGGING_PLAN §14.2): the bytes the selected transfer read in a
+ * wash of the second accent, the bytes it wrote in a success wash, and while it runs the next byte on
+ * each side (the working addresses) a dashed outline in the second accent, apart from the cursor's.
+ */
+.dmaReadWash {
+  background: var(--bgcolor-memmap-dma-read);
+}
+
+.dmaWrittenWash {
+  background: var(--bgcolor-memmap-dma-written);
+}
+
+.dmaNextByte {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border-radius: var(--radius-xs);
+  outline: 2px dashed var(--color-memmap-dma-next);
+  outline-offset: 0;
+  pointer-events: none;
 }
 
 .cursorByte,

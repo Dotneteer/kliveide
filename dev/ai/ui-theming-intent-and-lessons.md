@@ -2848,6 +2848,11 @@ The Memory and Disassembly documents share one frame (`features/memoryMap/`,
   the byte being typed over an accent fill showing the digits, a watched byte a breakpoint-hue
   underline, a pointed byte a register-hue underline, a changed byte the shared dot in its corner.
   One `key` string sums a row's marks so both hand-written memo comparators compare one value.
+- **A mark another tool sets keeps off the primary accent and the find hue**: the DMA Transfers' overlay
+  tints the bytes a transfer read in the second accent's wash, the bytes it wrote in the success wash and
+  the next byte with a *dashed* second-accent outline, because the selection (accent wash), the cursor
+  (solid accent outline) and find matches (warning wash) already own those. A navigation that reveals a
+  mark lands a few rows before it, never on it: the cursor's outline would hide the mark's.
 - **The flow gutter is drawn per row**: each row carries its slice of the lanes (`flowGutter.ts`) in
   an SVG as tall as the row, lane 0 innermost beside the address. Nothing is positioned over the
   virtualised list, so variable-height synopsis rows cannot break it. Arrows are `--color-flow-arrow`

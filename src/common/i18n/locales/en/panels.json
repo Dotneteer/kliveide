@@ -1110,5 +1110,10 @@
   "@panels.document.dmaBusTimeline": {
     "context": "Name of the DMA Bus Timeline document tab (ZX Spectrum Next): when the DMA held the bus, frame by frame.",
     "maxChars": 20
+  },
+  "panels.document.dmaTransfers": "DMA Transfers",
+  "@panels.document.dmaTransfers": {
+    "context": "Name of the DMA Transfers document tab (ZX Spectrum Next): every DMA transfer from its enable to its end.",
+    "maxChars": 20
   }
 }

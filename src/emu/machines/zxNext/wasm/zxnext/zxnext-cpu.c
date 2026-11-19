@@ -260,10 +260,12 @@ static uint32_t zxnextCpuRunDma(void) {
       if (zxnextCpuNextIsOneMCycle()) return 0;
     }
     zxnextDmaAcknowledgeBusIfRequested();
-    /* The bus timeline (§13.1): a hold opens when the bus is acknowledged */
-    if (zxnextDmaBusEnabled && dmaBusAcknowledged && !zxnextDmaBusOpen) zxnextDmaBusOpenHold(zxnextDmaSysTact());
+    /* The bus timeline (§13.1): a hold opens when the bus is acknowledged; the transfers ring (§14.1)
+       uses the same tracker for its lost interrupts */
+    if ((zxnextDmaBusEnabled | zxnextDmaXferEnabled) && dmaBusAcknowledged && !zxnextDmaBusOpen) zxnextDmaBusOpenHold(zxnextDmaSysTact());
     const uint32_t ticks = zxnextDmaStep();
     if (ticks > 0u) {
+      if (zxnextDmaXferEnabled) zxnextDmaXferAddHeld(ticks);
       zxnextCpuTactPlusDmaTicks(ticks);
       held = 1u;
     }
@@ -280,6 +282,7 @@ static uint32_t zxnextCpuRunDma(void) {
           if (low) zxnextDmaBusPulseSeen = 2u;
         } else if (!low) {
           zxnextDmaBusFlags |= ZXNEXT_DMABUSF_INT_LOST;
+          zxnextDmaXferNoteIntLost();
           zxnextDmaBusPulseSeen = 1u;
         }
       }

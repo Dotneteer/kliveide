@@ -89,6 +89,8 @@ import {
   DmaStateCommand,
   HideDmaLogCommand,
   HideDmaTimelineCommand,
+  HideDmaTransfersCommand,
+  ShowDmaTransfersCommand,
   ShowDmaTimelineCommand,
   ShowDmaLogCommand,
   StepDmaBlockCommand,
@@ -247,6 +249,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new HideDmaLogCommand());
   cmdSrv.registerCommand(new ShowDmaTimelineCommand());
   cmdSrv.registerCommand(new HideDmaTimelineCommand());
+  cmdSrv.registerCommand(new ShowDmaTransfersCommand());
+  cmdSrv.registerCommand(new HideDmaTransfersCommand());
   cmdSrv.registerCommand(new StepDmaCommand());
   cmdSrv.registerCommand(new StepDmaBlockCommand());
   cmdSrv.registerCommand(new StepDmaReleaseCommand());
