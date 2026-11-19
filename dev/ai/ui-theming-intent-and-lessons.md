@@ -1786,6 +1786,18 @@ device is doing. The rule that settled, reusable for any device with a "what is 
 - **A hardware name in a section heading keeps its case** (`zxnDDMA`): the headings are upper-cased by
   CSS, so such a name sits in a span with `text-transform: none`.
 
+## A Log Of Bytes: The Group's Byte Is A Value In Bold, Its Followers Indent, A Problem Is A Row Wash
+
+The DMA Port Log (`DmaPortLogPanel.module.scss`) settled how a log of bytes that form commands reads:
+
+- **The byte that starts a command is a value in bold; the bytes that belong to it are indented in the
+  byte column**, so a command's extent is visible without a border or a second colour. Reads keep the
+  second accent (`--color-state-value-alt`), apart from writes at a glance.
+- **A row with a problem gets the warning wash behind the whole row and its reason in the warning hue
+  after the meaning**; the row's values keep their colours. One row, one wash: never a coloured cell.
+- **A group header (a setup) is a row of secondary text with one primary phrase** (its number and size)
+  and a link-coloured action, so headers read as structure, not as data.
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

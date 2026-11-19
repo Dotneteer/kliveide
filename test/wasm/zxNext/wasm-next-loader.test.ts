@@ -109,6 +109,8 @@ function createViewExports(
     // --- The Interrupts panel's snapshot, the hit record and the 1 MB interrupt event ring (from offset 0)
     zxnextGetInterruptStatePtr: () => options.nextRegWatchOffset ?? 0,
     zxnextGetDmaStatePtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextDmaLogPtr: () => 0,
+    zxnextDmaLogGetCapacity: () => 0,
     zxnextIntHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextIntEventsPtr: () => 0,
     zxnextIntEventsGetCapacity: () => 65536,

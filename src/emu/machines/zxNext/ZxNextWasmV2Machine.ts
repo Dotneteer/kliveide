@@ -42,6 +42,7 @@ import {
   type NextInterruptState
 } from "@common/zxnext/interrupts/interruptState";
 import { decodeDmaState, type NextDmaState } from "@common/zxnext/dma/dmaState";
+import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -2124,6 +2125,26 @@ export class ZxNextWasmV2Machine
       nextRegCE: ex.zxnextPeekNextRegister(0xce),
       tactsInFrame: ex.zxnextGetTactsInFrame()
     });
+  }
+
+  /** The DMA Port Log's records written since `since` (all held ones by default), oldest first (§11.1) */
+  getDmaLog(since?: number): NextDmaLog {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const capacity = ex.zxnextDmaLogGetCapacity();
+    const count = ex.zxnextDmaLogGetCount() >>> 0;
+    const { firstSeq, records } = copyRingRecords(runtime.dmaLog, capacity, count, since ?? 0);
+    return { enabled: ex.zxnextDmaLogGetEnabled() !== 0, capacity, count, firstSeq, records };
+  }
+
+  /** Switches the DMA Port Log's recording on or off */
+  setDmaLogRecording(enabled: boolean): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaLogSetEnabled(enabled ? 1 : 0);
+  }
+
+  /** Forgets every recorded DMA port access */
+  clearDmaLog(): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaLogClear();
   }
 
   /** The interrupt event ring's records written since `since` (all held ones by default), oldest first */

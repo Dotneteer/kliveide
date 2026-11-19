@@ -112,6 +112,48 @@ static uint8_t dmaRdSeq;
 static uint8_t dmaStartsSinceLoad;
 static uint8_t dmaEnableNote;
 
+/*
+ * The DMA Port Log's ring (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §11.1): every access to port $6B and
+ * $0B, recorded only while `zxnextDmaLogEnabled` is set. Debugging state only: every static here is
+ * volatile (build-zxnext-wasm.cjs), and recording never changes what the DMA does. A record is 16 bytes:
+ *   +0  u32 frame          +4  u32 position in the frame (28 MHz clocks)
+ *   +8  u16 PC of the instruction (an I/O instruction is two bytes: PC - 2 during its I/O cycle)
+ *   +10 u8  the byte written or read
+ *   +11 u8  flags: ZXNEXT_DMALOGF_*, bits 5-4 the CPU speed
+ *   +12 u8  write: the write sequencer before the byte; read: the read entry returned
+ *   +13 u8  write: the write sequencer after the byte
+ *   +14 u8  write: dmaRegTemp after the byte (the base byte of the group in progress)
+ *   +15 u8  write: dmaStartsSinceLoad after the byte
+ * The count only grows; record n lives at n % ZXNEXT_DMALOG_CAPACITY.
+ */
+#define ZXNEXT_DMALOG_CAPACITY 32768u
+#define ZXNEXT_DMALOG_RECORD_SIZE 16u
+#define ZXNEXT_DMALOGF_READ 0x01u
+#define ZXNEXT_DMALOGF_PORT_0B 0x02u
+#define ZXNEXT_DMALOGF_HOST 0x04u
+#define ZXNEXT_DMALOGF_SPEED_SHIFT 4u
+static uint8_t zxnextDmaLog[ZXNEXT_DMALOG_CAPACITY * ZXNEXT_DMALOG_RECORD_SIZE];
+static uint32_t zxnextDmaLogCount;
+static uint8_t zxnextDmaLogEnabled;
+
+uint32_t z80GetPc(void);
+
+static void zxnextDmaLogRecord(uint32_t value, uint32_t flags, uint32_t before, uint32_t after, uint32_t regTemp, uint32_t starts) {
+  uint8_t *r = &zxnextDmaLog[(zxnextDmaLogCount % ZXNEXT_DMALOG_CAPACITY) * ZXNEXT_DMALOG_RECORD_SIZE];
+  const uint32_t f = frames;
+  const uint32_t p = frameTacts28;
+  const uint32_t host = zxnextCpuInInstruction ? 0u : ZXNEXT_DMALOGF_HOST;
+  const uint32_t pc = host ? 0u : ((z80GetPc() - 2u) & 0xffffu);
+  r[0] = (uint8_t)f; r[1] = (uint8_t)(f >> 8); r[2] = (uint8_t)(f >> 16); r[3] = (uint8_t)(f >> 24);
+  r[4] = (uint8_t)p; r[5] = (uint8_t)(p >> 8); r[6] = (uint8_t)(p >> 16); r[7] = (uint8_t)(p >> 24);
+  r[8] = (uint8_t)pc; r[9] = (uint8_t)(pc >> 8);
+  r[10] = (uint8_t)value;
+  r[11] = (uint8_t)(flags | host | (dmaMode ? ZXNEXT_DMALOGF_PORT_0B : 0u) |
+    ((uint32_t)(cpuEffectiveSpeed & 0x03u) << ZXNEXT_DMALOGF_SPEED_SHIFT));
+  r[12] = (uint8_t)before; r[13] = (uint8_t)after; r[14] = (uint8_t)regTemp; r[15] = (uint8_t)starts;
+  zxnextDmaLogCount++;
+}
+
 /* The note an enable latches */
 static inline void zxnextDmaLatchEnableNote(void) {
   dmaEnableNote = (uint8_t)((dmaStartsSinceLoad ? 0x01u : 0u) | (dmaEndOfBlockN ? 0u : 0x02u));
@@ -455,7 +497,7 @@ static void zxnextDmaWriteBase(uint8_t d) {
   }
 }
 
-void zxnextDmaWritePort(uint32_t value) {
+static void zxnextDmaWritePortCore(uint32_t value) {
   uint8_t d = value & 0xffu;
   switch (dmaWrSeq) {
     case DMA_WR_IDLE:
@@ -530,7 +572,7 @@ void zxnextDmaWritePort(uint32_t value) {
 // Read sequence
 // ============================================================================
 
-uint32_t zxnextDmaReadStatusByte(void) {
+static uint32_t zxnextDmaReadStatusByteCore(void) {
   uint32_t value;
   const uint16_t portA = dmaDirAtoB ? dmaSrc : dmaDest;
   const uint16_t portB = dmaDirAtoB ? dmaDest : dmaSrc;
@@ -546,6 +588,33 @@ uint32_t zxnextDmaReadStatusByte(void) {
   dmaRdSeq = zxnextDmaNextReadEntry(dmaRdSeq);
   return value;
 }
+
+/* A write to the DMA's port, recorded in the DMA Port Log while it records */
+void zxnextDmaWritePort(uint32_t value) {
+  if (!zxnextDmaLogEnabled) {
+    zxnextDmaWritePortCore(value);
+    return;
+  }
+  const uint32_t before = dmaWrSeq;
+  zxnextDmaWritePortCore(value);
+  zxnextDmaLogRecord(value & 0xffu, 0u, before, dmaWrSeq, dmaRegTemp, dmaStartsSinceLoad);
+}
+
+/* A read of the DMA's port, recorded in the DMA Port Log while it records */
+uint32_t zxnextDmaReadStatusByte(void) {
+  const uint32_t entry = dmaRdSeq;
+  const uint32_t value = zxnextDmaReadStatusByteCore();
+  if (zxnextDmaLogEnabled) zxnextDmaLogRecord(value, ZXNEXT_DMALOGF_READ, entry, 0u, 0u, 0u);
+  return value;
+}
+
+/* The DMA Port Log's exports (§11.1) */
+uint32_t zxnextDmaLogPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaLog; }
+uint32_t zxnextDmaLogGetCapacity(void) { return ZXNEXT_DMALOG_CAPACITY; }
+uint32_t zxnextDmaLogGetCount(void) { return zxnextDmaLogCount; }
+void zxnextDmaLogSetEnabled(uint32_t enabled) { zxnextDmaLogEnabled = enabled ? 1u : 0u; }
+uint32_t zxnextDmaLogGetEnabled(void) { return zxnextDmaLogEnabled; }
+void zxnextDmaLogClear(void) { zxnextDmaLogCount = 0u; }
 
 // ============================================================================
 // Transfer

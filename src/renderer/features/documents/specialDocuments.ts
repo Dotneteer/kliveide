@@ -5,6 +5,8 @@ import {
   COPPER_PANEL_ID,
   INT_TIMELINE_EDITOR,
   INT_TIMELINE_PANEL_ID,
+  DMA_LOG_EDITOR,
+  DMA_LOG_PANEL_ID,
   NEXTREGS_EDITOR,
   NEXTREGS_PANEL_ID,
   DISASSEMBLY_EDITOR,
@@ -39,6 +41,7 @@ export type SpecialDocumentId =
   | typeof BASIC_PANEL_ID
   | typeof COPPER_PANEL_ID
   | typeof INT_TIMELINE_PANEL_ID
+  | typeof DMA_LOG_PANEL_ID
   | typeof NEXTREGS_PANEL_ID
   | typeof SPRITES_PANEL_ID
   | typeof TILEMAP_PANEL_ID
@@ -89,6 +92,13 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "int-timeline",
     workspaceRestorable: true
   }, { name: "panels.document.interruptTimeline" }),
+  // --- The ZX Spectrum Next DMA Port Log (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §11.3)
+  [DMA_LOG_PANEL_ID]: withTexts({
+    id: DMA_LOG_PANEL_ID,
+    type: DMA_LOG_EDITOR,
+    iconName: "dma-log",
+    workspaceRestorable: true
+  }, { name: "panels.document.dmaPortLog" }),
   // --- The ZX Spectrum Next registers, popped out of the Debug sidebar's Next Registers panel
   [NEXTREGS_PANEL_ID]: withTexts({
     id: NEXTREGS_PANEL_ID,

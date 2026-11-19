@@ -1829,6 +1829,39 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next DMA Port Log's records written since `since`.
+   */
+  getDmaLog(since?: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getDmaLog(since);
+  }
+
+  /**
+   * Switches the ZX Spectrum Next DMA Port Log's recording on or off.
+   */
+  setDmaLogRecording(enabled: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).setDmaLogRecording(enabled);
+  }
+
+  /**
+   * Forgets every recorded ZX Spectrum Next DMA port access.
+   */
+  clearDmaLog() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).clearDmaLog();
+  }
+
+  /**
    * Gets the ZX Spectrum Next interrupt event ring's records written since `since`.
    */
   getInterruptEvents(since?: number) {

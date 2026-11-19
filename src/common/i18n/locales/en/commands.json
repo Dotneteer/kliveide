@@ -1905,6 +1905,14 @@
   "@commands.dma.nextOnly": {
     "context": "Error of the 'dma' IDE command when the running machine is not a ZX Spectrum Next."
   },
+  "commands.dma.showLogDescription": "Opens the ZX Spectrum Next DMA Port Log, which records every access to the DMA's ports while it is open",
+  "@commands.dma.showLogDescription": {
+    "context": "Description of the 'show-dma-log' IDE command."
+  },
+  "commands.dma.hideLogDescription": "Closes the ZX Spectrum Next DMA Port Log, which stops its recording",
+  "@commands.dma.hideLogDescription": {
+    "context": "Description of the 'hide-dma-log' IDE command."
+  },
   "commands.interrupts.showTimelineDescription": "Displays the Interrupt Timeline and starts recording interrupt events",
   "@commands.interrupts.showTimelineDescription": {
     "context": "Description of the 'show-int-timeline' interactive command, shown by 'help'."

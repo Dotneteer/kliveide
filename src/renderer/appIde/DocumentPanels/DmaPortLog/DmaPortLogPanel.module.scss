@@ -1,0 +1,149 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The DMA Port Log document (NEXT_DMA_DEBUGGING_PLAN §11.3). Values take the state panels' colour;
+ * base bytes the DMA's (`--color-dma-badge-active`, the accent), follow bytes are indented and
+ * secondary, reads keep the second accent; a row with an anomaly is a warning wash with its reason in
+ * the warning hue. Widths in `ch` (M2).
+ */
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--surface-panel);
+    color: var(--data-secondary);
+    text-align: left;
+    font-weight: normal;
+    padding: 0 1ch;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  td {
+    padding: 0 1ch;
+    white-space: nowrap;
+    color: var(--color-state-value);
+    vertical-align: top;
+  }
+
+  tbody tr:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+/* --- A setup's header: its number, where it came from, whether it enables */
+.setupRow td {
+  padding-top: var(--space-2);
+  color: var(--data-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.setupTitle {
+  color: var(--text-primary);
+  margin-right: 1ch;
+}
+
+.setupDetail {
+  margin-right: 2ch;
+}
+
+.followRow td:nth-child(5) {
+  padding-left: 3ch;
+}
+
+.baseByte.baseByte {
+  font-weight: 600;
+}
+
+.readByte.readByte {
+  color: var(--color-state-value-alt);
+}
+
+.secondary.secondary {
+  color: var(--data-secondary);
+}
+
+.meaning.meaning {
+  color: var(--text-primary);
+  white-space: normal;
+}
+
+.anomaly {
+  background-color: var(--bgcolor-dma-diag-warning);
+}
+
+.anomalyText {
+  margin-left: 1ch;
+  color: var(--status-warning);
+}
+
+.pc,
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.pc {
+  color: var(--color-state-value);
+  text-decoration: underline dotted;
+}
+
+.link {
+  color: var(--accent-text);
+}
+
+.held {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.full {
+  color: var(--status-warning);
+}
+
+.muted {
+  color: var(--data-secondary);
+  padding: var(--space-1) 1ch;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.segment {
+  border: none;
+  background: none;
+  padding: 0 1ch;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  @include focus-ring;
+}
+
+.segmentOn.segmentOn {
+  background-color: var(--accent-subtle);
+  color: var(--text-primary);
+}
