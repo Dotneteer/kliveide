@@ -12,6 +12,7 @@ import type {
 } from "@common/messaging/EmuApi";
 import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zxnext/layers/layerMix";
 import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/interrupts/interruptState";
+import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 
 /**
  * What the IDE reads from a ZX Spectrum Next.
@@ -58,6 +59,9 @@ export interface IZxNextIdeMachine {
 
   /** The interrupt system: the chain, the modes, the NMI (NEXT_INTERRUPTS_DEBUGGING_PLAN §3.2). Side-effect free. */
   getInterruptState(): NextInterruptState;
+
+  /** The DMA: registers, working state and sequencers (NEXT_DMA_DEBUGGING_PLAN §3.2). Side-effect free. */
+  getDmaState(): NextDmaState;
 
   /** The interrupt event ring's records written since `since` (all held ones by default), oldest first. */
   getInterruptEvents(since?: number): NextInterruptEvents;
@@ -115,6 +119,7 @@ export function isZxNextIdeMachine(machine: unknown): machine is IZxNextIdeMachi
     typeof m.getNextUlaState === "function" &&
     typeof m.getCopperState === "function" &&
     typeof m.getInterruptState === "function" &&
+    typeof m.getDmaState === "function" &&
     typeof m.getNextSpriteState === "function" &&
     typeof m.getNextTilemapState === "function" &&
     typeof m.getNextLayer2State === "function" &&

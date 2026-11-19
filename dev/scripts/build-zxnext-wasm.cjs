@@ -75,6 +75,8 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextIntNmiOpen",
   "zxnextInterruptsSoftwareRequest",
   "zxnextIdeInterruptState",
+  // --- The DMA panel's snapshot buffer (NEXT_DMA_DEBUGGING_PLAN §3.2)
+  "zxnextIdeDmaState",
   "zxnextCopperWatch",
   "zxnextCopperWatchArmed",
   "zxnextCopperWatchAny",
@@ -551,6 +553,7 @@ const productionExports = [
   "zxnextGetDmaAddressA",
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
+  "zxnextGetDmaStatePtr",
 ];
 
 const buildModes = {

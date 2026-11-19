@@ -40,6 +40,7 @@ import type {
   NextInterruptEvents,
   NextInterruptState
 } from "@common/zxnext/interrupts/interruptState";
+import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
   HistoricalCpuInfo,
@@ -856,6 +857,14 @@ class EmuApiImpl {
    * the NMI. Reading it never changes the machine.
    */
   async getInterruptState(): Promise<NextInterruptState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the ZX Spectrum Next DMA's state: its registers, working addresses, counter and sequencers.
+   * Reading it never changes the machine.
+   */
+  async getDmaState(): Promise<NextDmaState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

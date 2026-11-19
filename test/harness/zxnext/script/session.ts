@@ -13,6 +13,7 @@ import {
   type NextInterruptState,
   type NextIntEvent
 } from "@common/zxnext/interrupts/interruptState";
+import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
   CopperState,
@@ -1252,6 +1253,17 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getInterruptState();
+  }
+
+  /**
+   * The DMA as the IDE's DMA panel reads it (`IZxNextIdeMachine.getDmaState`, NEXT_DMA_DEBUGGING_PLAN
+   * §3.2): its registers, start and working addresses, counter, sequencers and, on core 3.03, the
+   * zxnDDMA settings. No side effects: unlike reading port $6B, it does not move the read sequence.
+   */
+  dmaState(): NextDmaState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getDmaState();
   }
 
   /** Switches the interrupt event ring on or off, as the Interrupt Timeline document does (§4.1). */

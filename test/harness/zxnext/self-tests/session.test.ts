@@ -26,6 +26,20 @@ describe("harness session", () => {
     expect(s.registers()).toMatchObject({ pc: s.symbol("Done"), a: 0x42, hl: 0x1234 });
   });
 
+  it("dmaState reads the DMA's registers without moving its read sequence", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\nPark: jr Park");
+    // --- WR0 A->B, port A $1234, length 16; WR4 port B $5678; load
+    for (const b of [0x7d, 0x34, 0x12, 0x10, 0x00, 0xad, 0x78, 0x56, 0xcf, 0xbb, 0x18]) s.out(0x6b, b);
+    const st = s.dmaState();
+    expect(st).toMatchObject({ dialect: "zxn", aToB: true, blockLength: 16, nextRead: "portALo" });
+    expect(st.portA).toMatchObject({ start: 0x1234, working: 0x1234 });
+    expect(st.portB).toMatchObject({ start: 0x5678, working: 0x5678 });
+    s.dmaState();
+    // --- the mask $18 enables port A lo and hi: the first read still gives port A's low byte
+    expect(s.in(0x6b)).toBe(0x34);
+  });
+
   it("step executes exactly one instruction per count", async () => {
     const s = await createSession();
     await s.loadCode(`

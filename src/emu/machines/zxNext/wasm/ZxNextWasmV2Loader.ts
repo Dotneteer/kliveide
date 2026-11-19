@@ -454,6 +454,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetDmaAddressA: ZxNextWasmV2ExportFunction;
   zxnextGetDmaAddressB: ZxNextWasmV2ExportFunction;
   zxnextGetDmaSeq: ZxNextWasmV2ExportFunction;
+  zxnextGetDmaStatePtr: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -505,6 +506,8 @@ export type ZxNextWasmV2Runtime = {
   readonly copperMemory: Uint8Array;
   /** The Interrupts panel's 96-byte snapshot, filled by `zxnextGetInterruptStatePtr` (read only by the IDE) */
   readonly interruptState: Uint8Array;
+  /** The DMA panel's 64-byte snapshot, filled by `zxnextGetDmaStatePtr` (read only by the IDE) */
+  readonly dmaState: Uint8Array;
   /** The interrupt event ring: 64K records of 16 bytes (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1; read only by the IDE) */
   readonly interruptEvents: Uint8Array;
   /** The latched interrupt-stop hit's record, 16 bytes (read only by the IDE) */
@@ -952,6 +955,7 @@ const requiredV2Exports = [
   "zxnextGetDmaAddressA",
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
+  "zxnextGetDmaStatePtr",
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS,
@@ -1042,6 +1046,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "spriteWatch", exports.zxnextSpriteWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "interruptState", exports.zxnextGetInterruptStatePtr(), 96, memoryBuffer);
+  assertViewRange(artifactName, "dmaState", exports.zxnextGetDmaStatePtr(), 64, memoryBuffer);
   assertViewRange(artifactName, "interruptEvents", exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16, memoryBuffer);
   assertViewRange(artifactName, "interruptHitRecord", exports.zxnextIntHitRecordPtr(), 16, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
@@ -1065,6 +1070,7 @@ export function createZxNextWasmV2Views(
     spriteWatch: new Uint8Array(memoryBuffer, exports.zxnextSpriteWatchPtr(), 128),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     interruptState: new Uint8Array(memoryBuffer, exports.zxnextGetInterruptStatePtr(), 96),
+    dmaState: new Uint8Array(memoryBuffer, exports.zxnextGetDmaStatePtr(), 64),
     interruptEvents: new Uint8Array(memoryBuffer, exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16),
     interruptHitRecord: new Uint8Array(memoryBuffer, exports.zxnextIntHitRecordPtr(), 16),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),

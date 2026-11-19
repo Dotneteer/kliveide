@@ -746,6 +746,27 @@ export const componentAliases: Record<string, string> = {
   "--color-int-late": "var(--status-error)",
   "--color-int-reti": "var(--status-success)",
 
+  // --- DMA panel (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §3) ------------------------------------------
+  /*
+   * The header badge says what the DMA is doing: a transfer under way (holding, waiting, starting,
+   * stepped aside) is a value, so it takes the state panels' colour on the accent's subtle fill; a state
+   * the program cannot leave by itself (deaf, locked) takes the error hue; idle is neutral. Diagnostics
+   * reuse the Interrupts panel's rule-and-fill look, by meaning. The status byte's live bits (E, T) are
+   * values; its fixed bits are tertiary text.
+   */
+  "--color-dma-badge-active": "var(--color-state-value)",
+  "--bgcolor-dma-badge-active": "var(--accent-subtle)",
+  "--color-dma-badge-alert": "var(--status-error)",
+  "--bgcolor-dma-badge-alert": "var(--status-error-subtle)",
+  "--color-dma-badge-idle": "var(--text-secondary)",
+  "--bgcolor-dma-badge-idle": "var(--surface-hover)",
+  "--border-dma-diag-info": "var(--status-info)",
+  "--bgcolor-dma-diag-info": "var(--accent-subtle)",
+  "--border-dma-diag-warning": "var(--status-warning)",
+  "--bgcolor-dma-diag-warning": "var(--status-warning-subtle)",
+  "--color-dma-progress": "var(--color-state-value)",
+  "--bgcolor-dma-progress-track": "var(--surface-hover)",
+
   // --- Execution History (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
   /*
    * Event rows (INT, NMI, DMA hold) are separators, not instructions: a subtle neutral band with

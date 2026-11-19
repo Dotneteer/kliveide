@@ -912,3 +912,9 @@ address that bypasses the MMU and reaches all 4 MB of the Issue 5 board, `$DF` f
 reads, and X,Y positions on the Layer 2 screen. On an older core those bytes turn into register writes, so
 check before you use them. Once you know who holds the bus and when, the courier is the fastest pair of hands
 in the machine.
+
+<Callout type="info">
+To see all of this in a running program, open Klive's DMA panel: [Debugging the DMA](/en/guides/next/dma/)
+shows the start and working addresses side by side, the prescaler's exact period, the status byte and the
+read sequence, and warns about the traps in this chapter.
+</Callout>

@@ -1897,6 +1897,14 @@
   "@commands.interrupts.nextOnly": {
     "context": "Error of the 'show-int-timeline' command and of 'int:' breakpoints on a machine other than the Next."
   },
+  "commands.dma.description": "Prints the ZX Spectrum Next DMA's state: its registers, addresses, pacing, status and diagnostics",
+  "@commands.dma.description": {
+    "context": "Description of the 'dma' IDE command in the command list and help. 'DMA' is a hardware name."
+  },
+  "commands.dma.nextOnly": "The DMA state is available only on the ZX Spectrum Next",
+  "@commands.dma.nextOnly": {
+    "context": "Error of the 'dma' IDE command when the running machine is not a ZX Spectrum Next."
+  },
   "commands.interrupts.showTimelineDescription": "Displays the Interrupt Timeline and starts recording interrupt events",
   "@commands.interrupts.showTimelineDescription": {
     "context": "Description of the 'show-int-timeline' interactive command, shown by 'help'."

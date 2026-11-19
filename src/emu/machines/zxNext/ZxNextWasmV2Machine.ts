@@ -41,6 +41,7 @@ import {
   type NextInterruptEvents,
   type NextInterruptState
 } from "@common/zxnext/interrupts/interruptState";
+import { decodeDmaState, type NextDmaState } from "@common/zxnext/dma/dmaState";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -2103,6 +2104,25 @@ export class ZxNextWasmV2Machine
         count: ex.zxnextIntEventsGetCount() >>> 0,
         capacity: ex.zxnextIntEventsGetCapacity()
       }
+    });
+  }
+
+  /**
+   * The DMA panel's snapshot (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §3.2): one core call fills 64 bytes
+   * without side effects (it never reads port $6B, which would move the read sequence on).
+   */
+  getDmaState(): NextDmaState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    ex.zxnextGetDmaStatePtr();
+    return decodeDmaState(runtime.dmaState, {
+      nextReg82: ex.zxnextPeekNextRegister(0x82),
+      nextReg85: ex.zxnextPeekNextRegister(0x85),
+      nextRegC0: ex.zxnextPeekNextRegister(0xc0),
+      nextRegCC: ex.zxnextPeekNextRegister(0xcc),
+      nextRegCD: ex.zxnextPeekNextRegister(0xcd),
+      nextRegCE: ex.zxnextPeekNextRegister(0xce),
+      tactsInFrame: ex.zxnextGetTactsInFrame()
     });
   }
 

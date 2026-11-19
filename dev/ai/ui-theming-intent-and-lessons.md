@@ -1766,6 +1766,26 @@ settled four rules worth reusing for any view of competing hardware sources:
 - **One scroller per region.** A document with a chart and lists splits them with a `SplitPanel`; the
   body never scrolls, and each list scrolls in its own `ScrollViewer` filling its pane.
 
+## A Hardware State Badge: A Value On A Wash, A Dead End In The Error Hue, Idle Neutral
+
+The Next's DMA panel (`--*-dma-*` aliases in `componentAliases.ts`) opens with one badge naming what the
+device is doing. The rule that settled, reusable for any device with a "what is it doing" row:
+
+- **A state the device is working through is a value**: `--color-state-value` text on `--accent-subtle`,
+  like every other value in a converted state panel. Idle is neutral (`--text-secondary` on
+  `--surface-hover`), so a quiet device does not look like news.
+- **A state the program cannot leave by itself takes the error hue** (DMA: deaf until reset, locked by
+  auto restart). That is the one place the badge leaves the accent; warnings below it carry the
+  evidence and stay in the diagnostic look of the Interrupts panel (left rule and subtle fill).
+- **Live bits of a register byte are values in a bordered cell; fixed bits are tertiary text in a plain
+  cell.** The DMA status byte `00E1101T` shows E and T as values, the six fixed bits recede, so the eye
+  lands on the two that change.
+- **Start and working addresses side by side: the working one takes `--color-state-value-alt` only once
+  it differs from its start.** Two pointers into the same space get two accents only when they disagree,
+  which is exactly when the reader needs to look.
+- **A hardware name in a section heading keeps its case** (`zxnDDMA`): the headings are upper-cased by
+  CSS, so such a name sits in a span with `text-transform: none`.
+
 ## Token Architecture
 
 Four layers, in `src/renderer/theming/tokens/`:

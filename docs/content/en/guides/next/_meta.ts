@@ -5,6 +5,7 @@ export default {
   "next-breakpoints": "Next breakpoints",
   "copper": "The Copper view",
   "interrupts": "Debugging interrupts",
+  "dma": "Debugging the DMA",
   "sprite-inspector": "The Sprite Inspector",
   "tilemap-inspector": "The Tilemap Inspector",
   "layer2-inspector": "The Layer 2 Inspector",

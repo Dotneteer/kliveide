@@ -108,6 +108,7 @@ function createViewExports(
     zxnextSpritePatternMemory8Ptr: () => 0,
     // --- The Interrupts panel's snapshot, the hit record and the 1 MB interrupt event ring (from offset 0)
     zxnextGetInterruptStatePtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextGetDmaStatePtr: () => options.nextRegWatchOffset ?? 0,
     zxnextIntHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextIntEventsPtr: () => 0,
     zxnextIntEventsGetCapacity: () => 65536,

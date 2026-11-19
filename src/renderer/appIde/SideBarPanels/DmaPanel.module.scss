@@ -1,0 +1,196 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The DMA side-bar panel (NEXT_DMA_DEBUGGING_PLAN §3). A `DataPanel`, so font, size and leading come
+ * from `Data.module.scss`; this file lays out the field rows, the badge, the diagnostics, the ports
+ * table, the status bits and the read-sequence chips. Widths are `ch` (M2); colours are L4 aliases
+ * (`--*-dma-*`) or the shared state-value colours.
+ */
+.dmaPanel {
+  padding-block: var(--space-1);
+}
+
+.fieldRow {
+  padding-inline: var(--space-2);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  color: var(--data-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sectionHint {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* A hardware name whose case is part of it (zxnDDMA) */
+.keepCase {
+  text-transform: none;
+}
+
+/* --- The header badge: what the DMA is doing */
+.badge {
+  padding-inline: 0.75ch;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  color: var(--color-dma-badge-active);
+  background-color: var(--bgcolor-dma-badge-active);
+  font-weight: 600;
+}
+
+.badge_idle {
+  color: var(--color-dma-badge-idle);
+  background-color: var(--bgcolor-dma-badge-idle);
+  font-weight: 400;
+}
+
+.badge_deaf,
+.badge_locked {
+  color: var(--color-dma-badge-alert);
+  background-color: var(--bgcolor-dma-badge-alert);
+}
+
+/* --- Diagnostics: a hint with its evidence (D4) */
+.diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) var(--space-2);
+}
+
+.diag {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid var(--border-dma-diag-info);
+  background-color: var(--bgcolor-dma-diag-info);
+}
+
+.info {
+  border-left-color: var(--border-dma-diag-info);
+  background-color: var(--bgcolor-dma-diag-info);
+}
+
+.warning {
+  border-left-color: var(--border-dma-diag-warning);
+  background-color: var(--bgcolor-dma-diag-warning);
+}
+
+.diagTitle {
+  color: var(--text-primary);
+}
+
+.diagDetail {
+  color: var(--data-secondary);
+}
+
+/* --- The progress bar beside the byte count */
+.bar {
+  flex: 1 1 auto;
+  min-width: 6ch;
+  height: 0.5ch;
+  margin-inline: 1ch var(--space-2);
+  align-self: center;
+  border-radius: 2px;
+  background-color: var(--bgcolor-dma-progress-track);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background-color: var(--color-dma-progress);
+}
+
+/* --- The ports table: a label column, then port A and port B */
+.portRow {
+  display: grid;
+  grid-template-columns: 13ch minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 1ch;
+  padding-inline: var(--space-2);
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+.portHeader {
+  color: var(--data-secondary);
+
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.portLabel {
+  color: var(--data-secondary);
+}
+
+.value {
+  color: var(--color-state-value);
+  font-weight: 600;
+}
+
+/* A working address that has moved away from its start */
+.valueAlt {
+  color: var(--color-state-value-alt);
+  font-weight: 600;
+}
+
+.secondary {
+  color: var(--data-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- The status byte's bits, bit 7 first; E (5) and T (0) are the live ones */
+.bits {
+  display: inline-flex;
+  gap: 0.25ch;
+  margin-left: 1ch;
+}
+
+.bit {
+  width: 2ch;
+  text-align: center;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+}
+
+.bitLive {
+  color: var(--color-state-value);
+  border-color: var(--color-state-value);
+  font-weight: 600;
+}
+
+/* --- The read sequence: one chip per entry, the next one marked, masked-out ones dim */
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5ch;
+}
+
+.chip {
+  padding-inline: 0.5ch;
+  color: var(--data-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+}
+
+.chipNext {
+  color: var(--color-state-value);
+  border-color: var(--color-state-value);
+  font-weight: 600;
+}
+
+.chipOff {
+  color: var(--text-disabled);
+  text-decoration: line-through;
+}
