@@ -342,60 +342,99 @@
 }
 
 /*
- * The inline error/warning pills.
+ * A build's errors and warnings, shown quietly (the "quiet hint"): a faint tint across the line, its
+ * line number in the status colour, and after the code the line's first message in the status colour
+ * at normal weight, then its code and "+N" (more messages on the line) dimmed. No fill and no bold:
+ * the code stays the loudest thing on the line. The squiggle, the hover (all messages, with their
+ * codes and quick fixes) and the problem counter carry the rest.
  *
- * `.warningIcon` was declared three times: once sharing a block with `.errorIcon`, once setting
- * `background-color: orangered !important`, and once setting `color: orange` — which never applied,
- * because the shared block's `color: … !important` outranked it. One of the three declarations was
- * dead, and a named CSS colour was doing the work of a status token.
+ * The line number takes the colour rather than a glyph, because the glyph margin is the breakpoints'.
  *
- * `!important` stays only on the properties Monaco sets inline on these decoration elements; the
- * rest no longer carry it.
+ * Injected text gets the token class of the text it stands in (`mtk1`), which beats a bare module
+ * class, so the hint classes are scoped under `.monaco-editor`.
  */
-.errorIcon,
-.warningIcon {
-  color: var(--console-ansi-bright-white) !important;
-  font-family: var(--shell-font-family) !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  margin-left: 0.75rem !important;
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
-  border-top-left-radius: 100px;
-  border-bottom-left-radius: 100px;
+.errorLine {
+  background: var(--status-error-faint);
+}
+
+.warningLine {
+  background: var(--status-warning-faint);
+}
+
+/* Also on the cursor line, whose number Monaco colours with a more specific rule */
+:global(.monaco-editor) .errorLineNumber,
+:global(.monaco-editor) .errorLineNumber:global(.line-numbers.active-line-number) {
+  color: var(--status-error);
+  font-weight: 700;
+}
+
+:global(.monaco-editor) .warningLineNumber,
+:global(.monaco-editor) .warningLineNumber:global(.line-numbers.active-line-number) {
+  color: var(--status-warning);
+  font-weight: 700;
+}
+
+:global(.monaco-editor) .errorHint,
+:global(.monaco-editor) .warningHint {
+  font-family: var(--shell-font-family);
+  font-size: var(--font-size-300);
+  font-style: normal;
+  font-weight: 400;
+  margin-left: 3ch;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 1000ch;
-  vertical-align: middle;
+}
+
+:global(.monaco-editor) .errorHint {
+  color: var(--status-error);
+}
+
+:global(.monaco-editor) .warningHint {
+  color: var(--status-warning);
+}
+
+/* The severity icon, drawn before the hint's first piece only (a mask reads alpha, so the colour is
+   the status token) */
+:global(.monaco-editor) .errorHint:not(.errorHint + .errorHint)::before,
+:global(.monaco-editor) .warningHint:not(.warningHint + .warningHint)::before {
+  content: "";
   display: inline-block;
-  text-align: right;
+  width: calc(var(--space-1) * 3);
+  height: calc(var(--space-1) * 3);
+  margin-right: var(--space-1_5);
+  vertical-align: -0.15ex;
+  background-color: currentColor;
 }
 
-.errorIcon {
-  background-color: var(--status-error);
+:global(.monaco-editor) .errorHint:not(.errorHint + .errorHint)::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M15 9l-6 6M9 9l6 6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
-.warningIcon {
-  background-color: var(--status-warning);
+:global(.monaco-editor) .warningHint:not(.warningHint + .warningHint)::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l10 18H2z'/%3E%3Cpath d='M12 10v4M12 17.5v.01'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
 /*
- * Monaco renders a long text run as pieces of at most 50 characters, each its own span carrying
- * the decoration's class — so a long message would show as several pills, split mid-word. A piece
- * that follows another of the same pill joins it seamlessly: no gap, no padding, no rounding at the
- * joint.
+ * Monaco renders a long text run as pieces of at most 50 characters, each its own span carrying the
+ * decoration's class. A piece that follows another of the same hint joins it: no gap, no icon.
  */
-.errorIcon + .errorIcon,
-.warningIcon + .warningIcon {
-  margin-left: 0 !important;
-  padding-left: 0 !important;
-  border-radius: 0;
+:global(.monaco-editor) .errorHint + .errorHint,
+:global(.monaco-editor) .warningHint + .warningHint {
+  margin-left: 0;
 }
 
-.errorIcon:has(+ .errorIcon),
-.warningIcon:has(+ .warningIcon) {
-  padding-right: 0 !important;
+:global(.monaco-editor) .hintDetail {
+  font-size: var(--font-size-100);
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-left: 1.5ch;
+  white-space: pre;
+}
+
+:global(.monaco-editor) .hintDetail + .hintDetail {
+  margin-left: 0;
 }
 
 .selectedFrameStatement {

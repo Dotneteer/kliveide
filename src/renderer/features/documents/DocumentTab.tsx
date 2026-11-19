@@ -44,6 +44,8 @@ export enum CloseMode {
 type Props = {
   name: string;
   path?: string;
+  /** The last background build's errors in this file; a badge after the name when not zero */
+  errorCount?: number;
   iconName?: string;
   iconFill?: string;
   isActive?: boolean;
@@ -86,6 +88,7 @@ type Props = {
  */
 export const DocumentTab = ({
   name,
+  errorCount = 0,
   isTemporary,
   isReadOnly = false,
   isLocked = false,
@@ -208,7 +211,8 @@ export const DocumentTab = ({
         ref={nameRef}
         className={classnames(styles.titleText, {
           [styles.activeTitle]: isActive && isInActiveArea,
-          [styles.temporaryTitle]: isTemporary
+          [styles.temporaryTitle]: isTemporary,
+          [styles.errorTitle]: errorCount > 0
         })}
       >
         <bdi>{name}</bdi>
@@ -222,6 +226,14 @@ export const DocumentTab = ({
           />
         )}
       </span>
+      {errorCount > 0 && (
+        <span
+          className={styles.errorBadge}
+          aria-label={t("panels.feature.editor.problems.errors", { count: errorCount })}
+        >
+          {errorCount}
+        </span>
+      )}
       {isReadOnly && renderReadOnlyBadge(readOnlyRef, isActive)}
       {isLocked && renderLockedBadge(lockedRef)}
 

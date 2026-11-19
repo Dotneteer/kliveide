@@ -200,3 +200,24 @@
 .closeButton:focus-visible {
   visibility: visible;
 }
+
+/*
+ * A file with errors in the last background build: its name in the error colour and the count after
+ * it, so the file to fix stands out in a row of tabs (the editor's problem counter has the details).
+ */
+.titleText.errorTitle {
+  color: var(--status-error);
+}
+
+.errorBadge {
+  flex: none;
+  margin-right: var(--space-1);
+  padding: 0 var(--space-1_5);
+  border-radius: var(--radius-full);
+  background: var(--status-error);
+  color: var(--surface-canvas);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  line-height: var(--font-size-300);
+  font-variant-numeric: tabular-nums;
+}
