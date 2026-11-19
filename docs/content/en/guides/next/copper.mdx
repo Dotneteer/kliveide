@@ -1,5 +1,5 @@
 ---
-description: "The ZX Spectrum Next's Copper: its live state in the Debug activity, the Copper List with its raster ruler, Copper breakpoints and stepping."
+description: "The ZX Spectrum Next's Copper: its live state in the Machine info activity, the Copper List with its raster ruler, Copper breakpoints and stepping."
 ---
 
 import { Callout, Steps } from 'nextra/components'
@@ -12,7 +12,7 @@ a program of up to 1024 two-byte instructions from its own 2K memory, which the 
 and its mistakes show only as a wrong picture. Klive shows you that program, where the Copper is in
 it, and where in the frame each instruction acts.
 
-There are two views of the same state: a compact **Copper** panel in the Debug activity, and the
+There are two views of the same state: a compact **Copper** panel in the Machine info activity, and the
 full **Copper List** document.
 
 *Applies to: ZX Spectrum Next.*
@@ -39,14 +39,14 @@ the meaning column says which register each `MOVE` writes and with what value.
 ### Stop on the instruction
 
 Click the gutter of the row to set a Copper breakpoint, or right-click it and choose **Run to here**.
-The machine stops when the Copper completes that instruction, and the Next Registers panel and the
+The machine stops when the Copper completes that instruction, and the Next Registers document and the
 paused screen show its effect. **Step Copper** moves on one Copper instruction at a time.
 
 </Steps>
 
 ## The Copper Panel
 
-Open the Debug activity and expand the **Copper** header (it sits beside **Next Registers**):
+Open the Machine info activity and expand the **Copper** header (it sits below **Next Memory Mapping**):
 
 | Row | Shows |
 |---|---|

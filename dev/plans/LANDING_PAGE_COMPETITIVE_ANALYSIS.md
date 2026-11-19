@@ -64,6 +64,7 @@ developers use it.
 | NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
 | General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
 | **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique) | ✅ (ZEsarUX) | ? | — | — | ✗ |
+| **Next interrupt debugging** | ✅ the daisy chain at a pause (in service, requesting, held, the vector table's handler words) with diagnostics for the usual traps; an interrupt timeline over 1-4 frames with latencies; interrupt stops (taken, lost, RETN in a handler, a long wait, NMI) (after v0.69.0) | ? | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
 | Next asset editors | ✅ sprites (8-bit and 4-bit), palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
 | NextZXOS boot, SD image | ✅ cached boot, a FAT32 driver; each model's SD card checked against its hashes, older models' cards downloaded on demand; tapes on the Next | ✅ | ✅ | — | — | via CSpect |
@@ -83,7 +84,8 @@ developers use it.
 1. **One app, no assembly required:** emulator, editor with real language intelligence, assembler,
    compilers and debugger on Mac, Windows and Linux; templates for every machine and language.
 2. **BASIC and C as debug languages:** source-level debugging that no competitor offers reliably.
-3. **Next-native:** NextReg, Copper and sprite breakpoints, bank breakpoints, the live inspectors, the
+3. **Next-native:** NextReg, Copper, sprite and interrupt breakpoints, bank breakpoints, the live
+   inspectors, the interrupt views, the
    `.dma`/`.copper` DSLs, `.savenex`, asset editors, a cached NextZXOS boot.
 4. **NEX and ROM reverse engineering:** debug any `.nex` with no project; annotations on every
    machine; every shipped ROM annotated from scratch (the Z88's OZ 4.7 from OZ's own source, with permission).

@@ -4,6 +4,7 @@ export default {
   "next-registers": "Next Registers, memory mapping and palettes",
   "next-breakpoints": "Next breakpoints",
   "copper": "The Copper view",
+  "interrupts": "Debugging interrupts",
   "sprite-inspector": "The Sprite Inspector",
   "tilemap-inspector": "The Tilemap Inspector",
   "layer2-inspector": "The Layer 2 Inspector",

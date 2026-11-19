@@ -888,14 +888,16 @@ export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
   { id: "next_layers_document", label: t("menu.next.layers"), click: ideCommand("show-layers") }
 ];
 
-/** Debug › Step Copper on the Next */
+/** Debug › Step Copper and Debug › Interrupt Timeline on the Next */
 export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   {
     id: "step_copper",
     label: t("menu.next.stepCopper"),
     enabled: mainStore.getState()?.emulatorState?.machineState !== MachineControllerState.Running,
     click: ideCommand("step-copper")
-  }
+  },
+  // --- The Interrupt Timeline (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §4.2): opening it starts recording
+  { id: "show_interrupt_timeline", label: t("menu.next.interruptTimeline"), click: ideCommand("show-int-timeline") }
 ];
 
 /**

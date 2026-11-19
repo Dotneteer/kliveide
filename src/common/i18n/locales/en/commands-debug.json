@@ -1376,5 +1376,32 @@
     "placeholders": {
       "count": "How many watch expressions were removed"
     }
+  },
+  "commands.bp.interrupt.kind": "Unknown interrupt stop: use int:ack, int:lost, int:retn, int:reti, int:wait:<T-states> or int:nmi",
+  "@commands.bp.interrupt.kind": {
+    "context": "Validation error of 'bp-set int:...' (ZX Spectrum Next interrupt stops). The specs are syntax, keep them."
+  },
+  "commands.bp.interrupt.source": "Unknown interrupt source: use one of {sources}",
+  "@commands.bp.interrupt.source": {
+    "context": "Validation error of 'bp-set int:ack:<source>'. The source names are syntax, keep them.",
+    "placeholders": {
+      "sources": "A comma-separated list: line, uart0rx, ..., uart1tx"
+    }
+  },
+  "commands.bp.interrupt.nmiDevice": "Unknown NMI device: use int:nmi, int:nmi:multiface or int:nmi:divmmc",
+  "@commands.bp.interrupt.nmiDevice": {
+    "context": "Validation error of 'bp-set int:nmi:<device>'. The specs are syntax, keep them."
+  },
+  "commands.bp.interrupt.waitLimit": "int:wait needs a limit in T-states, 1 or more, e.g. int:wait:228",
+  "@commands.bp.interrupt.waitLimit": {
+    "context": "Validation error of 'bp-set int:wait:<T>'. The spec is syntax, keep it."
+  },
+  "commands.bp.interrupt.extra": "Too many parts in the interrupt stop's spec",
+  "@commands.bp.interrupt.extra": {
+    "context": "Validation error of 'bp-set int:...' with too many ':'-separated parts."
+  },
+  "commands.bp.interrupt.noAccessOptions": "An interrupt stop watches an interrupt event, not memory, a port or a register",
+  "@commands.bp.interrupt.noAccessOptions": {
+    "context": "Validation error of the 'bp-set' IDE command when an int: stop is given -r/-w/-i/-o/-c/-v/-m/-attr. Option names and syntax are not translated."
   }
 }

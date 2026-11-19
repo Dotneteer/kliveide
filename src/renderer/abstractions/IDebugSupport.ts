@@ -8,6 +8,8 @@ import type { CompiledCondition, ConditionSymbols } from "@common/utils/breakpoi
 import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditionStore";
 import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
+import type { InterruptWatch } from "@common/zxnext/interrupts/interruptStops";
+import type { NextIntEvent } from "@common/zxnext/interrupts/interruptState";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -118,6 +120,19 @@ export interface IDebugSupport {
    * @param value The value written (a condition's `VAL`)
    */
   hasSpriteHit(sprite: number, attribute: number, value: number): boolean;
+
+  /**
+   * The ZX Spectrum Next interrupt-stop watch (`int:`) to arm in the core; `kinds` is 0 when no
+   * interrupt stop is enabled. Optional: only the Next's debug support needs it.
+   */
+  buildInterruptWatch?(): InterruptWatch;
+
+  /**
+   * Does any interrupt stop want to stop on this event?
+   * @param event The event the core latched
+   * @param coreWaitLimit The WAIT limit the core was armed with
+   */
+  hasInterruptHit(event: NextIntEvent, coreWaitLimit: number): boolean;
 
   /**
    * Gets IO read breakpoint information for the specified port

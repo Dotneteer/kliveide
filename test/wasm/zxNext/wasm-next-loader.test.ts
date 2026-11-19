@@ -106,6 +106,11 @@ function createViewExports(
     // --- So do the sprite attribute slots and the 128K of 8-bit pattern variants (from offset 0)
     zxnextSpriteAttributesPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextSpritePatternMemory8Ptr: () => 0,
+    // --- The Interrupts panel's snapshot, the hit record and the 1 MB interrupt event ring (from offset 0)
+    zxnextGetInterruptStatePtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextIntHitRecordPtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextIntEventsPtr: () => 0,
+    zxnextIntEventsGetCapacity: () => 65536,
     zxnextTraceGetStartOffset: () => options.traceOffset ?? 0,
     // --- The layer debug preview (LAYER_COMPOSITION_PLAN §4.2): a picture-sized view
     zxnextLayerPreviewPtr: () => options.pixelOffset,

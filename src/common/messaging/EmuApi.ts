@@ -35,6 +35,11 @@ import type {
   ProfileView
 } from "@common/profile/profileTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+import type {
+  InterruptStopEvent,
+  NextInterruptEvents,
+  NextInterruptState
+} from "@common/zxnext/interrupts/interruptState";
 import type { HistoryRegisters } from "@common/history/historyRecord";
 import type {
   HistoricalCpuInfo,
@@ -847,6 +852,43 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next interrupt system: the daisy chain, the modes, the vector table words and
+   * the NMI. Reading it never changes the machine.
+   */
+  async getInterruptState(): Promise<NextInterruptState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the ZX Spectrum Next interrupt event ring's records written since `since` (all held ones by
+   * default), oldest first.
+   */
+  async getInterruptEvents(_since?: number): Promise<NextInterruptEvents> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Switches the ZX Spectrum Next interrupt event ring's recording on or off.
+   */
+  async setInterruptRecording(_enabled: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Forgets the ZX Spectrum Next interrupt event ring's records.
+   */
+  async clearInterruptEvents(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Writes NextReg `$20` (request an interrupt) or `$C8`-`$CA` (clear status bits) as the CPU would.
+   */
+  async writeInterruptNextReg(_reg: number, _value: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ZX Spectrum Next sprite state the Sprite Inspector shows: the raw attribute and pattern
    * memories, the core-resolved table and the global sprite registers. Reading it never changes the
    * machine.
@@ -1221,6 +1263,11 @@ export type Z80CpuState = {
    * a sprite-attribute breakpoint (`sp:`) fires.
    */
   lastSpriteWrite?: SpriteWriteEvent;
+  /**
+   * The interrupt event the machine last stopped on. ZX Spectrum Next only, and absent until an
+   * interrupt stop (`int:`) fires.
+   */
+  lastInterruptStop?: InterruptStopEvent;
   /**
    * Set while the history cursor is in the past (`dev/plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
    * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory

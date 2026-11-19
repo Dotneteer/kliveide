@@ -3088,5 +3088,68 @@
       "size": "The download's size in megabytes, e.g. '58.6'"
     },
     "maxChars": 40
+  },
+  "dialog.breakpoint.kind.interrupt": "Interrupt event",
+  "@dialog.breakpoint.kind.interrupt": {
+    "context": "Option of the breakpoint Type radio group in the breakpoint dialog (ZX Spectrum Next): stop on an interrupt event - taken, lost, a handler's return, a long wait, an NMI.",
+    "maxChars": 31
+  },
+  "dialog.breakpoint.interrupt.eventLabel": "Stop when",
+  "@dialog.breakpoint.interrupt.eventLabel": {
+    "context": "Label of the interrupt event picker in the breakpoint dialog.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.interrupt.event.ack": "An interrupt is taken",
+  "@dialog.breakpoint.interrupt.event.ack": {
+    "context": "Interrupt event option: the CPU acknowledges an interrupt and its handler starts.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.event.lost": "An interrupt is lost (pulse mode)",
+  "@dialog.breakpoint.interrupt.event.lost": {
+    "context": "Interrupt event option: a pulse-mode interrupt ended before the CPU took it.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.event.retn": "A handler ends with RETN",
+  "@dialog.breakpoint.interrupt.event.retn": {
+    "context": "Interrupt event option: RETN while a maskable interrupt is in service (it releases nothing). 'RETN' is a Z80 instruction, keep it.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.event.reti": "RETI outside IM 2",
+  "@dialog.breakpoint.interrupt.event.reti": {
+    "context": "Interrupt event option: RETI executed while the CPU is not in IM 2, so it releases nothing. Z80 terms, keep them.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.event.wait": "A request waits too long",
+  "@dialog.breakpoint.interrupt.event.wait": {
+    "context": "Interrupt event option: a source's request waits longer than a limit before the CPU takes it.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.event.nmi": "An NMI is taken",
+  "@dialog.breakpoint.interrupt.event.nmi": {
+    "context": "Interrupt event option: the CPU takes a non-maskable interrupt.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.interrupt.sourceLabel": "From",
+  "@dialog.breakpoint.interrupt.sourceLabel": {
+    "context": "Label of the interrupt source picker in the breakpoint dialog (which source or NMI device).",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.interrupt.anySource": "Any source",
+  "@dialog.breakpoint.interrupt.anySource": {
+    "context": "First option of the interrupt source picker: do not narrow the stop to one source.",
+    "maxChars": 18
+  },
+  "dialog.breakpoint.interrupt.waitLabel": "Longer than (T-states)",
+  "@dialog.breakpoint.interrupt.waitLabel": {
+    "context": "Label of the wait limit field of an interrupt stop.",
+    "maxChars": 24
+  },
+  "dialog.breakpoint.interrupt.waitHint": "A raster line is 224-228 T-states. With several wait stops, each reports at the smallest limit.",
+  "@dialog.breakpoint.interrupt.waitHint": {
+    "context": "Hint under the wait limit field of an interrupt stop."
+  },
+  "dialog.breakpoint.interrupt.stopNote": "An acknowledge stops at the handler's first instruction; the other events stop after the instruction that caused them. A condition reads the registers there.",
+  "@dialog.breakpoint.interrupt.stopNote": {
+    "context": "Note at the bottom of the breakpoint dialog for an interrupt stop: where the machine stops."
   }
 }

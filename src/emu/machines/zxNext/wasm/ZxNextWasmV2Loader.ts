@@ -88,6 +88,16 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextSetDaisyStatus: ZxNextWasmV2ExportFunction;
   zxnextSetDaisyEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetDaisyInService: ZxNextWasmV2ExportFunction;
+  zxnextGetInterruptStatePtr: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsPtr: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsGetCapacity: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsGetCount: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsSetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsGetEnabled: ZxNextWasmV2ExportFunction;
+  zxnextIntEventsClear: ZxNextWasmV2ExportFunction;
+  zxnextSetIntWatch: ZxNextWasmV2ExportFunction;
+  zxnextIntHitRecordPtr: ZxNextWasmV2ExportFunction;
+  zxnextTakeIntHit: ZxNextWasmV2ExportFunction;
   zxnextSetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetCpuAf: ZxNextWasmV2ExportFunction;
   zxnextSetCpuAf: ZxNextWasmV2ExportFunction;
@@ -493,6 +503,12 @@ export type ZxNextWasmV2Runtime = {
   readonly spriteWatch: Uint8Array;
   /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
   readonly copperMemory: Uint8Array;
+  /** The Interrupts panel's 96-byte snapshot, filled by `zxnextGetInterruptStatePtr` (read only by the IDE) */
+  readonly interruptState: Uint8Array;
+  /** The interrupt event ring: 64K records of 16 bytes (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1; read only by the IDE) */
+  readonly interruptEvents: Uint8Array;
+  /** The latched interrupt-stop hit's record, 16 bytes (read only by the IDE) */
+  readonly interruptHitRecord: Uint8Array;
   /** The sprite attribute slots, 128 x 5 bytes (read only by the IDE) */
   readonly spriteAttributes: Uint8Array;
   /**
@@ -569,6 +585,16 @@ const requiredV2Exports = [
   "zxnextSetDaisyStatus",
   "zxnextSetDaisyEnabled",
   "zxnextGetDaisyInService",
+  "zxnextGetInterruptStatePtr",
+  "zxnextIntEventsPtr",
+  "zxnextIntEventsGetCapacity",
+  "zxnextIntEventsGetCount",
+  "zxnextIntEventsSetEnabled",
+  "zxnextIntEventsGetEnabled",
+  "zxnextIntEventsClear",
+  "zxnextSetIntWatch",
+  "zxnextIntHitRecordPtr",
+  "zxnextTakeIntHit",
   "zxnextSetTacts",
   "zxnextGetCpuAf",
   "zxnextSetCpuAf",
@@ -1015,6 +1041,9 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "spriteWatch", exports.zxnextSpriteWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
+  assertViewRange(artifactName, "interruptState", exports.zxnextGetInterruptStatePtr(), 96, memoryBuffer);
+  assertViewRange(artifactName, "interruptEvents", exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16, memoryBuffer);
+  assertViewRange(artifactName, "interruptHitRecord", exports.zxnextIntHitRecordPtr(), 16, memoryBuffer);
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
   assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
@@ -1035,6 +1064,9 @@ export function createZxNextWasmV2Views(
     copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
     spriteWatch: new Uint8Array(memoryBuffer, exports.zxnextSpriteWatchPtr(), 128),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
+    interruptState: new Uint8Array(memoryBuffer, exports.zxnextGetInterruptStatePtr(), 96),
+    interruptEvents: new Uint8Array(memoryBuffer, exports.zxnextIntEventsPtr(), exports.zxnextIntEventsGetCapacity() * 16),
+    interruptHitRecord: new Uint8Array(memoryBuffer, exports.zxnextIntHitRecordPtr(), 16),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
     spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),
     frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes),

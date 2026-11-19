@@ -2,8 +2,8 @@
  * Guides screenshots of the ZX Spectrum Next tools (`docs/content/en/guides/next/`):
  *
  * - `copper/copper-view.webp` — the Copper view with a Copper list and its raster ruler;
- * - `next-registers/nextreg-panel.webp` and `next-registers/memory-mapping.webp` — the Next
- *   Registers and Next Memory Mapping side-bar panels;
+ * - `next-registers/nextreg-document.webp` and `next-registers/memory-mapping.webp` — the Next
+ *   Registers document and the Next Memory Mapping side-bar panel (Machine info);
  * - `nex-files/nex-viewer.webp` — a `.nex` file in the NEX viewer, its banks listed;
  * - `next-models/rtc-settings.webp` — Settings › Machine with the real-time clock's group.
  * - `tbu-files/tbu-viewer.webp` — a TBBLUE.TBU core update file in the TBU viewer. The file is not
@@ -99,31 +99,17 @@ module.exports = {
         await setIdeSize(klive, 1280, 900);
       });
 
-      await h.activity(klive, "Debug");
-      await step(klive, "nextreg", async () => {
-        await h.sections(ide, ["Next Registers"]);
-        await h.park(ide);
-        await panelShot(klive, "Next Registers", "en/guides/next/next-registers/nextreg-panel.webp", {
-          displayWidth: 320,
-          maxHeight: 620
-        });
-      });
       await step(klive, "nextreg-document", async () => {
-        // --- The panel header's pop-out button opens the document; the panel stays open
-        const panel = h.sectionLocator(ide, "Next Registers");
-        await panel.locator('[class*="_headerActions_"] button').click();
-        await ide.locator('[class*="_documentArea_"] [data-reg="21"]').first().waitFor({ timeout: 10000 });
-        const stillOpen = await panel.evaluate(
-          (el) => (el.querySelector('[class*="_contentWrapper_"]')?.getBoundingClientRect().height ?? 0) > 2
-        );
-        if (!stillOpen) throw new Error("The pop-out button folded the Next Registers panel");
         // --- Select Reg $15: four fields, one of them with named values
-        await klive.cmd("show-nextregs $15", 1500);
+        await klive.cmd("show-nextregs $15", 2500);
+        await ide.locator('[class*="_documentArea_"] [data-reg="21"]').first().waitFor({ timeout: 10000 });
         await klive.cmd("cls", 400);
         await h.park(ide);
         await klive.shot(DOCS, "en/guides/next/next-registers/nextreg-document.webp", { displayWidth: 900 });
         await klive.cmd("hide-nextregs", 800);
       });
+      // --- The memory mapping is machine information (the Machine info activity)
+      await h.activity(klive, "Machine info");
       await step(klive, "memory-mapping", async () => {
         await h.sections(ide, ["Next Memory Mapping"]);
         await h.park(ide);

@@ -36,7 +36,7 @@ export type SideBarPanelBadge = ComponentType<SideBarPanelBadgeProps>;
 
 /**
  * Small icon buttons at the right end of a panel header — after the badge — for actions on the
- * panel as a whole, such as popping it out into a document (`NextRegPanelActions`).
+ * panel as a whole, such as popping it out into a document.
  *
  * A component, like the badge, so it can read the store. The header stops a click or key press
  * inside the slot from also toggling the panel open or shut, so the actions need not.

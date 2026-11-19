@@ -72,5 +72,9 @@
   "commands.usage.watchAdd.types": ">: use direct symbol value\n<type>:\n  b=byte,\n  w=16-bit little-endian, -w=16-bit big-endian,\n  l=32-bit little-endian, -l=32-bit big-endian,\n  f=flag,\n  a=array (use length, default: 8), s=string (use length, default: 8)",
   "@commands.usage.watchAdd.types": {
     "context": "Line of the IDE command help (the 'help <command>' output) explaining one option or argument of w-add: the meaning of the > prefix and of each type letter. Keep the letters (b, w, -w, l, -l, f, a, s), '>', '<type>' and the line breaks and indentation exactly. Keep option names (-r, -len, ...), placeholders in <angle brackets>, addresses and the example commands exactly as they are."
+  },
+  "commands.usage.bpSet.interrupt": "int:<kind>: (ZX Spectrum Next) stop on an interrupt event - int:ack[:<source>] when the CPU takes one, int:lost[:<source>] when a pulse is missed, int:retn / int:reti when a handler's return releases nothing, int:wait:<T>[:<source>] when a request waits longer, int:nmi[:multiface|divmmc]; e.g. bp-set int:ack:line",
+  "@commands.usage.bpSet.interrupt": {
+    "context": "Line of the IDE command help (the 'help <command>' output) explaining one argument of bp-set. Keep option names, placeholders in <angle brackets>, the specs and the example command exactly as they are."
   }
 }

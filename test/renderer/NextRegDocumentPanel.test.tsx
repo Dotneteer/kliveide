@@ -46,7 +46,6 @@ vi.mock("@renderer/appIde/services/DocumentServiceProvider", () => ({
 }));
 
 import { createNextRegDocumentPanel } from "@renderer/appIde/DocumentPanels/NextRegs/NextRegDocumentPanel";
-import { NextRegPanelActions } from "@renderer/appIde/SideBarPanels/NextRegPanel";
 import { SideBarPanel } from "@renderer/appIde/SideBar/SideBarPanel";
 import { resetNextRegStops } from "@renderer/features/nextRegs/useNextRegState";
 
@@ -150,10 +149,21 @@ describe("Next Registers document", () => {
   });
 });
 
-describe("Next Registers panel pop-out", () => {
+/*
+ * A side-bar panel's header actions (`SideBarPanelInfo.headerActions`). The Next Registers panel was the
+ * first to use them (its pop-out button) and is gone; the behaviour is the header's, so a stand-in
+ * action that runs a command keeps it covered.
+ */
+const OpenDocumentAction = (_props: SideBarPanelBadgeProps) => (
+  <button type="button" onClick={() => void executeCommand("show-nextregs")}>
+    open
+  </button>
+);
+
+describe("Side-bar panel header actions", () => {
   const panel = (headerActions?: (props: SideBarPanelBadgeProps) => React.ReactElement | null) => ({
-    id: "nextRegPanel",
-    title: "Next Registers",
+    id: "somePanel",
+    title: "Some Panel",
     hostActivity: "debug-view",
     renderer: () => <div>content</div>,
     headerActions
@@ -164,9 +174,9 @@ describe("Next Registers panel pop-out", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("opens the document without folding the panel", () => {
+  it("runs the action without folding the panel", () => {
     const { store } = renderWithProviders(
-      <SideBarPanel sideBar={panel(NextRegPanelActions)} index={0} expanded={true} />
+      <SideBarPanel sideBar={panel(OpenDocumentAction)} index={0} expanded={true} />
     );
     const before = store.getState().ideView?.sideBarPanels;
     const button = screen.getByRole("button");
@@ -175,7 +185,7 @@ describe("Next Registers panel pop-out", () => {
     expect(executeCommand).toHaveBeenCalledWith("show-nextregs");
     expect(store.getState().ideView?.sideBarPanels).toEqual(before);
     // --- The header itself still folds the panel
-    fireEvent.click(screen.getByText("Next Registers"));
-    expect(store.getState().ideView?.sideBarPanels?.nextRegPanel?.expanded).toBe(false);
+    fireEvent.click(screen.getByText("Some Panel"));
+    expect(store.getState().ideView?.sideBarPanels?.somePanel?.expanded).toBe(false);
   });
 });

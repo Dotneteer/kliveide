@@ -679,9 +679,9 @@ export const componentAliases: Record<string, string> = {
   /*
    * The *second kind* of value in a row, where a row carries two that must not be confused.
    *
-   * This is the secondary accent's actual criterion, and these panels meet it twice:
+   * This is the secondary accent's actual criterion, and these views meet it twice:
    *
-   * - `NextRegPanel`'s `08 → 08` — the left number is what was last written to the register, the
+   * - The Next Registers' `08 → 08` — the left number is what was last written to the register, the
    *   right one is what it reads back as. The same register a moment apart.
    * - `MemMappingPanel`'s page rows — `bank8k bank16k readOffset writeOffset`, where the first two
    *   are *bank numbers* and the last two are *addresses into memory*. Four hex numbers in a row
@@ -714,6 +714,37 @@ export const componentAliases: Record<string, string> = {
   /* The Copper's PC row and the hit row: two distinct markers (trap T1). */
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
+
+  // --- Interrupts panel and Interrupt Timeline (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md`) -----
+  /*
+   * A chain row's state: in service is a value (the state panels' colour), requesting is the warning
+   * hue because it is something waiting. The rows a source in service holds are hatched with a
+   * neutral step, the divider under the blocker takes the warning hue. Diagnostics are a left rule
+   * and a subtle fill in their status hue; info uses the accent's subtle fill (there is no info-subtle).
+   */
+  "--color-int-in-service": "var(--color-state-value)",
+  "--color-int-requesting": "var(--status-warning)",
+  "--bgcolor-int-blocked": "var(--surface-hover)",
+  "--border-int-blocker": "var(--status-warning)",
+  "--border-int-diag-info": "var(--status-info)",
+  "--bgcolor-int-diag-info": "var(--accent-subtle)",
+  "--border-int-diag-warning": "var(--status-warning)",
+  "--bgcolor-int-diag-warning": "var(--status-warning-subtle)",
+  "--border-int-diag-error": "var(--status-error)",
+  "--bgcolor-int-diag-error": "var(--status-error-subtle)",
+  /*
+   * The sources' lane colours: categories, not meanings, so they borrow the audio mixer's fixed group
+   * hues (fixed across accents, apart in hue). The main program is neutral, the NMI the error hue.
+   */
+  "--color-int-lane-line": "var(--audio-group-6)",
+  "--color-int-lane-uart-rx": "var(--audio-group-3)",
+  "--color-int-lane-ctc": "var(--audio-group-1)",
+  "--color-int-lane-ula": "var(--audio-group-2)",
+  "--color-int-lane-uart-tx": "var(--audio-group-4)",
+  "--color-int-lane-main": "var(--text-tertiary)",
+  "--color-int-lane-nmi": "var(--status-error)",
+  "--color-int-late": "var(--status-error)",
+  "--color-int-reti": "var(--status-success)",
 
   // --- Execution History (`dev/plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
   /*

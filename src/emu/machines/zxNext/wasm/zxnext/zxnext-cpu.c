@@ -487,6 +487,8 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   /* The tape first: its input stage up to now, and the LD-BYTES / SA-BYTES trap, which may move PC */
   zxnextTapeBeforeInstruction();
   uint16_t pcBefore = (uint16_t)z80GetPc();
+  /* The interrupt event ring and stops (zxnext-int-events.c) need SP before the instruction */
+  uint16_t spBefore = zxnextIntEventsActive ? (uint16_t)z80GetSp() : 0u;
   uint32_t previousTacts = z80GetTacts();
   uint8_t rawIntSignal = zxnextCpuShouldRaiseInt() != 0u;
   uint8_t shouldAcceptInt = rawIntSignal && z80GetIff1();
@@ -564,10 +566,19 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
   z80SetSigInt(rawIntSignal);
+  uint32_t ievAckSource = 0x100u;
+  uint32_t ievAckVector = 0xffu;
   if (intTaken) {
-    z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() && z80GetInterruptMode() == 2u
-      ? zxnextInterruptsAcknowledge() : 0xffu);
+    const uint32_t chain = zxnextInterruptsGetHardwareIm2Mode() && z80GetInterruptMode() == 2u;
+    const uint32_t vector = chain ? zxnextInterruptsAcknowledge() : 0xffu;
+    z80SetInterruptVector(vector);
+    /* The event is recorded after the acknowledge cycle, when the handler's first instruction starts */
+    ievAckSource = chain && vector != 0xffu ? (vector >> 1) & 0x0fu : 0xffu;
+    ievAckVector = vector;
   }
+  /* Likewise the NMI, whose device is known only before the acknowledge */
+  const uint32_t ievNmiSource = nmiSignal && zxnextIntEventsActive ? zxnextNmiEventSource() : 0u;
+  const uint32_t ievNmiStackless = nmiSignal ? zxnextNmiGetStacklessEnabled() : 0u;
 
   /* The opcode bytes the CPU fetched for this instruction - after any paging its own M1 cycle caused
      (a DivMMC automap at $0066 supplies different code from the ROM that was there) - so RETI / RETN are
@@ -595,9 +606,17 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     zxnextNmiSetReturnAddress(nmiReturnAddress);
     zxnextNmiMarkAccepted();
   }
-  if (isRetiInstruction) {
-    zxnextInterruptsReti();
+  if (zxnextIntEventsActive) {
+    /* The return address the acknowledge pushed: past a HALT, as for the NMI */
+    if (ievAckSource != 0x100u) {
+      zxnextIntEventAcknowledge(ievAckSource, ievAckVector, (uint16_t)(pcBefore + (wasHalted ? 1u : 0u)), spBefore);
+    }
+    if (nmiSignal) zxnextIntEventNmi(ievNmiSource, ievNmiStackless, nmiReturnAddress, spBefore);
   }
+  if (isRetiInstruction) {
+    zxnextInterruptsReti(pcBefore, spBefore);
+  }
+  if (isRetnInstruction) zxnextInterruptsRetn(pcBefore, spBefore);
   /* divmmc_retn_seen <= retn and not mf_is_active (~4091): a RETN that ends a Multiface NMI does not
      reach DivMMC. cpu_retn_seen clears the Multiface state unconditionally. */
   uint32_t mfWasActive = 0u;
@@ -622,6 +641,10 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
     z80SetRetExecuted(0);
   }
 #endif
+  if (zxnextIntEventsActive) {
+    zxnextIntEventsAfterInstruction(pcBefore, spBefore, isRetnInstruction, zxnextTimingIntPulseCycles);
+    zxnextInterruptsCheckWait(pcBefore, spBefore);
+  }
   zxnextPsgCalculateCurrentAudioValue(frameTacts28);
 #ifndef Z80_BENCH_STRIP_DEBUG
   zxnextTraceRecordInstruction(pcBefore);

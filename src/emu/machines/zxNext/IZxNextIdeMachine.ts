@@ -11,6 +11,7 @@ import type {
   UlaState
 } from "@common/messaging/EmuApi";
 import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zxnext/layers/layerMix";
+import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/interrupts/interruptState";
 
 /**
  * What the IDE reads from a ZX Spectrum Next.
@@ -55,6 +56,21 @@ export interface IZxNextIdeMachine {
   /** Layer 2, for the Layer 2 Inspector: registers and the displayed (and shadow) banks in one read (LAYER2_INSPECTOR_PLAN D2, D8). */
   getNextLayer2State(options?: { shadow?: boolean }): NextLayer2State;
 
+  /** The interrupt system: the chain, the modes, the NMI (NEXT_INTERRUPTS_DEBUGGING_PLAN §3.2). Side-effect free. */
+  getInterruptState(): NextInterruptState;
+
+  /** The interrupt event ring's records written since `since` (all held ones by default), oldest first. */
+  getInterruptEvents(since?: number): NextInterruptEvents;
+
+  /** Switches the interrupt event ring's recording on or off. */
+  setInterruptRecording(enabled: boolean): void;
+
+  /** Forgets every recorded interrupt event. */
+  clearInterruptEvents(): void;
+
+  /** A real NextReg write of `$20` (Ring) or `$C8`-`$CA` (Clear status); other registers are refused. */
+  writeInterruptNextReg(reg: number, value: number): void;
+
   /** Arms (or cancels) "Step Copper": the next debug run stops when the Copper completes any instruction. */
   requestCopperStep(armed?: boolean): void;
 
@@ -98,6 +114,7 @@ export function isZxNextIdeMachine(machine: unknown): machine is IZxNextIdeMachi
     typeof m.getPaletteDeviceInfo === "function" &&
     typeof m.getNextUlaState === "function" &&
     typeof m.getCopperState === "function" &&
+    typeof m.getInterruptState === "function" &&
     typeof m.getNextSpriteState === "function" &&
     typeof m.getNextTilemapState === "function" &&
     typeof m.getNextLayer2State === "function" &&

@@ -22,7 +22,7 @@ describe("NextReg descriptors", () => {
   });
 
   it("keeps every slice inside its byte and says something about it", () => {
-    // --- `NextRegPanel` masks and shifts a byte with these, then labels the result from
+    // --- The Next Registers document masks and shifts a byte with these, then labels the result from
     // --- `description` or `valueSet`; a slice with neither renders an unexplained number.
     for (const descriptor of NEXT_REG_DESCRIPTORS) {
       for (const [index, slice] of (descriptor.slices ?? []).entries()) {

@@ -16,7 +16,6 @@
   "panels.sideBar.kliveProject": "Klive projekt",
   "panels.sideBar.callStack": "Hívási verem",
   "panels.sideBar.nextMemoryMapping": "Next memórialeképezés",
-  "panels.sideBar.nextRegisters": "Next regiszterek",
   "panels.sideBar.variables": "Változók",
   "panels.sideBar.watch": "Figyelők",
   "panels.sideBar.breakpoints": "Töréspontok",

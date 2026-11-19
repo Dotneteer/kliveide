@@ -9,11 +9,34 @@ import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import {
   isBankRelative,
   isCopperBreakpoint,
+  isInterruptStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint,
   spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
 import { SPRITE_ATTR_ALL, SPRITE_INDEX_MAX } from "@common/zxnext/sprites/spriteBreakpoints";
+import {
+  formatInterruptStop,
+  interruptStopOf,
+  stopSourceIndex,
+  type InterruptStop,
+  type InterruptStopKind
+} from "@common/zxnext/interrupts/interruptStops";
+import { NEXT_INT_SOURCE_IDS } from "@common/zxnext/interrupts/interruptState";
+
+/** An interrupt stop's form fields (the empty ones for any other breakpoint) */
+function interruptFieldsOf(
+  bp: BreakpointInfo
+): Pick<BreakpointFormState, "interruptEvent" | "interruptSource" | "interruptWait"> {
+  const stop = interruptStopOf(bp.interruptStop);
+  if (!stop) return { interruptEvent: "ack", interruptSource: "", interruptWait: "" };
+  return {
+    interruptEvent: stop.kind,
+    interruptSource:
+      stop.kind === "nmi" ? (stop.nmiDevice ?? "") : stop.source !== undefined ? NEXT_INT_SOURCE_IDS[stop.source] : "",
+    interruptWait: stop.waitLimit !== undefined ? String(stop.waitLimit) : ""
+  };
+}
 import {
   MAX_BREAKPOINT_HIT_COUNT,
   breakpointFiltersOf,
@@ -78,7 +101,9 @@ export type BreakpointKind =
   /** The ZX Spectrum Next's `cu:<index>`: the Copper completes a list instruction. */
   | "copper"
   /** The ZX Spectrum Next's `sp:<sprite>`: an attribute byte of a sprite is written. */
-  | "sprite";
+  | "sprite"
+  /** The ZX Spectrum Next's `int:<kind>`: an interrupt event (NEXT_INTERRUPTS_DEBUGGING_PLAN §5). */
+  | "interrupt";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -122,6 +147,15 @@ export type BreakpointFormState = {
   spriteIndex: string;
   /** Sprite kind only: the watched attribute bytes, bit `n` for byte `n`. `$1F` is all five. */
   spriteAttrMask: number;
+  /** Interrupt kind only: which event stops (`ack`, `lost`, `retn`, `reti`, `wait`, `nmi`). */
+  interruptEvent: InterruptStopKind;
+  /**
+   * Interrupt kind only: the source id (`ula`, `line`, ...) for ack/lost/wait, the device
+   * (`multiface`, `divmmc`) for nmi; empty for any.
+   */
+  interruptSource: string;
+  /** Raw input, interrupt kind only: the wait limit in T-states, for `wait`. */
+  interruptWait: string;
   disabled: boolean;
   /**
    * "Remove after it stops" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
@@ -252,6 +286,7 @@ export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean 
     isNextRegBreakpoint(bp ?? {}) ||
     isCopperBreakpoint(bp ?? {}) ||
     isSpriteBreakpoint(bp ?? {}) ||
+    isInterruptStop(bp ?? {}) ||
     isBankRelative(bp ?? {})
   );
 }
@@ -320,6 +355,9 @@ export function createEmptyForm(): BreakpointFormState {
     copperIndex: "",
     spriteIndex: "",
     spriteAttrMask: SPRITE_ATTR_ALL,
+    interruptEvent: "ack",
+    interruptSource: "",
+    interruptWait: "",
     disabled: false,
     oneShot: false,
     length: "",
@@ -356,6 +394,38 @@ export function isSpriteKind(kind: BreakpointKind): boolean {
   return kind === "sprite";
 }
 
+/** True for the kind bound to an interrupt event rather than to a place. */
+export function isInterruptKind(kind: BreakpointKind): boolean {
+  return kind === "interrupt";
+}
+
+/**
+ * The interrupt form's fields as a stop, or the field that is wrong. The source picker offers the
+ * chain's sources for ack/lost/wait and the NMI devices for nmi; retn and reti take neither.
+ */
+export function interruptStopFromForm(
+  form: Pick<BreakpointFormState, "interruptEvent" | "interruptSource" | "interruptWait">
+): InterruptStop | { field: "interruptSource" | "interruptWait" } {
+  const kind = form.interruptEvent;
+  const sourceText = form.interruptSource.trim();
+  if (kind === "retn" || kind === "reti") return { kind };
+  if (kind === "nmi") {
+    if (sourceText === "") return { kind };
+    return sourceText === "multiface" || sourceText === "divmmc" ? { kind, nmiDevice: sourceText } : { field: "interruptSource" };
+  }
+  let source: number | undefined;
+  if (sourceText !== "") {
+    source = stopSourceIndex(sourceText);
+    if (source === undefined) return { field: "interruptSource" };
+  }
+  if (kind === "wait") {
+    const limit = parseNumericInput(form.interruptWait);
+    if (!limit.ok || limit.value < 1 || limit.value > 0xffffff) return { field: "interruptWait" };
+    return { kind, waitLimit: limit.value, source };
+  }
+  return { kind, source };
+}
+
 /**
  * Switch the breakpoint type, dropping whatever the new type cannot carry.
  *
@@ -372,17 +442,21 @@ export function applyKindChange(
   const nextReg = isNextRegKind(kind);
   const copper = isCopperKind(kind);
   const sprite = isSpriteKind(kind);
+  const interrupt = isInterruptKind(kind);
   return {
     ...form,
     kind,
     copperIndex: copper ? form.copperIndex : "",
     spriteIndex: sprite ? form.spriteIndex : "",
     spriteAttrMask: sprite ? form.spriteAttrMask : SPRITE_ATTR_ALL,
+    interruptEvent: interrupt ? form.interruptEvent : "ack",
+    interruptSource: interrupt ? form.interruptSource : "",
+    interruptWait: interrupt ? form.interruptWait : "",
     // --- A NextReg breakpoint has no address and no partition; the address field is not merely
     // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
     // --- unreachable.
-    address: nextReg || copper || sprite ? "" : form.address,
-    partition: isIoKind(kind) || nextReg || copper || sprite ? undefined : form.partition,
+    address: nextReg || copper || sprite || interrupt ? "" : form.address,
+    partition: isIoKind(kind) || nextReg || copper || sprite || interrupt ? undefined : form.partition,
     ioMask: isIoKind(kind) ? form.ioMask : "",
     nextReg: nextReg ? form.nextReg : "",
     filterValue: nextReg ? form.filterValue : false,
@@ -525,6 +599,20 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     };
   }
 
+  // --- An interrupt stop: an event kind, bound to an interrupt event
+  if (isInterruptKind(form.kind)) {
+    const stop = interruptStopFromForm(form);
+    return {
+      interruptStop: "field" in stop ? undefined : formatInterruptStop(stop),
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   // --- A sprite breakpoint: an event kind too, bound to a sprite
   if (isSpriteKind(form.kind)) {
     const index = parseNumericInput(form.spriteIndex);
@@ -598,6 +686,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
       ? "copper"
       : isSpriteBreakpoint(bp)
       ? "sprite"
+      : isInterruptStop(bp)
+      ? "interrupt"
       : bp.memoryRead
       ? "memRead"
       : bp.memoryWrite
@@ -621,6 +711,7 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
         : `$${(bp.copperIndex & COPPER_INDEX_MAX).toString(16).toUpperCase().padStart(3, "0")}`,
     spriteIndex: bp.spriteIndex === undefined ? "" : `$${toHexa2(bp.spriteIndex & SPRITE_INDEX_MAX)}`,
     spriteAttrMask: bp.spriteIndex === undefined ? SPRITE_ATTR_ALL : spriteAttrMaskOf(bp),
+    ...interruptFieldsOf(bp),
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -727,6 +818,23 @@ export function validateBreakpointForm(
             : t("panels.breakpointForm.copperInvalid");
       } else if (index.value < 0 || index.value > COPPER_INDEX_MAX) {
         errors.copperIndex = t("panels.breakpointForm.copperRange");
+      }
+    }
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
+  // --- The interrupt stop's rules, on their own path like the sprite ones
+  if (isInterruptKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.interruptSource = t("panels.breakpointForm.interruptUnsupported");
+    } else {
+      const stop = interruptStopFromForm(form);
+      if ("field" in stop) {
+        errors[stop.field] =
+          stop.field === "interruptWait"
+            ? t("panels.breakpointForm.interruptWait")
+            : t("panels.breakpointForm.interruptSource");
       }
     }
     addDuplicateKeyError(errors, form, env);
@@ -917,6 +1025,7 @@ export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind
       return "copper";
     case "sprite":
       return "sprite";
+    // --- An interrupt stop's condition reads the registers after the event, as an execution one does
     default:
       return "exec";
   }

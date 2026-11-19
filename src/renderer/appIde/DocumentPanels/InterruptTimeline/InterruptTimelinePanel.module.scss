@@ -1,0 +1,294 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Interrupt Timeline document (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.2): the swimlane chart and the
+ * selection pane above, the latency table and the event list below. Lane colours are the
+ * `--color-int-lane-*` aliases; widths are `ch` (M2).
+ *
+ * A `SplitPanel` divides the body: the chart and the selection on top, the latency table and the
+ * event list below. One scroller per region, never one inside another: the body does not scroll, the
+ * chart scales to fit its side of the split, and the selection and the two lists each scroll in their
+ * own `ScrollViewer`. The containers stay unpositioned (the splitter measures against the page).
+ */
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.upper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34ch;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The chart fits its box: the SVG keeps its proportions and anchors top left */
+.chart {
+  padding: var(--space-2) 0 var(--space-2) var(--space-2);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.info {
+  padding: var(--space-2) 0 0 var(--space-2);
+  border-left: 1px solid var(--border-subtle);
+  min-height: 0;
+}
+
+.infoTitle {
+  margin-bottom: var(--space-1);
+  color: var(--data-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.muted {
+  color: var(--data-secondary);
+  padding-top: var(--space-1);
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: 14ch minmax(0, 1fr);
+}
+
+.kvKey {
+  color: var(--text-secondary);
+}
+
+.kvValue {
+  color: var(--color-state-value);
+}
+
+.lower {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.lowerPane {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0 0 var(--space-2);
+  min-width: 0;
+  min-height: 0;
+
+  & + & {
+    border-left: 1px solid var(--border-subtle);
+  }
+}
+
+/* The pane's scrolling region: the ScrollViewer fills it (its default `height: 100%`) */
+.paneBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: var(--space-2);
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+
+  th {
+    position: sticky;
+    top: 0;
+    background-color: var(--surface-panel);
+    color: var(--data-secondary);
+    text-align: left;
+    font-weight: normal;
+    padding: 0 1ch;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  td {
+    padding: 0 1ch;
+    white-space: nowrap;
+    color: var(--color-state-value);
+  }
+}
+
+.nameCell.nameCell {
+  color: var(--text-secondary);
+}
+
+.eventRow {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+}
+
+.selectedRow {
+  background-color: var(--surface-selected);
+}
+
+.late.late {
+  color: var(--color-int-late);
+}
+
+.frameLabel {
+  min-width: 14ch;
+  text-align: center;
+  color: var(--color-state-value);
+}
+
+.held {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.full {
+  color: var(--status-warning);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.segment {
+  border: none;
+  background: none;
+  padding: 0 1ch;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  @include focus-ring;
+}
+
+.segmentOn.segmentOn {
+  background-color: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+.linkButton {
+  margin-top: var(--space-2);
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include focus-ring;
+}
+
+/* --- The chart */
+.gridLine {
+  stroke: var(--border-subtle);
+}
+
+.frameLine {
+  stroke: var(--accent-secondary-text);
+  stroke-dasharray: 4 3;
+}
+
+.frameText {
+  fill: var(--accent-text);
+  font-size: 10px;
+}
+
+.partialText {
+  fill: var(--status-warning);
+  font-size: 10px;
+}
+
+.axisText {
+  fill: var(--text-tertiary);
+  font-size: 9.5px;
+}
+
+.laneText {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}
+
+.laneBg {
+  fill: var(--surface-hover);
+}
+
+.hatchLine {
+  stroke: var(--text-tertiary);
+}
+
+.goneLine {
+  stroke: var(--status-error);
+  opacity: 0.4;
+}
+
+.bar_main { fill: var(--color-int-lane-main); opacity: 0.45; }
+.bar_line { fill: var(--color-int-lane-line); }
+.bar_uartRx { fill: var(--color-int-lane-uart-rx); }
+.bar_ctc { fill: var(--color-int-lane-ctc); }
+.bar_ula { fill: var(--color-int-lane-ula); }
+.bar_uartTx { fill: var(--color-int-lane-uart-tx); }
+.bar_nmi { fill: var(--color-int-lane-nmi); }
+
+.hatch_main,
+.hatch_line,
+.hatch_uartRx,
+.hatch_ctc,
+.hatch_ula,
+.hatch_uartTx,
+.hatch_nmi {
+  stroke-opacity: 0.6;
+}
+
+.hatch_line { stroke: var(--color-int-lane-line); }
+.hatch_uartRx { stroke: var(--color-int-lane-uart-rx); }
+.hatch_ctc { stroke: var(--color-int-lane-ctc); }
+.hatch_ula { stroke: var(--color-int-lane-ula); }
+.hatch_uartTx { stroke: var(--color-int-lane-uart-tx); }
+.hatch_nmi { stroke: var(--color-int-lane-nmi); }
+
+.marker {
+  cursor: pointer;
+}
+
+.markerSelected {
+  stroke: var(--text-primary);
+  stroke-width: 1.5;
+}
+
+.markerReq { fill: var(--status-warning); }
+.markerAck { fill: var(--text-primary); }
+.markerLate { fill: var(--color-int-late); }
+.markerReti { fill: var(--color-int-reti); }
+
+.markerBad {
+  stroke: var(--status-error);
+  stroke-width: 2;
+  fill: none;
+}

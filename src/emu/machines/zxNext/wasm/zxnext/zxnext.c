@@ -235,6 +235,7 @@ static uint8_t micBit;
 #include "zxnext-divmmc.c"
 #include "zxnext-sd.c"
 #include "zxnext-diagnostics.c"
+#include "zxnext-int-events.c"
 #include "zxnext-nmi.c"
 #include "zxnext-interrupts.c"
 #include "zxnext-keyboard.c"
@@ -382,7 +383,7 @@ static uint32_t zxnextDebugAccessHit(uint32_t accessMask);
 #define Z80_DEBUG_LOOP_PREFIX zxnext
 #define Z80_DEBUG_LOOP_FRAME_COMPLETED frameCompleted
 #define Z80_DEBUG_LOOP_STOP() \
-  (zxSdGetHostCommand() != ZX_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u)
+  (zxSdGetHostCommand() != ZX_SD_HOST_COMMAND_NONE || zxnextResetRequest != 0u || zxnextIntHitPresent != 0u)
 #include "../../../../z80/wasm/z80-debug-loop.c"
 
 /* The access-breakpoint test of the last instruction: the shared log's memory accesses, the Next's port record */
@@ -501,6 +502,41 @@ uint32_t zxnextGetLastInterruptVector(void) { return zxnextInterruptsGetLastVect
 void zxnextSetDaisyStatus(uint32_t index, uint32_t active) { zxnextInterruptsSetDaisyStatus(index, active); }
 void zxnextSetDaisyEnabled(uint32_t index, uint32_t active) { zxnextInterruptsSetDaisyEnabled(index, active); }
 uint32_t zxnextGetDaisyInService(uint32_t index) { return zxnextInterruptsGetDaisyInService(index); }
+
+/* The Interrupts panel's snapshot (NEXT_INTERRUPTS_DEBUGGING_PLAN §3.2): 96 bytes, side-effect free */
+uint32_t zxnextGetInterruptStatePtr(void) { return zxnextInterruptsSnapshot(); }
+
+/* The interrupt event ring (§4.1): 16-byte records, record n at n % capacity; the count only grows */
+uint32_t zxnextIntEventsPtr(void) { return (uint32_t)(uintptr_t)zxnextIntEvents; }
+uint32_t zxnextIntEventsGetCapacity(void) { return ZXNEXT_IEV_CAPACITY; }
+uint32_t zxnextIntEventsGetCount(void) { return zxnextIntEventCount; }
+void zxnextIntEventsSetEnabled(uint32_t enabled) {
+  zxnextIntEventsEnabled = enabled ? 1u : 0u;
+  zxnextIntEventsUpdateActive();
+}
+uint32_t zxnextIntEventsGetEnabled(void) { return zxnextIntEventsEnabled; }
+void zxnextIntEventsClear(void) { zxnextIntEventCount = 0u; }
+
+/*
+ * The interrupt-stop watch (§5): a bit per event kind, a bit per chain source for ACK, a bit per NMI
+ * device (0 Multiface, 1 DivMMC, 2 other) for NMI, and the WAIT limit in CPU tacts. 0 kinds disarms.
+ * Clears a stale hit.
+ */
+void zxnextSetIntWatch(uint32_t kinds, uint32_t ackSources, uint32_t nmiSources, uint32_t waitLimit) {
+  zxnextIntWatchKinds = kinds;
+  zxnextIntWatchAckSources = ackSources;
+  zxnextIntWatchNmiSources = nmiSources;
+  zxnextIntWatchWaitLimit = waitLimit;
+  zxnextIntHitPresent = 0u;
+  zxnextIntEventsUpdateActive();
+}
+/* The latched hit: 1 and the record copied to the hit buffer, or 0; taking it clears it */
+uint32_t zxnextIntHitRecordPtr(void) { return (uint32_t)(uintptr_t)zxnextIntHitRecord; }
+uint32_t zxnextTakeIntHit(void) {
+  uint32_t hit = zxnextIntHitPresent;
+  zxnextIntHitPresent = 0u;
+  return hit;
+}
 
 void zxnextSetTacts(uint32_t value) {
   tacts = value;

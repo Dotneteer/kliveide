@@ -33,6 +33,14 @@ import type {
   JoystickConnector
 } from "./IZxNextHostInputMachine";
 import { nextRegSetOf } from "./nextRegSets";
+import {
+  copyRingRecords,
+  decodeInterruptEvent,
+  decodeInterruptState,
+  type InterruptStopEvent,
+  type NextInterruptEvents,
+  type NextInterruptState
+} from "@common/zxnext/interrupts/interruptState";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -1092,6 +1100,8 @@ export class ZxNextWasmV2Machine
     let watchesNextReg = false;
     let watchesCopper = false;
     let watchesSprites = false;
+    let watchesInterrupts = false;
+    let interruptWaitLimit = 0;
     const self = this;
     return {
       get executionContext() {
@@ -1205,6 +1215,18 @@ export class ZxNextWasmV2Machine
         this.lastSpriteWrite = undefined;
 
         /*
+         * The interrupt-stop watch (NEXT_INTERRUPTS_DEBUGGING_PLAN §5): pushed on entry, disarmed (0
+         * kinds) when no `int:` stop is enabled. Unlike the watches above it keeps the in-core loop: the
+         * event records its own PC, and the core returns from `ExecuteUntilStop` as soon as it latches
+         * a hit (`Z80_DEBUG_LOOP_STOP`), so `afterStep` sees it at the end of that instruction.
+         */
+        const intWatch = debugSupport?.buildInterruptWatch?.();
+        watchesInterrupts = (intWatch?.kinds ?? 0) !== 0;
+        interruptWaitLimit = intWatch?.waitLimit ?? 0;
+        wasm.zxnextSetIntWatch(intWatch?.kinds ?? 0, intWatch?.ackSources ?? 0, intWatch?.nmiSources ?? 0, interruptWaitLimit);
+        this.lastInterruptStop = undefined;
+
+        /*
          * Finish a reset the last run stopped in front of.
          *
          * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
@@ -1288,6 +1310,11 @@ export class ZxNextWasmV2Machine
         // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
         // --- DMA it held the bus for, or the Copper); the machine stops at its end.
         if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
+          return FrameTerminationMode.DebugEvent;
+        }
+        // --- A watched interrupt event happened during this instruction (an acknowledge stops at the
+        // --- handler's first instruction)
+        if (watchesInterrupts && wasm.zxnextTakeIntHit() && this.acceptWasmV2InterruptHit(runtime, interruptWaitLimit)) {
           return FrameTerminationMode.DebugEvent;
         }
 
@@ -1453,6 +1480,17 @@ export class ZxNextWasmV2Machine
       pc,
       partition: this.getPartition(pc)
     };
+    return true;
+  }
+
+  /**
+   * An interrupt event the core latched for an armed `int:` watch: stop if an interrupt stop (hit
+   * count, condition) accepts it, and keep the event for the stop message and the Breakpoints panel.
+   */
+  private acceptWasmV2InterruptHit(runtime: ZxNextWasmV2Runtime, coreWaitLimit: number): boolean {
+    const event = decodeInterruptEvent(runtime.interruptHitRecord, 0, 0);
+    if (!this.executionContext.debugSupport?.hasInterruptHit(event, coreWaitLimit)) return false;
+    this.lastInterruptStop = { ...event, partition: this.getPartition(event.pc) };
     return true;
   }
 
@@ -1950,6 +1988,12 @@ export class ZxNextWasmV2Machine
   lastSpriteWrite?: SpriteWriteEvent;
 
   /**
+   * The interrupt event an `int:` stop last stopped on. Set by the debug loop, cleared when the
+   * machine resumes.
+   */
+  lastInterruptStop?: InterruptStopEvent;
+
+  /**
    * "Step Copper" is pending: the next debug run stops after the Z80 instruction during which the
    * Copper completes its next instruction, whatever its index (plan §4.6).
    */
@@ -1970,7 +2014,8 @@ export class ZxNextWasmV2Machine
       ...super.getCpuState(),
       lastNextRegWrite: this.lastNextRegWrite,
       lastCopperHit: this.lastCopperHit,
-      lastSpriteWrite: this.lastSpriteWrite
+      lastSpriteWrite: this.lastSpriteWrite,
+      lastInterruptStop: this.lastInterruptStop
     };
   }
 
@@ -2037,6 +2082,69 @@ export class ZxNextWasmV2Machine
       },
       lastHit: this.lastCopperHit
     };
+  }
+
+  /**
+   * The Interrupts panel's snapshot (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §3.2): one core call
+   * fills 96 bytes without side effects (no UART/CTC sync, no latching, a peeked vector table).
+   */
+  getInterruptState(): NextInterruptState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    ex.zxnextGetInterruptStatePtr();
+    return decodeInterruptState(runtime.interruptState, {
+      pc: ex.zxnextGetCpuPc(),
+      sp: ex.zxnextGetCpuSp(),
+      interruptDepth: ex.zxnextGetInterruptDepth(),
+      nextReg06: ex.zxnextPeekNextRegister(0x06),
+      nextRegD8: ex.zxnextPeekNextRegister(0xd8),
+      recording: {
+        enabled: ex.zxnextIntEventsGetEnabled() !== 0,
+        count: ex.zxnextIntEventsGetCount() >>> 0,
+        capacity: ex.zxnextIntEventsGetCapacity()
+      }
+    });
+  }
+
+  /** The interrupt event ring's records written since `since` (all held ones by default), oldest first */
+  getInterruptEvents(since?: number): NextInterruptEvents {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const capacity = ex.zxnextIntEventsGetCapacity();
+    const count = ex.zxnextIntEventsGetCount() >>> 0;
+    const { firstSeq, records } = copyRingRecords(runtime.interruptEvents, capacity, count, since ?? 0);
+    return {
+      enabled: ex.zxnextIntEventsGetEnabled() !== 0,
+      capacity,
+      count,
+      firstSeq,
+      records,
+      currentFrame: ex.zxnextGetFrames() >>> 0,
+      currentPos28: (ex.zxnextGetCurrentFrameTact() >>> 0) * 4,
+      totalHc: ex.zxnextGetTimingTotalHc(),
+      totalVc: ex.zxnextGetTimingTotalVc()
+    };
+  }
+
+  /** Switches the interrupt event ring's recording on or off (it is off after a start) */
+  setInterruptRecording(enabled: boolean): void {
+    this.requireWasmV2Runtime().exports.zxnextIntEventsSetEnabled(enabled ? 1 : 0);
+  }
+
+  /** Forgets every recorded interrupt event */
+  clearInterruptEvents(): void {
+    this.requireWasmV2Runtime().exports.zxnextIntEventsClear();
+  }
+
+  /**
+   * The Interrupts panel's Ring and Clear status actions (plan D5): a real NextReg write, as the CPU
+   * makes one, limited to `$20` and the status registers `$C8`-`$CA`.
+   */
+  writeInterruptNextReg(reg: number, value: number): void {
+    if (reg !== 0x20 && reg !== 0xc8 && reg !== 0xc9 && reg !== 0xca) {
+      throw new Error(`Not an interrupt request or status register: $${reg.toString(16)}`);
+    }
+    this.requireWasmV2Runtime().exports.zxnextWriteNextRegister(reg & 0xff, value & 0xff);
   }
 
   /**
