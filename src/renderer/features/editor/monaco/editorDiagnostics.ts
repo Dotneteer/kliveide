@@ -5,6 +5,10 @@
  * Pure functions, no Monaco: `MonacoEditor.tsx` turns the results into markers and decorations.
  */
 
+import { get } from "lodash";
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
+import { SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE } from "@common/settings/setting-const";
+
 /** The Klive assembler's "Identifier '{0}' is not defined yet." */
 export const UNDEFINED_SYMBOL_CODE = "Z0605";
 
@@ -86,6 +90,23 @@ export function countProblems(items: ReadonlyArray<{ isWarning?: boolean }>): {
   let warnings = 0;
   for (const item of items) if (item.isWarning) warnings++;
   return { errors: items.length - warnings, warnings };
+}
+
+/** A build message as the tabs count it */
+export type BuildMessage = { filename: string; isWarning?: boolean };
+
+/**
+ * The last background build's messages, or undefined while **Compile in the background** is off
+ * (the editor shows none then either). A store selector, so a component reads it with the
+ * `useSelector` it already has rather than another hook.
+ */
+export function backgroundBuildMessages(state: {
+  globalSettings?: unknown;
+  compilation?: { backgroundResult?: { errors?: ReadonlyArray<BuildMessage> } };
+}): ReadonlyArray<BuildMessage> | undefined {
+  const def = KliveGlobalSettings[SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE];
+  const enabled = get(state?.globalSettings ?? {}, SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE, def?.defaultValue);
+  return enabled ? state?.compilation?.backgroundResult?.errors : undefined;
 }
 
 /**
