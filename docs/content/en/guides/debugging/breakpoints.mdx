@@ -142,37 +142,50 @@ Below the breakpoints, the panel lists breakpoints that come from
 ## The breakpoint dialog
 
 **Add breakpoint** and **Edit breakpoint...** open a dialog with every option `bp-set` accepts,
-without the flag syntax.
+without the flag syntax. Like the Settings dialog, it has a list of pages on the left; under each
+page's name is a one-line summary of what is set there (`Execution $8000`, `A == $FF · At least 5`,
+`Stop`), so you can read the whole breakpoint without opening every page.
 
 <Shot
   src="guides/debugging/breakpoints/breakpoint-dialog.webp"
-  alt="The Edit breakpoint dialog with a condition and a hit count filled in"
-  caption="The breakpoint dialog with a condition and a hit count."
-  width={520}
+  alt="The Edit breakpoint dialog on its Condition page, with a condition and a hit count filled in"
+  caption="The breakpoint dialog's Condition page, with a condition and a hit count."
+  width={640}
 />
 
-- **Type**: one of the [breakpoint types](#breakpoint-types).
-- **Break only in a specific partition**: on machines that page ROM or RAM, ties the breakpoint to
-  one partition. The partition names are those of the [Memory view](/en/guides/debugging/memory/#machine-specific-memory-partitions).
-  Not for I/O breakpoints, which watch a port.
+**Trigger** says what makes the breakpoint fire:
+
+- **Type**: one of the [breakpoint types](#breakpoint-types). The CPU's types are in the first
+  column, the ZX Spectrum Next's hardware types in the second.
 - **Address** (or **Port**): `$8000`, `32768` or `%1000000000000000`, or a
-  [bank-relative](#bank-relative-breakpoints) address such as `05:+$0100`.
-- **Port mask** (I/O types): leave it empty to match the port exactly.
+  [bank-relative](#bank-relative-breakpoints) address such as `05:+$0100`. The other types ask for
+  a register, a Copper list index, a sprite or an interrupt event instead.
 - **Length** (memory types): how many bytes to watch from the address, so one breakpoint can guard
   a buffer.
-- **Action**: *Stop*, or *Log message* for a logpoint, with its **Message**.
-- **Condition** and **Hit count**: see
-  [Conditions, hit counts and logpoints](/en/guides/debugging/breakpoint-conditions/). The condition
-  is checked as you type; the **Syntax** link opens that page.
-- **Hits so far**, when editing, with a **Reset** button.
-- **Enabled**, and **Remove after it stops** for a one-shot.
+- **Port mask** (I/O types): leave it empty to match the port exactly.
+- **Partition**: on machines that page ROM or RAM, **Break only in a specific partition** ties the
+  breakpoint to one partition. The partition names are those of the [Memory view](/en/guides/debugging/memory/#machine-specific-memory-partitions).
+  Not for I/O breakpoints, which watch a port.
+
+**Condition** holds the **Condition** and the **Hit count**; see
+[Conditions, hit counts and logpoints](/en/guides/debugging/breakpoint-conditions/). The condition
+is checked as you type; the **Syntax** link opens that page.
+
+**Action** says what happens when it fires: *Stop*, with **Remove after it stops** for a one-shot,
+or *Log message* for a logpoint, with its **Message**. For the Next's hardware types it also says
+where the machine stops.
+
+**Enabled** is beside the buttons, and when you edit a breakpoint, **Hits so far** and a **Reset**
+button are under the page list. A page with a mistake on it gets a red dot after its name, and
+**Add** (or **Save**) opens the first such page.
 
 The dialog refuses an address that already has a breakpoint of the same type.
 
 <Callout type="info">
 A source-code breakpoint belongs to the editor, which moves it with its line as you edit. Opened on
-one, the dialog shows its **Location** (and the address it resolved to) instead of the type, address
-and partition, and edits only its condition, hit count and enabled state. To script one, use
+one, the dialog's first page is **Location**, which shows the line (and the address it resolved to)
+instead of the type, address and partition; the dialog opens on **Condition** and edits only the
+condition, hit count, action and enabled state. To script one, use
 `bp-set [myfile.asm]:12`.
 </Callout>
 

@@ -17,6 +17,12 @@ type RadioGroupProps = {
   ariaLabel?: string;
   /** Lay the options out in this many columns. One column when omitted. */
   columns?: number;
+  /**
+   * `"row"` (the default) fills the columns left to right, a row at a time; `"column"` fills each
+   * column top to bottom first, so options that belong together stand in one column (the breakpoint
+   * dialog's CPU types, then the Next's hardware).
+   */
+  flow?: "row" | "column";
   enabled?: boolean;
 };
 
@@ -33,6 +39,7 @@ export const RadioGroup = ({
   onChange,
   ariaLabel,
   columns = 1,
+  flow = "row",
   enabled = true
 }: RadioGroupProps) => {
   // --- One name per instance, or two groups on the same dialog would fight over one selection.
@@ -43,7 +50,19 @@ export const RadioGroup = ({
       role="radiogroup"
       aria-label={ariaLabel}
       className={styles.group}
-      style={columns > 1 ? { gridTemplateColumns: `repeat(${columns}, auto)` } : undefined}
+      style={
+        columns > 1
+          ? {
+              gridTemplateColumns: `repeat(${columns}, auto)`,
+              ...(flow === "column"
+                ? {
+                    gridAutoFlow: "column",
+                    gridTemplateRows: `repeat(${Math.ceil(options.length / columns)}, auto)`
+                  }
+                : {})
+            }
+          : undefined
+      }
     >
       {options.map((option) => {
         const id = `${name}-${option.value}`;

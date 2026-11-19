@@ -20,8 +20,8 @@ breakpoints in the first place is in [Breakpoints](/en/guides/debugging/breakpoi
 ### Open the breakpoint's dialog
 
 Right-click the breakpoint in the editor margin and choose **Edit Condition...**, or double-click
-its row in the Breakpoints panel. On an empty line, **Add Conditional Breakpoint...** sets the
-breakpoint and opens the dialog in one go.
+its row in the Breakpoints panel and select the **Condition** page. On an empty line, **Add
+Conditional Breakpoint...** sets the breakpoint and opens the dialog on that page in one go.
 
 ### Type the condition
 
@@ -183,7 +183,7 @@ A logpoint is set like any breakpoint &mdash; at an address, a partition address
 address, a source line, or on memory, I/O and NextReg access &mdash; and can carry a condition and a
 hit rule: then it logs only when the condition is true and the rule says so, and its hit counter
 counts the lines it logged. Set one with `-log` on [`bp-set`](/en/reference/commands/#bp-set), with the
-**Action** row (*Log message*) of the breakpoint dialog, or with **Add Logpoint…** in the editor's
+**Action** page (*Log message*) of the breakpoint dialog, or with **Add Logpoint…** in the editor's
 margin menu:
 
 ```

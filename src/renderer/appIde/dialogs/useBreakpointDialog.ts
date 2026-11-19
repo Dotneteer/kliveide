@@ -140,7 +140,7 @@ export function useBreakpointDialog() {
               }
             : undefined
         },
-        { title: initial ? t("dialog.breakpoint.editTitle") : t("dialog.breakpoint.addTitle"), width: 420, iconName: "debug-with-bp" }
+        { title: initial ? t("dialog.breakpoint.editTitle") : t("dialog.breakpoint.addTitle"), width: 680, iconName: "debug-with-bp" }
       );
       // --- A dismissed dialog resolves undefined, which is a cancellation, not an empty edit.
       if (!result) return false;

@@ -11,6 +11,12 @@ type DialogFormProps = {
   submitDanger?: boolean;
   cancelLabel?: string;
   submitting?: boolean;
+  /**
+   * Content at the footer's start, across from the buttons: a setting of the whole dialog rather
+   * than of any one field or page (the breakpoint dialog's Enabled box), or a message that belongs
+   * to no single field.
+   */
+  footerStart?: ReactNode;
   onSubmit: () => void | Promise<void>;
   onCancel: () => void;
 };
@@ -22,6 +28,7 @@ export function DialogForm({
   submitDanger = false,
   cancelLabel,
   submitting: submittingProp,
+  footerStart,
   onSubmit,
   onCancel
 }: DialogFormProps) {
@@ -68,6 +75,8 @@ export function DialogForm({
           disabled={submitDisabled || submitting}
           isDanger={submitDanger}
         />
+        {/* Last in the DOM: the footer is `row-reverse`, so this lands at the start */}
+        {footerStart && <div className={styles.footerStart}>{footerStart}</div>}
       </footer>
     </form>
   );

@@ -121,7 +121,7 @@ module.exports = {
         await h.sections(ide, ["Breakpoints"]);
         await panel.getByText("INT:ACK:LINE").first().dblclick();
         await klive.sleep(1500);
-        await klive.shot('[role="dialog"]', "en/guides/next/interrupts/interrupt-stop.webp", { displayWidth: 560 });
+        await klive.shot('[role="dialog"]', "en/guides/next/interrupts/interrupt-stop.webp", { displayWidth: 640 });
         await ide.locator('[role="dialog"]').getByRole("button", { name: "Cancel", exact: true }).click();
         await klive.sleep(600);
         await klive.cmd("bp-del int:ack:line", 600);

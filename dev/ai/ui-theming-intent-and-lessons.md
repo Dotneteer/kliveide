@@ -941,6 +941,29 @@ it informs ("the 16K image goes at the top of the 32K card"), `--status-error` w
 OK is disabled. The field above it does not turn red as well (see "Two lines of prose about the same
 problem").
 
+## A Dialog That Outgrows The Screen Becomes Pages In A Fixed Frame
+
+When one dialog's fields stack taller than a small window (the breakpoint dialog reached ~42rem),
+it takes the **Settings dialog's frame**: a page list on the left, the page on the right, and **one
+fixed height** (`height: min(<n>rem, calc(100vh - 10rem))`) for every page, type and machine, so
+nothing it shows makes the dialog jump. The pages split by question: the breakpoint dialog's are
+*Trigger* (what fires it), *Condition* and *Action*.
+
+- **Each page name carries a one-line summary** of what the page holds (`Execution $8000`,
+  `A == $FF · At least 5`, `Stop, then remove`), monospace, tertiary, ellipsised. Nothing then hides
+  behind a page, which is the usual objection to tabs.
+- **An error on a page out of sight is a dot after its name** (`--status-error`) and its summary
+  turns the error colour; the submit button goes to the first page with an error instead of doing
+  nothing visible.
+- **A setting of the whole dialog goes in the footer** (`DialogForm`'s `footerStart`: the
+  breakpoint's Enabled box), as does a message that belongs to no field (the duplicate key).
+- **The tallest page sets the height and must fit without scrolling.** Measure every type in the
+  running app, with an error showing, not in a replica. What makes them fit: labels *beside*
+  their fields in one shared `max-content` column (not over them); a short hint beside its field;
+  a control that a checkbox turns on on the checkbox's own line; a radio list filled column by
+  column (`RadioGroup` `flow="column"`) so its row count is the same on every machine; notes about
+  *when* it stops moved to the page about what it does then.
+
 ## A `min-width` Is A Column, Not A Gap
 
 `.bpLabel` used one `min-width: 9ch` to do two jobs — line the keys up into a column, *and* keep the

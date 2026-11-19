@@ -163,7 +163,10 @@ async function launchKlive({
           },
           editorOptions: { fontFamily: "iosevka", fontSize: 16 },
           panelOptions: { fontFamily: panelFontFamily, fontSize: panelFontSize },
-          ...globalSettings
+          ...globalSettings,
+          // --- The emulator window's "Always on top" is on by default; a scripted instance keeps it
+          // --- off, or its window covers whatever the developer is doing while the run lasts
+          emuOptions: { stayOnTop: false, ...(globalSettings.emuOptions ?? {}) }
         }
       },
       null,
@@ -173,7 +176,10 @@ async function launchKlive({
 
   const app = await electron.launch({
     executablePath: require(path.join(REPO, "node_modules", "electron")),
-    args: [MAIN, "--showide"],
+    // --- Its own Electron user data, inside the run's throwaway home: with the shared one, a Klive the
+    // --- developer has open holds the single-instance lock and this instance quits at once, with
+    // --- exit code 0, which looks like success
+    args: [MAIN, "--showide", `--user-data-dir=${path.join(home, "user-data")}`],
     cwd: REPO,
     env: { ...process.env, ...env, KLIVE_SETTINGS_FILE: settings, ...(userHome ? { HOME: userHome } : {}) },
     timeout: 60_000
