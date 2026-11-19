@@ -57,6 +57,9 @@ const aMatrixMachine = {
 const addressBox = () => screen.getAllByRole("textbox")[0];
 const typeAddress = (value: string) => fireEvent.change(addressBox(), { target: { value } });
 const submit = (label = "Add") => fireEvent.click(screen.getByText(label));
+/** Shows a page of the dialog. A tab's name is its label followed by its summary. */
+const openPage = (name: "Trigger" | "Condition" | "Action") =>
+  fireEvent.click(screen.getByRole("tab", { name: new RegExp(`^${name}`) }));
 
 describe("BreakpointDialog - adding", () => {
   it("starts as a blank execution breakpoint with no complaints", () => {
@@ -120,6 +123,7 @@ describe("BreakpointDialog - adding", () => {
     renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
 
     typeAddress("$8000");
+    openPage("Action");
     fireEvent.click(screen.getByRole("checkbox", { name: "Remove after it stops" }));
     submit();
 
@@ -530,6 +534,7 @@ describe("BreakpointDialog - NextReg write breakpoints", () => {
       <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
     );
     chooseNextReg();
+    openPage("Action");
 
     expect(screen.queryByText(/Stops after the instruction that wrote the register/)).not.toBeNull();
   });
@@ -540,13 +545,13 @@ describe("BreakpointDialog - NextReg write breakpoints", () => {
     );
     chooseNextReg();
 
-    // --- Register only - and the Condition field every kind has.
-    expect(screen.getAllByRole("textbox")).toHaveLength(2);
+    // --- Register only: the Condition field is on its own page.
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
     expect(screen.queryByLabelText("Value")).toBeNull();
 
     fireEvent.click(screen.getByLabelText("Break only on a specific value"));
 
-    expect(screen.getAllByRole("textbox")).toHaveLength(4);
+    expect(screen.getAllByRole("textbox")).toHaveLength(3);
     // --- Side by side, in the notation the key and the command both use: `=$03/$0F`.
     expect(screen.getByLabelText("Value")).toBeDefined();
     expect(screen.getByLabelText("Mask")).toBeDefined();
@@ -676,6 +681,7 @@ describe("BreakpointDialog - conditions and hit counts", () => {
       <BreakpointDialog env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
     );
     typeAddress("$8000");
+    openPage("Condition");
     fireEvent.change(conditionBox(), { target: { value: "A == $FF && !ZF" } });
     submit();
 
@@ -693,6 +699,7 @@ describe("BreakpointDialog - conditions and hit counts", () => {
       <BreakpointDialog env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
     );
     typeAddress("$8000");
+    openPage("Condition");
     fireEvent.change(conditionBox(), { target: { value: "A == == 1" } });
 
     expect(await screen.findByText("Column 6: Unexpected '=='; expected a value")).toBeTruthy();
@@ -710,6 +717,7 @@ describe("BreakpointDialog - conditions and hit counts", () => {
       />
     );
     typeAddress("$8000");
+    openPage("Condition");
     fireEvent.change(conditionBox(), { target: { value: "w[score] > 3" } });
 
     expect(screen.getByRole("status").textContent).toContain("Unknown label score");
@@ -723,6 +731,7 @@ describe("BreakpointDialog - conditions and hit counts", () => {
     renderWithProviders(
       <BreakpointDialog initial={initial} env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
     );
+    openPage("Condition");
     expect(screen.getByRole("combobox", { name: "Hit count rule" }).textContent).toContain("Every");
     fireEvent.change(screen.getByLabelText("Hit count"), { target: { value: "10" } });
     submit("Save");
@@ -826,9 +835,10 @@ describe("BreakpointDialog - logpoints", () => {
     const controls = someControls();
     renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
 
+    typeAddress("$8000");
+    openPage("Action");
     expect((screen.getByLabelText("Stop") as HTMLInputElement).checked).toBe(true);
     expect(screen.queryByLabelText("Log message", { selector: "input[type=text], input:not([type])" })).toBeNull();
-    typeAddress("$8000");
     fireEvent.click(screen.getByLabelText("Log message", { selector: "input[type=radio]" }));
     const message = screen.getByLabelText("Log message", { selector: "input:not([type=radio])" });
     fireEvent.change(message, { target: { value: "[LOOP] B={B}" } });
@@ -961,5 +971,50 @@ describe("BreakpointDialog - sprite attribute breakpoints", () => {
       })
     );
     expect(controls.close.mock.calls[0][0].breakpoint.address).toBeUndefined();
+  });
+});
+
+describe("BreakpointDialog - pages", () => {
+  it("opens on the Trigger page and summarises every page in the list", () => {
+    renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />);
+
+    expect(screen.getByRole("tab", { name: /^Trigger/ }).getAttribute("aria-selected")).toBe("true");
+    typeAddress("$8000");
+    expect(screen.getByRole("tab", { name: /^Trigger/ }).textContent).toContain("Execution $8000");
+    expect(screen.getByRole("tab", { name: /^Condition/ }).textContent).toContain("Always");
+    expect(screen.getByRole("tab", { name: /^Action/ }).textContent).toContain("Stop");
+  });
+
+  it("goes to the page holding the first error when Add is pressed, and marks it", () => {
+    const controls = someControls();
+    renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
+
+    openPage("Condition");
+    submit();
+
+    expect(controls.close).not.toHaveBeenCalled();
+    const trigger = screen.getByRole("tab", { name: /^Trigger/ });
+    expect(trigger.getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("img", { name: "Has an error" })).toBeDefined();
+  });
+
+  it("opens on the page of the field it was asked to focus", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} focus="logMessage" controls={someControls()} />
+    );
+    expect(screen.getByRole("tab", { name: /^Action/ }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("keeps what was typed on a page after another page was shown", () => {
+    renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />);
+
+    typeAddress("$8000");
+    openPage("Condition");
+    fireEvent.change(screen.getByLabelText("Condition"), { target: { value: "A == 1" } });
+    openPage("Trigger");
+    expect((addressBox() as HTMLInputElement).value).toBe("$8000");
+    openPage("Condition");
+    expect((screen.getByLabelText("Condition") as HTMLInputElement).value).toBe("A == 1");
+    expect(screen.getByRole("tab", { name: /^Condition/ }).textContent).toContain("A == 1");
   });
 });

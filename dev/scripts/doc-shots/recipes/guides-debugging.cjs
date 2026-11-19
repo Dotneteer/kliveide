@@ -149,7 +149,7 @@ module.exports = {
           const page = await h.pageWithDialog(klive);
           await h.park(page);
           await klive.shot('[role="dialog"]', "en/guides/debugging/breakpoints/breakpoint-dialog.webp", {
-            displayWidth: 520,
+            displayWidth: 640,
             page
           });
           await page.keyboard.press("Escape");

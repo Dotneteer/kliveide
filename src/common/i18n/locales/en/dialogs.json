@@ -535,17 +535,71 @@
   "@dialog.breakpoint.oneShot": {
     "context": "Checkbox in the breakpoint dialog: a one-shot breakpoint deleted after it first stops the machine."
   },
+  "dialog.breakpoint.page.trigger": "Trigger",
+  "@dialog.breakpoint.page.trigger": {
+    "context": "Name of the first page in the breakpoint dialog's page list (left side, like the Settings dialog): what makes the breakpoint fire - its type and its address, port, register or event.",
+    "maxChars": 18
+  },
+  "dialog.breakpoint.whereLabel": "Where",
+  "@dialog.breakpoint.whereLabel": {
+    "context": "Group heading on the breakpoint dialog's Trigger page, above the address, port, register, list index, sprite or interrupt event fields of the chosen breakpoint type.",
+    "maxChars": 24
+  },
+  "dialog.breakpoint.pagesAria": "Breakpoint settings",
+  "@dialog.breakpoint.pagesAria": {
+    "context": "Screen-reader name of the breakpoint dialog's page list (Trigger, Condition, Action)."
+  },
+  "dialog.breakpoint.pageError": "Has an error",
+  "@dialog.breakpoint.pageError": {
+    "context": "Screen-reader text of the red dot after a page name in the breakpoint dialog's page list, shown when a field on that page does not validate."
+  },
+  "dialog.breakpoint.summary.trigger": "{kind} {value}",
+  "@dialog.breakpoint.summary.trigger": {
+    "context": "One-line summary under the Trigger page name in the breakpoint dialog's page list, e.g. 'Execution $8000'. Reorder if your language needs to.",
+    "placeholders": {
+      "kind": "The breakpoint type, e.g. 'Execution' or 'Memory write'",
+      "value": "What the user typed for the address, port, register, list index or sprite (e.g. $8000), or the interrupt event's name"
+    }
+  },
+  "dialog.breakpoint.summary.hitRule": "{rule} {count}",
+  "@dialog.breakpoint.summary.hitRule": {
+    "context": "Part of the one-line summary under the Condition page name in the breakpoint dialog: the hit-count rule and its number, e.g. 'At least 5' or 'Every 3'.",
+    "placeholders": {
+      "rule": "The hit-count rule's name as the Hit count dropdown shows it (Equal to, At least, Every, ...)",
+      "count": "The number typed, or the letter n while the field is empty"
+    }
+  },
+  "dialog.breakpoint.summary.conditionAndHits": "{condition} · {hits}",
+  "@dialog.breakpoint.summary.conditionAndHits": {
+    "context": "One-line summary under the Condition page name in the breakpoint dialog when both a condition and a hit-count rule are set.",
+    "placeholders": {
+      "condition": "The condition expression as typed, e.g. A == $FF (syntax, shown verbatim)",
+      "hits": "The hit-count summary, e.g. 'At least 5'"
+    }
+  },
+  "dialog.breakpoint.summary.log": "Log: {message}",
+  "@dialog.breakpoint.summary.log": {
+    "context": "One-line summary under the Action page name in the breakpoint dialog for a logpoint, followed by its message template.",
+    "placeholders": {
+      "message": "The log message template as typed (syntax, shown verbatim)"
+    }
+  },
+  "dialog.breakpoint.summary.stopOnce": "Stop, then remove",
+  "@dialog.breakpoint.summary.stopOnce": {
+    "context": "One-line summary under the Action page name in the breakpoint dialog for a one-shot breakpoint: it stops the machine once and is then deleted.",
+    "maxChars": 28
+  },
   "dialog.breakpoint.nextRegStopNote": "Stops after the instruction that wrote the register, reporting its previous and new values.",
   "@dialog.breakpoint.nextRegStopNote": {
-    "context": "Note at the bottom of the breakpoint dialog for a NextReg breakpoint, explaining when it stops."
+    "context": "Note on the Action page of the breakpoint dialog, under Stop / Log message, for a NextReg breakpoint, explaining when it stops."
   },
   "dialog.breakpoint.copperStopNote": "Stops after the Z80 instruction during which the Copper completed it. The Copper keeps running to the end of that instruction, so its PC may already be past the index.",
   "@dialog.breakpoint.copperStopNote": {
-    "context": "Note at the bottom of the breakpoint dialog for a Copper breakpoint. Copper, Z80 and PC are technical names; keep them."
+    "context": "Note on the Action page of the breakpoint dialog, under Stop / Log message, for a Copper breakpoint. Copper, Z80 and PC are technical names; keep them."
   },
   "dialog.breakpoint.spriteStopNote": "Stops after the instruction during which the byte was written — through port $57 (by the CPU or the DMA) or the $35-$39/$75-$79 NextReg mirrors (by the CPU or the Copper) — reporting its previous and new values.",
   "@dialog.breakpoint.spriteStopNote": {
-    "context": "Note at the bottom of the breakpoint dialog for a sprite-attribute breakpoint. Keep the port/register numbers and technical names (CPU, DMA, NextReg, Copper)."
+    "context": "Note on the Action page of the breakpoint dialog, under Stop / Log message, for a sprite-attribute breakpoint. Keep the port/register numbers and technical names (CPU, DMA, NextReg, Copper)."
   },
   "dialog.breakpoint.location.unresolved": "{place} (not resolved - build the project)",
   "@dialog.breakpoint.location.unresolved": {
@@ -3150,6 +3204,6 @@
   },
   "dialog.breakpoint.interrupt.stopNote": "An acknowledge stops at the handler's first instruction; the other events stop after the instruction that caused them. A condition reads the registers there.",
   "@dialog.breakpoint.interrupt.stopNote": {
-    "context": "Note at the bottom of the breakpoint dialog for an interrupt stop: where the machine stops."
+    "context": "Note on the Action page of the breakpoint dialog, under Stop / Log message, for an interrupt stop: where the machine stops."
   }
 }

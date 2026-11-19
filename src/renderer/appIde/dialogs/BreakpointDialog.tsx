@@ -7,11 +7,11 @@ import type {
   BreakpointKind
 } from "@renderer/appIde/utils/breakpoint-form";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import classnames from "classnames";
 import { TextInput } from "@controls/TextInput";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
-import { DialogRow } from "@renderer/controls/DialogRow";
 import { RadioGroup, type RadioGroupOption } from "@renderer/controls/RadioGroup";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { Button } from "@renderer/controls/Button";
@@ -146,6 +146,39 @@ const describeNextReg = (text: string): string | undefined => {
   return described
     ? `${hex} — ${described.description}`
     : translate("dialog.breakpoint.nextReg.undocumented", { register: hex });
+};
+
+/**
+ * The dialog's pages, in the Settings dialog's frame: where it stops, under what condition, and what
+ * it does then.
+ */
+type BreakpointPage = "trigger" | "condition" | "action";
+
+const PAGE_ORDER: BreakpointPage[] = ["trigger", "condition", "action"];
+
+/**
+ * Which page shows each field's error: the page that gets the error dot, and the one Add goes to
+ * when the form does not validate. `form` (the duplicate-key rule) is the trigger's: the key is made
+ * of the type and the place.
+ */
+const PAGE_FIELDS: Record<BreakpointPage, (keyof BreakpointFormState | "form")[]> = {
+  trigger: [
+    "address",
+    "length",
+    "ioMask",
+    "partition",
+    "nextReg",
+    "nextRegValue",
+    "nextRegMask",
+    "copperIndex",
+    "spriteIndex",
+    "spriteAttrMask",
+    "interruptSource",
+    "interruptWait",
+    "form"
+  ],
+  condition: ["condition", "hitCount"],
+  action: ["logMessage"]
 };
 
 const isIoKind = (kind: BreakpointKind) => kind === "ioRead" || kind === "ioWrite";
@@ -304,398 +337,451 @@ export const BreakpointDialog = ({
     focus === "condition" || (sourceMode && focus !== "hitCount" && focus !== "logMessage");
   const logging = form.action === "log";
 
+  // --- The page the dialog opens on: the one holding the field it was asked to focus. A source
+  // --- breakpoint's place is the editor's, so it opens on what can be edited.
+  const [page, setPage] = useState<BreakpointPage>(() =>
+    focus === "logMessage"
+      ? "action"
+      : focus === "condition" || focus === "hitCount" || sourceMode
+        ? "condition"
+        : "trigger"
+  );
+  const pageHasError = (p: BreakpointPage) =>
+    PAGE_FIELDS[p].some(
+      (field) => errors[field] !== undefined && (submitted || (field !== "form" && touched[field]))
+    );
+
   const submit = () => {
     setSubmitted(true);
-    if (!valid) return;
+    if (!valid) {
+      // --- An error on a page out of sight would leave Add doing nothing visible: go to it
+      const first = PAGE_ORDER.find((p) => PAGE_FIELDS[p].some((field) => errors[field] !== undefined));
+      if (first) setPage(first);
+      return;
+    }
     controls.close({
       breakpoint: formToBreakpointInfo(form),
       replaces: initial
     });
   };
 
-  return (
-    <DialogForm
-      submitLabel={editing ? t("dialog.breakpoint.save") : t("dialog.breakpoint.add")}
-      submitDisabled={submitted && !valid}
-      onSubmit={submit}
-      onCancel={controls.cancel}
-    >
-      {sourceMode && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.locationLabel")}>
-          <div className={styles.location}>{sourceLocationText(form.source!)}</div>
-        </DialogRow>
-      )}
+  // --- What each page holds, in one line under its name, so no setting hides behind a page
+  const kindLabel = kindOptions.find((o) => o.value === form.kind)?.label ?? "";
+  const triggerValue = nextRegKind
+    ? form.nextReg
+    : copperKind
+      ? form.copperIndex
+      : spriteKind
+        ? form.spriteIndex
+        : interruptKind
+          ? (interruptEventOptions().find((o) => o.value === form.interruptEvent)?.label ?? "")
+          : form.address;
+  // --- An interrupt stop's event names the type already ("An interrupt is taken")
+  const triggerSummary = sourceMode
+    ? sourceLocationText(form.source!)
+    : interruptKind
+      ? triggerValue
+      : triggerValue.trim()
+      ? t("dialog.breakpoint.summary.trigger", { kind: kindLabel, value: triggerValue.trim() })
+      : kindLabel;
+  const hitRule =
+    form.hitMode === "always"
+      ? undefined
+      : t("dialog.breakpoint.summary.hitRule", {
+          rule: HIT_MODE_OPTIONS.find((o) => o.value === form.hitMode)?.label ?? "",
+          count: form.hitCount.trim() || "n"
+        });
+  const condition = form.condition.trim();
+  const conditionSummary =
+    condition && hitRule
+      ? t("dialog.breakpoint.summary.conditionAndHits", { condition, hits: hitRule })
+      : condition || hitRule || t("dialog.breakpoint.hitMode.always");
+  const actionSummary = logging
+    ? form.logMessage.trim()
+      ? t("dialog.breakpoint.summary.log", { message: form.logMessage.trim() })
+      : t("dialog.breakpoint.action.log")
+    : form.oneShot
+      ? t("dialog.breakpoint.summary.stopOnce")
+      : t("dialog.breakpoint.action.stop");
+  const pages: { id: BreakpointPage; label: string; summary: string }[] = [
+    {
+      id: "trigger",
+      label: sourceMode ? t("dialog.breakpoint.locationLabel") : t("dialog.breakpoint.page.trigger"),
+      summary: triggerSummary
+    },
+    { id: "condition", label: t("dialog.breakpoint.conditionLabel"), summary: conditionSummary },
+    { id: "action", label: t("dialog.breakpoint.actionLabel"), summary: actionSummary }
+  ];
 
-      {!sourceMode && (
-      <DialogRow rows={true} label={t("dialog.breakpoint.typeLabel")}>
+  // --- When the machine stops, which differs by type: said once, on the Action page
+  const stopNote = sourceMode
+    ? undefined
+    : nextRegKind
+      ? t("dialog.breakpoint.nextRegStopNote")
+      : copperKind
+        ? t("dialog.breakpoint.copperStopNote")
+        : spriteKind
+          ? t("dialog.breakpoint.spriteStopNote")
+          : interruptKind
+            ? t("dialog.breakpoint.interrupt.stopNote")
+            : undefined;
+
+  const triggerPage = sourceMode ? (
+    <section className={styles.group}>
+      <h4 className={styles.groupTitle}>{t("dialog.breakpoint.locationLabel")}</h4>
+      <div className={styles.location}>{sourceLocationText(form.source!)}</div>
+    </section>
+  ) : (
+    <>
+      <section className={styles.group}>
+        <h4 className={styles.groupTitle}>{t("dialog.breakpoint.typeLabel")}</h4>
+        {/*
+          * Filled column by column, so the CPU's types stand in the first column and the Next's
+          * hardware in the second. Five rows on every machine: the 48K's single column is as tall
+          * as the Next's two, so the page below starts at the same place on both.
+          */}
         <RadioGroup
           ariaLabel={t("dialog.breakpoint.typeAria")}
           options={kindOptions}
           value={form.kind}
-          columns={2}
+          columns={env.supportsNextRegBreakpoints ? 2 : 1}
+          flow="column"
           onChange={(kind) => setForm((prev) => applyKindChange(prev, kind as BreakpointKind))}
         />
-      </DialogRow>
-      )}
+      </section>
 
-      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && !spriteKind && !interruptKind && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.partitionLabel")}>
-          {/*
-            * Opt in, rather than a "(none)" entry in the picker.
-            *
-            * Most breakpoints are not partition-bound, and the bank matrix has no room for a
-            * "none" cell among 247 banks without it reading as bank zero. A checkbox also states
-            * the default plainly instead of hiding it behind an open menu.
-            */}
-          <Checkbox
-            key={`partition-${partitionEnabled}`}
-            initialValue={form.partition !== undefined}
-            enabled={partitionEnabled}
-            label={t("dialog.breakpoint.partitionCheckbox")}
-            right={true}
-            onChange={(on) => {
-              setTouched((t) => ({ ...t, partition: true }));
-              update({ partition: on ? (initial?.partition ?? defaultPartition) : undefined });
-            }}
-          />
-          {form.partition !== undefined && (
-            <PartitionPicker
-              value={form.partition}
-              onChange={(partition) => {
-                setTouched((t) => ({ ...t, partition: true }));
-                update({ partition });
-              }}
-              displayBankMatrix={machineSetup.displayBankMatrix}
-              segmentOptions={machineSetup.segmentOptions}
-              partitionOptions={machineSetup.partitionOptions}
-            />
-          )}
-          {!partitionEnabled && (
-            <div className={styles.hint}>
-              {bankRelative && !ioKind
-                ? t("dialog.breakpoint.partitionHint.bankRelative")
-                : t("dialog.breakpoint.partitionHint.io")}
-            </div>
-          )}
-          {shows("partition") && errors.partition && (
-            <div className={styles.error} role="alert">
-              {errors.partition}
-            </div>
-          )}
-        </DialogRow>
-      )}
-
-      {!sourceMode && nextRegKind && (
-        <>
-          <DialogRow rows={true} label={t("dialog.breakpoint.registerLabel")}>
-            <TextInput
-              value={form.nextReg}
-              width={BYTE_FIELD}
-              error={errorFor("nextReg")}
-              autoFocus={!focus}
-              onChange={(nextReg) => {
-                setTouched((t) => ({ ...t, nextReg: true }));
-                update({ nextReg });
-              }}
-            />
-            <div className={styles.hint}>
-              {describeNextReg(form.nextReg) ?? t("dialog.breakpoint.registerHint")}
-            </div>
-          </DialogRow>
-
-          {/* Names the whole group - a toggle and, when it is on, two fields - rather than the
-            * first field in it, which carries its own name. */}
-          <DialogRow rows={true} label={t("dialog.breakpoint.valueFilterLabel")}>
-            <Checkbox
-              initialValue={form.filterValue}
-              label={t("dialog.breakpoint.valueFilterCheckbox")}
-              right={true}
-              onChange={(on) => {
-                setTouched((t) => ({ ...t, nextRegValue: true }));
-                // --- Clearing on the way out, so an abandoned filter cannot survive invisibly and
-                // --- fail validation against a field that is no longer on screen.
-                update(on ? { filterValue: true } : { filterValue: false, nextRegValue: "", nextRegMask: "" });
-              }}
-            />
-            {form.filterValue && (
-              <>
-                <div className={styles.filterFields}>
+      <section className={styles.group}>
+        <h4 className={styles.groupTitle}>{t("dialog.breakpoint.whereLabel")}</h4>
+        <div className={styles.fields}>
+          {nextRegKind && (
+            <>
+              <Field label={t("dialog.breakpoint.registerLabel")}>
+                <div className={styles.inline}>
+                  <TextInput
+                    value={form.nextReg}
+                    width={BYTE_FIELD}
+                    ariaLabel={t("dialog.breakpoint.registerLabel")}
+                    error={errorFor("nextReg")}
+                    autoFocus={!focus}
+                    onChange={(nextReg) => {
+                      setTouched((t) => ({ ...t, nextReg: true }));
+                      update({ nextReg });
+                    }}
+                  />
                   {/*
-                    * Named for a screen reader, because neither field has a visible label of its
-                    * own: the separator between them is what tells a sighted reader which is which,
-                    * and a separator is not an accessible name.
+                    * A live hint rather than a dropdown of all 256: it names the register just
+                    * typed, the dropdown's one real benefit, without its scrolling.
                     */}
-                  <TextInput
-                    value={form.nextRegValue}
-                    width={BYTE_FIELD}
-                    ariaLabel={t("dialog.breakpoint.valueAria")}
-                    error={errorFor("nextRegValue")}
-                    onChange={(nextRegValue) => {
-                      setTouched((t) => ({ ...t, nextRegValue: true }));
-                      update({ nextRegValue });
-                    }}
-                  />
-                  <span className={styles.filterSeparator} aria-hidden="true">
-                    /
+                  <span className={styles.sideHint}>
+                    {describeNextReg(form.nextReg) ?? t("dialog.breakpoint.registerHint")}
                   </span>
-                  <TextInput
-                    value={form.nextRegMask}
-                    width={BYTE_FIELD}
-                    ariaLabel={t("dialog.breakpoint.maskAria")}
-                    error={errorFor("nextRegMask")}
-                    onChange={(nextRegMask) => {
-                      setTouched((t) => ({ ...t, nextRegMask: true }));
-                      update({ nextRegMask });
+                </div>
+              </Field>
+
+              {/*
+                * The value and the mask sit beside the box that turns them on, laid out the way the
+                * breakpoint's key reads them (`=$03/$0F`), so ticking it does not push a row down.
+                */}
+              <Field label={t("dialog.breakpoint.valueFilterLabel")}>
+                <div className={styles.inline}>
+                  <Checkbox
+                    initialValue={form.filterValue}
+                    label={t("dialog.breakpoint.valueFilterCheckbox")}
+                    right={true}
+                    onChange={(on) => {
+                      setTouched((t) => ({ ...t, nextRegValue: true }));
+                      // --- Cleared on the way out, so an abandoned filter cannot survive invisibly
+                      // --- and fail validation against fields that are no longer on screen.
+                      update(on ? { filterValue: true } : { filterValue: false, nextRegValue: "", nextRegMask: "" });
                     }}
                   />
+                  {form.filterValue && (
+                    <>
+                      <TextInput
+                        value={form.nextRegValue}
+                        width={BYTE_FIELD}
+                        ariaLabel={t("dialog.breakpoint.valueAria")}
+                        error={errorFor("nextRegValue")}
+                        onChange={(nextRegValue) => {
+                          setTouched((t) => ({ ...t, nextRegValue: true }));
+                          update({ nextRegValue });
+                        }}
+                      />
+                      <span className={styles.filterSeparator} aria-hidden="true">
+                        /
+                      </span>
+                      <TextInput
+                        value={form.nextRegMask}
+                        width={BYTE_FIELD}
+                        ariaLabel={t("dialog.breakpoint.maskAria")}
+                        error={errorFor("nextRegMask")}
+                        onChange={(nextRegMask) => {
+                          setTouched((t) => ({ ...t, nextRegMask: true }));
+                          update({ nextRegMask });
+                        }}
+                      />
+                    </>
+                  )}
                 </div>
-                {/* No backticks: this is a plain text node, not Markdown, and they render as
-                  * themselves. */}
-                <div className={styles.hint}>
-                  {t("dialog.breakpoint.valueFilterHint")}
-                </div>
-              </>
-            )}
-          </DialogRow>
+                {form.filterValue && (
+                  <div className={styles.hint}>{t("dialog.breakpoint.valueFilterHint")}</div>
+                )}
+              </Field>
 
-          <DialogRow>
-            <Checkbox
-              initialValue={form.nextRegCopper}
-              label={t("dialog.breakpoint.nextRegCopper")}
-              right={true}
-              onChange={(nextRegCopper) => update({ nextRegCopper })}
-            />
-          </DialogRow>
-        </>
-      )}
-
-      {!sourceMode && copperKind && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.copperIndexLabel")}>
-          <TextInput
-            value={form.copperIndex}
-            width={BYTE_FIELD}
-            error={errorFor("copperIndex")}
-            autoFocus={!focus}
-            onChange={(copperIndex) => {
-              setTouched((t) => ({ ...t, copperIndex: true }));
-              update({ copperIndex });
-            }}
-          />
-          <div className={styles.hint}>
-            {describeCopperIndex(form.copperIndex, copperRam) ??
-              t("dialog.breakpoint.copperIndexHint")}
-          </div>
-        </DialogRow>
-      )}
-
-      {!sourceMode && spriteKind && (
-        <>
-          <DialogRow rows={true} label={t("dialog.breakpoint.spriteLabel")}>
-            <TextInput
-              value={form.spriteIndex}
-              width={BYTE_FIELD}
-              error={errorFor("spriteIndex")}
-              autoFocus={!focus}
-              onChange={(spriteIndex) => {
-                setTouched((t) => ({ ...t, spriteIndex: true }));
-                update({ spriteIndex });
-              }}
-            />
-            <div className={styles.hint}>{t("dialog.breakpoint.spriteHint")}</div>
-          </DialogRow>
-          <DialogRow rows={true} label={t("dialog.breakpoint.attrBytesLabel")}>
-            <div
-              className={styles.attrBytes}
-              role="group"
-              aria-label={t("dialog.breakpoint.attrBytesLabel")}
-            >
-              {SPRITE_ATTRIBUTE_LABELS.map((label, attr) => (
+              <Field>
                 <Checkbox
-                  key={attr}
-                  initialValue={(form.spriteAttrMask & (1 << attr)) !== 0}
-                  label={`${attr}: ${label}`}
+                  initialValue={form.nextRegCopper}
+                  label={t("dialog.breakpoint.nextRegCopper")}
                   right={true}
-                  onChange={(on) => {
-                    setTouched((t) => ({ ...t, spriteAttrMask: true }));
-                    setForm((prev) => ({
-                      ...prev,
-                      spriteAttrMask: on
-                        ? prev.spriteAttrMask | (1 << attr)
-                        : prev.spriteAttrMask & ~(1 << attr)
-                    }));
+                  onChange={(nextRegCopper) => update({ nextRegCopper })}
+                />
+              </Field>
+            </>
+          )}
+
+          {copperKind && (
+            <Field label={t("dialog.breakpoint.copperIndexLabel")}>
+              <TextInput
+                value={form.copperIndex}
+                width={BYTE_FIELD}
+                ariaLabel={t("dialog.breakpoint.copperIndexLabel")}
+                error={errorFor("copperIndex")}
+                autoFocus={!focus}
+                onChange={(copperIndex) => {
+                  setTouched((t) => ({ ...t, copperIndex: true }));
+                  update({ copperIndex });
+                }}
+              />
+              <div className={styles.hint}>
+                {describeCopperIndex(form.copperIndex, copperRam) ??
+                  t("dialog.breakpoint.copperIndexHint")}
+              </div>
+            </Field>
+          )}
+
+          {spriteKind && (
+            <>
+              <Field label={t("dialog.breakpoint.spriteLabel")}>
+                <div className={styles.inline}>
+                  <TextInput
+                    value={form.spriteIndex}
+                    width={BYTE_FIELD}
+                    ariaLabel={t("dialog.breakpoint.spriteLabel")}
+                    error={errorFor("spriteIndex")}
+                    autoFocus={!focus}
+                    onChange={(spriteIndex) => {
+                      setTouched((t) => ({ ...t, spriteIndex: true }));
+                      update({ spriteIndex });
+                    }}
+                  />
+                  <span className={styles.sideHint}>{t("dialog.breakpoint.spriteHint")}</span>
+                </div>
+              </Field>
+              <Field label={t("dialog.breakpoint.attrBytesLabel")}>
+                <div
+                  className={styles.attrBytes}
+                  role="group"
+                  aria-label={t("dialog.breakpoint.attrBytesLabel")}
+                >
+                  {SPRITE_ATTRIBUTE_LABELS.map((label, attr) => (
+                    <Checkbox
+                      key={attr}
+                      initialValue={(form.spriteAttrMask & (1 << attr)) !== 0}
+                      label={`${attr}: ${label}`}
+                      right={true}
+                      onChange={(on) => {
+                        setTouched((t) => ({ ...t, spriteAttrMask: true }));
+                        setForm((prev) => ({
+                          ...prev,
+                          spriteAttrMask: on
+                            ? prev.spriteAttrMask | (1 << attr)
+                            : prev.spriteAttrMask & ~(1 << attr)
+                        }));
+                      }}
+                    />
+                  ))}
+                </div>
+                {errorFor("spriteAttrMask") && (
+                  <div className={styles.error} role="alert">
+                    {errorFor("spriteAttrMask")}
+                  </div>
+                )}
+              </Field>
+            </>
+          )}
+
+          {interruptKind && (
+            <>
+              <Field label={t("dialog.breakpoint.interrupt.eventLabel")}>
+                <Dropdown
+                  options={interruptEventOptions()}
+                  initialValue={form.interruptEvent}
+                  ariaLabel={t("dialog.breakpoint.interrupt.eventLabel")}
+                  width="34ch"
+                  onChanged={(interruptEvent) => {
+                    setTouched((t) => ({ ...t, interruptSource: true }));
+                    update({ interruptEvent: interruptEvent as BreakpointFormState["interruptEvent"], interruptSource: "" });
                   }}
                 />
-              ))}
-            </div>
-            {errorFor("spriteAttrMask") && (
-              <div className={styles.error} role="alert">
-                {errorFor("spriteAttrMask")}
-              </div>
-            )}
-          </DialogRow>
-        </>
-      )}
-
-      {!sourceMode && interruptKind && (
-        <>
-          <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.eventLabel")}>
-            <Dropdown
-              options={interruptEventOptions()}
-              initialValue={form.interruptEvent}
-              ariaLabel={t("dialog.breakpoint.interrupt.eventLabel")}
-              width="34ch"
-              onChanged={(interruptEvent) => {
-                setTouched((t) => ({ ...t, interruptSource: true }));
-                update({ interruptEvent: interruptEvent as BreakpointFormState["interruptEvent"], interruptSource: "" });
-              }}
-            />
-          </DialogRow>
-          {form.interruptEvent !== "retn" && form.interruptEvent !== "reti" && (
-            <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.sourceLabel")}>
-              <Dropdown
-                key={form.interruptEvent === "nmi" ? "nmi" : "chain"}
-                options={interruptSourceOptions(form.interruptEvent)}
-                initialValue={form.interruptSource}
-                ariaLabel={t("dialog.breakpoint.interrupt.sourceLabel")}
-                width="20ch"
-                onChanged={(interruptSource) => {
-                  setTouched((t) => ({ ...t, interruptSource: true }));
-                  update({ interruptSource });
-                }}
-              />
-              {errorFor("interruptSource") && (
-                <div className={styles.error} role="alert">
-                  {errorFor("interruptSource")}
-                </div>
+              </Field>
+              {form.interruptEvent !== "retn" && form.interruptEvent !== "reti" && (
+                <Field label={t("dialog.breakpoint.interrupt.sourceLabel")}>
+                  <Dropdown
+                    key={form.interruptEvent === "nmi" ? "nmi" : "chain"}
+                    options={interruptSourceOptions(form.interruptEvent)}
+                    initialValue={form.interruptSource}
+                    ariaLabel={t("dialog.breakpoint.interrupt.sourceLabel")}
+                    width="20ch"
+                    onChanged={(interruptSource) => {
+                      setTouched((t) => ({ ...t, interruptSource: true }));
+                      update({ interruptSource });
+                    }}
+                  />
+                  {errorFor("interruptSource") && (
+                    <div className={styles.error} role="alert">
+                      {errorFor("interruptSource")}
+                    </div>
+                  )}
+                </Field>
               )}
-            </DialogRow>
+              {form.interruptEvent === "wait" && (
+                <Field label={t("dialog.breakpoint.interrupt.waitLabel")}>
+                  <TextInput
+                    value={form.interruptWait}
+                    width={BYTE_FIELD}
+                    ariaLabel={t("dialog.breakpoint.interrupt.waitLabel")}
+                    error={errorFor("interruptWait")}
+                    onChange={(interruptWait) => {
+                      setTouched((t) => ({ ...t, interruptWait: true }));
+                      update({ interruptWait });
+                    }}
+                  />
+                  <div className={styles.hint}>{t("dialog.breakpoint.interrupt.waitHint")}</div>
+                </Field>
+              )}
+            </>
           )}
-          {form.interruptEvent === "wait" && (
-            <DialogRow rows={true} label={t("dialog.breakpoint.interrupt.waitLabel")}>
-              <TextInput
-                value={form.interruptWait}
-                width={WORD_FIELD}
-                error={errorFor("interruptWait")}
-                onChange={(interruptWait) => {
-                  setTouched((t) => ({ ...t, interruptWait: true }));
-                  update({ interruptWait });
-                }}
-              />
-              <div className={styles.hint}>{t("dialog.breakpoint.interrupt.waitHint")}</div>
-            </DialogRow>
-          )}
-          <DialogRow rows={true}>
-            <div className={styles.hint}>{t("dialog.breakpoint.interrupt.stopNote")}</div>
-          </DialogRow>
-        </>
-      )}
 
-      {!sourceMode && !nextRegKind && !copperKind && !spriteKind && !interruptKind && (
-      <DialogRow rows={true} label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
-        <TextInput
-          value={form.address}
-          width={WORD_FIELD}
-          error={errorFor("address")}
-          autoFocus={!focus}
-          onChange={(address) => {
-            setTouched((t) => ({ ...t, address: true }));
-            update({ address });
-          }}
-        />
-        <div className={styles.hint}>
-          {/*
-            * The bank-relative spelling is offered here rather than as controls of its own: it is
-            * what `bp-set` accepts, so there is one syntax to learn, and the Type selector above is
-            * then all a bank *watchpoint* needs. See `breakpoint-form.ts`.
-            */}
-          {!ioKind && env.supportsBankRelative
-            ? t("dialog.breakpoint.addressHintBank")
-            : t("dialog.breakpoint.addressHint")}
+          {!nextRegKind && !copperKind && !spriteKind && !interruptKind && (
+            <>
+              <Field label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
+                <TextInput
+                  value={form.address}
+                  width={WORD_FIELD}
+                  ariaLabel={addressLabel}
+                  error={errorFor("address")}
+                  autoFocus={!focus}
+                  onChange={(address) => {
+                    setTouched((t) => ({ ...t, address: true }));
+                    update({ address });
+                  }}
+                />
+                <div className={styles.hint}>
+                  {/*
+                    * The bank-relative spelling is offered here rather than as controls of its
+                    * own: it is what `bp-set` accepts, so there is one syntax to learn.
+                    */}
+                  {!ioKind && env.supportsBankRelative
+                    ? t("dialog.breakpoint.addressHintBank")
+                    : t("dialog.breakpoint.addressHint")}
+                </div>
+              </Field>
+
+              {(form.kind === "memRead" || form.kind === "memWrite") && (
+                <Field label={t("dialog.breakpoint.lengthLabel")}>
+                  <div className={styles.inline}>
+                    <TextInput
+                      value={form.length}
+                      width={BYTE_FIELD}
+                      ariaLabel={t("dialog.breakpoint.lengthLabel")}
+                      error={errorFor("length")}
+                      onChange={(length) => {
+                        setTouched((t) => ({ ...t, length: true }));
+                        update({ length });
+                      }}
+                    />
+                    <span className={styles.sideHint}>{t("dialog.breakpoint.lengthHint")}</span>
+                  </div>
+                </Field>
+              )}
+
+              {ioKind && (
+                <Field label={t("dialog.breakpoint.portMaskLabel")}>
+                  <div className={styles.inline}>
+                    <TextInput
+                      value={form.ioMask}
+                      width={WORD_FIELD}
+                      ariaLabel={t("dialog.breakpoint.portMaskLabel")}
+                      error={errorFor("ioMask")}
+                      onChange={(ioMask) => {
+                        setTouched((t) => ({ ...t, ioMask: true }));
+                        update({ ioMask });
+                      }}
+                    />
+                    <span className={styles.sideHint}>{t("dialog.breakpoint.portMaskHint")}</span>
+                  </div>
+                </Field>
+              )}
+
+              {env.supportsPartitions && (
+                <Field label={t("dialog.breakpoint.partitionLabel")}>
+                  {/*
+                    * Opt in, rather than a "(none)" entry in the picker: most breakpoints are not
+                    * partition-bound, and the bank matrix has no room for a "none" cell. The
+                    * picker sits on the checkbox's own line, so ticking it moves nothing below.
+                    * Disabled rather than hidden for an I/O type or a bank-relative address, so
+                    * switching type does not make the row jump away.
+                    */}
+                  <div className={styles.inline}>
+                    <Checkbox
+                      key={`partition-${partitionEnabled}`}
+                      initialValue={form.partition !== undefined}
+                      enabled={partitionEnabled}
+                      label={t("dialog.breakpoint.partitionCheckbox")}
+                      right={true}
+                      onChange={(on) => {
+                        setTouched((t) => ({ ...t, partition: true }));
+                        update({ partition: on ? (initial?.partition ?? defaultPartition) : undefined });
+                      }}
+                    />
+                    {form.partition !== undefined && (
+                      <PartitionPicker
+                        value={form.partition}
+                        onChange={(partition) => {
+                          setTouched((t) => ({ ...t, partition: true }));
+                          update({ partition });
+                        }}
+                        displayBankMatrix={machineSetup.displayBankMatrix}
+                        segmentOptions={machineSetup.segmentOptions}
+                        partitionOptions={machineSetup.partitionOptions}
+                      />
+                    )}
+                  </div>
+                  {!partitionEnabled && (
+                    <div className={styles.hint}>
+                      {bankRelative && !ioKind
+                        ? t("dialog.breakpoint.partitionHint.bankRelative")
+                        : t("dialog.breakpoint.partitionHint.io")}
+                    </div>
+                  )}
+                  {shows("partition") && errors.partition && (
+                    <div className={styles.error} role="alert">
+                      {errors.partition}
+                    </div>
+                  )}
+                </Field>
+              )}
+            </>
+          )}
         </div>
-      </DialogRow>
-      )}
+      </section>
+    </>
+  );
 
-      {!sourceMode && (form.kind === "memRead" || form.kind === "memWrite") && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.lengthLabel")}>
-          <TextInput
-            value={form.length}
-            width={BYTE_FIELD}
-            ariaLabel={t("dialog.breakpoint.lengthLabel")}
-            error={errorFor("length")}
-            onChange={(length) => {
-              setTouched((t) => ({ ...t, length: true }));
-              update({ length });
-            }}
-          />
-          <div className={styles.hint}>
-            {t("dialog.breakpoint.lengthHint")}
-          </div>
-        </DialogRow>
-      )}
-
-      {!sourceMode && ioKind && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.portMaskLabel")}>
-          <TextInput
-            value={form.ioMask}
-            width={WORD_FIELD}
-            error={errorFor("ioMask")}
-            onChange={(ioMask) => {
-              setTouched((t) => ({ ...t, ioMask: true }));
-              update({ ioMask });
-            }}
-          />
-          <div className={styles.hint}>
-            {t("dialog.breakpoint.portMaskHint")}
-          </div>
-        </DialogRow>
-      )}
-
-      <DialogRow rows={true} label={t("dialog.breakpoint.actionLabel")}>
-        <RadioGroup
-          ariaLabel={t("dialog.breakpoint.actionAria")}
-          options={ACTION_OPTIONS}
-          value={form.action}
-          columns={2}
-          onChange={(action) => update({ action: action as BreakpointFormState["action"] })}
-        />
-      </DialogRow>
-
-      {logging && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.messageLabel")}>
-          {/*
-            * The template, validated on every keystroke by the compiler the emulator arms it with
-            * (the Klive dialect): column-accurate errors once touched, label warnings at once.
-            */}
-          <TextInput
-            value={form.logMessage}
-            error={errorFor("logMessage")}
-            autoFocus={focus === "logMessage"}
-            ariaLabel={t("dialog.breakpoint.messageAria")}
-            placeholder={t("dialog.breakpoint.example", { example: LOG_EXAMPLE })}
-            onChange={(logMessage) => {
-              setTouched((t) => ({ ...t, logMessage: true }));
-              update({ logMessage });
-            }}
-          />
-          {warnings.logMessage && !errorFor("logMessage") && (
-            <div className={styles.warning} role="status">
-              {warnings.logMessage}
-            </div>
-          )}
-          <div className={styles.hint}>
-            {t("dialog.breakpoint.messageHint", { expr: LOG_EXPR, exprHex: LOG_EXPR_HEX })}{" "}
-            <button
-              type="button"
-              className={styles.link}
-              onClick={() => void mainApi.showWebsite(LOGPOINT_SYNTAX_PAGE)}
-            >
-              {t("dialog.breakpoint.syntaxLink")}
-            </button>
-          </div>
-        </DialogRow>
-      )}
-
-      <DialogRow rows={true} label={t("dialog.breakpoint.conditionLabel")}>
+  const conditionPage = (
+    <>
+      <section className={styles.group}>
+        <h4 className={styles.groupTitle}>{t("dialog.breakpoint.conditionLabel")}</h4>
         {/*
           * Validated on every keystroke, by the same checker the emulator arms with. Errors show
           * once the field has been touched; warnings (an unknown label) show at once, because the
@@ -739,10 +825,11 @@ export const BreakpointDialog = ({
             {t("dialog.breakpoint.syntaxLink")}
           </button>
         </div>
-      </DialogRow>
+      </section>
 
-      <DialogRow rows={true} label={t("dialog.breakpoint.hitCountLabel")}>
-        <div className={styles.hitFields}>
+      <section className={styles.group}>
+        <h4 className={styles.groupTitle}>{t("dialog.breakpoint.hitCountLabel")}</h4>
+        <div className={styles.inline}>
           <Dropdown
             options={HIT_MODE_OPTIONS}
             initialValue={form.hitMode}
@@ -767,91 +854,184 @@ export const BreakpointDialog = ({
             />
           )}
         </div>
-        <div className={styles.hint}>
-          {t("dialog.breakpoint.hitCountHint")}
-        </div>
-      </DialogRow>
+        <div className={styles.hint}>{t("dialog.breakpoint.hitCountHint")}</div>
+      </section>
+    </>
+  );
 
-      {editing && hits !== undefined && (
-        <DialogRow rows={true} label={t("dialog.breakpoint.hitsSoFar")}>
-          <div className={styles.hitsRow}>
-            <span className={styles.hits} data-testid="breakpoint-hits">
-              {hits}
-            </span>
-            {onResetHits && (
-              <Button
-                text={t("dialog.breakpoint.resetHits")}
-                variant="secondary"
-                clicked={() => {
-                  void onResetHits().then(() => setHits(0));
-                }}
-              />
-            )}
-          </div>
-        </DialogRow>
-      )}
-
-      <DialogRow>
-        <Checkbox
-          initialValue={!form.disabled}
-          label={t("dialog.breakpoint.enabled")}
-          right={true}
-          onChange={(enabled) => update({ disabled: !enabled })}
+  const actionPage = (
+    <>
+      <section className={styles.group}>
+        <h4 className={styles.groupTitle}>{t("dialog.breakpoint.actionLabel")}</h4>
+        <RadioGroup
+          ariaLabel={t("dialog.breakpoint.actionAria")}
+          options={ACTION_OPTIONS}
+          value={form.action}
+          columns={2}
+          onChange={(action) => update({ action: action as BreakpointFormState["action"] })}
         />
         {/* A one-shot (G1.6): session-owned and never saved; a logpoint never stops, so never */}
         {!logging && (
-          <Checkbox
-            initialValue={form.oneShot}
-            label={t("dialog.breakpoint.oneShot")}
-            right={true}
-            onChange={(oneShot) => update({ oneShot })}
-          />
+          <div className={styles.below}>
+            <Checkbox
+              initialValue={form.oneShot}
+              label={t("dialog.breakpoint.oneShot")}
+              right={true}
+              onChange={(oneShot) => update({ oneShot })}
+            />
+          </div>
         )}
-      </DialogRow>
+        {/*
+          * The one place a user meets the timing contract. The machine cannot stop mid-instruction,
+          * so the breakpoint reports the write with both values rather than withholding it; saying
+          * so stops the feature reading as a write-veto.
+          */}
+        {stopNote && <div className={styles.hint}>{stopNote}</div>}
+      </section>
 
-      {!sourceMode && nextRegKind && (
-        <DialogRow rows={true}>
+      {logging && (
+        <section className={styles.group}>
+          <h4 className={styles.groupTitle}>{t("dialog.breakpoint.messageLabel")}</h4>
           {/*
-            * The one place a user meets this contract. The machine cannot stop mid-instruction, so
-            * the breakpoint reports the write with both values rather than withholding it; saying
-            * so here stops the feature reading as a write-veto.
+            * The template, validated on every keystroke by the compiler the emulator arms it with
+            * (the Klive dialect): column-accurate errors once touched, label warnings at once.
             */}
+          <TextInput
+            value={form.logMessage}
+            error={errorFor("logMessage")}
+            autoFocus={focus === "logMessage"}
+            ariaLabel={t("dialog.breakpoint.messageAria")}
+            placeholder={t("dialog.breakpoint.example", { example: LOG_EXAMPLE })}
+            onChange={(logMessage) => {
+              setTouched((t) => ({ ...t, logMessage: true }));
+              update({ logMessage });
+            }}
+          />
+          {warnings.logMessage && !errorFor("logMessage") && (
+            <div className={styles.warning} role="status">
+              {warnings.logMessage}
+            </div>
+          )}
           <div className={styles.hint}>
-            {t("dialog.breakpoint.nextRegStopNote")}
+            {t("dialog.breakpoint.messageHint", { expr: LOG_EXPR, exprHex: LOG_EXPR_HEX })}{" "}
+            <button
+              type="button"
+              className={styles.link}
+              onClick={() => void mainApi.showWebsite(LOGPOINT_SYNTAX_PAGE)}
+            >
+              {t("dialog.breakpoint.syntaxLink")}
+            </button>
           </div>
-        </DialogRow>
+        </section>
       )}
+    </>
+  );
 
-      {!sourceMode && copperKind && (
-        <DialogRow rows={true}>
-          <div className={styles.hint}>
-            {t("dialog.breakpoint.copperStopNote")}
-          </div>
-        </DialogRow>
-      )}
-
-      {!sourceMode && spriteKind && (
-        <DialogRow rows={true}>
-          <div className={styles.hint}>
-            {t("dialog.breakpoint.spriteStopNote")}
-          </div>
-        </DialogRow>
-      )}
-
+  return (
+    <DialogForm
+      submitLabel={editing ? t("dialog.breakpoint.save") : t("dialog.breakpoint.add")}
+      submitDisabled={submitted && !valid}
+      onSubmit={submit}
+      onCancel={controls.cancel}
+      footerStart={
+        <>
+          {/* Enabled is the whole breakpoint's state, not any one page's */}
+          <Checkbox
+            initialValue={!form.disabled}
+            label={t("dialog.breakpoint.enabled")}
+            right={true}
+            onChange={(enabled) => update({ disabled: !enabled })}
+          />
+          {/*
+            * The duplicate-key rule belongs to no single field, so it renders beside the buttons.
+            * `bp-set` would silently merge onto the existing breakpoint; here that would read as a
+            * rename.
+            */}
+          {submitted && errors.form && (
+            <div className={styles.error} role="alert">
+              {errors.form}
+            </div>
+          )}
+        </>
+      }
+    >
       {/*
-        * The duplicate-key rule belongs to no single field, so it renders on its own. `bp-set`
-        * would silently merge onto the existing breakpoint; here that would read as a rename.
+        * The Settings dialog's frame: the pages on the left, the page on the right, one fixed
+        * height for every type, page and machine, so switching never makes the dialog jump.
         */}
-      {submitted && errors.form && (
-        <DialogRow rows={true}>
-          <div className={styles.error} role="alert">
-            {errors.form}
+      <div className={styles.body} data-testid="breakpoint-dialog">
+        <nav className={styles.nav}>
+          <div className={styles.pages} role="tablist" aria-orientation="vertical" aria-label={t("dialog.breakpoint.pagesAria")}>
+            {pages.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                role="tab"
+                id={`bp-page-${p.id}`}
+                aria-selected={page === p.id}
+                aria-controls="bp-page-panel"
+                className={classnames(styles.pageButton, {
+                  [styles.selected]: page === p.id,
+                  [styles.pageError]: pageHasError(p.id)
+                })}
+                onClick={() => setPage(p.id)}
+              >
+                <span className={styles.pageName}>
+                  {p.label}
+                  {pageHasError(p.id) && (
+                    <span className={styles.errorDot} role="img" aria-label={t("dialog.breakpoint.pageError")} />
+                  )}
+                </span>
+                <span className={styles.pageSummary} title={p.summary}>
+                  {p.summary}
+                </span>
+              </button>
+            ))}
           </div>
-        </DialogRow>
-      )}
+          {editing && hits !== undefined && (
+            <div className={styles.hitsBox}>
+              <span>
+                {t("dialog.breakpoint.hitsSoFar")}{" "}
+                <span className={styles.hits} data-testid="breakpoint-hits">
+                  {hits}
+                </span>
+              </span>
+              {onResetHits && (
+                <Button
+                  text={t("dialog.breakpoint.resetHits")}
+                  variant="secondary"
+                  clicked={() => {
+                    void onResetHits().then(() => setHits(0));
+                  }}
+                />
+              )}
+            </div>
+          )}
+        </nav>
+        <div
+          className={styles.page}
+          role="tabpanel"
+          id="bp-page-panel"
+          aria-labelledby={`bp-page-${page}`}
+        >
+          {page === "trigger" ? triggerPage : page === "condition" ? conditionPage : actionPage}
+        </div>
+      </div>
     </DialogForm>
   );
 };
+
+/**
+ * One labelled field of the Where group: the label in the group's shared first column, the control
+ * and its hint in the second. Label beside field rather than over it, which is what lets every
+ * type's fields fit the fixed page without scrolling.
+ */
+const Field = ({ label, children }: { label?: string; children: ReactNode }) => (
+  <>
+    <span className={styles.fieldLabel}>{label}</span>
+    <div className={styles.fieldControl}>{children}</div>
+  </>
+);
 
 /** `main.asm:42` (with the column of a statement breakpoint) and where it resolved to. */
 export function sourceLocationText(bp: BreakpointInfo): string {

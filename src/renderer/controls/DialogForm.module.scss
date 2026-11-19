@@ -40,3 +40,13 @@
   border-bottom-left-radius: var(--radius-modal);
   border-bottom-right-radius: var(--radius-modal);
 }
+
+/* `footerStart`: pushed to the footer's start, across from the buttons. */
+.footerStart {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  margin-right: auto;
+}
