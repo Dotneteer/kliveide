@@ -1,0 +1,220 @@
+4:"$Sreact.fragment"
+5:I[7121,[],""]
+6:I[4581,[],""]
+b:"static/chunks/c16f53c3-d1dc27298ca4c9c2.js"
+c:"static/chunks/500-fc3b64d9ff4a32a7.js"
+d:"static/chunks/436-2e7c1075bb484b2c.js"
+e:"static/chunks/app/%5Blang%5D/(docs)/%5B...mdxPath%5D/page-3e9cc379e0bdb1f7.js"
+f:I[826,["545","$b","500","$c","436","$d","25","$e"],"TOCProvider"]
+10:I[4637,["545","$b","500","$c","436","$d","25","$e"],"Sidebar"]
+11:I[6665,["545","$b","500","$c","436","$d","25","$e"],"ClientWrapper"]
+17:"ViewportBoundary"
+18:I[484,[],"$17"]
+19:"MetadataBoundary"
+1a:I[484,[],"$19"]
+1b:"$Sreact.suspense"
+1c:I[6869,[],"IconMark"]
+8:X
+8:C
+9:X
+12:T214e,---
+description: "See and debug the ZX Spectrum Next's interrupts: the daisy chain at a pause in the Interrupts panel, the events over frames in the Interrupt Timeline, and interrupt stops."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Debugging Interrupts
+
+The ZX Spectrum Next has fourteen maskable interrupt sources in a daisy chain, a pulse mode and a
+hardware IM2 mode, and an NMI with its own arbiter. When an interrupt does not fire, fires late or
+fires once and never again, the cause is in state the Z80 registers do not show. Klive shows it in three
+places: the **Interrupts** panel for the state at a pause, the **Interrupt Timeline** for what happened
+over the last frames, and **interrupt stops** that pause the machine on an interrupt event.
+
+*Applies to: ZX Spectrum Next.*
+
+## Finding out why an interrupt does not fire
+
+<Steps>
+
+### Pause where it should have fired
+
+Run the program in debug mode and pause it where the interrupt should have run.
+
+### Open the Interrupts panel
+
+Open the **Machine info** activity and expand the **Interrupts** header, below **Copper**.
+
+### Read the diagnostics
+
+The boxes under the mode rows name the usual causes with their evidence: a source stuck in service
+because its handler ended with `RETN`, interrupts left disabled by a handler that returned without
+`EI`, hardware IM2 mode with the CPU still in IM 1, or an empty vector table entry.
+
+### Read the chain
+
+Find your source's row. **requesting** means it waits to be taken; if the rows from it down are
+hatched, a higher-priority source is still in service and the divider under that source says so.
+**EN** 0 means the source's interrupt is off; **ST** 1 with **EN** 0 is polled mode.
+
+</Steps>
+
+<Shot src="guides/next/interrupts/interrupts-panel.webp" alt="The Interrupts panel, paused in the line interrupt's handler nested inside the ULA's: Line and ULA in service, the sources between them and below hatched" caption="Stopped in the line interrupt's handler, which runs inside the ULA's: both are in service, and every source below the line interrupt waits for its RETI." width={380} />
+
+## The Interrupts Panel
+
+| Row | Shows |
+|---|---|
+| **Mode** | **Hardware IM2** or **Pulse** (NextReg `$C0` bit 0). |
+| **CPU** | The CPU's interrupt mode and its IFF1 and IFF2 flip-flops. |
+| **/INT** | Whether the interrupt line is low now, and the pulse length (32 or 36 T-states). |
+| **Vectors** | In hardware IM2 mode, the vectors the sources supply (`$C0` bits 7-5) and the last one read; `$FF` in pulse mode. |
+| **Table** | In IM 2, where the CPU reads handler addresses (`I` × 256 + the vector base); `$0038` in IM 1. |
+
+**The daisy chain** lists the sources in priority order, the line interrupt first: the index, the
+source, its enable (**EN**, NextRegs `$C4`-`$C6`), its status bit (**ST**, `$C8`-`$CA`), its state
+(**idle**, **requesting**, **in service**), its vector, and in IM 2 the **Handler** word read from the
+vector table. Click a handler address to open the disassembly there. CTC channels 4-7 have places in
+the chain but no hardware, so they share one **reserved** row.
+
+While the machine is paused, hovering a row shows two buttons:
+
+- **Ring** requests the interrupt by writing NextReg `$20`, as a program can. It ignores the enable.
+  Available for the line interrupt, the ULA and CTC channels 0-3.
+- **Clear** clears the source's status bit by writing a 1 to `$C8`-`$CA`.
+
+Both are real writes to the machine: the Next Registers document shows them like a program's.
+
+**NMI** shows the NMI arbiter's state (IDLE, FETCH, HOLD, END) and the device it chose, whether the M1
+and DRIVE buttons may raise an NMI (`$06` bits 3 and 4), the +3 disk port trap (`$D8` bit 0), the
+stackless NMI (`$C0` bit 3) and the return address in `$C2`/`$C3`.
+
+## Watching interrupts over time
+
+<Steps>
+
+### Open the Interrupt Timeline
+
+Use **Debug › Interrupt Timeline**, the Interrupts panel's **Timeline** link, or the
+`show-int-timeline` command. The document records interrupt events while it is open.
+
+### Run the program
+
+Let it run for a few frames, then pause it. With **Follow** on, the document shows the newest frames.
+
+### Read the lanes
+
+Each source has a lane, with the main program at the top. A solid bar is a handler running; a hatched
+bar is a handler in service while a nested one runs. ▲ marks a request, ● an acknowledge (late ones are
+highlighted), ◆ a return, ✕ a lost interrupt or a return that released nothing.
+
+### Look at one event
+
+Click a marker or a row of the event list. The **Selection** pane shows the frame, the beam position,
+the latency from the request, the interrupted address and how long the handler ran.
+
+</Steps>
+
+<Shot src="guides/next/interrupts/interrupt-timeline.webp" alt="The Interrupt Timeline over two frames: the ULA's handler bar in each frame with the line interrupt's short handler nested inside it, and the latency table below" caption="Two frames of a program whose line interrupt rings inside the ULA's handler. The latency table compares every acknowledge with the budget." width={900} />
+
+Drag the splitter between the chart and the tables to give either more room; the lanes follow the
+chart's height, and the document remembers the position. The toolbar picks **1**, **2** or **4** frames in view, zooms inside the view (**All**, **¼**, **1/16**),
+and with **Late only** shows only the acknowledges that came later than the budget. The trash button
+forgets the recorded events.
+
+**How many frames the timeline holds** depends on the program. The recorder keeps the newest 65,536
+events, so a program with a frame interrupt and two line interrupts keeps thousands of frames, while a
+sample player with a CTC interrupt on every raster line keeps about seventy. The toolbar's summary says
+which frames are held. When the recorder is full, the oldest frame has lost its first events: it is
+labelled **partial**, its lost part is hatched, and it is left out of the latency table.
+
+**Latency** is counted from the request to the handler's first instruction, in the CPU's own T-states
+at its speed at the time. The budget is 41 T: up to 22 T to finish the running instruction and 19 T for
+the IM 2 acknowledge. A latency above it means the source waited behind the chain or a `DI`.
+
+<Callout type="info">
+Frame positions (the **Frame T** column and the axis) are in 3.5 MHz T-states, the frame's own clock,
+whatever the CPU speed. Latencies and handler times are in the CPU's T-states.
+</Callout>
+
+## Stopping on an interrupt
+
+An interrupt stop is a breakpoint bound to an interrupt event. Add one in the Breakpoints panel's
+dialog with the **Interrupt event** type, or with `bp-set`:
+
+| Spec | Stops when |
+|---|---|
+| `int:ack`, `int:ack:<source>` | the CPU takes an interrupt (from that source), at the handler's first instruction |
+| `int:lost`, `int:lost:<source>` | a pulse-mode interrupt ends before the CPU takes it |
+| `int:retn` | a `RETN` executes while a maskable source is in service: nothing is released |
+| `int:reti` | a `RETI` executes outside IM 2 while a source is in service: nothing is released |
+| `int:wait:<T>`, `int:wait:<T>:<source>` | a request waits longer than T T-states before it is taken |
+| `int:nmi`, `int:nmi:multiface`, `int:nmi:divmmc` | the CPU takes an NMI |
+
+The sources are `line`, `uart0rx`, `uart1rx`, `ctc0`-`ctc3`, `ula`, `uart0tx` and `uart1tx`. For
+example, `bp-set int:ack:line` stops every time the line interrupt's handler starts, and
+`bp-set int:wait:228:ula` stops when the frame interrupt has waited more than a raster line.
+
+Interrupt stops take conditions, hit counts and log messages like other breakpoints; a condition reads
+the registers where the machine stops. The Emulator output pane names the event, for example
+`Interrupt stop: Line taken (vector $A0), interrupting $9005 in 04`.
+
+<Shot src="guides/next/interrupts/interrupt-stop.webp" alt="The breakpoint dialog with the Interrupt event type, Stop when An interrupt is taken, From Line" caption="An interrupt stop in the breakpoint dialog." width={480} />
+
+<Callout type="info">
+With several `int:wait` stops, the machine checks every waiting request against the smallest limit,
+so each of them stops at that limit.
+</Callout>
+
+## Related
+
+- [Interrupts: Fourteen Voices, Two Wires](/en/under-the-hood/emulator-internals/next-interrupts/)
+- [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Next Registers, memory mapping and palettes](/en/guides/next/next-registers/)
+- [The Copper view](/en/guides/next/copper/)a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$4","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$Lf",null,{"value":[{"value":"Finding out why an interrupt does not fire","id":"finding-out-why-an-interrupt-does-not-fire","depth":2},{"value":"Pause where it should have fired","id":"pause-where-it-should-have-fired","depth":3},{"value":"Open the Interrupts panel","id":"open-the-interrupts-panel","depth":3},{"value":"Read the diagnostics","id":"read-the-diagnostics","depth":3},{"value":"Read the chain","id":"read-the-chain","depth":3},{"value":"The Interrupts Panel","id":"the-interrupts-panel","depth":2},{"value":"Watching interrupts over time","id":"watching-interrupts-over-time","depth":2},{"value":"Open the Interrupt Timeline","id":"open-the-interrupt-timeline","depth":3},{"value":"Run the program","id":"run-the-program","depth":3},{"value":"Read the lanes","id":"read-the-lanes","depth":3},{"value":"Look at one event","id":"look-at-one-event","depth":3},{"value":"Stopping on an interrupt","id":"stopping-on-an-interrupt","depth":2},{"value":"Related","id":"related","depth":2}],"children":[["$","$L10",null,{}],["$","$L11",null,{"metadata":{"description":"See and debug the ZX Spectrum Next's interrupts: the daisy chain at a pause in the Interrupts panel, the events over frames in the Interrupt Timeline, and interrupt stops.","title":"Debugging Interrupts","filePath":"content/en/guides/next/interrupts.mdx","timestamp":1794936969000},"sourceCode":"$12","children":["$L13","$L14"]}]]}]}],null,"$L15"]}],"p":"$@16","v":null,"s":"$9"}}]]
+3:[["children",{"s":{"n":"mdxPath","t":"c","k":"guides/next/interrupts","s":[]},"h":65600,"d":{"r":["$","$4","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+2:[["children",{"s":"(docs)","h":131104,"c":"$Q3"}]]
+1:[["children",{"s":{"n":"lang","t":"d","k":"en","s":["_not-found","_global-error"]},"h":196720,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":131152,"c":"$Q1"},"h":{"r":["$","$4","h",{"children":[null,["$","$L18",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L1a",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$1b",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Debugging Interrupts - Klive IDE"}],["$","meta","1",{"name":"description","content":"See and debug the ZX Spectrum Next's interrupts: the daisy chain at a pause in the Interrupts panel, the events over frames in the Interrupt Timeline, and interrupt stops."}],["$","link","2",{"rel":"alternate","hrefLang":"en","href":"/en/guides/next/interrupts/"}],["$","meta","3",{"property":"og:title","content":"Klive IDE Documentation"}],["$","meta","4",{"property":"og:description","content":"The comprehensive guide to Klive IDE"}],["$","meta","5",{"name":"twitter:card","content":"summary"}],["$","meta","6",{"name":"twitter:title","content":"Klive IDE Documentation"}],["$","meta","7",{"name":"twitter:description","content":"The comprehensive guide to Klive IDE"}],["$","link","8",{"rel":"icon","href":"/images/klive-logo.svg"}],["$","$L1c","9",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@1d","v":null,"s":"$9"}},"a":"$@1e","u":"$@1f","b":"dVwQ43jst76v-5miI8HGN"}
+20:I[721,["545","$b","500","$c","436","$d","25","$e"],"HeadingAnchor"]
+3c:I[484,[],"OutletBoundary"]
+13:["$","div",null,{"id":"nextra-skip-nav"}]
+14:["$","main",null,{"data-pagefind-body":true,"children":[false,[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Debugging Interrupts","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX Spectrum Next has fourteen maskable interrupt sources in a daisy chain, a pulse mode and a\nhardware IM2 mode, and an NMI with its own arbiter. When an interrupt does not fire, fires late or\nfires once and never again, the cause is in state the Z80 registers do not show. Klive shows it in three\nplaces: the ",["$","strong",null,{"children":"Interrupts"}]," panel for the state at a pause, the ",["$","strong",null,{"children":"Interrupt Timeline"}]," for what happened\nover the last frames, and ",["$","strong",null,{"children":"interrupt stops"}]," that pause the machine on an interrupt event."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","em",null,{"children":"Applies to: ZX Spectrum Next."}]}],"\n",["$","h2",null,{"id":"finding-out-why-an-interrupt-does-not-fire","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Finding out why an interrupt does not fire",["$","$L20",null,{"id":"finding-out-why-an-interrupt-does-not-fire"}]]}],"\n",["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_1_"},"children":[["$","h3",null,{"id":"pause-where-it-should-have-fired","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Pause where it should have fired",["$","$L20",null,{"id":"pause-where-it-should-have-fired"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Run the program in debug mode and pause it where the interrupt should have run."}],["$","h3",null,{"id":"open-the-interrupts-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the Interrupts panel",["$","$L20",null,{"id":"open-the-interrupts-panel"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open the ",["$","strong",null,{"children":"Machine info"}]," activity and expand the ",["$","strong",null,{"children":"Interrupts"}]," header, below ",["$","strong",null,{"children":"Copper"}],"."]}],["$","h3",null,{"id":"read-the-diagnostics","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Read the diagnostics",["$","$L20",null,{"id":"read-the-diagnostics"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The boxes under the mode rows name the usual causes with their evidence: a source stuck in service\nbecause its handler ended with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETN"}],", interrupts left disabled by a handler that returned without\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"EI"}],", hardware IM2 mode with the CPU still in IM 1, or an empty vector table entry."]}],["$","h3",null,{"id":"read-the-chain","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Read the chain",["$","$L20",null,{"id":"read-the-chain"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Find your source’s row. ",["$","strong",null,{"children":"requesting"}]," means it waits to be taken; if the rows from it down are\nhatched, a higher-priority source is still in service and the divider under that source says so.\n","$L21"," 0 means the source’s interrupt is off; ","$L22"," 1 with ","$L23"," 0 is polled mode."]}]]}],"\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30","\n","$L31","\n","$L32","\n","$L33","\n","$L34","\n","$L35","\n","$L36","\n","$L37","\n","$L38","\n","$L39","\n","$L3a","\n","$L3b"]]}]
+15:["$","$L3c",null,{"children":["$","$1b",null,{"name":"Next.MetadataOutlet","children":"$@3d"}]}]
+1f:true
+3f:I[8500,["545","$b","500","$c","436","$d","25","$e"],""]
+9:300
+21:["$","strong",null,{"children":"EN"}]
+22:["$","strong",null,{"children":"ST"}]
+23:["$","strong",null,{"children":"EN"}]
+24:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"380px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"Stopped in the line interrupt's handler, which runs inside the ULA's: both are in service, and every source below the line interrupt waits for its RETI."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/interrupts/interrupts-panel.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/interrupts/interrupts-panel.webp","alt":"The Interrupts panel, paused in the line interrupt's handler nested inside the ULA's: Line and ULA in service, the sources between them and below hatched","loading":"lazy","decoding":"async"}],[]]}]]}]
+25:["$","h2",null,{"id":"the-interrupts-panel","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Interrupts Panel",["$","$L20",null,{"id":"the-interrupts-panel"}]]}]
+26:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Row","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Mode"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","strong",null,{"children":"Hardware IM2"}]," or ",["$","strong",null,{"children":"Pulse"}]," (NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C0"}]," bit 0)."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"CPU"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"The CPU’s interrupt mode and its IFF1 and IFF2 flip-flops.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"/INT"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Whether the interrupt line is low now, and the pulse length (32 or 36 T-states).","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Vectors"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["In hardware IM2 mode, the vectors the sources supply (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C0"}]," bits 7-5) and the last one read; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," in pulse mode."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Table"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["In IM 2, where the CPU reads handler addresses (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"I"}]," × 256 + the vector base); ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0038"}]," in IM 1."],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"The daisy chain"}]," lists the sources in priority order, the line interrupt first: the index, the\nsource, its enable (",["$","strong",null,{"children":"EN"}],", NextRegs ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C4"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C6"}],"), its status bit (",["$","strong",null,{"children":"ST"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C8"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CA"}],"), its state\n(",["$","strong",null,{"children":"idle"}],", ",["$","strong",null,{"children":"requesting"}],", ",["$","strong",null,{"children":"in service"}],"), its vector, and in IM 2 the ",["$","strong",null,{"children":"Handler"}]," word read from the\nvector table. Click a handler address to open the disassembly there. CTC channels 4-7 have places in\nthe chain but no hardware, so they share one ",["$","strong",null,{"children":"reserved"}]," row."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"While the machine is paused, hovering a row shows two buttons:"}]
+29:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Ring"}]," requests the interrupt by writing NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$20"}],", as a program can. It ignores the enable.\nAvailable for the line interrupt, the ULA and CTC channels 0-3."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Clear"}]," clears the source’s status bit by writing a 1 to ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C8"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$CA"}],"."]}],"\n"]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Both are real writes to the machine: the Next Registers document shows them like a program’s."}]
+2b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"NMI"}]," shows the NMI arbiter’s state (IDLE, FETCH, HOLD, END) and the device it chose, whether the M1\nand DRIVE buttons may raise an NMI (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$06"}]," bits 3 and 4), the +3 disk port trap (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$D8"}]," bit 0), the\nstackless NMI (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C0"}]," bit 3) and the return address in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C2"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C3"}],"."]}]
+2c:["$","h2",null,{"id":"watching-interrupts-over-time","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Watching interrupts over time",["$","$L20",null,{"id":"watching-interrupts-over-time"}]]}]
+2d:["$","div",null,{"className":"nextra-steps x:ms-4 x:mb-12 x:border-s x:border-gray-200 x:ps-6 x:dark:border-neutral-800","style":{"--counter-id":"_S_2_"},"children":[["$","h3",null,{"id":"open-the-interrupt-timeline","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Open the Interrupt Timeline",["$","$L20",null,{"id":"open-the-interrupt-timeline"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"Debug › Interrupt Timeline"}],", the Interrupts panel’s ",["$","strong",null,{"children":"Timeline"}]," link, or the\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-int-timeline"}]," command. The document records interrupt events while it is open."]}],["$","h3",null,{"id":"run-the-program","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Run the program",["$","$L20",null,{"id":"run-the-program"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Let it run for a few frames, then pause it. With ",["$","strong",null,{"children":"Follow"}]," on, the document shows the newest frames."]}],["$","h3",null,{"id":"read-the-lanes","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Read the lanes",["$","$L20",null,{"id":"read-the-lanes"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Each source has a lane, with the main program at the top. A solid bar is a handler running; a hatched\nbar is a handler in service while a nested one runs. ▲ marks a request, ● an acknowledge (late ones are\nhighlighted), ◆ a return, ✕ a lost interrupt or a return that released nothing."}],["$","h3",null,{"id":"look-at-one-event","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Look at one event",["$","$L20",null,{"id":"look-at-one-event"}]]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Click a marker or a row of the event list. The ",["$","strong",null,{"children":"Selection"}]," pane shows the frame, the beam position,\nthe latency from the request, the interrupted address and how long the handler ran."]}]]}]
+2e:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"900px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"Two frames of a program whose line interrupt rings inside the ULA's handler. The latency table compares every acknowledge with the budget."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/interrupts/interrupt-timeline.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/interrupts/interrupt-timeline.webp","alt":"The Interrupt Timeline over two frames: the ULA's handler bar in each frame with the line interrupt's short handler nested inside it, and the latency table below","loading":"lazy","decoding":"async"}],[]]}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Drag the splitter between the chart and the tables to give either more room; the lanes follow the\nchart’s height, and the document remembers the position. The toolbar picks ",["$","strong",null,{"children":"1"}],", ",["$","strong",null,{"children":"2"}]," or ",["$","strong",null,{"children":"4"}]," frames in view, zooms inside the view (",["$","strong",null,{"children":"All"}],", ",["$","strong",null,{"children":"¼"}],", ",["$","strong",null,{"children":"1/16"}],"),\nand with ",["$","strong",null,{"children":"Late only"}]," shows only the acknowledges that came later than the budget. The trash button\nforgets the recorded events."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"How many frames the timeline holds"}]," depends on the program. The recorder keeps the newest 65,536\nevents, so a program with a frame interrupt and two line interrupts keeps thousands of frames, while a\nsample player with a CTC interrupt on every raster line keeps about seventy. The toolbar’s summary says\nwhich frames are held. When the recorder is full, the oldest frame has lost its first events: it is\nlabelled ",["$","strong",null,{"children":"partial"}],", its lost part is hatched, and it is left out of the latency table."]}]
+31:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Latency"}]," is counted from the request to the handler’s first instruction, in the CPU’s own T-states\nat its speed at the time. The budget is 41 T: up to 22 T to finish the running instruction and 19 T for\nthe IM 2 acknowledge. A latency above it means the source waited behind the chain or a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"DI"}],"."]}]
+32:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Frame positions (the ",["$","strong",null,{"children":"Frame T"}]," column and the axis) are in 3.5 MHz T-states, the frame’s own clock,\nwhatever the CPU speed. Latencies and handler times are in the CPU’s T-states."]}]}]]}]
+33:["$","h2",null,{"id":"stopping-on-an-interrupt","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Stopping on an interrupt",["$","$L20",null,{"id":"stopping-on-an-interrupt"}]]}]
+34:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["An interrupt stop is a breakpoint bound to an interrupt event. Add one in the Breakpoints panel’s\ndialog with the ",["$","strong",null,{"children":"Interrupt event"}]," type, or with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set"}],":"]}]
+35:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Spec","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Stops when","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:ack"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:ack:<source>"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the CPU takes an interrupt (from that source), at the handler’s first instruction","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:lost"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:lost:<source>"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a pulse-mode interrupt ends before the CPU takes it","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:retn"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETN"}]," executes while a maskable source is in service: nothing is released"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:reti"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETI"}]," executes outside IM 2 while a source is in service: nothing is released"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:wait:<T>"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:wait:<T>:<source>"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"a request waits longer than T T-states before it is taken","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:nmi"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:nmi:multiface"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:nmi:divmmc"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L3e"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+36:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The sources are ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"line"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"uart0rx"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"uart1rx"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ctc0"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ctc3"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ula"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"uart0tx"}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"uart1tx"}],". For\nexample, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set int:ack:line"}]," stops every time the line interrupt’s handler starts, and\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"bp-set int:wait:228:ula"}]," stops when the frame interrupt has waited more than a raster line."]}]
+37:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Interrupt stops take conditions, hit counts and log messages like other breakpoints; a condition reads\nthe registers where the machine stops. The Emulator output pane names the event, for example\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Interrupt stop: Line taken (vector $A0), interrupting $9005 in 04"}],"."]}]
+38:["$","figure",null,{"className":"Shot_figure__sblVn","style":{"maxWidth":"480px"},"children":[["$","figcaption",null,{"className":"Shot_label__LxtzD","children":["$undefined",["$","span",null,{"children":"An interrupt stop in the breakpoint dialog."}]]}],["$","a",null,{"className":"Shot_frame__pOeOr","href":"/images/en/guides/next/interrupts/interrupt-stop.webp","target":"_blank","rel":"noopener noreferrer","children":[["$","img",null,{"src":"/images/en/guides/next/interrupts/interrupt-stop.webp","alt":"The breakpoint dialog with the Interrupt event type, Stop when An interrupt is taken, From Line","loading":"lazy","decoding":"async"}],[]]}]]}]
+39:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$32:props:children:0:props:style","data-pagefind-ignore":"all","children":"$32:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With several ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"int:wait"}]," stops, the machine checks every waiting request against the smallest limit,\nso each of them stops at that limit."]}]}]]}]
+3a:["$","h2",null,{"id":"related","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Related",["$","$L20",null,{"id":"related"}]]}]
+3b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L3f",null,{"href":"/en/under-the-hood/emulator-internals/next-interrupts/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Interrupts: Fourteen Voices, Two Wires"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L3f",null,{"href":"/en/guides/next/next-breakpoints/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Next breakpoints"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L3f",null,{"href":"/en/guides/next/next-registers/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Next Registers, memory mapping and palettes"}]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$","$L3f",null,{"href":"/en/guides/next/copper/","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"The Copper view"}]}],"\n"]}]
+3d:null
+9:C
+3e:["$","td",null,{"children":"the CPU takes an NMI","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]
+1e:0
+7:"$undefined"
+1d:"$undefined"
+16:"$undefined"
