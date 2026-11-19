@@ -11,6 +11,7 @@ import { createElement } from "react";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { t } from "@common/i18n/i18n";
 import { useT } from "@common/i18n/useT";
+import { parseHeader } from "@common/diskfs/plus3dos";
 
 type ScrFileViewState = {
   scrollPosition?: number;
@@ -25,16 +26,16 @@ const ScrFileViewerPanel = ({
   const t = useT();
 
   return createElement(
-    GenericFilePanel<true, ScrFileViewState>,
+    GenericFilePanel<Uint8Array, ScrFileViewState>,
     {
       document,
       contents,
       viewState,
       fileLoader: loadScrFileContents,
-      // --- The context is unused: this viewer draws from `contents` directly, and the loader now
-      // --- returns only a validity flag (see `loadScrFileContents`).
-      validRenderer: () => {
+      // --- The loader hands over the 6912 screen bytes, without a PLUS3DOS header if the file has one.
+      validRenderer: context => {
         const documentSource = document.node.projectPath;
+        const screen = context.fileInfo ?? contents;
 
         return (
           <Panel>
@@ -49,14 +50,14 @@ const ScrFileViewerPanel = ({
                       documentHubService,
                       `scrData${documentSource}`,
                       t("panels.next.dumpTitle.dump", { source: documentSource }),
-                      contents
+                      screen
                     );
                   }}
                 />
               </HeaderRow>
 
               <ScreenCanvas
-                data={contents}
+                data={screen}
                 palette={SPECTRUM_48_COLORS}
                 zoomFactor={2}
                 screenWidth={256}
@@ -84,21 +85,24 @@ export const createScrFileViewerPanel = ({
   />
 );
 
+/** The size of the PLUS3DOS header a +3DOS or NextZXOS `SAVE ... SCREEN$` writes in front of the data */
+const PLUS3DOS_HEADER_SIZE = 128;
+
 /**
- * Validates a `.SCR` file.
+ * Validates a `.SCR` file and returns its 6912 screen bytes.
  *
- * It used to split `contents` into `pixels` and `attrs` and return them as a `ScrFileContents` —
- * which nothing ever read. The renderer passes the raw `contents` on, and `createScrPixelData`
- * splits them again at the point of use. The split here was doing no work; the length check was the
- * whole function. Saying so is the fix, rather than keeping a parse whose output has no consumer.
+ * A file saved from +3 BASIC or NextBASIC starts with a 128-byte PLUS3DOS header (7040 bytes in all).
+ * A valid header (signature and checksum) is skipped; a file without one is read as it is. Pixels and
+ * attributes are split at the point of use, in `createScrPixelData`.
  */
-function loadScrFileContents (contents: Uint8Array): { fileInfo?: true; error?: string } {
-  if (contents.length !== SCR_FILE_LENGTH) {
+export function loadScrFileContents (contents: Uint8Array): { fileInfo?: Uint8Array; error?: string } {
+  const screen = parseHeader(contents) ? contents.subarray(PLUS3DOS_HEADER_SIZE) : contents;
+  if (screen.length !== SCR_FILE_LENGTH) {
     return {
       error: t("panels.next.scr.invalidSize", { size: contents.length, expected: SCR_FILE_LENGTH })
     };
   }
-  return { fileInfo: true };
+  return { fileInfo: screen };
 }
 
 /**

@@ -7,12 +7,18 @@
  * alone cannot tell apart - and a file 512 bytes longer starts with a palette: 256 entries of two bytes,
  * `RRRGGGBB` then `0000000B`, the order NextReg `$44` takes them. Without one the picture uses the
  * Next's default Layer 2 palette, and the viewer says so.
+ *
+ * A file NextBASIC saved (`SAVE f$ LAYER`, the form the wiki gives for `.sl2`) starts with a 128-byte
+ * PLUS3DOS header (https://wiki.specnext.dev/File_Formats). A valid header - signature and checksum -
+ * is skipped before the size is judged; a file without one is read as it is.
  */
+import { parseHeader } from "@common/diskfs/plus3dos";
 import type { Layer2Resolution } from "./layer2Decode";
 
 export const LAYER2_FILE_SMALL = 0xc000;
 export const LAYER2_FILE_WIDE = 0x14000;
 export const LAYER2_FILE_PALETTE = 512;
+export const PLUS3DOS_HEADER_SIZE = 128;
 
 export type Layer2File = {
   /** The pixel bytes, without the palette */
@@ -34,7 +40,8 @@ export function readPaletteBlock(bytes: Uint8Array): number[] {
   return Array.from({ length: 256 }, (_, i) => ((bytes[i * 2] & 0xff) << 1) | (bytes[i * 2 + 1] & 0x01));
 }
 
-export function parseLayer2File(contents: Uint8Array): { file?: Layer2File; error?: string } {
+export function parseLayer2File(raw: Uint8Array): { file?: Layer2File; error?: string } {
+  const contents = parseHeader(raw) ? raw.subarray(PLUS3DOS_HEADER_SIZE) : raw;
   const sizes: [number, Layer2Resolution[]][] = [
     [LAYER2_FILE_SMALL, [0]],
     [LAYER2_FILE_WIDE, [1, 2]]
@@ -56,7 +63,8 @@ export function parseLayer2File(contents: Uint8Array): { file?: Layer2File; erro
   }
   return {
     error:
-      `Invalid file size (${contents.length} bytes): a Layer 2 picture is 49,152 bytes (256×192) or ` +
-      `81,920 bytes (320×256 or 640×256), optionally after a 512-byte palette.`
+      `Invalid file size (${raw.length} bytes): a Layer 2 picture is 49,152 bytes (256×192) or ` +
+      `81,920 bytes (320×256 or 640×256), optionally after a 512-byte palette, and either may ` +
+      `follow a 128-byte PLUS3DOS header.`
   };
 }

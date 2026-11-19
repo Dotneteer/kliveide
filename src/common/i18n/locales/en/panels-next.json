@@ -214,7 +214,7 @@
       "source": "The file's name or project path"
     }
   },
-  "panels.next.scr.invalidSize": "Invalid file size ({size} bytes): an .SCR file is {expected} bytes long.",
+  "panels.next.scr.invalidSize": "Invalid file size ({size} bytes): an .SCR file is {expected} bytes long, optionally after a 128-byte PLUS3DOS header.",
   "@panels.next.scr.invalidSize": {
     "context": "Error shown instead of the .scr (ZX Spectrum screen file) viewer when the file has the wrong length.",
     "placeholders": {
