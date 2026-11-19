@@ -5748,5 +5748,66 @@
   "panels.side.dma.ddma.coloursTooltip": "$F3: a source byte equal to it is not written (transparent mode). $F7: the value a fill writes.",
   "@panels.side.dma.ddma.coloursTooltip": {
     "context": "Tooltip of the Colours row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.feature.dmaLens.title": "DMA program: {summary}",
+  "@panels.feature.dmaLens.title": {
+    "context": "Text of the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines. Followed by the program's facts joined with ' · '.",
+    "placeholders": {
+      "summary": "The program's facts, e.g. '$C000 → port $00DF · 2048 bytes · burst'"
+    }
+  },
+  "panels.feature.dmaLens.patched": "patched at run time",
+  "@panels.feature.dmaLens.patched": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: an address the program writes as 0 in a .dw line, which code fills in before sending the program."
+  },
+  "panels.feature.dmaLens.ioPort": "port {address}",
+  "@panels.feature.dmaLens.ioPort": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: an I/O port address (rather than a memory address).",
+    "placeholders": {
+      "address": "The port address, e.g. '$00DF'"
+    }
+  },
+  "panels.feature.dmaLens.route": "{from} → {to}",
+  "@panels.feature.dmaLens.route": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: where the bytes come from and go to.",
+    "placeholders": {
+      "from": "The source address or port",
+      "to": "The destination address or port"
+    }
+  },
+  "panels.feature.dmaLens.lengthPatched": "length patched at run time",
+  "@panels.feature.dmaLens.lengthPatched": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: the block length is written as 0 in a .dw line and filled in by code."
+  },
+  "panels.feature.dmaLens.bytes": "{count, plural, one {# byte} other {# bytes}}",
+  "@panels.feature.dmaLens.bytes": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: how many bytes the transfer moves.",
+    "placeholders": {
+      "count": "The number of bytes"
+    }
+  },
+  "panels.feature.dmaLens.pacing": "prescaler {prescaler}: {clocks} T a byte, {rate} Hz at 3.5 MHz",
+  "@panels.feature.dmaLens.pacing": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: the prescaler and the byte period and rate it gives with a 3.5 MHz CPU. 'T' is T-states.",
+    "placeholders": {
+      "prescaler": "The prescaler value",
+      "clocks": "T-states from one byte to the next",
+      "rate": "Bytes a second"
+    }
+  },
+  "panels.feature.dmaLens.prescalerNone": "prescaler {prescaler} (no effect at 3.5 MHz)",
+  "@panels.feature.dmaLens.prescalerNone": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: a prescaler too small to slow the transfer down at 3.5 MHz.",
+    "placeholders": {
+      "prescaler": "The prescaler value"
+    }
+  },
+  "panels.feature.dmaLens.autoRestart": "auto restart",
+  "@panels.feature.dmaLens.autoRestart": {
+    "context": "In the summary of a .dma program shown above its first line in the Klive assembler editor (a code lens) and in the hover of its .dma lines: the block repeats when it ends (WR5)."
+  },
+  "panels.feature.dmaLens.swallowed": "This line's first byte is taken as a follow byte of an earlier register group.",
+  "@panels.feature.dmaLens.swallowed": {
+    "context": "In the hover of a .dma line in the Klive assembler editor, when the DMA would not read the line's first byte as a new register group (the build shows warning Z0388 there)."
   }
 }

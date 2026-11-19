@@ -9,6 +9,7 @@ import type {
 export type LineAddressInfo = { address: number; bytes: readonly number[] };
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
+import { dmaProgramsOfFile, type DmaProgram, type DmaProgramRecord } from "@common/zxnext/dma/dmaProgram";
 
 // ---------------------------------------------------------------------------
 // Public interface
@@ -51,6 +52,9 @@ export interface ILanguageIntelService {
    * (fileIndex, 1-based lineNumber), or undefined if the line emits no code.
    */
   getLineAddress(fileIndex: number, lineNumber: number): LineAddressInfo | undefined;
+
+  /** The `.dma` programs whose lines are in the given file (NEXT_DMA_DEBUGGING_PLAN §10.3). */
+  getDmaPrograms?(fileIndex: number): DmaProgram<number>[];
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +70,7 @@ export class LanguageIntelService implements ILanguageIntelService {
   private _fileIndexToPath = new Map<number, string>();
   private _filePathToIndex = new Map<string, number>();
   private _lineInfoMap = new Map<string, LineAddressInfo>();
+  private _dmaPrograms: DmaProgramRecord[] = [];
 
   /**
    * Constructs the service.
@@ -143,6 +148,11 @@ export class LanguageIntelService implements ILanguageIntelService {
     for (const li of data.lineInfo ?? []) {
       this._lineInfoMap.set(`${li.fileIndex}:${li.lineNumber}`, { address: li.address, bytes: li.bytes });
     }
+    this._dmaPrograms = data.dmaPrograms ?? [];
+  }
+
+  getDmaPrograms(fileIndex: number): DmaProgram<number>[] {
+    return dmaProgramsOfFile(this._dmaPrograms, fileIndex);
   }
 
   getSymbolAtPosition(

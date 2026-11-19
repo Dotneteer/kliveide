@@ -106,6 +106,20 @@ mode.
 
 The `dma` command prints the same rows and warnings as text in the command output.
 
+## Before the program runs
+
+When the program is written with the [`.dma` pragma](/en/reference/z80-assembler/zx-next-dma/), the
+build already warns about several of these mistakes, and the editor shows a line above each program
+that says what it does. With **Compile in the background** on, both appear as you type.
+
+<Shot src="guides/next/dma/dma-editor.webp" alt="A .dma program in the editor: above it a summary line naming the route from $C000 to port $00DF, 2,048 bytes, burst mode and prescaler 55 at 223 T-states a byte, and a warning on the .dma enable line that the DMA is enabled without .dma load" caption="The summary above the program, and a warning: the program enables the DMA without loading the new addresses first." width={820} />
+
+Hovering a `.dma` line decodes its register group and repeats the summary:
+
+<Shot src="guides/next/dma/dma-hover.webp" alt="The hover of a .dma wr2 line: 'WR2 · port B I/O, fixed, 3T cycle, prescaler 55' and the program's summary" caption="The hover of the WR2 line." width={820} />
+
+The warnings are listed in the [`.dma` pragma reference](/en/reference/z80-assembler/zx-next-dma/#warnings).
+
 ## Related pages
 
 - [Debugging interrupts](/en/guides/next/interrupts/): the interrupts the DMA steps aside for.

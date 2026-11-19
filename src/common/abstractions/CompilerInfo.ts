@@ -3,6 +3,7 @@ import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
 import type { SourceDebugExtensions } from "./SourceDebugInfo";
 import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
+import type { DmaProgramRecord } from "@common/zxnext/dma/dmaProgram";
 
 /**
  * Represents the possible types of an expression value
@@ -554,6 +555,8 @@ export type LanguageIntelData = {
   readonly sourceFiles: ReadonlyArray<{ index: number; filename: string }>;
   /** Per-line address and emitted bytes for instructions that emit code. */
   readonly lineInfo: LineIntelInfo[];
+  /** The Klive assembler's `.dma` programs (pragma lines have no `lineInfo`). */
+  readonly dmaPrograms?: DmaProgramRecord[];
 };
 
 /**
@@ -878,6 +881,12 @@ export type DebuggableOutput = InjectableOutput & {
    * consecutive `.copper` emissions, matched against the live Copper RAM by instruction shape.
    */
   readonly copperBlocks?: CopperBlock[];
+
+  /**
+   * The Klive assembler's `.dma` programs (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §10): their bytes
+   * after the fixups and their lines, for the editor's hover and code lens.
+   */
+  readonly dmaPrograms?: DmaProgramRecord[];
 
   /**
    * The Klive assembler's `.proc`/`.endp` extents (`dev/plans/PROFILER_PLAN.md` D7): the profiler's

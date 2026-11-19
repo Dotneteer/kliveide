@@ -529,6 +529,40 @@
       "0": "A name, token, number or file name from the source code or the build, shown verbatim"
     }
   },
+  "compiler.asm.Z0388": "This line's first byte is taken as a follow byte of the {0} on line {2}, which still expects {1} more. Write the values the {0} omits with .dw right after it.",
+  "@compiler.asm.Z0388": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The register group, e.g. 'WR0' (a hardware name, keep it)",
+      "1": "How many follow bytes the group still expects",
+      "2": "The line number of that group's .dma line"
+    }
+  },
+  "compiler.asm.Z0389": "The DMA is enabled after new start addresses but without .dma load: the transfer uses the old working addresses. Put .dma load before the enable.",
+  "@compiler.asm.Z0389": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
+  },
+  "compiler.asm.Z0390": "Auto restart in {0} mode never gives the bus back: the CPU stops for good. Use burst mode with a prescaler.",
+  "@compiler.asm.Z0390": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The operating mode, e.g. 'continuous' (a .dma keyword, keep it)"
+    }
+  },
+  "compiler.asm.Z0391": "In {0} mode the DMA keeps the bus while the prescaler waits, so the CPU is frozen for the whole block. Use burst mode for a paced transfer.",
+  "@compiler.asm.Z0391": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The operating mode, e.g. 'continuous' (a .dma keyword, keep it)"
+    }
+  },
+  "compiler.asm.Z0392": "The ZX Spectrum Next's DMA ignores {0}: it has no search, no interrupts and no mask or match.",
+  "@compiler.asm.Z0392": {
+    "context": "Z80 assembler message Z0387, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The .dma keywords that have no effect, e.g. 'int_enable' (keep them)"
+    }
+  },
   "compiler.asm.Z0401": "Unexpected error when emitting code for mnemonic ''{0}'.",
   "@compiler.asm.Z0401": {
     "context": "Z80 assembler message Z0401, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
