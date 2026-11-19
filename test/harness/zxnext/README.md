@@ -191,8 +191,14 @@ When a test needs something the session cannot do, add it to `script/session.ts`
    silently did nothing.
 5. **Export** new types from `index.ts` and **add a row** to the Session API table above.
 
+**Booting NextZXOS** is `bootNextZxos(rtc, card?)` (`script/nextzxos.ts`): it clones the 2.08 base
+card (`nextSdBaseImage`, or the CIM `KLIVE_SD_CARD` names), boots the implicit model from it and
+returns at the main menu (`nextZxosMenuShown`). A base card is fresh, so NextZXOS shows its "Welcome to
+NextZXOS" pages first; the boot presses SPACE on them. Do not boot the developer's own
+`~/Klive/ks2.cim`: whether it shows the welcome pages depends on what was done with it, and CI has none.
+
 Candidates not written yet: observing the INT line and interrupt acknowledge, a port/memory write
-log, and **booting NextZXOS from a cloned CIM in node**. The last already works ad hoc and found the
+log, and **running a `.nex` through NextZXOS in node**. It already works ad hoc and found the
 nxmodplayer esxDOS bug: wrap `@main/fat32/CimHandlers`' `CimHandler` (on a `cp -c` clone, never the
 real card) as an `SdCardBacking`, `attachSdCard` it, run `buildNextCodeInjectionFlow(hasAutoExec,
 "_klive/<file>.nex")` from `nextMachineInfo.ts` the way `browser/frame-runner.ts` interprets it

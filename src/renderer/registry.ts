@@ -1165,6 +1165,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".nex",
+    ignoreCase: true,
     editor: NEX_VIEWER,
     icon: "chip",
     isBinary: true,
@@ -1203,6 +1204,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     // --- An OZvm Cambridge Z88 snapshot (`dev/plans/Z88_SNAPSHOT_PLAN.md` §4.8)
     matchType: "ends",
     pattern: ".z88",
+    ignoreCase: true,
     editor: Z88_SNAPSHOT_VIEWER,
     icon: "chip",
     isBinary: true,
@@ -1276,8 +1278,11 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getDebugRecordingContextMenuInfo
   },
   {
+    // --- Binary file types match any case (`ignoreCase`): they come from SD cards, NextZXOS and
+    // --- other systems, where 8.3 names such as SCREEN.SCR are upper case. Source files do not.
     matchType: "ends",
     pattern: ".scr",
+    ignoreCase: true,
     editor: SCR_VIEWER,
     icon: "vm",
     isBinary: true,
@@ -1287,6 +1292,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".shc",
+    ignoreCase: true,
     editor: SHC_VIEWER,
     icon: "vm",
     isBinary: true,
@@ -1296,6 +1302,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".shr",
+    ignoreCase: true,
     editor: SHR_VIEWER,
     icon: "vm",
     isBinary: true,
@@ -1305,6 +1312,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".slr",
+    ignoreCase: true,
     editor: SLR_VIEWER,
     icon: "vm",
     isBinary: true,
@@ -1314,6 +1322,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".sl2",
+    ignoreCase: true,
     editor: SL2_VIEWER,
     icon: "vm",
     isBinary: true,
@@ -1323,6 +1332,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".pal",
+    ignoreCase: true,
     editor: PAL_EDITOR,
     icon: "palette",
     isBinary: true,
@@ -1331,6 +1341,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".npl",
+    ignoreCase: true,
     editor: NPL_EDITOR,
     icon: "palette",
     isBinary: true,
@@ -1339,6 +1350,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".nxi",
+    ignoreCase: true,
     editor: NXI_EDITOR,
     icon: "layers",
     isBinary: true,
@@ -1347,6 +1359,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".spr",
+    ignoreCase: true,
     editor: SPR_EDITOR,
     icon: "sprite",
     isBinary: true,
@@ -1355,6 +1368,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".vid",
+    ignoreCase: true,
     editor: VID_VIEWER,
     icon: "video",
     isBinary: true,
@@ -1363,6 +1377,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".bin",
+    ignoreCase: true,
     editor: BIN_VIEWER,
     icon: "file-code",
     isBinary: true,
@@ -1372,6 +1387,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".rom",
+    ignoreCase: true,
     editor: BIN_VIEWER,
     icon: "file-code",
     isBinary: true,
@@ -1381,6 +1397,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".png",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1390,6 +1407,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".jpg",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1399,6 +1417,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".jpeg",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1408,6 +1427,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".gif",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1417,6 +1437,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".bmp",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1426,6 +1447,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".webp",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1435,6 +1457,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".ico",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1444,6 +1467,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".svg",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1453,6 +1477,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".tiff",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,
@@ -1462,6 +1487,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".tif",
+    ignoreCase: true,
     editor: IMAGE_VIEWER,
     icon: "preview",
     isBinary: true,

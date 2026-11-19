@@ -19,6 +19,18 @@
         "4000"
       ],
       "port": 4000
+    },
+    {
+      "name": "plan-mockups",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4100",
+        "--directory",
+        "dev/plans"
+      ],
+      "port": 4100
     }
   ]
 }

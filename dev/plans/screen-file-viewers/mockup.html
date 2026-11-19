@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Screen File Viewer</title>
+<!--
+  Mockup for dev/plans/SCREEN_FILE_VIEWERS_PLAN.md. Built by build-mockup.cjs from
+  mockup.template.html: edit the template, then rebuild. A sketch, never a source to copy.
+-->
+<style>
+:root {
+  --canvas:#141517; --chrome:#1b1d21; --panel:#17191c; --raised:#202329; --hover:#24272e;
+  --active:#2a2e36; --border-subtle:#24272b; --border:#2e3238; --border-strong:#3d424a;
+  --text:#e4e6ea; --text-2:#949aa4; --text-3:#7f8690; --text-dis:#5a606a;
+  --accent:#45A5E6; --accent-2:#939CF0; --on-accent:#0e0f11;
+  --accent-subtle:color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-2-subtle:color-mix(in srgb, var(--accent-2) 18%, transparent);
+  --state-value:#45A5E6; --state-value-alt:#939CF0;
+  --warn:#e6b450; --warn-subtle:color-mix(in srgb, var(--warn) 16%, transparent);
+  --success:#4fc27a; --error:#f0716b;
+  --stage:#101113;
+  --mono:"Iosevka","JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --canvas:#ffffff; --chrome:#f1f2f4; --panel:#f7f8f9; --raised:#ffffff; --hover:#eceef1;
+  --active:#e3e6ea; --border-subtle:#e6e8eb; --border:#d9dce1; --border-strong:#c3c8cf;
+  --text:#1d2025; --text-2:#545a64; --text-3:#666c76; --text-dis:#a3a8b0;
+  --accent:#0A6FB8; --accent-2:#0A18B8; --on-accent:#ffffff;
+  --state-value:#0A6FB8; --state-value-alt:#0A18B8;
+  --warn:#9a6700; --success:#1c7a43; --error:#c0392b;
+  --stage:#e9ebee;
+  color-scheme: light;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; }
+body { background:var(--canvas); color:var(--text); font:13px/1.45 var(--sans); overflow:hidden; }
+button, input, select { font:inherit; color:inherit; }
+svg.i { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; }
+
+.ide { display:grid; grid-template-rows:34px 1fr 22px; height:100vh; }
+.tabs { display:flex; align-items:flex-end; background:var(--chrome); border-bottom:1px solid var(--border); padding-left:8px; gap:1px; }
+.tab { padding:6px 14px; color:var(--text-3); font-size:12px; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+.tab.on { background:var(--canvas); color:var(--text); border-color:var(--border); margin-bottom:-1px; }
+.mock { margin-left:auto; display:flex; gap:10px; align-items:center; padding:0 10px 5px; font-size:11px; color:var(--text-3); }
+.mock select { height:22px; font-size:11px; background:var(--canvas); border:1px solid var(--border-strong); border-radius:4px; }
+.ide-status { background:var(--chrome); border-top:1px solid var(--border); display:flex; gap:18px; align-items:center; padding:0 10px; font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden; }
+.workspace { min-height:0; display:flex; background:var(--panel); }
+.docwrap { flex:1 1 auto; min-width:0; display:flex; }
+.docwrap.narrow { flex:0 0 560px; border-right:1px dashed var(--border-strong); }
+.docwrap.narrow + .filler { display:flex; }
+.filler { display:none; flex:1; align-items:center; justify-content:center; color:var(--text-dis); font-size:12px; }
+
+/* segmented controls, buttons */
+.seg { display:inline-flex; border:1px solid var(--border-strong); border-radius:5px; overflow:hidden; height:22px; flex:0 0 auto; }
+.seg button { border:none; background:transparent; padding:0 8px; cursor:pointer; font-size:12px; color:var(--text-2); white-space:nowrap; display:inline-flex; align-items:center; gap:5px; }
+.seg button + button { border-left:1px solid var(--border-strong); }
+.seg button.on { background:var(--accent); color:var(--on-accent); font-weight:600; }
+.seg button:hover:not(.on) { background:var(--hover); color:var(--text); }
+.ibtn { width:22px; height:22px; border:none; background:transparent; border-radius:4px; color:var(--text-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.ibtn:hover { background:var(--hover); color:var(--text); }
+.btn { height:24px; padding:0 10px; border-radius:5px; border:1px solid var(--border-strong); background:var(--raised); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+.btn:hover { background:var(--hover); }
+
+/* ---------- the proposed viewer ---------- */
+.sfv { flex:1; min-width:0; display:grid; grid-template-rows:30px 1fr 22px; container-type:inline-size; background:var(--canvas); }
+.sfv .bar { display:flex; align-items:center; gap:8px; padding:0 8px; background:var(--chrome); border-bottom:1px solid var(--border-subtle); white-space:nowrap; overflow:hidden; font-size:12px; }
+.sfv .bar .spacer { flex:1; }
+.sfv .bar .fmt { font-family:var(--mono); color:var(--state-value); }
+.sfv .bar .note { color:var(--text-3); }
+.sfv .bar .vsep { width:1px; height:16px; background:var(--border); }
+.sfv .bar .more { display:none; }
+.sfv .body { min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 34ch; }
+.sfv .stage { position:relative; min-width:0; min-height:0; overflow:auto; background:var(--stage); display:grid; place-items:center; padding:12px; }
+.sfv .pic { position:relative; line-height:0; box-shadow:0 0 0 1px var(--border-strong); }
+.sfv .pic canvas.img { image-rendering:pixelated; display:block; }
+.sfv .pic canvas.ovl { position:absolute; inset:0; cursor:crosshair; }
+.sfv .insp { border-left:1px solid var(--border); background:var(--panel); overflow:auto; min-height:0; font-size:12px; }
+.sfv .probe { display:flex; align-items:center; gap:6px; padding:0 8px; border-top:1px solid var(--border-subtle); background:var(--chrome); font:11.5px var(--mono); color:var(--text-2); white-space:nowrap; overflow:hidden; }
+.sfv .probe .v { color:var(--state-value); }
+.sfv .probe .a { color:var(--state-value-alt); }
+.sfv .probe .pin { color:var(--accent); }
+.sfv .probe .dim { color:var(--text-3); font-family:var(--sans); }
+@container (max-width: 100ch) {
+  .sfv .body { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(220px,1fr) minmax(0,max-content); }
+  .sfv .insp { border-left:none; border-top:1px solid var(--border); max-height:46cqh; display:grid; grid-template-columns:repeat(auto-fill, minmax(30ch,1fr)); align-content:start; }
+}
+@container (max-width: 70ch) {
+  .sfv .bar .wide-only { display:none; }
+  .sfv .bar .more { display:inline-flex; }
+}
+
+/* sections (FileFacts) */
+.sec { border-bottom:1px solid var(--border-subtle); }
+.sec-h { display:flex; align-items:center; gap:6px; height:26px; padding:0 6px 0 8px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-2); }
+.sec-h .chev { color:var(--text-3); }
+.sec-h .meta { font-weight:400; text-transform:none; letter-spacing:0; color:var(--text-3); }
+.sec-h .acts { margin-left:auto; display:flex; gap:2px; }
+.facts { display:grid; grid-template-columns:minmax(12ch,max-content) 1fr; gap:3px 10px; padding:2px 10px 10px 24px; }
+.facts dt { color:var(--text-3); }
+.facts dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.facts dd.v { font-family:var(--mono); color:var(--state-value); }
+.facts dd.m { font-family:var(--mono); }
+.facts dd .ok { color:var(--success); }
+.path { display:flex; align-items:center; gap:4px; font-family:var(--mono); font-size:11.5px; color:var(--text-2); }
+.note-w { margin:0 10px 10px 24px; padding:6px 8px; border-radius:5px; background:var(--warn-subtle); color:var(--warn); font-size:12px; }
+.hint { padding:0 10px 10px 24px; color:var(--text-3); }
+
+/* colour swatches */
+.sw16 { display:grid; grid-template-columns:repeat(8, 1fr); gap:3px; padding:2px 10px 6px 24px; }
+.sw16 .s { position:relative; height:30px; border-radius:3px; cursor:pointer; border:1px solid var(--border-strong); display:flex; align-items:flex-end; justify-content:flex-end; padding:1px 3px; font:10px var(--mono); }
+.sw16 .s.unused { opacity:.28; }
+.sw16 .s.sel { outline:2px solid var(--accent); outline-offset:1px; }
+.sw16 .s span { background:rgba(0,0,0,.55); color:#fff; border-radius:2px; padding:0 2px; }
+.pal { display:grid; grid-template-columns:2ch repeat(16, 1fr); gap:2px; padding:2px 10px 6px 10px; font:10px var(--mono); color:var(--text-3); }
+.pal .rl { text-align:right; line-height:12px; }
+.pal .c { height:12px; border-radius:2px; cursor:pointer; }
+.pal .c.unused { background:transparent !important; box-shadow:inset 0 0 0 1px var(--cc); opacity:.7; }
+.pal .c.sel { outline:2px solid var(--accent); outline-offset:1px; position:relative; z-index:1; }
+.linkbtn { border:none; background:none; padding:0 0 0 6px; color:var(--accent); cursor:pointer; font:inherit; font-family:var(--sans); }
+.linkbtn:hover { text-decoration:underline; }
+.linkbtn.on { font-weight:600; }
+.legend { display:flex; gap:12px; padding:0 10px 10px 24px; color:var(--text-3); font-size:11px; }
+.legend i { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:4px; }
+
+/* error card */
+.errcard { max-width:52ch; background:var(--raised); border:1px solid var(--border); border-radius:8px; padding:16px 18px; display:grid; gap:10px; }
+.errcard h3 { margin:0; font-size:13px; display:flex; gap:8px; align-items:center; color:var(--warn); }
+.errcard p { margin:0; color:var(--text-2); }
+.errcard .sizes { font-family:var(--mono); color:var(--text); }
+
+/* overflow menu */
+.menu { position:absolute; z-index:5; background:var(--raised); border:1px solid var(--border-strong); border-radius:6px; padding:4px; box-shadow:0 6px 24px rgba(0,0,0,.35); font-size:12px; min-width:18ch; }
+.menu div { padding:4px 10px; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; gap:12px; }
+.menu div:hover { background:var(--hover); }
+.menu .on::after { content:"✓"; color:var(--accent); }
+
+/* ---------- today's viewers (for comparison) ---------- */
+.today { flex:1; min-width:0; display:flex; flex-direction:column; background:var(--canvas); }
+.today .hrow { display:flex; align-items:center; gap:6px; height:26px; padding:0 6px; border-bottom:1px solid var(--border-subtle); }
+.today .tbar { display:flex; align-items:center; gap:8px; height:30px; padding:0 8px; border-bottom:1px solid var(--border-subtle); background:var(--chrome); font-size:12px; white-space:nowrap; }
+.today .scroll { flex:1; overflow:auto; padding:8px; }
+.today canvas { image-rendering:pixelated; display:block; }
+.today .err { padding:12px; color:var(--error); font-family:var(--mono); font-size:12px; }
+
+.callouts { position:fixed; right:12px; bottom:30px; max-width:42ch; background:var(--raised); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-2); box-shadow:0 6px 24px rgba(0,0,0,.3); }
+.callouts b { color:var(--text); }
+.callouts ul { margin:6px 0 0; padding-left:18px; }
+.callouts .x { float:right; cursor:pointer; color:var(--text-3); }
+</style>
+</head>
+<body>
+<div class="ide">
+  <div class="tabs">
+    <div class="tab on" id="tab"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg><span id="tabName"></span></div>
+    <div class="mock">
+      <span>MOCKUP:</span>
+      <label>File <select id="mFile"></select></label>
+      <label>Width <select id="mWidth"><option value="wide">Wide</option><option value="narrow">Narrow (560px)</option></select></label>
+      <label>Theme <select id="mTheme"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+      <label>View <select id="mView"><option value="proposed">Proposed</option><option value="today">Today</option></select></label>
+    </div>
+  </div>
+  <div class="workspace">
+    <div class="docwrap" id="docwrap"></div>
+    <div class="filler">(the rest of the window: another document)</div>
+  </div>
+  <div class="ide-status"><span>ZX Spectrum Next</span><span>Paused</span><span style="margin-left:auto">Klive IDE</span></div>
+</div>
+<div class="callouts" id="callouts"><span class="x" id="cx">✕</span><b>Try:</b>
+  <ul>
+    <li>hover the picture (the strip under it is the probe), click to pin a pixel</li>
+    <li>click a colour in the inspector: other pixels dim</li>
+    <li>SCREEN.SCR: Grid; Blink FLASH; "FLASH cells: highlight" shows which cells blink</li>
+    <li>HIRES.SHR: the file has no colour, so pick the ink</li>
+    <li>HIRES.NXI: the size cannot tell 320×256 from 640×256</li>
+    <li>Width → Narrow: the inspector stacks, the bar folds into ⋯</li>
+  </ul>
+</div>
+
+<script>
+"use strict";
+// ============================================================================================
+// Sample files, built with the real byte layouts
+// ============================================================================================
+const FONT = Uint8Array.from(atob("AAAAAAAAAAAAEBAQEAAQAAAkJAAAAAAAACR+JCR+JAAACD4oPgo+CABiZAgQJkYAABAoECpEOgAACBAAAAAAAAAECAgICAQAACAQEBAQIAAAABQIPggUAAAACAg+CAgAAAAAAAAICBAAAAAAPgAAAAAAAAAAGBgAAAACBAgQIAAAPEZKUmI8AAAYKAgICD4AADxCAjxAfgAAPEIMAkI8AAAIGChIfggAAH5AfAJCPAAAPEB8QkI8AAB+AgQIEBAAADxCPEJCPAAAPEJCPgI8AAAAABAAABAAAAAQAAAQECAAAAQIEAgEAAAAAD4APgAAAAAQCAQIEAAAPEIECAAIAAA8SlZeQDwAADxCQn5CQgAAfEJ8QkJ8AAA8QkBAQjwAAHhEQkJEeAAAfkB8QEB+AAB+QHxAQEAAADxCQE5CPAAAQkJ+QkJCAAA+CAgICD4AAAICAkJCPAAAREhwSERCAABAQEBAQH4AAEJmWkJCQgAAQmJSSkZCAAA8QkJCQjwAAHxCQnxAQAAAPEJCUko8AAB8QkJ8REIAADxAPAJCPAAA/hAQEBAQAABCQkJCQjwAAEJCQkIkGAAAQkJCQlokAABCJBgYJEIAAIJEKBAQEAAAfgQIECB+AAAOCAgICA4AAABAIBAIBAAAcBAQEBBwAAAQOFQQEBAAAAAAAAAAAP8AHCJ4ICB+AAAAOAQ8RDwAACAgPCIiPAAAABwgICAcAAAEBDxERDwAAAA4RHhAPAAADBAYEBAQAAAAPEREPAQ4AEBAeERERAAAEAAwEBA4AAAEAAQEBCQYACAoMDAoJAAAEBAQEBAMAAAAaFRUVFQAAAB4RERERAAAADhEREQ4AAAAeEREeEBAAAA8REQ8BAYAABwgICAgAAAAOEA4BHgAABA4EBAQDAAAAEREREQ4AAAAREQoKBAAAABEVFRUKAAAAEQoEChEAAAAREREPAQ4AAB8CBAgfAAADggwCAgOAAAICAgICAgAAHAQDBAQcAAAFCgAAAAAADxCmaGhmUI8"), (c) => c.charCodeAt(0));
+
+function parsePlus3(bytes) {
+  if (bytes.length < 128) return null;
+  for (let i = 0; i < 8; i++) if (bytes[i] !== "PLUS3DOS".charCodeAt(i)) return null;
+  if (bytes[8] !== 0x1a) return null;
+  let sum = 0;
+  for (let i = 0; i < 127; i++) sum = (sum + bytes[i]) & 0xff;
+  if (sum !== bytes[127]) return null;
+  return { type: bytes[15], length: bytes[16] | (bytes[17] << 8), start: bytes[18] | (bytes[19] << 8) };
+}
+// Sample screen files for dev/plans/SCREEN_FILE_VIEWERS_PLAN.md, built with the real byte layouts.
+// One source for two users: build-mockup.cjs inlines it into the mockup, and generate-samples.cjs
+// writes the files to samples/ for the manual tests. Pass the 48K ROM's character set (768 bytes
+// from $3D00); the pictures' text is drawn with it.
+//
+// Layouts (checked against Klive's Next core, src/emu/machines/zxNext/wasm/zxnext/):
+// - SCR: 6,144 interleaved pixel bytes, then 768 attributes.
+// - Layer 2 256x192: row-major (y << 8 | x). 320x256: column-major (x << 8 | y). 640x256: column-major
+//   bytes of two pixels, the left one in the high nibble.
+// - LoRes 128x96: one byte per pixel, row-major. Rows 0-47 at $4000, rows 48-95 at $6000; the
+//   12,288-byte file is the two halves in order (zxnextLoResStandardAddress).
+// - Timex hi-colour: the 6,144 SCR-layout pixel bytes, then 6,144 attribute bytes in the same
+//   layout (one attribute per 8x1 strip, from $6000).
+// - Timex hi-res 512x192: each 16-pixel word is a byte from $4000 (left) and the byte at the same
+//   offset from $6000 (right); the file is the $4000 half, then the $6000 half.
+// - A PLUS3DOS header is 128 bytes: "PLUS3DOS", $1A, 1, 0, the file length, then the BASIC header
+//   (type 3 = CODE, length, load address, $8000) and the checksum of the first 127 bytes.
+function screenSamples(FONT) {
+  "use strict";
+  const concat = (...parts) => {
+    const o = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    let at = 0;
+    for (const p of parts) { o.set(p, at); at += p.length; }
+    return o;
+  };
+
+  function plus3Header(dataLength, start) {
+    const h = new Uint8Array(128);
+    "PLUS3DOS".split("").forEach((c, i) => (h[i] = c.charCodeAt(0)));
+    h[8] = 0x1a; h[9] = 1; h[10] = 0;
+    const total = dataLength + 128;
+    h[11] = total & 0xff; h[12] = (total >> 8) & 0xff; h[13] = (total >> 16) & 0xff; h[14] = (total >> 24) & 0xff;
+    h[15] = 3; // CODE
+    h[16] = dataLength & 0xff; h[17] = (dataLength >> 8) & 0xff;
+    h[18] = start & 0xff; h[19] = (start >> 8) & 0xff;
+    h[20] = 0x00; h[21] = 0x80;
+    let sum = 0;
+    for (let i = 0; i < 127; i++) sum = (sum + h[i]) & 0xff;
+    h[127] = sum;
+    return h;
+  }
+  const withHeader = (data, start) => concat(plus3Header(data.length, start), data);
+
+  function drawText(set, text, x0, y0, scale = 1) {
+    for (let n = 0; n < text.length; n++) {
+      const code = text.charCodeAt(n) - 32;
+      for (let r = 0; r < 8; r++) {
+        const row = FONT[code * 8 + r];
+        for (let b = 0; b < 8; b++) {
+          if (!(row & (0x80 >> b))) continue;
+          for (let sy = 0; sy < scale; sy++) for (let sx = 0; sx < scale; sx++) set(x0 + (n * 8 + b) * scale + sx, y0 + r * scale + sy);
+        }
+      }
+    }
+  }
+  /** The SCR interleave: the offset of the byte holding pixel column `col` (0-31) of row y */
+  const scrOffset = (col, y) => ((y & 0xc0) << 5) | ((y & 7) << 8) | ((y & 0x38) << 2) | col;
+  const rgb332 = (r, g, b) => (r << 5) | (g << 2) | b;
+
+  // ---------------------------------------------------------------------------------------------
+  // SCR
+
+  function scrScreen() {
+    const s = new Uint8Array(6912);
+    const pset = (x, y) => { if (x < 0 || y < 0 || x > 255 || y > 191) return; s[scrOffset(x >> 3, y)] |= 0x80 >> (x & 7); };
+    const attr = (col, row, v) => (s[0x1800 + row * 32 + col] = v);
+    for (let r = 0; r < 24; r++) for (let c = 0; c < 32; c++) attr(c, r, (1 << 3) | 7); // PAPER 1, INK 7
+    const bars = [2, 6, 4, 5];
+    for (let c = 0; c < 32; c++) for (let r = 0; r < 2; r++) attr(c, r, 0x40 | (bars[c >> 3] << 3));
+    drawText(pset, "KLIVE IDE", 56, 32, 2);
+    for (let c = 6; c < 26; c++) for (let r = 4; r < 6; r++) attr(c, r, 0x40 | (1 << 3) | 6); // BRIGHT, INK 6
+    drawText(pset, "SCREEN FILE VIEWER", 56, 56);
+    for (let c = 7; c < 25; c++) attr(c, 7, (1 << 3) | 5);
+    for (let a = 0; a < 720; a++) { const t = (a / 720) * Math.PI * 2; pset(Math.round(128 + 36 * Math.cos(t)), Math.round(122 + 36 * Math.sin(t))); }
+    for (let y = 100; y < 144; y += 4) for (let x = 104; x < 152; x++) if ((x - 128) ** 2 + (y - 122) ** 2 < 30 * 30) pset(x, y);
+    for (let c = 11; c < 21; c++) for (let r = 10; r < 20; r++) attr(c, r, 0x40 | (1 << 3) | 4); // BRIGHT, INK 4
+    drawText(pset, "PRESS ANY KEY", 76, 176);
+    for (let c = 9; c < 23; c++) attr(c, 22, 0x80 | (7 << 3) | 2); // FLASH, PAPER 7, INK 2
+    return s;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Layer 2
+
+  function l2Title() {
+    const d = new Uint8Array(49152);
+    const put = (x, y, v) => { if (x >= 0 && y >= 0 && x < 256 && y < 192) d[(y << 8) | x] = v; };
+    for (let y = 0; y < 192; y++) for (let x = 0; x < 256; x++) {
+      let v = rgb332(0, Math.min(7, Math.floor(y / 30)), 3 - Math.min(3, Math.floor(y / 48)));
+      if (y > 120 + 14 * Math.sin(x / 23)) v = rgb332(0, 4 - Math.min(3, Math.floor((y - 120) / 20)), 0);
+      if ((x - 190) ** 2 + (y - 60) ** 2 < 22 * 22) v = rgb332(7, 7 - Math.floor(Math.abs(y - 60) / 8), 0);
+      put(x, y, v);
+    }
+    drawText((x, y) => put(x, y, 0xff), "LAYER 2", 20, 140, 3);
+    return d;
+  }
+  /** A palette block: 256 entries of `RRRGGGBB`, `0000000B` */
+  function paletteBlock(entry) {
+    const p = new Uint8Array(512);
+    for (let i = 0; i < 256; i++) { const v = entry(i); p[i * 2] = (v >> 1) & 0xff; p[i * 2 + 1] = v & 1; }
+    return p;
+  }
+  const nine = (r, g, b) => (r << 6) | (g << 3) | b;
+  /** The default palette with red and blue swapped: proves a viewer uses the file's palette */
+  const swappedPalette = () => paletteBlock((i) => nine(i & 3 ? ((i & 3) << 1) | 1 : 0, (i >> 2) & 7, i >> 5));
+
+  function l2City() {
+    const pal = paletteBlock((i) => {
+      if (i < 64) return nine(Math.min(7, Math.floor(i / 7)), Math.min(7, Math.floor(i / 14)), 7 - Math.floor(i / 10));
+      if (i < 72) return nine(i - 64, i - 64, Math.min(7, i - 63));
+      if (i === 200) return nine(7, 6, 2);
+      if (i === 201) return nine(7, 7, 5);
+      if (i === 255) return nine(7, 7, 7);
+      return 0;
+    });
+    const d = new Uint8Array(81920);
+    const put = (x, y, v) => { if (x >= 0 && y >= 0 && x < 320 && y < 256) d[(x << 8) | y] = v; };
+    for (let x = 0; x < 320; x++) for (let y = 0; y < 256; y++) put(x, y, Math.min(63, y >> 2));
+    let seed = 7;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let bx = 0; bx < 320; ) {
+      const w = 18 + Math.floor(rnd() * 26), h = 60 + Math.floor(rnd() * 130), shade = 64 + Math.floor(rnd() * 3);
+      for (let x = bx; x < bx + w; x++) for (let y = 256 - h; y < 256; y++) put(x, y, shade);
+      for (let x = bx + 3; x < bx + w - 3; x += 5) for (let y = 256 - h + 5; y < 250; y += 7) {
+        if (rnd() > 0.45) { put(x, y, 200); put(x + 1, y, 200); put(x, y + 1, 201); put(x + 1, y + 1, 201); }
+      }
+      bx += w + 2;
+    }
+    drawText((x, y) => put(x, y, 255), "320x256", 12, 14, 2);
+    return { pal, d };
+  }
+
+  function l2Hires() {
+    const d = new Uint8Array(81920);
+    const put = (x, y, v) => {
+      if (x < 0 || y < 0 || x >= 640 || y >= 256) return;
+      const o = ((x >> 1) << 8) | y;
+      d[o] = x & 1 ? (d[o] & 0xf0) | v : (d[o] & 0x0f) | (v << 4);
+    };
+    for (let x = 0; x < 640; x++) for (let y = 0; y < 256; y++) put(x, y, ((Math.floor(x / 40) + Math.floor(y / 32)) & 1) ? 1 : 2);
+    for (let a = 0; a < 2000; a++) {
+      const t = (a / 2000) * Math.PI * 2;
+      for (let k = 0; k < 3; k++) put(Math.round(320 + (200 - k) * Math.cos(t)), Math.round(128 + (100 - k / 2) * Math.sin(t)), 14);
+    }
+    drawText((x, y) => put(x, y, 15), "640x256 4BPP", 224, 116, 2);
+    return d;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // LoRes, Timex hi-colour, Timex hi-res
+
+  function lores() {
+    const d = new Uint8Array(12288);
+    const put = (x, y, v) => { if (x >= 0 && y >= 0 && x < 128 && y < 96) d[(y << 7) | x] = v; };
+    for (let y = 0; y < 96; y++) for (let x = 0; x < 128; x++) {
+      const r = Math.hypot(x - 64, y - 48);
+      put(x, y, rgb332(Math.floor(r / 6) & 7, Math.floor(y / 12) & 7, Math.floor(x / 32) & 3));
+    }
+    for (let x = 0; x < 128; x++) { put(x, 47, 0xff); put(x, 48, 0xe0); } // the two halves' seam
+    drawText((x, y) => put(x, y, 0xff), "LORES", 44, 8);
+    drawText((x, y) => put(x, y, 0x00), "128x96", 40, 80);
+    return d;
+  }
+
+  function hicolour() {
+    const px = new Uint8Array(6144), at = new Uint8Array(6144);
+    const pset = (x, y) => { if (x >= 0 && y >= 0 && x < 256 && y < 192) px[scrOffset(x >> 3, y)] |= 0x80 >> (x & 7); };
+    drawText(pset, "HI-COLOUR", 20, 40, 3);
+    drawText(pset, "8x1 ATTRIBUTES", 72, 120);
+    for (let y = 150; y < 192; y++) for (let x = 0; x < 256; x++) if ((x + y) & 4) pset(x, y);
+    // --- each pixel row gets its own colours: impossible on a 48K screen, whose cells are 8x8
+    for (let y = 0; y < 192; y++) for (let col = 0; col < 32; col++) {
+      const ink = 1 + ((y >> 1) + col) % 7, paper = y < 150 ? 0 : 7 - ((y >> 2) % 7);
+      at[scrOffset(col, y)] = 0x40 | (paper << 3) | ink;
+    }
+    return concat(px, at);
+  }
+
+  function hires() {
+    const a = new Uint8Array(6144), b = new Uint8Array(6144);
+    const pset = (x, y) => {
+      if (x < 0 || y < 0 || x >= 512 || y >= 192) return;
+      const byteCol = x >> 3, half = byteCol & 1 ? b : a;
+      half[scrOffset(byteCol >> 1, y)] |= 0x80 >> (x & 7);
+    };
+    drawText(pset, "TIMEX HI-RES", 64, 24, 4);
+    drawText(pset, "512x192: EACH 16-PIXEL WORD IS ONE BYTE FROM $4000 AND ONE FROM $6000", 0, 80);
+    for (let x = 0; x < 512; x += 2) for (let y = 100; y < 120; y++) pset(x, y); // one-pixel stripes
+    for (let x = 0; x < 512; x++) for (let y = 130; y < 190; y++) if (((x >> 3) & 1) === 0) pset(x, y); // byte columns alternate
+    return concat(a, b);
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // The files
+
+  const scr = scrScreen();
+  const title = l2Title();
+  const city = l2City();
+  const hiresL2 = l2Hires();
+  const broken = Uint8Array.from({ length: 7000 }, (_, i) => (i * 37) & 0xff);
+  const loresPic = lores(), hicolPic = hicolour(), hiresPic = hires();
+
+  // --- `kind` is the viewer that opens it; `check` is what a manual test should see
+  const files = [
+    { name: "SCREEN.SCR", kind: "scr", bytes: scr, check: "A 48K screen: rainbow bars, BRIGHT title, green circle, a FLASH line (PRESS ANY KEY)." },
+    { name: "SCREEN-HEADER.SCR", kind: "scr", bytes: withHeader(scr, 0x4000), check: "Same picture after a PLUS3DOS header (CODE at $4000)." },
+    { name: "SCREEN-AT-8000.SCR", kind: "scr", bytes: withHeader(scr, 0x8000), check: "Same picture; the header loads at $8000, so the viewer warns (not an error)." },
+    { name: "BROKEN.SCR", kind: "scr", bytes: broken, check: "7,000 bytes: refused with the size message." },
+    { name: "TITLE.SL2", kind: "l2", bytes: withHeader(title, 0x0000), check: "Layer 2 256x192 after a PLUS3DOS header (the wiki's .sl2): sky, sun, hills, LAYER 2." },
+    { name: "TITLE-BARE.SL2", kind: "l2", bytes: title, check: "Same picture, no header." },
+    { name: "TITLE.NXI", kind: "l2", bytes: title, check: "256x192, no palette: the Next default palette." },
+    { name: "TITLE-PALETTE.NXI", kind: "l2", bytes: concat(swappedPalette(), title), check: "256x192 with its own palette (red and blue swapped): the sky turns red, the sun blue." },
+    { name: "CITY.NXI", kind: "l2", bytes: concat(city.pal, city.d), check: "320x256 with its own palette: a dusk skyline. Shown as 640x256 it is garbage." },
+    { name: "HIRES.NXI", kind: "l2", bytes: hiresL2, check: "640x256 4-bit, no palette: a checkerboard, an ellipse, 640x256 4BPP. Shown as 320x256 it is garbage." },
+    { name: "LORES.SLR", kind: "slr", bytes: loresPic, check: "LoRes 128x96: rings, LORES, 128x96; a white then a red line where the two 6K halves meet (rows 47/48)." },
+    { name: "LORES-HEADER.SLR", kind: "slr", bytes: withHeader(loresPic, 0x4000), check: "Same picture after a PLUS3DOS header." },
+    { name: "HICOLOUR.SHC", kind: "shc", bytes: hicolPic, check: "Timex hi-colour: HI-COLOUR with a different colour on every pixel row (8x1 attributes)." },
+    { name: "HICOLOUR-HEADER.SHC", kind: "shc", bytes: withHeader(hicolPic, 0x4000), check: "Same picture after a PLUS3DOS header." },
+    { name: "HIRES.SHR", kind: "shr", bytes: hiresPic, check: "Timex hi-res 512x192 mono: big TIMEX HI-RES, a line of 64-column text, one-pixel stripes, 8-pixel bars." },
+    { name: "HIRES-HEADER.SHR", kind: "shr", bytes: withHeader(hiresPic, 0x4000), check: "Same picture after a PLUS3DOS header." }
+  ];
+  return { files, plus3Header };
+}
+
+if (typeof module !== "undefined") module.exports = screenSamples;
+
+const FILES = screenSamples(FONT).files;
+
+// ============================================================================================
+// Decoders (a sketch of D1/D2: sizes, decode, probe)
+// ============================================================================================
+const SPECTRUM = ["#000000","#0000aa","#aa0000","#aa00aa","#00aa00","#00aaaa","#aaaa00","#aaaaaa","#000000","#0000ff","#ff0000","#ff00ff","#00ff00","#00ffff","#ffff00","#ffffff"];
+const COLOUR_NAMES = ["black","blue","red","magenta","green","cyan","yellow","white"];
+const hex = (v, n) => "$" + v.toString(16).toUpperCase().padStart(n, "0");
+const plain = (v, n) => v.toString(16).toUpperCase().padStart(n, "0");
+const num = (v) => v.toLocaleString("en-US");
+const nineToCss = (v) => { const c = (n) => Math.round((n * 255) / 7); return `rgb(${c((v >> 6) & 7)},${c((v >> 3) & 7)},${c(v & 7)})`; };
+const nineToRgb = (v) => { const c = (n) => Math.round((n * 255) / 7); return [c((v >> 6) & 7), c((v >> 3) & 7), c(v & 7)]; };
+const hexToRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+// --- the Next's default Layer 2 palette: index i is RGB332 i (layer2File.ts). The mockup also draws
+// --- LoRes with it; the viewer will use the Next's default ULA palette (§3).
+const defaultPalette = () => Array.from({ length: 256 }, (_, i) => (i << 1) | (i & 0x02 ? 1 : 0));
+const FORMAT_SIZES = { scr: 6912, slr: 12288, shc: 12288, shr: 12288 };
+
+function readFile(file) {
+  const bytes = file.bytes;
+  const header = parsePlus3(bytes);
+  const body = header ? bytes.subarray(128) : bytes;
+  if (file.kind !== "l2") {
+    if (body.length !== FORMAT_SIZES[file.kind]) return { error: true, kind: file.kind, header, size: bytes.length };
+    return { kind: file.kind, header, body, palette: defaultPalette(), resolutions: [0] };
+  }
+  const sizes = [[49152, [0]], [81920, [1, 2]]];
+  for (const [size, res] of sizes) {
+    if (body.length === size) return { kind: "l2", header, body, data: body, palette: defaultPalette(), paletteFromFile: false, resolutions: res };
+    if (body.length === size + 512) {
+      const p = body.subarray(0, 512);
+      return { kind: "l2", header, body, data: body.subarray(512), palette: Array.from({ length: 256 }, (_, i) => ((p[i * 2] & 0xff) << 1) | (p[i * 2 + 1] & 1)), paletteFromFile: true, resolutions: res };
+    }
+  }
+  return { error: true, kind: "l2", header, size: bytes.length };
+}
+
+const scrPixelAddr = (x, y) => ((y & 0xc0) << 5) | ((y & 7) << 8) | ((y & 0x38) << 2) | (x >> 3);
+const scrAttrAddr = (x, y) => 0x1800 + (y >> 3) * 32 + (x >> 3);
+const SIZE = { scr: [256, 192], slr: [128, 96], shc: [256, 192], shr: [512, 192] };
+
+/**
+ * RGBA pixels and, per pixel, two "colour keys" a colour selection matches against (INK and PAPER
+ * for the attribute formats, the index for the palette ones), and FLASH per pixel (SCR).
+ */
+function decode(info, view) {
+  if (info.kind === "l2") {
+    const res = view.resolution;
+    const w = res === 0 ? 256 : res === 1 ? 320 : 640, h = res === 0 ? 192 : 256;
+    const rgba = new Uint8ClampedArray(w * h * 4), keys = new Int16Array(w * h * 2).fill(-1);
+    const css = info.palette.map(nineToRgb);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const idx = l2Index(info, res, x, y), c = css[idx], i = (y * w + x) * 4;
+      rgba[i] = c[0]; rgba[i + 1] = c[1]; rgba[i + 2] = c[2]; rgba[i + 3] = 255;
+      keys[(y * w + x) * 2] = idx;
+    }
+    return { w, h, rgba, keys, zoomY: res === 2 ? 2 : 1 };
+  }
+  const [w, h] = SIZE[info.kind];
+  const rgba = new Uint8ClampedArray(w * h * 4), keys = new Int16Array(w * h * 2).fill(-1), flash = new Uint8Array(w * h);
+  const paint = (x, y, rgb) => { const i = (y * w + x) * 4; rgba[i] = rgb[0]; rgba[i + 1] = rgb[1]; rgba[i + 2] = rgb[2]; rgba[i + 3] = 255; };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = y * w + x;
+    if (info.kind === "slr") {
+      const idx = info.body[(y << 7) | x];
+      paint(x, y, nineToRgb(info.palette[idx])); keys[p * 2] = idx;
+      continue;
+    }
+    if (info.kind === "shr") {
+      const byteCol = x >> 3, off = scrPixelAddr((byteCol >> 1) << 3, y) + (byteCol & 1 ? 6144 : 0);
+      const on = (info.body[off] & (0x80 >> (x & 7))) !== 0;
+      paint(x, y, hexToRgb(SPECTRUM[on ? view.ink : 7 - view.ink]));
+      continue;
+    }
+    // --- scr and shc: a pixel bit and an attribute (8x8 cell, or 8x1 strip from the second half)
+    const a = info.kind === "scr" ? info.body[scrAttrAddr(x, y)] : info.body[6144 + scrPixelAddr(x, y)];
+    let on = (info.body[scrPixelAddr(x, y)] & (0x80 >> (x & 7))) !== 0;
+    if (a & 0x80 && view.blink && view.flashPhase) on = !on;
+    const ink = (a & 7) | ((a & 0x40) >> 3), paper = ((a >> 3) & 7) | ((a & 0x40) >> 3);
+    paint(x, y, hexToRgb(SPECTRUM[on ? ink : paper]));
+    keys[p * 2] = ink; keys[p * 2 + 1] = paper; flash[p] = a & 0x80 ? 1 : 0;
+  }
+  return { w, h, rgba, keys, flash, zoomY: info.kind === "shr" ? 2 : 1 };
+}
+function l2Offset(res, x, y) { return res === 0 ? (y << 8) | x : res === 1 ? (x << 8) | y : ((x >> 1) << 8) | y; }
+function l2Index(info, res, x, y) {
+  const b = info.data[l2Offset(res, x, y)];
+  return res === 2 ? (x & 1 ? b & 0x0f : b >> 4) : b;
+}
+
+const attrText = (a) => `INK ${a & 7} PAPER ${(a >> 3) & 7}${a & 0x40 ? " BRIGHT" : ""}${a & 0x80 ? " FLASH" : ""}`;
+const attrLong = (a) => `INK ${a & 7} (${COLOUR_NAMES[a & 7]}), PAPER ${(a >> 3) & 7} (${COLOUR_NAMES[(a >> 3) & 7]})${a & 0x40 ? ", BRIGHT" : ""}${a & 0x80 ? ", FLASH" : ""}`;
+
+function probe(info, view, x, y) {
+  const pre = info.header ? 128 : 0;
+  if (info.kind === "scr") {
+    const pa = scrPixelAddr(x, y), aa = scrAttrAddr(x, y), a = info.body[aa];
+    return {
+      line: [["x ", x], [" y ", y], [" · cell ", `${x >> 3},${y >> 3}`], [" · pixel ", hex(0x4000 + pa, 4), "v"], [" (+" + plain(pa + pre, 4) + ")"], [" · attr ", hex(0x4000 + aa, 4), "v"], [" (+" + plain(aa + pre, 4) + ") = ", hex(a, 2), "a"], [" " + attrText(a)]],
+      facts: [["Position", `x ${x}, y ${y}`], ["Cell", `column ${x >> 3}, row ${y >> 3}`, "m"], ["Pixel byte", `${hex(0x4000 + pa, 4)}, file +${plain(pa + pre, 4)}`, "v"], ["Bit", `${7 - (x & 7)} (${info.body[pa] & (0x80 >> (x & 7)) ? "ink" : "paper"})`, "m"], ["Attribute", `${hex(0x4000 + aa, 4)} = ${hex(a, 2)}, file +${plain(aa + pre, 4)}`, "v"], ["Decoded", attrLong(a)]]
+    };
+  }
+  if (info.kind === "shc") {
+    const pa = scrPixelAddr(x, y), a = info.body[6144 + pa];
+    return {
+      line: [["x ", x], [" y ", y], [" · pixel ", hex(0x4000 + pa, 4), "v"], [" (+" + plain(pa + pre, 4) + ")"], [" · attr ", hex(0x6000 + pa, 4), "v"], [" (+" + plain(6144 + pa + pre, 4) + ") = ", hex(a, 2), "a"], [" " + attrText(a)]],
+      facts: [["Position", `x ${x}, y ${y}`], ["Strip", `8×1 at column ${x >> 3}, row ${y}`, "m"], ["Pixel byte", `${hex(0x4000 + pa, 4)}, file +${plain(pa + pre, 4)}`, "v"], ["Attribute", `${hex(0x6000 + pa, 4)} = ${hex(a, 2)}, file +${plain(6144 + pa + pre, 4)}`, "v"], ["Decoded", attrLong(a)]]
+    };
+  }
+  if (info.kind === "shr") {
+    const byteCol = x >> 3, half = byteCol & 1, pa = scrPixelAddr((byteCol >> 1) << 3, y), b = info.body[pa + half * 6144];
+    const addr = (half ? 0x6000 : 0x4000) + pa, fo = pa + half * 6144 + pre;
+    return {
+      line: [["x ", x], [" y ", y], [" · byte ", hex(addr, 4), "v"], [" (+" + plain(fo, 4) + ") = ", hex(b, 2), "a"], [` · ${half ? "right" : "left"} byte of word ${byteCol >> 1}`]],
+      facts: [["Position", `x ${x}, y ${y}`], ["Byte", `${hex(addr, 4)} = ${hex(b, 2)}, file +${plain(fo, 4)}`, "v"], ["Half", half ? "$6000 (right byte of the word)" : "$4000 (left byte of the word)"], ["Bit", `${7 - (x & 7)} (${b & (0x80 >> (x & 7)) ? "ink" : "paper"})`, "m"]]
+    };
+  }
+  if (info.kind === "slr") {
+    const off = (y << 7) | x, idx = info.body[off], half = y < 48 ? 0x4000 : 0x6000, inHalf = off - (y < 48 ? 0 : 6144);
+    return {
+      line: [["x ", x], [" y ", y], [" · index ", hex(idx, 2), "v"], [" · ", hex(half + inHalf, 4), "a"], [" (+" + plain(off + pre, 4) + ")"]],
+      facts: [["Position", `x ${x}, y ${y}`], ["Palette index", hex(idx, 2), "v"], ["Address", `${hex(half + inHalf, 4)} (${y < 48 ? "top" : "bottom"} half)`, "v"], ["File offset", "+" + plain(off + pre, 4), "m"]]
+    };
+  }
+  const res = view.resolution, off = l2Offset(res, x, y), idx = l2Index(info, res, x, y), v = info.palette[idx];
+  const bank = off >> 14, inBank = off & 0x3fff, fo = off + pre + (info.paletteFromFile ? 512 : 0);
+  const rgb = `${(v >> 6) & 7},${(v >> 3) & 7},${v & 7}`;
+  const nib = res === 2 ? (x & 1 ? " low nibble" : " high nibble") : "";
+  return {
+    line: [["x ", x], [" y ", y], [" · index ", hex(idx, 2), "v"], [" · RGB " + rgb], [" · bank +" + bank + " ", hex(inBank, 4), "a"], [" (+" + plain(fo, 5) + ")" + nib]],
+    facts: [["Position", `x ${x}, y ${y}`], ["Palette index", hex(idx, 2), "v"], ["Colour", `${hex(v, 3)} · R ${(v >> 6) & 7} G ${(v >> 3) & 7} B ${v & 7}`, "v"], ["Byte", `bank +${bank}, ${hex(inBank, 4)}${nib}`, "v"], ["File offset", "+" + plain(fo, 5), "m"]]
+  };
+}
+
+// ============================================================================================
+// View state and rendering
+// ============================================================================================
+const state = { file: 0, width: "wide", theme: "dark", view: "proposed", per: {} };
+const vs = () => (state.per[state.file] ??= { zoom: "fit", grid: false, blink: false, ink: 0, resolution: undefined, sel: null, pin: null, flashPhase: 0 });
+let flashTimer = null;
+
+const ICON = {
+  chev: '<svg class="i chev" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m6 9 6 6 6-6"/></svg>',
+  bytes: '<svg class="i" viewBox="0 0 24 24"><rect x="14" y="14" width="4" height="6" rx="2"/><rect x="6" y="4" width="4" height="6" rx="2"/><path d="M6 20h4M14 10h4M6 14h2v6M14 4h2v6"/></svg>',
+  save: '<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>',
+  copy: '<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  reveal: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+  grid: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+  zap: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  more: '<svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>',
+  warn: '<svg class="i" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>',
+  x: '<svg class="i" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+};
+
+function render() {
+  document.documentElement.dataset.theme = state.theme;
+  const file = FILES[state.file];
+  document.getElementById("tabName").textContent = file.name;
+  const wrap = document.getElementById("docwrap");
+  wrap.className = "docwrap" + (state.width === "narrow" ? " narrow" : "");
+  const info = readFile(file);
+  const v = vs();
+  if (info.resolutions && v.resolution === undefined) v.resolution = info.resolutions[0];
+  clearInterval(flashTimer); flashTimer = null;
+  if (state.view === "today") return renderToday(wrap, file, info, v);
+  renderProposed(wrap, file, info, v);
+}
+
+function sec(title, body, { meta = "", acts = "" } = {}) {
+  return `<div class="sec"><div class="sec-h">${ICON.chev}<span>${title}</span>${meta ? `<span class="meta">${meta}</span>` : ""}${acts ? `<span class="acts">${acts}</span>` : ""}</div>${body}</div>`;
+}
+const facts = (rows) => `<dl class="facts">${rows.map(([k, val, cls]) => `<dt>${k}</dt><dd class="${cls ?? ""}">${val}</dd>`).join("")}</dl>`;
+
+const ATTR_KINDS = ["scr", "shc"];
+const BLINK_TITLE = "FLASH makes the machine swap INK and PAPER in a cell about three times a second. The file only stores the FLASH bit; Blink shows the picture as it looks on the machine.";
+const SHR_TITLE = "Hi-res has one ink for the whole screen, set by port $FF (bits 3-5), not stored in the file; the paper is its complement.";
+const FORMAT_NAMES = { scr: ".scr", slr: ".slr", shc: ".shc", shr: ".shr" };
+const selLabel = (info, sel) => (sel === "flash" ? "FLASH cells" : ATTR_KINDS.includes(info.kind) ? `${sel > 7 ? "BRIGHT " : ""}${COLOUR_NAMES[sel & 7]}` : hex(sel, 2));
+
+function renderProposed(wrap, file, info, v) {
+  const res = v.resolution;
+  const blinkBtn = `<span class="seg wide-only" title="${BLINK_TITLE}"><button data-act="blink" class="${v.blink ? "on" : ""}">${ICON.zap}Blink FLASH</button></span>`;
+  // ---------- toolbar
+  let left = "";
+  if (info.error) left = `<span class="note">Not a screen file Klive can read</span>`;
+  else if (info.kind === "scr") {
+    left = `<span class="fmt">256×192</span><span class="note">ZX Spectrum screen</span><span class="vsep"></span>
+      <span class="seg wide-only"><button data-act="grid" class="${v.grid ? "on" : ""}">${ICON.grid}Grid</button></span>${blinkBtn}`;
+  } else if (info.kind === "shc") {
+    left = `<span class="fmt">256×192</span><span class="note">Timex hi-colour · 8×1 attributes</span><span class="vsep"></span>${blinkBtn}`;
+  } else if (info.kind === "shr") {
+    left = `<span class="fmt">512×192</span><span class="note">Timex hi-res</span><span class="vsep"></span>
+      <span class="lbl note" title="${SHR_TITLE}">Ink</span><span class="seg" title="${SHR_TITLE}">${[0, 1, 2, 3, 4, 5, 6, 7].map((i) => `<button data-ink="${i}" class="${v.ink === i ? "on" : ""}" style="padding:0 5px"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${SPECTRUM[i]};box-shadow:0 0 0 1px var(--border-strong)"></i></button>`).join("")}</span>`;
+  } else if (info.kind === "slr") {
+    left = `<span class="fmt">128×96</span><span class="note">LoRes · 8-bit · Next default ULA palette</span>`;
+  } else {
+    left = info.resolutions.length > 1
+      ? `<span class="seg" title="An 80K file is 320×256 (8-bit) or 640×256 (4-bit): the size cannot tell">${info.resolutions.map((r) => `<button data-res="${r}" class="${res === r ? "on" : ""}">${r === 1 ? "320×256" : "640×256"}</button>`).join("")}</span>`
+      : `<span class="fmt">256×192</span>`;
+    left += `<span class="note">Layer 2 · ${info.paletteFromFile ? "palette from the file" : "Next default palette"}</span><span class="vsep"></span>
+      <span class="seg wide-only"><button data-act="grid" class="${v.grid ? "on" : ""}">${ICON.grid}Banks</button></span>`;
+  }
+  if (v.sel !== null && !info.error) left += `<span class="seg"><button data-act="unsel" title="Stop highlighting">${ICON.x}Highlight: ${selLabel(info, v.sel)}</button></span>`;
+  const zooms = ["fit", 1, 2, 3, 4];
+  const right = info.error ? "" : `<span class="seg">${zooms.map((z) => `<button data-zoom="${z}" class="${v.zoom === z ? "on" : ""}">${z === "fit" ? "Fit" : z + "×"}</button>`).join("")}</span>
+    <button class="ibtn more" data-act="menu" title="More">${ICON.more}</button>`;
+
+  // ---------- inspector
+  const actions = `<button class="ibtn" title="Show bytes${v.pin ? " (at the pinned pixel)" : ""}">${ICON.bytes}</button><button class="ibtn" title="Save as PNG">${ICON.save}</button><button class="ibtn" title="Copy picture">${ICON.copy}</button>`;
+  let insp = sec("File", facts([["Name", file.name, "m"], ["Folder", `<span class="path">~/KliveProjects/demo/assets <button class="ibtn" title="Reveal in Finder" style="width:18px;height:18px">${ICON.reveal}</button></span>`], ["Size", num(file.bytes.length) + " bytes", "m"]]), { acts: actions });
+  if (info.header) {
+    const h = info.header;
+    const expected = info.kind === "l2" ? null : 0x4000;
+    insp += sec("Header", facts([["Kind", "PLUS3DOS, CODE"], ["Length", num(h.length) + " bytes", "m"], ["Load address", hex(h.start, 4), "v"], ["Checksum", '<span class="ok">● valid</span>']]) + (expected !== null && h.start !== expected ? `<div class="note-w">Loads at ${hex(h.start, 4)}, not at the screen ($4000).</div>` : ""), { meta: "128 bytes" });
+  }
+  if (info.error) {
+    // --- nothing more to say about a file that is not a picture
+  } else if (info.kind === "scr") {
+    insp += sec("Picture", facts([["Format", "ZX Spectrum screen"], ["Resolution", "256×192, 32×24 cells", "m"], ["Bytes", "6,144 pixels + 768 attributes", "m"], ["Colours", "48K palette (the file has none)"]]));
+    insp += sec("Colours", attrColours(Array.from(info.body.subarray(0x1800, 0x1b00)), v, "cells"), { meta: "click to highlight" });
+  } else if (info.kind === "shc") {
+    insp += sec("Picture", facts([["Format", "Timex hi-colour"], ["Resolution", "256×192, an attribute per 8×1 strip", "m"], ["Bytes", "6,144 pixels ($4000) + 6,144 attributes ($6000)", "m"], ["Colours", "48K palette (the file has none)"]]));
+    insp += sec("Colours", attrColours(Array.from(info.body.subarray(6144)), v, "strips"), { meta: "click to highlight" });
+  } else if (info.kind === "shr") {
+    insp += sec("Picture", facts([["Format", "Timex hi-res"], ["Resolution", "512×192, one colour pair", "m"], ["Bytes", "2 × 6,144: the left byte of each 16-pixel word at $4000, the right one at $6000", "m"], ["Colours", `INK ${v.ink} (${COLOUR_NAMES[v.ink]}) on PAPER ${7 - v.ink} (${COLOUR_NAMES[7 - v.ink]}), chosen in the toolbar: port $FF sets it on the machine`]]));
+  } else if (info.kind === "slr") {
+    const used = new Set(info.body);
+    insp += sec("Picture", facts([["Format", "LoRes"], ["Resolution", "128×96, 8-bit", "m"], ["Bytes", "2 × 6,144: rows 0-47 ($4000), rows 48-95 ($6000)", "m"], ["Palette", "Next default ULA palette (the file has none)"]]));
+    insp += sec("Palette", palGrid(info.palette, used, 16, v), { meta: "default" });
+  } else {
+    const banks = res === 0 ? 3 : 5;
+    insp += sec("Picture", facts([["Format", "Layer 2"], ["Resolution", res === 0 ? "256×192, 8-bit" : res === 1 ? "320×256, 8-bit" : "640×256, 4-bit", "m"], ["Layout", res === 0 ? "rows (row-major)" : "columns (column-major)"], ["Bytes", `${num(info.data.length)} in ${banks} × 16K banks`, "m"], ["Palette", info.paletteFromFile ? "from the file (512 bytes)" : "Next default (none in the file)"]]));
+    const used = new Set();
+    const w = res === 0 ? 256 : res === 1 ? 320 : 640, h = res === 0 ? 192 : 256;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) used.add(l2Index(info, res, x, y));
+    // --- a 4-bit picture can use one row only (its palette offset, 0 in a file): show that row
+    insp += sec("Palette", palGrid(info.palette, used, res === 2 ? 1 : 16, v), { meta: info.paletteFromFile ? "from the file" : "default" });
+  }
+  if (!info.error) insp += sec("Pixel", v.pin ? facts(probe(info, v, v.pin[0], v.pin[1]).facts) : `<div class="hint">Click the picture to pin a pixel.</div>`, { meta: v.pin ? "pinned" : "" });
+
+  // ---------- stage
+  const sizes = info.kind === "l2"
+    ? `<span class="sizes">49,152</span> or <span class="sizes">81,920</span> bytes, optionally after a 512-byte palette`
+    : `<span class="sizes">${num(FORMAT_SIZES[info.kind])}</span> bytes`;
+  const stage = info.error
+    ? `<div class="errcard"><h3>${ICON.warn}This file cannot be shown as a screen</h3>
+        <p>It is <span class="sizes">${num(info.size)} bytes</span> long. A <b>${FORMAT_NAMES[info.kind] ?? "Layer 2"}</b> file is ${sizes}, and either may follow a 128-byte PLUS3DOS header.</p>
+        <div><button class="btn">${ICON.bytes}Show bytes</button></div></div>`
+    : `<div class="pic" id="pic"><canvas class="img" id="img"></canvas><canvas class="ovl" id="ovl"></canvas></div>`;
+
+  wrap.innerHTML = `<div class="sfv" id="sfv">
+    <div class="bar">${left}<span class="spacer"></span>${right}</div>
+    <div class="body"><div class="stage" id="stage">${stage}</div><div class="insp">${insp}</div></div>
+    <div class="probe" id="probe"></div></div>`;
+
+  wire(wrap, info, v);
+  if (info.error) { document.getElementById("probe").innerHTML = `<span class="dim">No picture</span>`; return; }
+  drawPicture(info, v);
+  showProbe(info, v, null);
+  // --- the ULA swaps FLASH cells every 16 frames: 0.32 s
+  if (ATTR_KINDS.includes(info.kind) && v.blink) flashTimer = setInterval(() => { v.flashPhase ^= 1; drawPicture(info, v); }, 320);
+}
+
+/** The 16 colours of an attribute picture, with how many cells (or strips) use each */
+function attrColours(attrs, v, unit) {
+  const inkCount = new Array(16).fill(0), paperCount = new Array(16).fill(0);
+  let bright = 0, flash = 0;
+  for (const a of attrs) {
+    const b = (a & 0x40) >> 3;
+    inkCount[(a & 7) | b]++; paperCount[((a >> 3) & 7) | b]++;
+    if (a & 0x40) bright++;
+    if (a & 0x80) flash++;
+  }
+  const sw = SPECTRUM.map((c, i) => {
+    const n = inkCount[i] + paperCount[i];
+    return `<div class="s ${n ? "" : "unused"} ${v.sel === i ? "sel" : ""}" data-sel="${i}" style="background:${c}" title="${i < 8 ? "" : "BRIGHT "}${COLOUR_NAMES[i & 7]}: INK in ${inkCount[i]} ${unit}, PAPER in ${paperCount[i]}"><span>${n || ""}</span></div>`;
+  }).join("");
+  const flashCell = flash
+    ? `${num(flash)} <button class="linkbtn ${v.sel === "flash" ? "on" : ""}" data-sel="flash" title="Highlight the ${unit} that blink on the machine">${v.sel === "flash" ? "highlighted" : "highlight"}</button>`
+    : "none";
+  return `<div class="sw16">${sw}</div><div class="legend"><span>top: normal · bottom: BRIGHT · number: ${unit}</span></div>` +
+    facts([[`BRIGHT ${unit}`, num(bright), "m"], [`FLASH ${unit}`, flashCell, "m"]]);
+}
+
+/** A 16-wide palette grid of `rows` rows: used entries solid, unused hollow */
+function palGrid(palette, used, rows, v) {
+  let cells = "";
+  for (let r = 0; r < rows; r++) {
+    cells += `<span class="rl">${plain(r, 1)}</span>`;
+    for (let c = 0; c < 16; c++) {
+      const i = r * 16 + c, css = nineToCss(palette[i]);
+      cells += `<span class="c ${used.has(i) ? "" : "unused"} ${v.sel === i ? "sel" : ""}" data-sel="${i}" style="background:${css};--cc:${css}" title="${hex(i, 2)} = ${hex(palette[i], 3)}${used.has(i) ? "" : " (unused)"}"></span>`;
+    }
+  }
+  return `<div class="pal">${cells}</div><div class="legend"><span><i style="background:var(--text-3)"></i>used</span><span><i style="box-shadow:inset 0 0 0 1px var(--text-3)"></i>not used</span></div>` +
+    facts([["Indices used", `${used.size} of ${rows * 16}`, "m"]]);
+}
+
+let current = null;
+function drawPicture(info, v) {
+  const d = decode(info, v);
+  current = d;
+  const img = document.getElementById("img"), ovl = document.getElementById("ovl"), stage = document.getElementById("stage");
+  if (!img) return;
+  let z = v.zoom;
+  if (z === "fit") {
+    const sw = stage.clientWidth - 24, sh = stage.clientHeight - 24;
+    z = Math.max(1, Math.min(8, Math.floor(Math.min(sw / d.w, sh / (d.h * d.zoomY)))));
+  }
+  const zx = z, zy = z * d.zoomY;
+  img.width = d.w; img.height = d.h;
+  img.style.width = d.w * zx + "px"; img.style.height = d.h * zy + "px";
+  const rgba = new Uint8ClampedArray(d.rgba);
+  if (v.sel !== null) {
+    for (let p = 0; p < d.w * d.h; p++) {
+      const hit = v.sel === "flash" ? d.flash?.[p] === 1 : d.keys[p * 2] === v.sel || d.keys[p * 2 + 1] === v.sel;
+      if (!hit) { rgba[p * 4] *= 0.22; rgba[p * 4 + 1] *= 0.22; rgba[p * 4 + 2] *= 0.22; }
+    }
+  }
+  img.getContext("2d").putImageData(new ImageData(rgba, d.w, d.h), 0, 0);
+  ovl.width = d.w * zx; ovl.height = d.h * zy;
+  ovl._z = [zx, zy];
+  drawOverlay(info, v, null);
+}
+
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawOverlay(info, v, hover) {
+  const ovl = document.getElementById("ovl");
+  if (!ovl || !current) return;
+  const [zx, zy] = ovl._z, g = ovl.getContext("2d");
+  g.clearRect(0, 0, ovl.width, ovl.height);
+  if (info.kind === "scr" && v.grid) {
+    g.strokeStyle = "rgba(160,170,185,.45)"; g.lineWidth = 1; g.beginPath();
+    for (let x = 8; x < 256; x += 8) { g.moveTo(x * zx + 0.5, 0); g.lineTo(x * zx + 0.5, ovl.height); }
+    for (let y = 8; y < 192; y += 8) { g.moveTo(0, y * zy + 0.5); g.lineTo(ovl.width, y * zy + 0.5); }
+    g.stroke();
+  }
+  if (info.kind === "l2" && v.grid) {
+    const res = v.resolution;
+    g.strokeStyle = "rgba(160,170,185,.7)"; g.lineWidth = 1; g.font = "600 11px " + cssVar("--mono");
+    const n = res === 0 ? 3 : 5;
+    for (let b = 0; b < n; b++) {
+      let x0, y0, x1, y1;
+      if (res === 0) { x0 = 0; y0 = b * 64; x1 = 256; y1 = (b + 1) * 64; } else { const cw = res === 1 ? 64 : 128; x0 = b * cw; y0 = 0; x1 = (b + 1) * cw; y1 = 256; }
+      g.strokeRect(x0 * zx + 0.5, y0 * zy + 0.5, (x1 - x0) * zx - 1, (y1 - y0) * zy - 1);
+      const t = "+" + b; g.fillStyle = "rgba(20,21,23,.8)"; g.fillRect(x0 * zx + 3, y0 * zy + 3, g.measureText(t).width + 8, 16);
+      g.fillStyle = "#e4e6ea"; g.fillText(t, x0 * zx + 7, y0 * zy + 15);
+    }
+  }
+  if (hover) {
+    // --- the hover box is what the probe describes: the 8x8 cell, the 8x1 strip, or the pixel
+    g.strokeStyle = "rgba(255,255,255,.65)"; g.lineWidth = 1;
+    if (info.kind === "scr") g.strokeRect((hover[0] & ~7) * zx + 0.5, (hover[1] & ~7) * zy + 0.5, 8 * zx - 1, 8 * zy - 1);
+    else if (info.kind === "shc") g.strokeRect((hover[0] & ~7) * zx - 0.5, hover[1] * zy - 0.5, 8 * zx + 1, zy + 1);
+    else g.strokeRect(hover[0] * zx - 0.5, hover[1] * zy - 0.5, zx + 1, zy + 1);
+  }
+  if (v.pin) {
+    g.strokeStyle = cssVar("--accent"); g.lineWidth = 2;
+    g.strokeRect(v.pin[0] * zx - 2, v.pin[1] * zy - 2, zx + 4, zy + 4);
+  }
+}
+
+function showProbe(info, v, hover) {
+  const el = document.getElementById("probe");
+  const at = hover ?? v.pin;
+  if (!at) { el.innerHTML = `<span class="dim">Hover the picture to read a pixel; click to pin it.</span>`; return; }
+  const p = probe(info, v, at[0], at[1]);
+  el.innerHTML = (hover ? "" : `<span class="pin">● pinned</span> `) + p.line.map(([t, val, cls]) => (val === undefined ? t : `${t}<span class="${cls ?? ""}">${val}</span>`)).join("");
+}
+
+function toggle(v, a) {
+  if (a === "grid") v.grid = !v.grid;
+  if (a === "blink") { v.blink = !v.blink; v.flashPhase = 0; }
+}
+
+function wire(wrap, info, v) {
+  wrap.querySelectorAll("[data-zoom]").forEach((b) => (b.onclick = () => { v.zoom = b.dataset.zoom === "fit" ? "fit" : +b.dataset.zoom; render(); }));
+  wrap.querySelectorAll("[data-res]").forEach((b) => (b.onclick = () => { v.resolution = +b.dataset.res; v.pin = null; v.sel = null; render(); }));
+  wrap.querySelectorAll("[data-ink]").forEach((b) => (b.onclick = () => { v.ink = +b.dataset.ink; render(); }));
+  wrap.querySelectorAll("[data-sel]").forEach((b) => (b.onclick = () => { const s = b.dataset.sel === "flash" ? "flash" : +b.dataset.sel; v.sel = v.sel === s ? null : s; render(); }));
+  wrap.querySelectorAll("[data-act]").forEach((b) => (b.onclick = (e) => {
+    const a = b.dataset.act;
+    if (a === "unsel") v.sel = null;
+    if (a === "menu") { e.stopPropagation(); return openMenu(b, info, v); }
+    toggle(v, a);
+    render();
+  }));
+  const ovl = document.getElementById("ovl");
+  if (!ovl) return;
+  const at = (e) => { const [zx, zy] = ovl._z, r = ovl.getBoundingClientRect(); return [Math.min(current.w - 1, Math.floor((e.clientX - r.left) / zx)), Math.min(current.h - 1, Math.floor((e.clientY - r.top) / zy))]; };
+  ovl.onmousemove = (e) => { const p = at(e); drawOverlay(info, v, p); showProbe(info, v, p); };
+  ovl.onmouseleave = () => { drawOverlay(info, v, null); showProbe(info, v, null); };
+  ovl.onclick = (e) => { const p = at(e); v.pin = v.pin && v.pin[0] === p[0] && v.pin[1] === p[1] ? null : p; render(); };
+}
+
+function openMenu(btn, info, v) {
+  closeMenu();
+  const m = document.createElement("div");
+  m.className = "menu"; m.id = "menu";
+  const items = info.kind === "scr" ? [["Grid", "grid", v.grid], ["Blink FLASH", "blink", v.blink]]
+    : info.kind === "shc" ? [["Blink FLASH", "blink", v.blink]]
+    : info.kind === "l2" ? [["Banks", "grid", v.grid]] : [];
+  m.innerHTML = items.map(([t, a, on]) => `<div data-m="${a}" class="${on ? "on" : ""}">${t}</div>`).join("") + `<div>Show bytes</div><div>Save as PNG…</div><div>Copy picture</div>`;
+  const r = btn.getBoundingClientRect();
+  m.style.top = r.bottom + 4 + "px"; m.style.left = Math.max(8, r.right - 180) + "px";
+  document.body.appendChild(m);
+  m.querySelectorAll("[data-m]").forEach((d) => (d.onclick = () => { toggle(v, d.dataset.m); closeMenu(); render(); }));
+}
+function closeMenu() { document.getElementById("menu")?.remove(); }
+document.addEventListener("click", closeMenu);
+
+// ---------- today's viewers, as they look now
+function renderToday(wrap, file, info, v) {
+  if (["slr", "shc", "shr"].includes(file.kind)) {
+    wrap.innerHTML = `<div class="today"><div class="tbar" style="text-transform:uppercase;font-size:11px;font-weight:600;color:var(--text-2)">${FORMAT_NAMES[file.kind].toUpperCase()} file</div><div class="scroll" style="display:grid;place-items:center;color:var(--text-3)">This viewer is not implemented yet.</div></div>`;
+    return;
+  }
+  if (file.kind === "scr") {
+    if (info.error) { wrap.innerHTML = `<div class="today"><div class="err">Invalid file size (${info.size} bytes): an .SCR file is 6912 bytes long, optionally after a 128-byte PLUS3DOS header.</div></div>`; return; }
+    wrap.innerHTML = `<div class="today"><div class="hrow"><button class="ibtn" title="Show the screen's memory dump">${ICON.reveal}</button></div><div class="scroll"><canvas id="timg"></canvas></div></div>`;
+    paintToday(decode(info, { flashPhase: 0 }), 2, 2);
+    return;
+  }
+  const res = v.resolution;
+  const resCtl = info.resolutions.length > 1
+    ? `<span class="seg">${info.resolutions.map((r) => `<button data-res="${r}" class="${res === r ? "on" : ""}">${r === 1 ? "320×256" : "640×256"}</button>`).join("")}</span>`
+    : `<span style="font-family:var(--mono);color:var(--state-value)">256×192</span>`;
+  wrap.innerHTML = `<div class="today"><div class="tbar">${resCtl}<span style="color:var(--text-2)">${info.paletteFromFile ? "Palette from the file" : "Default palette"}</span><span style="flex:1"></span><span class="seg"><button>Banks</button></span><span class="seg"><button>1×</button><button class="on">2×</button><button>3×</button><button>4×</button></span></div><div class="scroll"><canvas id="timg"></canvas></div></div>`;
+  wrap.querySelectorAll("[data-res]").forEach((b) => (b.onclick = () => { v.resolution = +b.dataset.res; render(); }));
+  const d = decode(info, v);
+  paintToday(d, 2, 2 * d.zoomY);
+}
+function paintToday(d, zx, zy) {
+  const c = document.getElementById("timg");
+  c.width = d.w; c.height = d.h; c.style.width = d.w * zx + "px"; c.style.height = d.h * zy + "px";
+  c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(d.rgba), d.w, d.h), 0, 0);
+}
+
+// ---------- mockup bar
+const fSel = document.getElementById("mFile");
+FILES.forEach((f, i) => fSel.add(new Option(`${f.name} (${num(f.bytes.length)} bytes)`, i)));
+fSel.onchange = () => { state.file = +fSel.value; render(); };
+document.getElementById("mWidth").onchange = (e) => { state.width = e.target.value; render(); };
+document.getElementById("mTheme").onchange = (e) => { state.theme = e.target.value; render(); };
+document.getElementById("mView").onchange = (e) => { state.view = e.target.value; render(); };
+document.getElementById("cx").onclick = () => document.getElementById("callouts").remove();
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 80); });
+render();
+</script>
+</body>
+</html>

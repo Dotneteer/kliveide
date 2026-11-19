@@ -1,11 +1,6 @@
-import { constants, copyFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir, userInfo } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { CimHandler } from "@main/fat32/CimHandlers";
-
-import { createSession, MATRIX_KEYS, NEXT_EXTRA_KEYS, ULA_COLORS, type ExtraKey, type MatrixKey, type NextKey, type NextTestSession } from "../../harness/zxnext";
+import { bootNextZxos, createSession, MATRIX_KEYS, NEXT_EXTRA_KEYS, ULA_COLORS, type ExtraKey, type MatrixKey, type NextKey, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The keyboard (catalogue KEY-001 - KEY-006, KEY-008; KEY-007 needs the joystick input of §4.32).
@@ -198,27 +193,8 @@ describe("keyboard", () => {
 });
 
 // ---------------------------------------------------------------------------------------------------
-// KEY-006 The ROM's keyboard scan, through NextZXOS
+// KEY-006 The ROM's keyboard scan, through NextZXOS (booted from the 2.08 base card, `bootNextZxos`)
 // ---------------------------------------------------------------------------------------------------
-
-const CARD = process.env.KLIVE_SD_CARD ?? join(userInfo().homedir, "Klive", "ks2.cim");
-
-/** Boots NextZXOS from a clone of the card (as SPI-009) and runs until the menu is up. */
-async function bootNextZxos(dir: string): Promise<{ s: NextTestSession; close: () => void }> {
-  const path = join(dir, "ks2.cim");
-  copyFileSync(CARD, path, constants.COPYFILE_FICLONE);
-  const handler = new CimHandler(path);
-  const info = handler.cimInfo;
-  const s = await createSession();
-  s.setRtcTime({ year: 26, month: 9, date: 19, day: 7, hours: 10, minutes: 0, seconds: 0 });
-  s.attachSdCard({
-    totalSectors: (info.maxSize * 2048) / info.sectorSize,
-    readSector: (i) => handler.readSector(i),
-    writeSector: (i, d) => handler.writeSector(i, d)
-  });
-  await s.runFramesAsync(250);
-  return { s, close: () => handler.close() };
-}
 
 /** Holds a key for 4 frames and gives the ROM 4 frames with it released (its scan runs every frame). */
 async function tap(s: NextTestSession, ...keys: NextKey[]): Promise<void> {
@@ -232,33 +208,28 @@ async function type(s: NextTestSession, text: string): Promise<void> {
   for (const c of text) await tap(s, c === " " ? "SPACE" : (c as NextKey));
 }
 
-describe.skipIf(!existsSync(CARD))("KEY-006: the ROM reads the keyboard (NextZXOS)", () => {
+describe("KEY-006: the ROM reads the keyboard (NextZXOS)", () => {
   it("the menu takes DOWN and ENTER; NextBASIC takes a typed BORDER and POKE", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "klive-key006-"));
+    const { s, close } = await bootNextZxos({ year: 26, month: 9, date: 19, day: 7, hours: 10, minutes: 0, seconds: 0 });
     try {
-      const { s, close } = await bootNextZxos(dir);
-      try {
-        // --- DOWN twice (an extra key: CAPS + 6 in the matrix) from Browser to NextBASIC
-        await tap(s, "DOWN");
-        await tap(s, "DOWN");
-        await tap(s, "ENTER");
-        await s.runFramesAsync(100);
-        // --- The comma is the extra "," key (SYM + N)
-        await type(s, "POKE 40000");
-        await tap(s, ",");
-        await type(s, "42");
-        await tap(s, "ENTER");
-        await s.runFramesAsync(50);
-        expect(s.peek(40000), "POKE 40000,42").toBe(42);
-        await type(s, "BORDER 2");
-        await tap(s, "ENTER");
-        await s.runFramesAsync(50);
-        expect(s.pixel(8, 8), "a red border").toBe(ULA_COLORS[2]);
-      } finally {
-        close();
-      }
+      // --- DOWN twice (an extra key: CAPS + 6 in the matrix) from Browser to NextBASIC
+      await tap(s, "DOWN");
+      await tap(s, "DOWN");
+      await tap(s, "ENTER");
+      await s.runFramesAsync(100);
+      // --- The comma is the extra "," key (SYM + N)
+      await type(s, "POKE 40000");
+      await tap(s, ",");
+      await type(s, "42");
+      await tap(s, "ENTER");
+      await s.runFramesAsync(50);
+      expect(s.peek(40000), "POKE 40000,42").toBe(42);
+      await type(s, "BORDER 2");
+      await tap(s, "ENTER");
+      await s.runFramesAsync(50);
+      expect(s.pixel(8, 8), "a red border").toBe(ULA_COLORS[2]);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      close();
     }
   }, 300_000);
 });
