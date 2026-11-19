@@ -14,6 +14,7 @@ import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zx
 import type { NextInterruptEvents, NextInterruptState } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
+import type { NextDmaBus } from "@common/zxnext/dma/dmaBus";
 import type { DmaStepMode } from "@common/zxnext/dma/dmaStops";
 
 /**
@@ -73,6 +74,15 @@ export interface IZxNextIdeMachine {
 
   /** Forgets every recorded DMA port access. */
   clearDmaLog(): void;
+
+  /** The DMA Bus Timeline's holds written since `since` (all held ones by default), oldest first (§13). */
+  getDmaBus(since?: number): NextDmaBus;
+
+  /** Switches the DMA Bus Timeline's recording on or off. Never changes the machine. */
+  setDmaBusRecording(enabled: boolean): void;
+
+  /** Forgets every recorded bus hold. */
+  clearDmaBus(): void;
 
   /** Arms (or cancels) a DMA step: the next debug run stops after one byte, at the block's end, or when the DMA lets go of the bus (§12.3). */
   requestDmaStep(mode: DmaStepMode | undefined): void;

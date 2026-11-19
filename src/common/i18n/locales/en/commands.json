@@ -1913,6 +1913,14 @@
   "@commands.dma.hideLogDescription": {
     "context": "Description of the 'hide-dma-log' IDE command."
   },
+  "commands.dma.showTimelineDescription": "Opens the ZX Spectrum Next DMA Bus Timeline, which records when the DMA holds the bus while it is open",
+  "@commands.dma.showTimelineDescription": {
+    "context": "Description of the 'show-dma-timeline' IDE command."
+  },
+  "commands.dma.hideTimelineDescription": "Closes the ZX Spectrum Next DMA Bus Timeline, which stops its recording",
+  "@commands.dma.hideTimelineDescription": {
+    "context": "Description of the 'hide-dma-timeline' IDE command."
+  },
   "commands.dma.stepRunningNormal": "Pause the machine or start it in debug mode before stepping the DMA",
   "@commands.dma.stepRunningNormal": {
     "context": "Error of the step-dma commands while the machine runs without the debugger."

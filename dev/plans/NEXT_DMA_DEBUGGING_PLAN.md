@@ -1,7 +1,7 @@
 # ZX Spectrum Next DMA Debugging Plan
 
-Status: **Phases 1-3 shipped** (PRs #1664-#1666). **Phase 4, DMA stops and stepping, implemented, in review**
-(2026-11-19, branch `dma-stops`; §12). This plan
+Status: **Phases 1-4 shipped** (PRs #1664-#1667). **Phase 5, the bus timeline, implemented, in review**
+(2026-11-19, branch `dma-bus-timeline`; §13). This plan
 details **Phase 1, the DMA side bar panel**; the later tools are listed in §8 and get their own phases
 here after Phase 1 is reviewed. §9 records what was built where it differs from the text below, and the
 answers taken for §5.
@@ -560,3 +560,74 @@ paused and the DMA is active or holds the bus.
   `requestDmaStep`); `MachineController`'s stop line; `bp-set dma:`; the dialog's **DMA event** type; the
   Breakpoints panel's **DMA events** group; `step-dma`, `step-dma-block`, `step-dma-release` and the DMA
   panel's buttons; tests `test/wasm/zxNext/wasm-next-dma-stop.test.ts`, `test/commands/DmaStopCommands.test.ts`.
+
+## 13. Phase 5: the DMA Bus Timeline
+
+Mockup tool 3 (§8's item 5). A document that shows who held the bus, frame by frame: how much of each
+frame the DMA took, how a paced transfer spaces its bytes, and which frame interrupts a long hold
+swallowed.
+
+### 13.1 What the core records: holds, not bytes
+
+A **hold** is one stretch with the bus acknowledged to the DMA. A burst transfer with a prescaler makes
+one hold a byte; a continuous copy makes one hold for the whole block. Recording holds rather than bytes
+keeps the ring useful at 28 MHz (a continuous copy moves up to ~90,000 bytes a frame) and still gives
+burst pacing byte by byte, since there each hold is one byte.
+
+A ring of 32K 16-byte records in `zxnext-dma.c`, recording only while the document is open:
+
+| Offset | Field |
+|---|---|
+| +0 u32 | frame the hold (part) started in |
+| +4 u32 | position in that frame, 28 MHz clocks |
+| +8 u32 | duration, 28 MHz clocks |
+| +12 u16 | bytes moved during the hold (part) |
+| +14 u8 | flags: bit 0 continues into the next frame, bit 1 continued from the previous one, bit 2 a pulse-mode interrupt began and ended during it (lost), bits 5-4 CPU speed |
+| +15 u8 | reserved |
+
+`zxnextCpuRunDma` opens a hold when the bus is acknowledged and closes it when it is released (burst
+wait, end of block, stepping aside); at a frame end inside a hold it writes the part so far, flagged
+"continues", and the next part starts at the frame boundary. A lost interrupt is a pulse (`intPulseOn`,
+pulse mode) seen active and then inactive while the hold lasts.
+
+### 13.2 The document
+
+**DMA Bus Timeline** (`$dmaTimeline`), `show-dma-timeline`/`hide-dma-timeline`, Debug › DMA Bus Timeline,
+and a link in the DMA panel:
+
+- An **overview**: one bar per held frame, the DMA's share of the frame, a marker on frames with a lost
+  interrupt; click a frame to select it.
+- A **detail** of the selected frame to scale: the DMA's holds on one lane, the CPU's running time on
+  the other, a lost interrupt marked where its hold began; zoom ×1/×16/×128 around the first hold or a
+  clicked point.
+- **Statistics** for the selected frame: holds, bytes, the DMA's bus time and share, and for paced
+  transfers the byte period (min-max, from consecutive one-byte holds) in CPU T-states.
+
+### 13.3 Done when
+
+- Harness tests: a continuous copy is one hold of 6 T-states a byte; a burst transfer at P = 55 is one
+  hold a byte, 226 T-states apart; a hold crossing a frame end is two parts flagged both ways; a 16K copy
+  at 3.5 MHz in pulse mode flags the frame interrupt it swallows; nothing is recorded while off;
+  recording leaves the machine byte-identical.
+- Unit tests for the timeline model (per-frame share, periods, lost frames).
+- A guide section with a generated screenshot; checked in the running app.
+
+### 13.4 As built (2026-11-19)
+
+- **A lost interrupt is a pulse that begins inside the hold.** The frame interrupt's pulse in pulse mode is
+  not an event: the CPU works it out from the raster when it samples /INT (`zxnextUlaPulseActiveAt`), so
+  the hold tracker asks the same question (`zxnextCpuPulseIntLow`) after every DMA step and counts a pulse
+  only when it sees /INT high, then low, then high again within the hold. A hold that began during a pulse
+  does not count it; the part of a hold that goes on from the previous frame starts as "high seen".
+- **The measured byte period is a little longer than the exact one**: the sample player in the running
+  app spaced its bytes 226-234 T-states apart (233.9 on average) against the formula's 223, because the
+  DMA gets the bus back only at the end of the CPU's machine cycle (`JR` is 12 T-states in three).
+- **The overview scales to the largest share** (at least 10%).
+- **Recording follows the shown document**, as the Port Log's and the Interrupt Timeline's do: only the
+  active document is mounted, so opening another one stops the recording.
+- Files: `zxnext-dma.c` (`zxnextDmaBus*`), `zxnext-cpu.c` (`zxnextCpuRunDma`, `zxnextCpuPulseIntLow`),
+  `build-zxnext-wasm.cjs`, `exportContract.ts`; `src/common/zxnext/dma/dmaBus.ts`; machine, `EmuApi`,
+  `MainToEmuProcessor`, harness `recordDmaBus`/`dmaBus`; `DocumentPanels/DmaBusTimeline/`;
+  `show-dma-timeline`/`hide-dma-timeline`; Debug › DMA Bus Timeline; the DMA panel's link;
+  `--*-dmabus-*` aliases; tests `test/zxnext-hw/dma/dma-bus-timeline.test.ts`, `test/renderer/dmaBus.test.ts`;
+  the DMA guide's section and screenshot (`guides-dma` recipe).

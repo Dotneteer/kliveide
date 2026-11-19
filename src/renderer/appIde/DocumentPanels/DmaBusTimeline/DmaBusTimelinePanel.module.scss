@@ -1,0 +1,132 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The DMA Bus Timeline document (NEXT_DMA_DEBUGGING_PLAN §13.2). The DMA is the state panels' value
+ * colour (the DMA panel's progress bar); the CPU's running time a wash of the second accent, its held
+ * time the neutral hover surface; a lost interrupt the error hue. Every SVG colour is a class, never a
+ * literal (`--*-dmabus-*` aliases).
+ */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+
+.title {
+  color: var(--data-secondary);
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.detail {
+  cursor: zoom-in;
+}
+
+.axis {
+  stroke: var(--border-subtle);
+}
+
+.axisText {
+  fill: var(--data-secondary);
+  font-size: 11px;
+}
+
+.laneLabel {
+  fill: var(--text-secondary);
+  font-size: 12px;
+}
+
+.hit {
+  fill: transparent;
+}
+
+.overviewBar {
+  cursor: pointer;
+
+  &:hover .hit {
+    fill: var(--surface-hover);
+  }
+}
+
+.selectedFrame.selectedFrame {
+  fill: var(--surface-selected);
+}
+
+.dmaBar,
+.dmaHold {
+  fill: var(--color-dmabus-dma);
+}
+
+.cpuRuns {
+  fill: var(--color-dmabus-cpu);
+}
+
+.cpuHeld {
+  fill: var(--color-dmabus-held);
+}
+
+.lost {
+  fill: var(--color-dmabus-lost);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22ch, 1fr));
+  gap: var(--space-1) var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  color: var(--data-secondary);
+}
+
+.statValue {
+  color: var(--color-state-value);
+}
+
+.statWarn.statWarn {
+  color: var(--color-dmabus-lost);
+}
+
+.held {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.segment {
+  border: none;
+  background: none;
+  padding: 0 1ch;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  @include focus-ring;
+}
+
+.segmentOn.segmentOn {
+  background-color: var(--accent-subtle);
+  color: var(--text-primary);
+}

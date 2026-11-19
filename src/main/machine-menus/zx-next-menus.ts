@@ -899,7 +899,9 @@ export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   // --- The Interrupt Timeline (`dev/plans/NEXT_INTERRUPTS_DEBUGGING_PLAN.md` §4.2): opening it starts recording
   { id: "show_interrupt_timeline", label: t("menu.next.interruptTimeline"), click: ideCommand("show-int-timeline") },
   // --- The DMA Port Log (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §11.3): opening it starts recording
-  { id: "show_dma_port_log", label: t("menu.next.dmaPortLog"), click: ideCommand("show-dma-log") }
+  { id: "show_dma_port_log", label: t("menu.next.dmaPortLog"), click: ideCommand("show-dma-log") },
+  // --- The DMA Bus Timeline (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §13.2): opening it starts recording
+  { id: "show_dma_bus_timeline", label: t("menu.next.dmaBusTimeline"), click: ideCommand("show-dma-timeline") }
 ];
 
 /**

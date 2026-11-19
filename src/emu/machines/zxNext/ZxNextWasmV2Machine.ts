@@ -43,6 +43,7 @@ import {
 } from "@common/zxnext/interrupts/interruptState";
 import { decodeDmaState, type NextDmaState } from "@common/zxnext/dma/dmaState";
 import type { NextDmaLog } from "@common/zxnext/dma/dmaLog";
+import type { NextDmaBus } from "@common/zxnext/dma/dmaBus";
 import {
   buildDmaWatch,
   decodeDmaHit,
@@ -2197,6 +2198,34 @@ export class ZxNextWasmV2Machine
     const count = ex.zxnextDmaLogGetCount() >>> 0;
     const { firstSeq, records } = copyRingRecords(runtime.dmaLog, capacity, count, since ?? 0);
     return { enabled: ex.zxnextDmaLogGetEnabled() !== 0, capacity, count, firstSeq, records };
+  }
+
+  /** The DMA Bus Timeline's holds written since `since` (all held ones by default), oldest first (§13.1) */
+  getDmaBus(since?: number): NextDmaBus {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const capacity = ex.zxnextDmaBusGetCapacity();
+    const count = ex.zxnextDmaBusGetCount() >>> 0;
+    const { firstSeq, records } = copyRingRecords(runtime.dmaBus, capacity, count, since ?? 0);
+    return {
+      enabled: ex.zxnextDmaBusGetEnabled() !== 0,
+      capacity,
+      count,
+      firstSeq,
+      records,
+      currentFrame: ex.zxnextGetFrames() >>> 0,
+      tactsInFrame: ex.zxnextGetTactsInFrame()
+    };
+  }
+
+  /** Switches the DMA Bus Timeline's recording on or off */
+  setDmaBusRecording(enabled: boolean): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaBusSetEnabled(enabled ? 1 : 0);
+  }
+
+  /** Forgets every recorded bus hold */
+  clearDmaBus(): void {
+    this.requireWasmV2Runtime().exports.zxnextDmaBusClear();
   }
 
   /** Switches the DMA Port Log's recording on or off */

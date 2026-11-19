@@ -88,6 +88,8 @@ import { HideInterruptTimelineCommand, ShowInterruptTimelineCommand } from "./co
 import {
   DmaStateCommand,
   HideDmaLogCommand,
+  HideDmaTimelineCommand,
+  ShowDmaTimelineCommand,
   ShowDmaLogCommand,
   StepDmaBlockCommand,
   StepDmaCommand,
@@ -243,6 +245,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DmaStateCommand());
   cmdSrv.registerCommand(new ShowDmaLogCommand());
   cmdSrv.registerCommand(new HideDmaLogCommand());
+  cmdSrv.registerCommand(new ShowDmaTimelineCommand());
+  cmdSrv.registerCommand(new HideDmaTimelineCommand());
   cmdSrv.registerCommand(new StepDmaCommand());
   cmdSrv.registerCommand(new StepDmaBlockCommand());
   cmdSrv.registerCommand(new StepDmaReleaseCommand());

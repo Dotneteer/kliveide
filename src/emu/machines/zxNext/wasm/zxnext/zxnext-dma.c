@@ -238,6 +238,62 @@ static void zxnextDmaWatchEnable(void) {
   if (dmaStartsSinceLoad) zxnextDmaHit(ZXNEXT_DMAW_PROBLEM, ZXNEXT_DMAP_NO_LOAD, 0u, 0u, 0u);
 }
 
+/*
+ * The DMA Bus Timeline's ring (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §13.1): one record per hold of
+ * the bus (a stretch with the bus acknowledged to the DMA), written when the hold ends, and at a frame
+ * end inside a hold for the part so far. Recording only while `zxnextDmaBusEnabled` is set; every static
+ * here is volatile, and nothing here changes the machine. A record is 16 bytes:
+ *   +0 u32 frame   +4 u32 position in the frame (28 MHz)   +8 u32 duration (28 MHz)
+ *   +12 u16 bytes moved   +14 u8 flags (ZXNEXT_DMABUSF_*, bits 5-4 the CPU speed)   +15 reserved
+ */
+#define ZXNEXT_DMABUS_CAPACITY 32768u
+#define ZXNEXT_DMABUS_RECORD_SIZE 16u
+#define ZXNEXT_DMABUSF_CONTINUES 0x01u
+#define ZXNEXT_DMABUSF_CONTINUED 0x02u
+#define ZXNEXT_DMABUSF_INT_LOST 0x04u
+static uint8_t zxnextDmaBus[ZXNEXT_DMABUS_CAPACITY * ZXNEXT_DMABUS_RECORD_SIZE];
+static uint32_t zxnextDmaBusCount;
+static uint8_t zxnextDmaBusEnabled;
+static uint8_t zxnextDmaBusOpen;
+static uint8_t zxnextDmaBusFlags;
+static uint8_t zxnextDmaBusContinued;
+static uint8_t zxnextDmaBusPulseSeen;
+static uint32_t zxnextDmaBusFrame;
+static uint32_t zxnextDmaBusPos;
+static uint64_t zxnextDmaBusStart;
+static uint32_t zxnextDmaBusBytes;
+
+/* Opens a hold: the bus was just acknowledged to the DMA */
+static void zxnextDmaBusOpenHold(uint64_t now) {
+  zxnextDmaBusOpen = 1u;
+  zxnextDmaBusFrame = frames;
+  zxnextDmaBusPos = frameTacts28;
+  zxnextDmaBusStart = now;
+  zxnextDmaBusBytes = 0u;
+  zxnextDmaBusFlags = zxnextDmaBusContinued ? ZXNEXT_DMABUSF_CONTINUED : 0u;
+  zxnextDmaBusContinued = 0u;
+  /* A hold that went on from the previous frame saw /INT high there: its next pulse counts */
+  zxnextDmaBusPulseSeen = (zxnextDmaBusFlags & ZXNEXT_DMABUSF_CONTINUED) ? 1u : 0u;
+}
+
+/* Writes the open hold's record; `continues`: a frame end cut it, the next part starts the next frame */
+static void zxnextDmaBusCloseHold(uint64_t now, uint32_t continues) {
+  uint8_t *r = &zxnextDmaBus[(zxnextDmaBusCount % ZXNEXT_DMABUS_CAPACITY) * ZXNEXT_DMABUS_RECORD_SIZE];
+  const uint32_t f = zxnextDmaBusFrame;
+  const uint32_t p = zxnextDmaBusPos;
+  const uint32_t d = (uint32_t)(now - zxnextDmaBusStart);
+  const uint32_t flags = zxnextDmaBusFlags | (continues ? ZXNEXT_DMABUSF_CONTINUES : 0u) |
+    ((uint32_t)(cpuEffectiveSpeed & 0x03u) << 4);
+  r[0] = (uint8_t)f; r[1] = (uint8_t)(f >> 8); r[2] = (uint8_t)(f >> 16); r[3] = (uint8_t)(f >> 24);
+  r[4] = (uint8_t)p; r[5] = (uint8_t)(p >> 8); r[6] = (uint8_t)(p >> 16); r[7] = (uint8_t)(p >> 24);
+  r[8] = (uint8_t)d; r[9] = (uint8_t)(d >> 8); r[10] = (uint8_t)(d >> 16); r[11] = (uint8_t)(d >> 24);
+  r[12] = (uint8_t)zxnextDmaBusBytes; r[13] = (uint8_t)(zxnextDmaBusBytes >> 8);
+  r[14] = (uint8_t)flags; r[15] = 0u;
+  zxnextDmaBusCount++;
+  zxnextDmaBusOpen = 0u;
+  zxnextDmaBusContinued = continues ? 1u : 0u;
+}
+
 /* The note an enable latches */
 static inline void zxnextDmaLatchEnableNote(void) {
   dmaEnableNote = (uint8_t)((dmaStartsSinceLoad ? 0x01u : 0u) | (dmaEndOfBlockN ? 0u : 0x02u));
@@ -731,6 +787,18 @@ uint32_t zxnextTakeDmaHit(void) {
   return hit;
 }
 
+/* The DMA Bus Timeline's exports (§13.1) */
+uint32_t zxnextDmaBusPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaBus; }
+uint32_t zxnextDmaBusGetCapacity(void) { return ZXNEXT_DMABUS_CAPACITY; }
+uint32_t zxnextDmaBusGetCount(void) { return zxnextDmaBusCount; }
+void zxnextDmaBusSetEnabled(uint32_t enabled) {
+  zxnextDmaBusEnabled = enabled ? 1u : 0u;
+  zxnextDmaBusOpen = 0u;
+  zxnextDmaBusContinued = 0u;
+}
+uint32_t zxnextDmaBusGetEnabled(void) { return zxnextDmaBusEnabled; }
+void zxnextDmaBusClear(void) { zxnextDmaBusCount = 0u; }
+
 /* The DMA Port Log's exports (§11.1) */
 uint32_t zxnextDmaLogPtr(void) { return (uint32_t)(uintptr_t)zxnextDmaLog; }
 uint32_t zxnextDmaLogGetCapacity(void) { return ZXNEXT_DMALOG_CAPACITY; }
@@ -924,6 +992,7 @@ static uint32_t zxnextDmaTransferByte(void) {
 #endif
   dmaAtLeastOne = 1;
   if (zxnextDmaWatchKinds) zxnextDmaWatchByte(destIo, writtenAt);
+  if (zxnextDmaBusOpen) zxnextDmaBusBytes++;
 
   // --- TRANSFERING_WRITE_4, the byte's last clock (`clocks - 1`, READ_1 being clock 0). READ_1 zeroes
   // --- the timer and every later clock adds `scale`, so a clock j sees (j - 1) x scale (dma.vhd ~245-255)

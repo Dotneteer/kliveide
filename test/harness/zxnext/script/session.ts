@@ -15,6 +15,7 @@ import {
 } from "@common/zxnext/interrupts/interruptState";
 import type { NextDmaState } from "@common/zxnext/dma/dmaState";
 import { decodeDmaLog, type DmaLogRecord } from "@common/zxnext/dma/dmaLog";
+import { decodeDmaBus, type DmaBusHold } from "@common/zxnext/dma/dmaBus";
 import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
   CopperState,
@@ -1280,6 +1281,21 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return decodeDmaLog(m.getDmaLog());
+  }
+
+  /** Switches the DMA Bus Timeline's ring on or off, as its document does (NEXT_DMA_DEBUGGING_PLAN §13.1). */
+  recordDmaBus(on: boolean): this {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    m.setDmaBusRecording(on);
+    return this;
+  }
+
+  /** The DMA Bus Timeline's holds held now, oldest first, decoded. Empty unless `recordDmaBus(true)` ran. */
+  dmaBus(): DmaBusHold[] {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return decodeDmaBus(m.getDmaBus());
   }
 
   /** Switches the interrupt event ring on or off, as the Interrupt Timeline document does (§4.1). */

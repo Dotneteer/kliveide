@@ -2,7 +2,7 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
-import { DMA_LOG_PANEL_ID } from "@common/state/common-ids";
+import { DMA_LOG_PANEL_ID, DMA_TIMELINE_PANEL_ID } from "@common/state/common-ids";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
 import { buildDmaModel } from "@renderer/features/dma/dmaViewModel";
 import { formatDmaState } from "@renderer/features/dma/dmaText";
@@ -129,4 +129,40 @@ export class StepDmaReleaseCommand extends DmaStepCommandBase {
   readonly usage = "step-dma-release";
   protected readonly mode = "release" as const;
   protected readonly stepping = "commands.dma.steppingRelease" as const;
+}
+
+/** `show-dma-timeline`: opens the DMA Bus Timeline document, which records while it is open (§13.2). */
+export class ShowDmaTimelineCommand extends IdeCommandBase {
+  readonly id = "show-dma-timeline";
+  get description() {
+    return t("commands.dma.showTimelineDescription");
+  }
+  readonly usage = "show-dma-timeline";
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
+    if (machineId !== MI_ZXNEXT) return commandError(t("commands.dma.nextOnly"));
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    if (documentHubService.isOpen(DMA_TIMELINE_PANEL_ID)) {
+      await documentHubService.setActiveDocument(DMA_TIMELINE_PANEL_ID);
+    } else {
+      await documentHubService.openDocument(createSpecialDocument(DMA_TIMELINE_PANEL_ID), undefined, false);
+    }
+    return commandSuccess;
+  }
+}
+
+/** `hide-dma-timeline`: closes the DMA Bus Timeline document, which stops its recording. */
+export class HideDmaTimelineCommand extends IdeCommandBase {
+  readonly id = "hide-dma-timeline";
+  get description() {
+    return t("commands.dma.hideTimelineDescription");
+  }
+  readonly usage = "hide-dma-timeline";
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(DMA_TIMELINE_PANEL_ID);
+    return commandSuccess;
+  }
 }
