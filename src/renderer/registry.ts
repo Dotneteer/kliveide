@@ -210,6 +210,7 @@ import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { CopperPanel } from "./appIde/SideBarPanels/CopperPanel";
 import { InterruptsPanel } from "./appIde/SideBarPanels/InterruptsPanel";
+import { DmaPanel } from "./appIde/SideBarPanels/DmaPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
 import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
@@ -420,6 +421,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: InterruptsPanel,
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.interrupts" }),
+  withTexts({
+    // --- The Next's DMA at a pause (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §3), below the interrupts
+    id: "nextDmaPanel",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: DmaPanel,
+    restrictTo: [MI_ZXNEXT]
+  }, { title: "panels.sideBar.dma" }),
   withTexts({
     // --- The Testing activity's first panel (`dev/plans/Z80_UNIT_TESTS_PLAN.md` D13)
     id: "unitTestsPanel",

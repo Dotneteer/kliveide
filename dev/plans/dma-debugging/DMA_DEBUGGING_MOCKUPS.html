@@ -1,0 +1,725 @@
+<title>DMA Debugging Tools</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a proposal page; each tool is a short brief beside (or above) a to-scale mockup of the
+   panel in Klive's own dark theme tokens (neutral ramp, Sinclair Blue accent, the article's DMA orange). */
+:root {
+  --page: #0f1012;
+  --canvas: #141517;
+  --chrome: #1b1d21;
+  --panel: #17191c;
+  --raised: #202329;
+  --hover: #24272e;
+  --border: #2e3238;
+  --border-subtle: #24272b;
+  --text: #e4e6ea;
+  --text-2: #949aa4;
+  --text-3: #7f8690;
+  --accent: #45a5e6;
+  --accent-2: #939cf0;
+  --dma: #e8912d;
+  --cpu: #5b9bf8;
+  --warn: #e5a03a;
+  --danger: #e5484d;
+  --ok: #30a46c;
+  --dma-wash: rgba(232, 145, 45, 0.16);
+  --cpu-wash: rgba(91, 155, 248, 0.16);
+  --accent-wash: rgba(69, 165, 230, 0.14);
+  --warn-wash: rgba(229, 160, 58, 0.12);
+  --danger-wash: rgba(229, 72, 77, 0.13);
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --page: #eceef1; --canvas: #ffffff; --chrome: #f1f2f4; --panel: #f7f8f9; --raised: #ffffff;
+    --hover: #e8eaee; --border: #d5d8dd; --border-subtle: #e5e7ea; --text: #1b1d21; --text-2: #565c66;
+    --text-3: #6b717b; --accent: #0a6fb8; --accent-2: #0a18b8; --dma: #b4610f; --cpu: #2563eb;
+    --warn: #9a5b00; --danger: #c62828; --ok: #1f7a4a;
+    --dma-wash: rgba(180, 97, 15, 0.13); --cpu-wash: rgba(37, 99, 235, 0.11);
+    --accent-wash: rgba(10, 111, 184, 0.10); --warn-wash: rgba(154, 91, 0, 0.10);
+    --danger-wash: rgba(198, 40, 40, 0.09);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --page: #eceef1; --canvas: #ffffff; --chrome: #f1f2f4; --panel: #f7f8f9; --raised: #ffffff;
+  --hover: #e8eaee; --border: #d5d8dd; --border-subtle: #e5e7ea; --text: #1b1d21; --text-2: #565c66;
+  --text-3: #6b717b; --accent: #0a6fb8; --accent-2: #0a18b8; --dma: #b4610f; --cpu: #2563eb;
+  --warn: #9a5b00; --danger: #c62828; --ok: #1f7a4a;
+  --dma-wash: rgba(180, 97, 15, 0.13); --cpu-wash: rgba(37, 99, 235, 0.11);
+  --accent-wash: rgba(10, 111, 184, 0.10); --warn-wash: rgba(154, 91, 0, 0.10);
+  --danger-wash: rgba(198, 40, 40, 0.09);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--page); color: var(--text); font-family: var(--font-body); font-size: 15px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
+h1, h2, h3 { font-family: var(--font-head); text-wrap: balance; margin: 0; }
+h1 { font-size: 2.4rem; line-height: 1.1; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; line-height: 1.2; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+a { color: var(--accent); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dma); }
+
+/* --- Header ----------------------------------------------------------------------------------- */
+header { display: flex; flex-direction: column; gap: 16px; }
+header .lede { font-size: 1.08rem; color: var(--text-2); max-width: 72ch; }
+.today { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+.today div { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; background: var(--canvas); font-size: 0.9rem; color: var(--text-2); }
+.today b { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.toc a { font-size: 0.85rem; text-decoration: none; color: var(--text); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; background: var(--canvas); }
+.toc a:hover, .toc a:focus-visible { border-color: var(--accent); outline: none; }
+.toc a span { font-family: var(--font-mono); color: var(--dma); margin-right: 6px; }
+
+/* --- Tool sections ---------------------------------------------------------------------------- */
+section.tool { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+.tool-head { display: flex; flex-direction: column; gap: 8px; }
+.brief { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.brief > div { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.brief h4 { margin: 0; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); font-weight: 600; }
+.brief ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 0.92rem; display: flex; flex-direction: column; gap: 4px; }
+.brief li b { color: var(--text); font-weight: 600; }
+.split { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.split > * { min-width: 0; }
+@media (max-width: 860px) { .brief, .split { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- IDE chrome used by every mockup ---------------------------------------------------------- */
+.ide { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 12.5px; line-height: 1.45; box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
+.scroll { overflow-x: auto; }
+.ide-title { display: flex; align-items: center; gap: 8px; background: var(--chrome); border-bottom: 1px solid var(--border); padding: 6px 10px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); font-weight: 600; }
+.ide-title .grow { flex: 1; }
+.tabs { display: flex; background: var(--chrome); border-bottom: 1px solid var(--border); font-size: 12px; }
+.tabs span { padding: 7px 14px; color: var(--text-3); border-right: 1px solid var(--border-subtle); white-space: nowrap; }
+.tabs span.on { color: var(--text); background: var(--panel); box-shadow: inset 0 2px 0 var(--accent); }
+.pill { font-family: var(--font-mono); font-size: 10.5px; padding: 1px 7px; border-radius: 999px; letter-spacing: 0.02em; text-transform: none; font-weight: 500; white-space: nowrap; }
+.pill.run { background: var(--dma-wash); color: var(--dma); border: 1px solid var(--dma); }
+.pill.ok { color: var(--ok); border: 1px solid var(--ok); }
+.pill.warn { background: var(--warn-wash); color: var(--warn); border: 1px solid var(--warn); }
+.pill.bad { background: var(--danger-wash); color: var(--danger); border: 1px solid var(--danger); }
+.pill.dim { color: var(--text-3); border: 1px solid var(--border); }
+.iconbtn { font-family: var(--font-body); font-size: 11.5px; color: var(--text); background: var(--raised); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; text-transform: none; letter-spacing: 0; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.iconbtn:hover, .iconbtn:focus-visible { border-color: var(--accent); outline: none; }
+
+/* Data rows in the DMA panel */
+.grp { border-bottom: 1px solid var(--border-subtle); }
+.grp-h { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--raised); color: var(--text-2); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.grp-h .grow { flex: 1; }
+.row { display: flex; gap: 8px; padding: 2px 10px; align-items: baseline; }
+.row:hover { background: var(--hover); }
+.lbl { width: 13ch; flex: none; color: var(--text-2); }
+.val { font-family: var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.sec { color: var(--text-3); font-size: 11.5px; }
+.ports { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ports th { text-align: left; font-weight: 500; color: var(--text-2); padding: 2px 10px; font-size: 11.5px; }
+.ports th.col { color: var(--text-3); font-weight: 600; }
+.ports td { font-family: var(--font-mono); color: var(--accent); padding: 2px 10px; }
+.ports td.changed { color: var(--accent-2); }
+.bar { height: 6px; border-radius: 3px; background: var(--hover); overflow: hidden; flex: 1; align-self: center; }
+.bar i { display: block; height: 100%; width: 59.2%; background: var(--dma); }
+.bits { display: inline-flex; gap: 2px; }
+.bits b { font-family: var(--font-mono); font-weight: 500; width: 2.1ch; text-align: center; border: 1px solid var(--border); border-radius: 2px; color: var(--text-3); font-size: 11px; }
+.bits b.fix { color: var(--text-3); background: var(--chrome); }
+.bits b.live { color: var(--dma); border-color: var(--dma); background: var(--dma-wash); }
+.seq { display: flex; flex-wrap: wrap; gap: 3px; }
+.seq span { font-family: var(--font-mono); font-size: 10.5px; padding: 0 5px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-2); }
+.seq span.next { border-color: var(--accent); color: var(--accent); }
+.note { margin: 6px 10px; padding: 6px 8px; border-radius: 4px; font-size: 11.5px; border-left: 3px solid; }
+.note.warn { background: var(--warn-wash); border-color: var(--warn); color: var(--text); }
+.note.bad { background: var(--danger-wash); border-color: var(--danger); color: var(--text); }
+.note b { font-weight: 600; }
+.panel-tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--panel); }
+
+/* Tables (log, transfers, breakpoints) */
+table.grid { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 760px; }
+table.grid th { position: sticky; top: 0; background: var(--chrome); text-align: left; font-weight: 600; font-size: 11px; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 10px; border-bottom: 1px solid var(--border); }
+table.grid td { padding: 2px 10px; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+table.grid td.m { font-family: var(--font-mono); }
+table.grid td.v { font-family: var(--font-mono); color: var(--accent); }
+table.grid td.base { font-family: var(--font-mono); color: var(--dma); font-weight: 700; }
+table.grid td.fol { font-family: var(--font-mono); color: var(--text-2); padding-left: 22px; }
+table.grid td.desc { white-space: normal; color: var(--text); }
+table.grid td.desc .sec { margin-left: 6px; }
+table.grid tr.setup td { background: var(--raised); color: var(--text-2); font-size: 11.5px; padding: 5px 10px; }
+table.grid tr.setup b { color: var(--text); }
+table.grid tr.sel td { background: var(--accent-wash); }
+table.grid tr.bad td { background: var(--danger-wash); }
+table.grid tr.dim td { color: var(--text-3); }
+.wr { display: inline-block; min-width: 3.4ch; font-family: var(--font-mono); font-size: 11px; color: var(--dma); border: 1px solid var(--dma); border-radius: 3px; padding: 0 4px; text-align: center; }
+.wr.cmd { color: var(--accent-2); border-color: var(--accent-2); }
+.wr.rd { color: var(--cpu); border-color: var(--cpu); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--border); background: var(--panel); font-size: 12px; color: var(--text-2); }
+.chip { border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; color: var(--text-2); font-size: 11.5px; }
+.chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset: 2px; }
+
+/* Timeline */
+.tl-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-top: 1px solid var(--border); }
+.tl-stats div { padding: 8px 12px; border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 1px; }
+.tl-stats span { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); }
+.tl-stats b { font-family: var(--font-mono); font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+.tl-stats b.warn { color: var(--warn); }
+svg text { font-family: var(--font-mono); }
+
+/* Memory overlay */
+.mem { font-family: var(--font-mono); font-size: 12px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 560px; }
+.mem .r { display: flex; gap: 8px; }
+.mem .a { color: var(--text-3); width: 6ch; }
+.mem .b { display: flex; gap: 2px; }
+.mem .b span { width: 2.6ch; text-align: center; border-radius: 2px; color: var(--text-2); }
+.mem .b span.rd { background: var(--dma-wash); color: var(--text); }
+.mem .b span.nx { outline: 2px solid var(--dma); color: var(--dma); font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 6px 10px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-2); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 5px; }
+
+/* Editor */
+.code { font-family: var(--font-mono); font-size: 12.5px; padding: 10px 0; line-height: 1.6; min-width: 640px; position: relative; }
+.code .ln { display: flex; }
+.code .no { width: 5ch; text-align: right; padding-right: 14px; color: var(--text-3); flex: none; }
+.code .lens { color: var(--text-3); font-size: 11px; padding-left: 5ch; margin-left: 14px; font-family: var(--font-body); }
+.code .lens a { color: var(--text-3); text-decoration: underline dotted; }
+.k { color: #c792ea; } .n { color: #f78c6c; } .c { color: #6a9955; } .l { color: #dcdcaa; } .s { color: var(--text); }
+:root[data-theme="light"] .k { color: #7b30d0; } :root[data-theme="light"] .n { color: #b5470b; } :root[data-theme="light"] .c { color: #3d7a2a; } :root[data-theme="light"] .l { color: #795e26; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .k { color: #7b30d0; } :root:not([data-theme="dark"]) .n { color: #b5470b; } :root:not([data-theme="dark"]) .c { color: #3d7a2a; } :root:not([data-theme="dark"]) .l { color: #795e26; } }
+.squig { text-decoration: underline wavy var(--warn); text-underline-offset: 3px; }
+.hover-card { position: absolute; left: 300px; top: 92px; width: 380px; background: var(--raised); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); font-family: var(--font-body); font-size: 12px; z-index: 2; }
+.hover-card .hc-h { padding: 6px 10px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.hover-card table { width: 100%; border-collapse: collapse; }
+.hover-card td { padding: 1px 10px; font-family: var(--font-mono); font-size: 11.5px; }
+.hover-card td:first-child { color: var(--dma); width: 8ch; }
+.hover-card .hc-f { padding: 6px 10px; border-top: 1px solid var(--border); color: var(--text-2); }
+.problems { border-top: 1px solid var(--border); font-size: 12px; }
+.problems div { padding: 3px 12px; display: flex; gap: 8px; }
+.problems .w { color: var(--warn); font-weight: 700; }
+
+/* Debug toolbar + breakpoints */
+.dbg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px; background: var(--chrome); border-bottom: 1px solid var(--border); }
+.dbg .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.dbg .iconbtn.dma { border-color: var(--dma); color: var(--dma); }
+.stopbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 7px 10px; background: var(--dma-wash); border-bottom: 1px solid var(--border); font-size: 12px; }
+.bp { display: flex; gap: 8px; align-items: center; padding: 4px 10px; border-bottom: 1px solid var(--border-subtle); }
+.bp .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); flex: none; }
+.bp .dot.off { background: transparent; border: 1.5px solid var(--text-3); }
+.bp .kind { font-family: var(--font-mono); font-size: 10.5px; color: var(--dma); border: 1px solid var(--dma); padding: 0 5px; border-radius: 3px; flex: none; }
+.bp .txt { flex: 1; min-width: 0; }
+.bp .hits { font-family: var(--font-mono); color: var(--text-3); font-size: 11px; }
+.bp.hit { background: var(--dma-wash); }
+.addbp { padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px; }
+.addbp label { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; }
+
+/* Console */
+.term { font-family: var(--font-mono); font-size: 12.5px; padding: 10px 12px; background: var(--canvas); white-space: pre; line-height: 1.55; min-width: 600px; color: var(--text-2); }
+.term .p { color: var(--accent); } .term .o { color: var(--text); } .term .d { color: var(--dma); }
+
+/* Priority table */
+table.plan { width: 100%; border-collapse: collapse; min-width: 720px; font-size: 14px; }
+table.plan th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+table.plan td { padding: 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; color: var(--text-2); }
+table.plan td:first-child { font-family: var(--font-mono); color: var(--dma); }
+table.plan td b { color: var(--text); font-weight: 600; }
+.size { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--border); border-radius: 3px; padding: 0 6px; color: var(--text); }
+.callout { border: 1px solid var(--border); border-left: 3px solid var(--dma); background: var(--canvas); border-radius: 6px; padding: 14px 16px; color: var(--text-2); font-size: 0.93rem; display: flex; flex-direction: column; gap: 6px; }
+.callout b { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Proposal · ZX Spectrum Next · zxnDMA and zxnDDMA</div>
+  <h1>DMA Debugging Tools</h1>
+  <p class="lede">Seven tools for seeing what the courier does: what it was told, what it actually holds, who owns the bus and when, and where the bytes went. Each one is aimed at a trap described in <a href="https://kliveide.net/en/under-the-hood/emulator-internals/next-dma/">DMA: One Bus, Two Masters</a>. The mockups use Klive's dark theme and an example run of that chapter's sample player: 2,048 bytes from <code>$C000</code> to the Specdrum DAC on port <code>$DF</code>, burst mode, prescaler 55.</p>
+  <div class="today">
+    <div><b>What Klive has today</b>DMA program regions decoded in the disassembly (<code>decode: "dma"</code>), the pure decoder <code>src/common/zxnext/dma/dmaDecoder.ts</code>, and port and NextReg breakpoints that report a DMA hit.</div>
+    <div><b>What is missing</b>No view of the DMA's live registers, no record of what was written to <code>$6B</code>/<code>$0B</code>, no picture of bus ownership, and no way to stop on a DMA event or step it.</div>
+    <div><b>What the core already holds</b>Every field these mockups show is a static in <code>zxnext-dma.c</code> (start and working addresses, counter, sequencer, prescaler, read sequence, zxnDDMA state). EmuApi exposes none of it yet.</div>
+  </div>
+  <nav class="toc" aria-label="Tools">
+    <a href="#panel"><span>1</span>DMA panel</a>
+    <a href="#log"><span>2</span>Port write log</a>
+    <a href="#timeline"><span>3</span>Bus timeline</a>
+    <a href="#transfers"><span>4</span>Transfers and memory</a>
+    <a href="#breakpoints"><span>5</span>Breakpoints and stepping</a>
+    <a href="#editor"><span>6</span>Editor support</a>
+    <a href="#console"><span>7</span>Console commands</a>
+    <a href="#order"><span>→</span>Suggested order</a>
+  </nav>
+</header>
+
+<!-- 1 ======================================================================================== -->
+<section class="tool" id="panel">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 1 · side-bar panel</div>
+    <h2>DMA panel: what the courier holds right now</h2>
+  </div>
+  <div class="split">
+    <div class="ide" role="img" aria-label="Mockup of the DMA side-bar panel during a burst transfer">
+      <div class="ide-title"><span class="grow">DMA</span><span class="pill run">running · burst</span></div>
+      <div class="panel-tools">
+        <button class="iconbtn" type="button">Step byte</button>
+        <button class="iconbtn" type="button">To end of block</button>
+        <button class="iconbtn" type="button">Show in memory</button>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">Transfer</span></div>
+        <div class="row"><span class="lbl">Dialect</span><span class="val">zxnDMA</span><span class="sec">port $6B, N bytes</span></div>
+        <div class="row"><span class="lbl">State</span><span class="val">waiting</span><span class="sec">prescaler, bus free</span></div>
+        <div class="row"><span class="lbl">Mode</span><span class="val">burst</span><span class="sec">WR4 $CD</span></div>
+        <div class="row"><span class="lbl">Direction</span><span class="val">A → B</span></div>
+        <div class="row"><span class="lbl">Progress</span><span class="val">1,213 / 2,048</span><span class="bar"><i></i></span></div>
+        <div class="row"><span class="lbl">Auto restart</span><span class="val">off</span><span class="sec">WR5 $82</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">Ports</span><span class="sec" style="text-transform:none;letter-spacing:0;font-weight:400">start ≠ working is normal mid-block</span></div>
+        <div class="scroll">
+        <table class="ports">
+          <tr><th></th><th class="col">Port A</th><th class="col">Port B</th></tr>
+          <tr><th>Start</th><td>$C000</td><td>$00DF</td></tr>
+          <tr><th>Working</th><td class="changed">$C4BD</td><td>$00DF</td></tr>
+          <tr><th>Kind</th><td>memory</td><td>I/O</td></tr>
+          <tr><th>Step</th><td>up</td><td>fixed</td></tr>
+          <tr><th>Cycle</th><td>3 clk</td><td>3 clk</td></tr>
+        </table>
+        </div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">Pacing</span></div>
+        <div class="row"><span class="lbl">Prescaler</span><span class="val">55</span><span class="sec">port B, burst</span></div>
+        <div class="row"><span class="lbl">Nominal</span><span class="val">15,909 Hz</span><span class="sec">875 kHz ÷ P</span></div>
+        <div class="row"><span class="lbl">Exact</span><span class="val">223 T</span><span class="sec">4 × P + 3 → 15,695 Hz</span></div>
+        <div class="row"><span class="lbl">Measured</span><span class="val">226.4 T</span><span class="sec">last 64 bytes, ±3 T jitter</span></div>
+        <div class="row"><span class="lbl">CPU keeps</span><span class="val">94.7 %</span><span class="sec">of its time</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">Status and read-back</span></div>
+        <div class="row"><span class="lbl">Status</span><span class="val">$3B</span>
+          <span class="bits" aria-label="bits 0 0 E 1 1 0 1 T"><b class="fix">0</b><b class="fix">0</b><b class="live" title="E: end of block not reached">1</b><b class="fix">1</b><b class="fix">1</b><b class="fix">0</b><b class="fix">1</b><b class="live" title="T: a byte moved">1</b></span></div>
+        <div class="row"><span class="lbl"></span><span class="sec">E = 1 block not finished · T = 1 under way</span></div>
+        <div class="row"><span class="lbl">Read mask</span><span class="val">$7F</span></div>
+        <div class="row"><span class="lbl">Next read</span>
+          <span class="seq"><span class="next">status</span><span>cnt lo</span><span>cnt hi</span><span>A lo</span><span>A hi</span><span>B lo</span><span>B hi</span></span></div>
+        <div class="row"><span class="lbl">Decoder</span><span class="val">ready</span><span class="sec">expects a base byte</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">Steps aside for</span></div>
+        <div class="row"><span class="lbl">$CC–$CE</span><span class="val">none</span><span class="sec">interrupts wait for the block end</span></div>
+      </div>
+      <div class="grp">
+        <div class="grp-h"><span class="grow">zxnDDMA</span><span class="pill dim">core 3.03 · off</span></div>
+        <div class="row"><span class="lbl">Flags $DF</span><span class="val">$00</span><span class="sec">physical, 2D, transparent, fill: off</span></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <div class="brief">
+        <div>
+          <h4>Answers</h4>
+          <ul>
+            <li><b>Which dialect am I in?</b> The last port touched decides N or N + 1 bytes.</li>
+            <li><b>Start or working address?</b> Both, side by side. The working one changes colour once it moves away from the start.</li>
+            <li><b>What will this prescaler sound like?</b> Nominal rate, the exact <code>4 × P + 3</code> period, and the measured period with its jitter.</li>
+            <li><b>What will the next <code>IN</code> return?</b> The read-sequence pointer and mask.</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Catches</h4>
+          <ul>
+            <li>Enable without <code>$CF</code></li>
+            <li>A half-written register group (the decoder's follower count)</li>
+            <li>WR4 bit 4: deaf until reset</li>
+            <li>Auto restart in continuous mode</li>
+            <li>zxnDDMA settings left on by an earlier transfer</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ide" role="img" aria-label="Mockup of the DMA panel's warnings">
+        <div class="ide-title"><span class="grow">DMA · warnings in other states</span></div>
+        <div class="note bad"><b>The CPU will not get the bus back.</b> Auto restart in continuous mode. Only a reset, or an interrupt enabled in NextRegs $CC–$CE, ends it.</div>
+        <div class="note bad"><b>Deaf until reset.</b> WR4 $91 asked for an interrupt control byte and gave no port B address. The DMA ignores every byte from here.</div>
+        <div class="note warn"><b>Enabled without a load.</b> $87 came after a WR0 at PC $8031 but no $CF. The transfer uses the working addresses $C800 and $00DF from the last block.</div>
+        <div class="note warn"><b>Expecting 2 more bytes for WR0</b> (length low, length high). The next byte you write is taken as a follower, whatever it is.</div>
+        <div class="note warn"><b>Prescaler in continuous mode.</b> The DMA keeps the bus while it waits: about 6.5 frames with the CPU frozen for this block.</div>
+        <div class="note warn"><b>Physical mode is still on.</b> $DF $01 from transfer #27 stays until the next $DF or $C3.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ======================================================================================== -->
+<section class="tool" id="log">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 2 · document panel</div>
+    <h2>Port write log: what the program actually told the DMA</h2>
+    <p>Every write to and read from <code>$6B</code> and <code>$0B</code>, with the frame, T-state and the PC of the instruction that did it, decoded by the existing <code>dmaDecoder.ts</code>. Bytes are grouped into setups (a run of writes ending in an enable), so a swallowed follower or an ignored byte shows up where it happened, not later as a wrong transfer.</p>
+  </div>
+  <div class="ide">
+    <div class="tabs"><span>main.kz80</span><span class="on">DMA Port Writes</span><span>Memory</span></div>
+    <div class="filters">
+      <span class="chip on">All</span><span class="chip">Writes</span><span class="chip">Reads</span><span class="chip">Anomalies (1)</span>
+      <span style="flex:1"></span>
+      <label><input type="checkbox" id="grp-setups" checked> Group into setups</label>
+      <button class="iconbtn" type="button">Clear</button>
+      <span class="pill run">recording</span>
+    </div>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr><th>Frame</th><th>T-state</th><th>PC</th><th>Port</th><th>Byte</th><th>Group</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr class="setup"><td colspan="7"><b>Setup 14</b> · 16 bytes by OTIR at <span class="link">$8007 main.kz80:5</span> · zxnDMA · starts transfer <span class="link">#31</span></td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,206</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$83</td><td><span class="wr cmd">WR6</span></td><td class="desc">disable</td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,227</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$7D</td><td><span class="wr">WR0</span></td><td class="desc">A → B<span class="sec">port A lo, hi and length lo, hi follow</span></td></tr>
+        <tr><td></td><td class="m">41,248</td><td></td><td></td><td class="fol">$00</td><td></td><td class="desc"><span class="sec">port A</span> <span class="val mono">$C000</span></td></tr>
+        <tr><td></td><td class="m">41,269</td><td></td><td></td><td class="fol">$C0</td><td></td><td class="desc"></td></tr>
+        <tr><td></td><td class="m">41,290</td><td></td><td></td><td class="fol">$00</td><td></td><td class="desc"><span class="sec">length</span> <span class="val mono">2,048</span><span class="sec">moves 2,048 bytes in zxnDMA mode</span></td></tr>
+        <tr><td></td><td class="m">41,311</td><td></td><td></td><td class="fol">$08</td><td></td><td class="desc"></td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,332</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$14</td><td><span class="wr">WR1</span></td><td class="desc">port A: memory, up</td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,353</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$68</td><td><span class="wr">WR2</span></td><td class="desc">port B: I/O, fixed<span class="sec">timing byte follows</span></td></tr>
+        <tr><td></td><td class="m">41,374</td><td></td><td></td><td class="fol">$21</td><td></td><td class="desc"><span class="sec">timing</span> 3 clocks<span class="sec">prescaler follows</span></td></tr>
+        <tr><td></td><td class="m">41,395</td><td></td><td></td><td class="fol">$37</td><td></td><td class="desc"><span class="sec">prescaler</span> <span class="val mono">55</span><span class="sec">223 T a byte, 15,695 Hz</span></td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,416</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$CD</td><td><span class="wr">WR4</span></td><td class="desc">burst<span class="sec">port B lo, hi follow</span></td></tr>
+        <tr><td></td><td class="m">41,437</td><td></td><td></td><td class="fol">$DF</td><td></td><td class="desc"><span class="sec">port B</span> <span class="val mono">$00DF</span><span class="sec">Specdrum DAC</span></td></tr>
+        <tr><td></td><td class="m">41,458</td><td></td><td></td><td class="fol">$00</td><td></td><td class="desc"></td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,479</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$82</td><td><span class="wr">WR5</span></td><td class="desc">stop at end of block</td></tr>
+        <tr><td class="m">1,203</td><td class="m">41,500</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$CF</td><td><span class="wr cmd">WR6</span></td><td class="desc">load<span class="sec">source $C000, destination $00DF, counter 0</span></td></tr>
+        <tr class="sel"><td class="m">1,203</td><td class="m">41,516</td><td class="m">$8007</td><td class="m">$6B</td><td class="base">$87</td><td><span class="wr cmd">WR6</span></td><td class="desc">enable → <span class="link">transfer #31</span><span class="sec">first byte at 41,525</span></td></tr>
+        <tr><td class="m">1,203</td><td class="m">52,140</td><td class="m">$8152</td><td class="m">$6B</td><td class="base">$BF</td><td><span class="wr cmd">WR6</span></td><td class="desc">read status next</td></tr>
+        <tr><td class="m">1,203</td><td class="m">52,151</td><td class="m">$8154</td><td class="m">$6B</td><td class="m" style="color:var(--cpu)">$3B</td><td><span class="wr rd">IN</span></td><td class="desc">status: under way, block not finished</td></tr>
+        <tr class="setup"><td colspan="7"><b>Setup 15</b> · 3 bytes by OUT at <span class="link">$8210 fx.kz80:31</span> · <span style="color:var(--danger)">DMA left deaf</span></td></tr>
+        <tr><td class="m">1,204</td><td class="m">3,010</td><td class="m">$8210</td><td class="m">$6B</td><td class="base">$C3</td><td><span class="wr cmd">WR6</span></td><td class="desc">reset</td></tr>
+        <tr class="bad"><td class="m">1,204</td><td class="m">3,031</td><td class="m">$8214</td><td class="m">$6B</td><td class="base">$91</td><td><span class="wr">WR4</span></td><td class="desc">⚠ bit 4 set without port B address: waits for an interrupt control byte it never takes. Deaf until reset.</td></tr>
+        <tr class="dim"><td class="m">1,204</td><td class="m">3,052</td><td class="m">$8218</td><td class="m">$6B</td><td class="m">$87</td><td><span class="wr cmd">—</span></td><td class="desc">ignored (DMA deaf)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="brief">
+    <div><h4>Data from the core</h4><ul><li>A ring buffer of DMA port accesses: frame, tact, PC, port, value, direction, and the sequencer state after the byte (<code>dmaWrSeq</code>).</li><li>Recording on only while the panel is open or a DMA breakpoint is set, so normal runs cost nothing.</li></ul></div>
+    <div><h4>Interaction</h4><ul><li>Click a PC to open the source line; click a transfer to open it in tool 4.</li><li>"Copy as <code>.defb</code>" turns a setup into source, decoded comments included.</li></ul></div>
+  </div>
+</section>
+
+<!-- 3 ======================================================================================== -->
+<section class="tool" id="timeline">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 3 · document panel</div>
+    <h2>Bus timeline: who held the bus, and for how long</h2>
+    <p>The chapter's timing figures, drawn from the running machine. The overview shows the DMA's share of each frame and flags lost pulse-mode interrupts; the detail view is to scale in T-states, one row for the DMA and one for the CPU, with the grant wait in red.</p>
+  </div>
+  <div class="ide">
+    <div class="tabs"><span>DMA Port Writes</span><span class="on">Bus Timeline</span></div>
+    <div class="filters">
+      <span>Frames 1,197–1,204</span><span style="flex:1"></span>
+      <span class="chip on">Bus share</span><span class="chip">Bytes</span><span class="chip">Interrupts</span>
+      <button class="iconbtn" type="button">Follow live</button>
+    </div>
+    <div class="scroll">
+      <svg viewBox="0 0 760 124" style="width:100%;min-width:640px;display:block" role="img" aria-label="Bar chart of the DMA's share of the bus for eight frames: 0, 100, 39, 35, 0, 0, 5.3 and 5.3 percent. Frame 1,199 has a lost frame interrupt.">
+        <text x="12" y="20" font-size="11" fill="var(--text-3)">DMA share of each frame</text>
+        <line x1="120" y1="92" x2="750" y2="92" stroke="var(--border)" />
+        <line x1="120" y1="32" x2="750" y2="32" stroke="var(--border-subtle)" stroke-dasharray="3 4" />
+        <text x="112" y="36" font-size="10" fill="var(--text-3)" text-anchor="end">100%</text>
+        <text x="112" y="95" font-size="10" fill="var(--text-3)" text-anchor="end">0%</text>
+        <g font-size="10.5">
+          <rect x="130" y="91" width="58" height="1" fill="var(--dma)" /><text x="159" y="86" text-anchor="middle" fill="var(--text-3)">0</text><text x="159" y="108" text-anchor="middle" fill="var(--text-2)">1,197</text>
+          <rect x="208" y="32" width="58" height="60" fill="var(--dma)" fill-opacity="0.75" /><text x="237" y="27" text-anchor="middle" fill="var(--dma)">100</text><text x="237" y="108" text-anchor="middle" fill="var(--text-2)">1,198</text>
+          <rect x="286" y="68.6" width="58" height="23.4" fill="var(--dma)" fill-opacity="0.75" /><text x="315" y="63" text-anchor="middle" fill="var(--dma)">39</text><text x="315" y="108" text-anchor="middle" fill="var(--text-2)">1,199</text>
+          <rect x="364" y="71" width="58" height="21" fill="var(--dma)" fill-opacity="0.75" /><text x="393" y="66" text-anchor="middle" fill="var(--dma)">35</text><text x="393" y="108" text-anchor="middle" fill="var(--text-2)">1,200</text>
+          <rect x="442" y="91" width="58" height="1" fill="var(--dma)" /><text x="471" y="86" text-anchor="middle" fill="var(--text-3)">0</text><text x="471" y="108" text-anchor="middle" fill="var(--text-2)">1,201</text>
+          <rect x="520" y="91" width="58" height="1" fill="var(--dma)" /><text x="549" y="86" text-anchor="middle" fill="var(--text-3)">0</text><text x="549" y="108" text-anchor="middle" fill="var(--text-2)">1,202</text>
+          <rect x="598" y="88.8" width="58" height="3.2" fill="var(--dma)" /><text x="627" y="83" text-anchor="middle" fill="var(--dma)">5.3</text><text x="627" y="108" text-anchor="middle" fill="var(--text-2)">1,203</text>
+          <rect x="676" y="88.8" width="58" height="3.2" fill="var(--dma)" stroke="var(--accent)" stroke-width="1.5" /><text x="705" y="83" text-anchor="middle" fill="var(--dma)">5.3</text><text x="705" y="108" text-anchor="middle" fill="var(--accent)">1,204</text>
+        </g>
+        <path d="M315,46 L315,40" stroke="var(--danger)" stroke-width="1.5" />
+        <circle cx="315" cy="44" r="0" />
+        <text x="352" y="48" font-size="10.5" fill="var(--danger)">⚠ frame INT lost (pulse mode, bus held)</text>
+        <path d="M349,45 L322,45" stroke="var(--danger)" stroke-width="1.2" />
+        <text x="12" y="122" font-size="10" fill="var(--text-3)">frame</text>
+      </svg>
+    </div>
+    <div class="scroll" style="border-top:1px solid var(--border)">
+      <svg viewBox="0 0 760 186" style="width:100%;min-width:640px;display:block" role="img" aria-label="Detail of frame 1,204 to scale, T-states minus 20 to 480 after byte 1,212. Three DMA bytes of 6 T-states start at 0, 226 and 452, each preceded by a 3 T-state grant wait on the CPU row and followed by about 3 T-states of handover. Between them the DMA waits for the prescaler with the bus free and the CPU runs. The machine is paused at T-state 300.">
+        <text x="12" y="20" font-size="11" fill="var(--text-3)">frame 1,204 · T-states after byte #1,212</text>
+        <g font-size="10" fill="var(--text-3)" text-anchor="middle">
+          <line x1="154.8" y1="26" x2="154.8" y2="32" stroke="var(--text-3)" /><text x="154.8" y="24">0</text>
+          <line x1="216.8" y1="26" x2="216.8" y2="32" stroke="var(--text-3)" /><text x="216.8" y="24">50</text>
+          <line x1="278.8" y1="26" x2="278.8" y2="32" stroke="var(--text-3)" /><text x="278.8" y="24">100</text>
+          <line x1="340.8" y1="26" x2="340.8" y2="32" stroke="var(--text-3)" /><text x="340.8" y="24">150</text>
+          <line x1="402.8" y1="26" x2="402.8" y2="32" stroke="var(--text-3)" /><text x="402.8" y="24">200</text>
+          <line x1="464.8" y1="26" x2="464.8" y2="32" stroke="var(--text-3)" /><text x="464.8" y="24">250</text>
+          <line x1="526.8" y1="26" x2="526.8" y2="32" stroke="var(--text-3)" /><text x="526.8" y="24">300</text>
+          <line x1="588.8" y1="26" x2="588.8" y2="32" stroke="var(--text-3)" /><text x="588.8" y="24">350</text>
+          <line x1="650.8" y1="26" x2="650.8" y2="32" stroke="var(--text-3)" /><text x="650.8" y="24">400</text>
+          <line x1="712.8" y1="26" x2="712.8" y2="32" stroke="var(--text-3)" /><text x="712.8" y="24">450</text>
+        </g>
+        <text x="12" y="62" font-size="12" fill="var(--dma)" font-weight="700">DMA</text>
+        <text x="12" y="112" font-size="12" fill="var(--cpu)" font-weight="700">CPU</text>
+        <!-- DMA bytes: 6 T each -->
+        <rect x="154.8" y="44" width="7.44" height="28" fill="var(--dma)" />
+        <rect x="435.04" y="44" width="7.44" height="28" fill="var(--dma)" />
+        <rect x="715.28" y="44" width="7.44" height="28" fill="var(--dma)" />
+        <g font-size="10" fill="var(--dma)"><text x="158.5" y="40" text-anchor="middle">#1,213</text><text x="438.8" y="40" text-anchor="middle">#1,214</text><text x="719" y="40" text-anchor="middle">#1,215</text></g>
+        <!-- prescaler waits, bus free -->
+        <rect x="162.24" y="44" width="269.08" height="28" fill="none" stroke="var(--dma)" stroke-dasharray="5 4" />
+        <text x="296.8" y="62" font-size="10.5" text-anchor="middle" fill="var(--dma)">prescaler wait · bus free</text>
+        <rect x="442.48" y="44" width="269.08" height="28" fill="none" stroke="var(--dma)" stroke-dasharray="5 4" />
+        <text x="577" y="62" font-size="10.5" text-anchor="middle" fill="var(--dma)">prescaler wait</text>
+        <!-- CPU row -->
+        <rect x="130" y="94" width="21.08" height="28" fill="var(--cpu)" fill-opacity="0.18" stroke="var(--cpu)" />
+        <rect x="151.08" y="94" width="3.72" height="28" fill="var(--danger)" fill-opacity="0.5" />
+        <rect x="154.8" y="94" width="11.16" height="28" fill="var(--text-3)" fill-opacity="0.35" />
+        <rect x="165.96" y="94" width="265.36" height="28" fill="var(--cpu)" fill-opacity="0.18" stroke="var(--cpu)" />
+        <text x="298.6" y="112" font-size="10.5" text-anchor="middle" fill="var(--cpu)">runs</text>
+        <rect x="431.32" y="94" width="3.72" height="28" fill="var(--danger)" fill-opacity="0.5" />
+        <rect x="435.04" y="94" width="11.16" height="28" fill="var(--text-3)" fill-opacity="0.35" />
+        <rect x="446.2" y="94" width="265.36" height="28" fill="var(--cpu)" fill-opacity="0.18" stroke="var(--cpu)" />
+        <text x="578.9" y="112" font-size="10.5" text-anchor="middle" fill="var(--cpu)">runs</text>
+        <rect x="711.56" y="94" width="3.72" height="28" fill="var(--danger)" fill-opacity="0.5" />
+        <rect x="715.28" y="94" width="11.16" height="28" fill="var(--text-3)" fill-opacity="0.35" />
+        <rect x="726.44" y="94" width="23.56" height="28" fill="var(--cpu)" fill-opacity="0.18" stroke="var(--cpu)" />
+        <!-- paused marker -->
+        <line x1="526.8" y1="34" x2="526.8" y2="132" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" />
+        <text x="531" y="88" font-size="10" fill="var(--accent)">paused · CPU has the bus</text>
+        <!-- period -->
+        <path d="M154.8,148 L435.04,148" stroke="var(--text-2)" />
+        <path d="M154.8,143 L154.8,153 M435.04,143 L435.04,153" stroke="var(--text-2)" />
+        <text x="294.9" y="166" font-size="10.5" text-anchor="middle" fill="var(--text-2)">226 T: 223 T by the prescaler + 3 T for the grant</text>
+        <text x="750" y="182" font-size="10" text-anchor="end" fill="var(--text-3)">orange: DMA byte · grey: CPU held · red: waiting for the grant</text>
+      </svg>
+    </div>
+    <div class="tl-stats">
+      <div><span>Bytes this frame</span><b>312</b></div>
+      <div><span>DMA bus time</span><b>3,744 T · 5.3 %</b></div>
+      <div><span>Byte period</span><b>223–229 T</b></div>
+      <div><span>Expected</span><b>223 T (P = 55)</b></div>
+      <div><span>Lost interrupts</span><b class="warn">1 in frame 1,199</b></div>
+    </div>
+  </div>
+  <div class="brief">
+    <div><h4>Answers</h4><ul><li><b>Why did my game drop a frame?</b> A continuous transfer held the bus across the frame interrupt.</li><li><b>Is my sample rate right?</b> The measured period against the prescaler's exact one.</li><li><b>How much CPU does burst mode leave me?</b> Per frame, read off the bar.</li></ul></div>
+    <div><h4>Data from the core</h4><ul><li>A per-byte trace: tact of the request, the grant, the read and the write, the source, the destination and the value.</li><li>Bus request and acknowledge edges (<code>dmaBusRequested</code>, <code>dmaBusAcknowledged</code>) and the interrupt lines' pulses, so a lost pulse can be marked.</li></ul></div>
+  </div>
+</section>
+
+<!-- 4 ======================================================================================== -->
+<section class="tool" id="transfers">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 4 · document panel + memory overlay</div>
+    <h2>Transfers and memory: where the bytes went</h2>
+    <p>One row per transfer, from its enable to its end of block (or until it was disabled). Selecting a row tints the source and destination in the Memory panel and puts a frame around the next byte. A zxnDDMA transfer shows its 22-bit addresses as RAM bank and page, and its rectangle.</p>
+  </div>
+  <div class="ide">
+    <div class="tabs"><span>Bus Timeline</span><span class="on">DMA Transfers</span></div>
+    <div class="scroll">
+    <table class="grid">
+      <thead><tr><th>#</th><th>Frame</th><th>Started by</th><th>Mode</th><th>From</th><th>To</th><th>Bytes</th><th>Bus held</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="m">28</td><td class="m">1,196</td><td><span class="link">gfx.kz80:88</span></td><td>zxnDDMA · fill</td><td class="v">value $E3</td><td class="v">page 18 +$0000<span class="sec"> 256 × 192</span></td><td class="m">49,152</td><td class="m">147,459 T</td><td><span class="pill ok">done</span></td></tr>
+        <tr><td class="m">29</td><td class="m">1,198</td><td><span class="link">gfx.kz80:44</span></td><td>continuous</td><td class="v">$4000–$7FFF</td><td class="v">$C000–$FFFF</td><td class="m">16,384</td><td class="m">98,331 T</td><td><span class="pill warn">INT lost</span></td></tr>
+        <tr><td class="m">30</td><td class="m">1,200</td><td><span class="link">sprites.kz80:12</span></td><td>continuous</td><td class="v">$A000–$AFFF</td><td class="v">port $5B<span class="sec"> patterns</span></td><td class="m">4,096</td><td class="m">24,583 T</td><td><span class="pill ok">done</span></td></tr>
+        <tr class="sel"><td class="m">31</td><td class="m">1,203</td><td><span class="link">main.kz80:5</span></td><td>burst · P 55</td><td class="v">$C000–$C7FF</td><td class="v">port $DF<span class="sec"> DAC</span></td><td class="m">1,213 / 2,048</td><td class="m">14,556 T</td><td><span class="pill run">running</span></td></tr>
+        <tr class="dim"><td class="m">—</td><td class="m">1,204</td><td><span class="link">fx.kz80:31</span></td><td>—</td><td>—</td><td>—</td><td class="m">0</td><td class="m">—</td><td><span class="pill bad">DMA deaf</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="ide">
+    <div class="ide-title"><span class="grow">Memory · $C4A0 · transfer #31 overlay</span><span class="pill run">→ port $DF · last value $8C</span></div>
+    <div class="scroll"><div class="mem" id="memgrid" aria-label="Hex dump of $C4A0 to $C4DF; bytes up to $C4BC are tinted as read by the DMA, $C4BD is framed as the next byte"></div></div>
+    <div class="legend"><span><i style="background:var(--dma-wash);border:1px solid var(--dma)"></i>read by transfer #31</span><span><i style="outline:2px solid var(--dma)"></i>next byte (working port A)</span><span><i style="background:var(--cpu-wash);border:1px solid var(--cpu)"></i>written (memory destinations)</span></div>
+  </div>
+  <div class="brief">
+    <div><h4>Answers</h4><ul><li><b>Did the copy land where I meant?</b> The destination range, in bank and page terms when it went through the MMU.</li><li><b>Did a fill run one byte past the end?</b> The byte count and the range, against the block length written.</li><li><b>Which transfer overwrote this byte?</b> From the Memory panel's context menu: "Last DMA write here".</li></ul></div>
+    <div><h4>Builds on</h4><ul><li>The port write log (who started it) and the per-byte trace (what it touched). No new core data beyond tools 2 and 3.</li><li>The Memory panel's existing range highlighting.</li></ul></div>
+  </div>
+</section>
+
+<!-- 5 ======================================================================================== -->
+<section class="tool" id="breakpoints">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 5 · Breakpoints panel + debug toolbar</div>
+    <h2>Breakpoints and stepping: stop on what the DMA does</h2>
+    <p>New breakpoint kinds for DMA events, and DMA stepping for the case the CPU stepper cannot cover: while the DMA holds the bus, the CPU does not run, so stepping the CPU never moves. Following the WASM core rule, each stop is a core candidate, and TypeScript decides what it means.</p>
+  </div>
+  <div class="split" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+    <div class="ide">
+      <div class="dbg">
+        <button class="iconbtn" type="button">Continue</button>
+        <button class="iconbtn" type="button">Step into</button>
+        <button class="iconbtn" type="button">Step over</button>
+        <span class="sep"></span>
+        <button class="iconbtn dma" type="button">Step DMA byte</button>
+        <button class="iconbtn dma" type="button">Run to end of block</button>
+        <button class="iconbtn dma" type="button">Run until CPU has the bus</button>
+      </div>
+      <div class="stopbar"><span class="pill run">stopped</span><span><b>DMA end of block</b> · transfer #29 · frame 1,199, T 27,423 · CPU frozen at <span class="link mono">$8061 gfx.kz80:45</span></span></div>
+      <div class="ide-title"><span class="grow">Breakpoints</span></div>
+      <div class="bp"><span class="dot"></span><span class="kind">DMA</span><span class="txt">Enable <span class="mono">$87</span> · any port</span><span class="hits">3</span></div>
+      <div class="bp hit"><span class="dot"></span><span class="kind">DMA</span><span class="txt">End of block · started at gfx.kz80:44</span><span class="hits">1</span></div>
+      <div class="bp"><span class="dot"></span><span class="kind">DMA</span><span class="txt">Writes memory <span class="mono">$4000–$5AFF</span> · ULA screen</span><span class="hits">0</span></div>
+      <div class="bp"><span class="dot"></span><span class="kind">DMA</span><span class="txt">Byte counter = <span class="mono">1,024</span></span><span class="hits">0</span></div>
+      <div class="bp"><span class="dot"></span><span class="kind">DMA</span><span class="txt">Anomaly: deaf, enable without load, ignored byte</span><span class="hits">1</span></div>
+      <div class="bp"><span class="dot off"></span><span class="kind">DMA</span><span class="txt">Bus held longer than <span class="mono">70,000 T</span></span><span class="hits">—</span></div>
+      <div class="bp"><span class="dot off"></span><span class="kind">DMA</span><span class="txt">Auto restart wraps</span><span class="hits">—</span></div>
+      <div class="bp"><span class="dot"></span><span class="kind" style="color:var(--text-2);border-color:var(--border)">port</span><span class="txt">Out <span class="mono">$5B</span> · <span class="sec">existing kind, now reports "DMA #30, byte 812"</span></span><span class="hits">812</span></div>
+    </div>
+    <div class="ide">
+      <div class="ide-title"><span class="grow">Add DMA breakpoint</span></div>
+      <div class="addbp">
+        <label><input type="radio" name="bpk" id="bpk-enable" checked> Enable ($87 / WR3)</label>
+        <label><input type="radio" name="bpk" id="bpk-load"> Load ($CF)</label>
+        <label><input type="radio" name="bpk" id="bpk-eob"> End of block</label>
+        <label><input type="radio" name="bpk" id="bpk-wrap"> Auto restart wraps</label>
+        <label><input type="radio" name="bpk" id="bpk-mem"> Reads / writes memory range</label>
+        <label><input type="radio" name="bpk" id="bpk-io"> Reads / writes port</label>
+        <label><input type="radio" name="bpk" id="bpk-cnt"> Byte counter reaches</label>
+        <label><input type="radio" name="bpk" id="bpk-bus"> Bus held longer than</label>
+        <label><input type="radio" name="bpk" id="bpk-anom"> Decoder anomaly</label>
+        <label><input type="radio" name="bpk" id="bpk-ddma"> zxnDDMA command on $0B</label>
+      </div>
+      <div class="callout" style="margin:0 10px 10px">
+        <b>Why memory breakpoints need a DMA flag</b>
+        A CPU memory breakpoint watches the CPU's accesses. The DMA reaches the same memory through the same MMU, so a write it makes into the screen is invisible to today's breakpoint. The proposal adds "CPU", "DMA" or "both" to memory breakpoints, as port and NextReg breakpoints already report a DMA hit.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ======================================================================================== -->
+<section class="tool" id="editor">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 6 · Klive assembler editor</div>
+    <h2>Editor support: decode the setup before it runs</h2>
+    <p>A <code>.dma</code> pragma, like the existing <code>.copper</code> one, marks a block of <code>.defb</code> as a DMA program. The editor then shows a code lens with the transfer's summary, a hover with the decoded groups, and warnings for the traps that are visible in the bytes alone.</p>
+  </div>
+  <div class="ide">
+    <div class="tabs"><span class="on">main.kz80</span><span>fx.kz80</span></div>
+    <div class="scroll">
+    <div class="code">
+      <div class="ln"><span class="no">1</span><span>        <span class="k">nextreg</span> <span class="n">$08</span>,<span class="n">$18</span>        <span class="c">; DACs and speaker on</span></span></div>
+      <div class="ln"><span class="no">2</span><span>        <span class="k">ld</span> hl,<span class="l">Prog</span></span></div>
+      <div class="ln"><span class="no">3</span><span>        <span class="k">ld</span> bc,<span class="n">$106b</span></span></div>
+      <div class="ln"><span class="no">4</span><span>        <span class="k">otir</span></span></div>
+      <div class="ln"><span class="no">5</span><span>        <span class="k">ret</span></span></div>
+      <div class="lens">zxnDMA · A → B · <a>$C000</a> → port <a>$DF</a> · 2,048 bytes · burst · P 55 (15,695 Hz) · 16 bytes · <a>last run: transfer #31</a></div>
+      <div class="ln"><span class="no">6</span><span><span class="l">Prog</span>:   <span class="k">.dma</span></span></div>
+      <div class="ln"><span class="no">7</span><span>        <span class="k">.defb</span> <span class="n">$83</span>              <span class="c">; disable</span></span></div>
+      <div class="ln"><span class="no">8</span><span>        <span class="k">.defb</span> <span class="n">$7d</span>,<span class="n">$00</span>,<span class="n">$c0</span>      <span class="c">; WR0: A to B, port A $C000</span></span></div>
+      <div class="ln"><span class="no">9</span><span>        <span class="k">.defb</span> <span class="n">$00</span>,<span class="n">$08</span>          <span class="c">; ... length 2,048</span></span></div>
+      <div class="ln"><span class="no">10</span><span>        <span class="k">.defb</span> <span class="n">$14</span>              <span class="c">; WR1: A is memory, upwards</span></span></div>
+      <div class="ln"><span class="no">11</span><span>        <span class="k">.defb</span> <span class="n">$68</span>,<span class="n">$21</span>,<span class="n">55</span>       <span class="c">; WR2: B is I/O, fixed; P = 55</span></span></div>
+      <div class="ln"><span class="no">12</span><span>        <span class="k">.defb</span> <span class="n">$cd</span>,<span class="n">$df</span>,<span class="n">$00</span>      <span class="c">; WR4: burst, port B $00DF</span></span></div>
+      <div class="ln"><span class="no">13</span><span>        <span class="k">.defb</span> <span class="n">$a2</span>              <span class="c">; WR5: auto restart</span></span></div>
+      <div class="ln"><span class="no">14</span><span>        <span class="k">.defb</span> <span class="squig"><span class="n">$87</span></span>              <span class="c">; enable</span></span></div>
+      <div class="ln"><span class="no">15</span><span>        <span class="k">.enddma</span></span></div>
+      <div class="hover-card" role="img" aria-label="Hover card with the decoded DMA program">
+        <div class="hc-h"><span class="wr">WR2</span> <span>port B timing and prescaler</span></div>
+        <table>
+          <tr><td>$68</td><td>I/O, fixed, timing byte follows</td></tr>
+          <tr><td>$21</td><td>3-clock cycles, prescaler follows</td></tr>
+          <tr><td>55</td><td>prescaler: 223 T a byte at 3.5 MHz</td></tr>
+        </table>
+        <div class="hc-f">Nominal 15,909 Hz · exact 15,695 Hz · burst mode: about 95 % of the CPU's time stays free.</div>
+      </div>
+    </div>
+    </div>
+    <div class="problems">
+      <div><span class="w">⚠</span><span>main.kz80:14 · Enable without a load. Add <span class="mono">$CF</span> before <span class="mono">$87</span>, or the DMA continues from its last working addresses.</span></div>
+      <div><span class="w">⚠</span><span>main.kz80:6 · The program does not start with <span class="mono">$83</span> (disable) or <span class="mono">$C3</span> (reset).</span></div>
+    </div>
+  </div>
+  <div class="brief">
+    <div><h4>Lint rules (from the bytes alone)</h4><ul><li>Enable without <code>$CF</code>; no leading <code>$83</code> or <code>$C3</code></li><li>A group's followers run past the block's end, or a later base byte would be swallowed</li><li>WR4 bit 4 set; a byte that matches no group</li><li>Auto restart with continuous mode; a prescaler in continuous mode</li><li>WR1 prescaler byte (accepted and dropped); zxnDDMA commands sent to <code>$0B</code></li></ul></div>
+    <div><h4>Builds on</h4><ul><li><code>dmaDecoder.ts</code> already decodes the bytes; the pragma only tells the editor where they are. The assembler output is unchanged.</li><li>The decoded region kind <code>dma</code> in program annotations, so the same summary appears in the disassembly.</li></ul></div>
+  </div>
+</section>
+
+<!-- 7 ======================================================================================== -->
+<section class="tool" id="console">
+  <div class="tool-head">
+    <div class="eyebrow">Tool 7 · IDE command prompt</div>
+    <h2>Console commands: the same data for scripts and recipes</h2>
+    <p>Text versions of tools 1 to 4, so a doc-shot recipe, a test or an AI session can read the DMA without a panel. The names are proposals and follow the IDE's existing command style.</p>
+  </div>
+  <div class="ide">
+    <div class="ide-title"><span class="grow">Command</span></div>
+    <div class="scroll">
+<div class="term"><span class="p">&gt;</span> <span class="o">dma</span>
+<span class="o">zxnDMA ($6B) · running · burst · A → B · 1,213 / 2,048</span>
+<span class="o">A  start $C000  working $C4BD  memory  up     3 clk</span>
+<span class="o">B  start $00DF  working $00DF  I/O     fixed  3 clk  prescaler 55 (223 T)</span>
+<span class="o">status $3B · read mask $7F · next read: status · decoder: ready</span>
+<span class="p">&gt;</span> <span class="o">dma-log -last 4</span>
+<span class="d">1203:41,479 $8007 OUT $6B $82  WR5 stop at end of block</span>
+<span class="d">1203:41,500 $8007 OUT $6B $CF  load</span>
+<span class="d">1203:41,516 $8007 OUT $6B $87  enable → transfer #31</span>
+<span class="d">1203:52,151 $8154 IN  $6B $3B  status: under way</span>
+<span class="p">&gt;</span> <span class="o">dma-bp -end-of-block</span>
+<span class="o">DMA breakpoint 7 set: end of block, any transfer</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Order ==================================================================================== -->
+<section class="tool" id="order">
+  <div class="tool-head">
+    <div class="eyebrow">Suggested order</div>
+    <h2>What to build first</h2>
+    <p>Each step is usable on its own, and each later one reuses what the earlier ones added to the core and EmuApi.</p>
+  </div>
+  <div class="scroll">
+  <table class="plan">
+    <thead><tr><th>Step</th><th>Tool</th><th>Core and API work</th><th>Size</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>DMA panel</b> with its warnings, and the <code>dma</code> command</td><td><code>getDmaState()</code> on EmuApi: one export reading the statics in <code>zxnext-dma.c</code>. Warnings are derived in a view model, like <code>copperViewModel.ts</code>.</td><td><span class="size">S</span></td></tr>
+      <tr><td>2</td><td><b>Editor support</b>: <code>.dma</code> pragma, code lens, hover, lint</td><td>None. Assembler pragma plus <code>dmaDecoder.ts</code>.</td><td><span class="size">M</span></td></tr>
+      <tr><td>3</td><td><b>Port write log</b></td><td>A ring buffer of port accesses with tact, PC and sequencer state, switched on only while needed.</td><td><span class="size">M</span></td></tr>
+      <tr><td>4</td><td><b>Breakpoints and DMA stepping</b></td><td>Core stop candidates (enable, load, end of block, wrap, counter, memory and port access by the DMA, bus-hold length, anomaly) with <code>debug-loop-equivalence</code> tests; harness tests in <code>test/zxnext-hw/dma/</code>.</td><td><span class="size">L</span></td></tr>
+      <tr><td>5</td><td><b>Bus timeline</b></td><td>A per-byte trace with request, grant and release tacts, and the interrupt pulses for lost-interrupt marks.</td><td><span class="size">M</span></td></tr>
+      <tr><td>6</td><td><b>Transfers and memory overlay</b></td><td>None beyond steps 3 and 5.</td><td><span class="size">S</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout">
+    <b>Notes for a plan</b>
+    <span>The panel is a converted state panel: values take <code>--color-state-value</code>, as the Copper, Sprite and Tilemap panels do. All new text goes through <code>t()</code>. Every trace and stop is off by default, so a normal run pays nothing for it. The zxnDDMA rows appear only for profiles whose core is 3.03 or later.</span>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+  var host = document.getElementById("memgrid");
+  if (!host) return;
+  var base = 0xC4A0, next = 0xC4BD;
+  function hex(n, w) { return ("0000" + n.toString(16).toUpperCase()).slice(-w); }
+  for (var r = 0; r < 4; r++) {
+    var row = document.createElement("div"); row.className = "r";
+    var a = document.createElement("span"); a.className = "a"; a.textContent = "$" + hex(base + r * 16, 4); row.appendChild(a);
+    var b = document.createElement("span"); b.className = "b";
+    for (var c = 0; c < 16; c++) {
+      var addr = base + r * 16 + c;
+      var v = Math.round(128 + 100 * Math.sin((addr - 0xC000) * 2 * Math.PI / 37)) & 0xff;
+      var s = document.createElement("span"); s.textContent = hex(v, 2);
+      if (addr < next) s.className = "rd"; else if (addr === next) s.className = "nx";
+      b.appendChild(s);
+    }
+    row.appendChild(b); host.appendChild(row);
+  }
+})();
+</script>

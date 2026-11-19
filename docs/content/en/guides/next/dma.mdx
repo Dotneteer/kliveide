@@ -1,0 +1,113 @@
+---
+description: "See the ZX Spectrum Next's DMA at a pause in the DMA panel: its dialect and mode, both ports' start and working addresses, the prescaler's rate, the status byte and read sequence, and warnings for the usual setup mistakes."
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Debugging the DMA
+
+The ZX Spectrum Next's DMA moves bytes while the CPU waits. When a transfer copies the wrong bytes, never
+starts, or freezes the program, the cause is in the DMA's own registers, which the Z80 registers do not
+show and which a program can only read back one byte at a time. The **DMA** panel shows all of them at a
+pause, and names the usual mistakes with their evidence.
+
+*Applies to: ZX Spectrum Next.* How the DMA works is explained in
+[DMA: One Bus, Two Masters](/en/under-the-hood/emulator-internals/next-dma/).
+
+## Finding out what a transfer did
+
+<Steps>
+
+### Pause after the setup
+
+Run the program in debug mode and pause it after it has written its setup to the DMA, for example on a
+breakpoint after the `OTIR` that sends it.
+
+### Open the DMA panel
+
+Open the **Machine info** activity and expand the **DMA** header, below **Interrupts**.
+
+### Read the warnings
+
+The boxes under the **State** row name the usual causes with their evidence: an enable without a load,
+a register group still waiting for its bytes, a DMA left deaf by WR4 bit 4, auto restart that never
+gives the bus back, or a switched-off port.
+
+### Compare the start and working addresses
+
+**Start** is what WR0 and WR4 wrote; **Working** is where the next byte comes from and goes to. They
+differ until the next `$CF`, and during a transfer. A working address that has moved away from its start
+is shown in the second accent colour.
+
+</Steps>
+
+<Shot src="guides/next/dma/dma-panel.webp" alt="The DMA panel during a burst transfer to the Specdrum DAC: waiting with the bus free, 811 of 2,048 bytes moved, port A's working address past its start, prescaler 55 at 223 T-states a byte" caption="The DMA chapter's sample player, paused: the DMA waits for its prescaler with the bus free, and port A's working address has moved 811 bytes past its start." width={380} />
+
+## The DMA panel
+
+**State** is what the DMA is doing at the pause:
+
+| State | Meaning |
+|---|---|
+| **idle** | No transfer; **block finished** when the last block reached its end. |
+| **starting** | Enabled; the DMA takes the bus at the next instruction. |
+| **waiting, bus free** | Burst mode: the DMA waits for its prescaler and the CPU runs. |
+| **stepped aside** | The DMA let go of the bus so the CPU can take an interrupt enabled in NextRegs `$CC`-`$CE`. |
+| **holding the bus** | A transfer is under way and the CPU is stopped. |
+| **locked** | Auto restart in continuous mode: the CPU never gets the bus back. |
+| **deaf** | WR4 bit 4 without port B's address: the DMA ignores every byte until a reset. |
+
+<Callout type="info">
+A pause always falls between two CPU instructions, and Klive runs a transfer that keeps the bus to its
+end before the next instruction. So **holding the bus** appears only when the pause lands at the end of a
+frame in the middle of a long transfer.
+</Callout>
+
+**Transfer** shows the dialect (the port touched last: `$6B` moves *N* bytes for a block length of *N*,
+`$0B` moves *N* + 1), the operating mode (byte mode, and burst mode without a prescaler, behave as
+continuous), the direction, the bytes moved of the bytes to move, and auto restart.
+
+**Ports** shows port A and port B side by side: the start and working addresses, whether the port is
+memory or I/O, how its address steps after each byte, and the clocks its read or write cycle takes.
+
+**Pacing** appears when port B has a prescaler. **Nominal** is the formula's 875 kHz ÷ *P*; **Exact** is
+the period worked out for the current CPU speed, 32 × *P* clocks of 28 MHz and then three CPU clocks
+(4 × *P* + 3 T-states at 3.5 MHz), or **no effect at this speed** when the wait is shorter than a byte.
+Contention and the SD card port can make real bytes a little later.
+
+**Status and read-back** shows the status byte a read would give, `00E1101T`, with what its E and T bits
+mean; the read mask; which entry the next read of the port returns; and what the DMA expects as the next
+byte written to it. The panel works the status byte out without reading the port, so opening it never
+moves the read sequence.
+
+**Steps aside for** lists the interrupt sources enabled in NextRegs `$CC`-`$CE`.
+
+**zxnDDMA** appears on models with core 3.03: the `$DF` flags, bits 23-16 of both start addresses, the
+rectangle, the strides, the transparent colour and the fill value.
+
+## The warnings
+
+| Warning | What happened |
+|---|---|
+| **Enabled without a load ($CF)** | New start addresses were written after the last `$CF`, so the transfer used the old working addresses. |
+| **Enabled after a finished block** | An enable without `$CF` or `$D3` after a block ended moves one more byte, from just past the end. |
+| **WR*n* expects more bytes** | A register group is waiting for follow bytes; the next byte written is taken as one of them. |
+| **The DMA ignores every byte** | WR4 bit 4 without port B's address. Only a reset frees it. |
+| **The CPU will not get the bus back** | Auto restart in continuous mode. Only a reset, or an interrupt enabled in `$CC`-`$CE`, ends it. |
+| **The DMA keeps the bus while it waits** | A prescaler in continuous mode freezes the CPU for the whole block; the warning estimates for how many frames. |
+| **Port $6B (or $0B) is switched off** | NextReg `$82` bit 5 or `$85` bit 1 disables the port. |
+| **zxnDDMA settings stay on** | Flags from an earlier `$DF` still apply to the next transfer until a `$C3`. |
+
+Information notes also say when a prescaler has no effect at the current speed, when Z80 DMA mode moves
+one more byte, when a block length of 0 moves one byte, and when the step-aside enables need hardware IM2
+mode.
+
+## The `dma` command
+
+The `dma` command prints the same rows and warnings as text in the command output.
+
+## Related pages
+
+- [Debugging interrupts](/en/guides/next/interrupts/): the interrupts the DMA steps aside for.
+- [Next breakpoints](/en/guides/next/next-breakpoints/): port breakpoints also stop on writes the DMA
+  makes.

@@ -29,7 +29,9 @@ const ARGS = {
   op: "*", key: "$8000", max: 9, column: 1, message: "m", text: "q", frames: "1.0", line2: 0,
   label: "100", colours: 4, lm: 6, rm: 63, ld1: "$0000", ld2: "$0000", port: "B0h", source: "1 kHz", low: "A0h", high: "A1h",
   slot: 2, slots: "2, 3", register: "HL", shown: 5, reg: "$12",
-  length: 32, vector: "$B6", blocker: "Line", im: 1, handler: "$FFFF", sources: "UART 0 Rx"
+  length: 32, vector: "$B6", blocker: "Line", im: 1, handler: "$FFFF", sources: "UART 0 Rx",
+  base: "$91", portA: "$C000", portB: "$00DF", group: "WR0", prescaler: 55, bytes: 17, moved: 811, clocks: 223,
+  ended: "yes", moving: "no", byte: 5, row: 2
 };
 
 const KEYS = Object.keys(panelsSide).filter((key) => !key.startsWith("@")) as MessageKey[];

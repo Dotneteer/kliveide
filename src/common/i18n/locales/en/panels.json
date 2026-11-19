@@ -1091,6 +1091,11 @@
     "context": "Side-bar panel heading (Machine info activity, ZX Spectrum Next only): the interrupt system - the daisy chain of interrupt sources, the modes and the NMI.",
     "maxChars": 20
   },
+  "panels.sideBar.dma": "DMA",
+  "@panels.sideBar.dma": {
+    "context": "Side-bar panel heading (Machine info activity, ZX Spectrum Next only): the DMA's registers, working addresses, pacing and status at a pause. 'DMA' is a hardware name.",
+    "maxChars": 20
+  },
   "panels.document.interruptTimeline": "Interrupt Timeline",
   "@panels.document.interruptTimeline": {
     "context": "Name of the Interrupt Timeline document tab (ZX Spectrum Next): the interrupt events drawn as swimlanes over frames.",

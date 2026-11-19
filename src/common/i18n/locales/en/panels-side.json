@@ -5165,5 +5165,588 @@
   "panels.side.interrupts.diag.disabled.detail": "A handler most likely returned without EI: an acknowledge clears IFF1 and IFF2, and RETI or RETN copies IFF2 back to IFF1.",
   "@panels.side.interrupts.diag.disabled.detail": {
     "context": "Explanation under the interrupts-disabled diagnostic. 'EI', 'RETI', 'RETN', 'IFF1', 'IFF2' are Z80 terms, keep them."
+  },
+  "panels.side.dma.notAvailable": "The DMA state is not available",
+  "@panels.side.dma.notAvailable": {
+    "context": "Empty state of the DMA side-bar panel (ZX Spectrum Next, Machine info activity) when no machine is running or it is not a Next."
+  },
+  "panels.side.dma.stateLabel": "State",
+  "@panels.side.dma.stateLabel": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): what the DMA is doing now",
+    "maxChars": 12
+  },
+  "panels.side.dma.stateTooltip": "What the DMA is doing at this pause. A pause falls between two CPU instructions, so a transfer that keeps the bus is seen only when the pause lands at the end of a frame.",
+  "@panels.side.dma.stateTooltip": {
+    "context": "Tooltip of the State row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.state.deaf": "deaf",
+  "@panels.side.dma.state.deaf": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: WR4 bit 4 left the DMA ignoring every byte until a reset.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.locked": "locked",
+  "@panels.side.dma.state.locked": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: auto restart in continuous mode: the CPU never gets the bus back.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.holding": "holding the bus",
+  "@panels.side.dma.state.holding": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: a transfer is under way and the CPU is stopped.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.steppedAside": "stepped aside",
+  "@panels.side.dma.state.steppedAside": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: the DMA let go of the bus so the CPU can take an interrupt.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.waiting": "waiting, bus free",
+  "@panels.side.dma.state.waiting": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: burst mode: the DMA waits for its prescaler and the CPU runs.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.starting": "starting",
+  "@panels.side.dma.state.starting": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: the DMA has been enabled and will take the bus at the next instruction.",
+    "maxChars": 18
+  },
+  "panels.side.dma.state.idle": "idle",
+  "@panels.side.dma.state.idle": {
+    "context": "Badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) header row: no transfer.",
+    "maxChars": 18
+  },
+  "panels.side.dma.blockFinished": "block finished",
+  "@panels.side.dma.blockFinished": {
+    "context": "Secondary text beside the idle badge in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the last block reached its end.",
+    "maxChars": 16
+  },
+  "panels.side.dma.diag.deaf.title": "The DMA ignores every byte until a reset",
+  "@panels.side.dma.diag.deaf.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.deaf.detail": "WR4 {base} has bit 4 set without port B's address, so the DMA waits for an interrupt control byte it never takes.",
+  "@panels.side.dma.diag.deaf.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "base": "The WR4 base byte, e.g. '$91'"
+    }
+  },
+  "panels.side.dma.diag.lock.title": "The CPU will not get the bus back",
+  "@panels.side.dma.diag.lock.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.lock.detail": "Auto restart in continuous mode repeats the block forever. {count, plural, =0 {No interrupt is enabled in NextRegs $CC-$CE, so only a reset ends it.} other {Only a reset, or an interrupt from {sources} (NextRegs $CC-$CE), ends it.}}",
+  "@panels.side.dma.diag.lock.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "count": "How many interrupt sources the DMA steps aside for",
+      "sources": "Their names, e.g. 'ULA, CTC 0'"
+    }
+  },
+  "panels.side.dma.diag.noLoad.title": "Enabled without a load ($CF)",
+  "@panels.side.dma.diag.noLoad.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.noLoad.detail": "New start addresses were written after the last $CF, so the transfer uses the old working addresses: port A {portA}, port B {portB}.",
+  "@panels.side.dma.diag.noLoad.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "portA": "Port A's working address, e.g. '$C800'",
+      "portB": "Port B's working address"
+    }
+  },
+  "panels.side.dma.diag.afterEnd.title": "Enabled after a finished block without $CF or $D3",
+  "@panels.side.dma.diag.afterEnd.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.afterEnd.detail": "The DMA moves one more byte, from the address just past the end of the last block.",
+  "@panels.side.dma.diag.afterEnd.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.diag.partial.title": "{group} expects {count, plural, one {# more byte} other {# more bytes}}",
+  "@panels.side.dma.diag.partial.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are.",
+    "placeholders": {
+      "group": "The register group, e.g. 'WR0' or 'zxnDDMA'",
+      "count": "How many follow bytes are still expected"
+    }
+  },
+  "panels.side.dma.diag.partial.detail": "The next byte written to the DMA is taken as one of them, whatever its value.",
+  "@panels.side.dma.diag.partial.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.diag.prescalerContinuous.title": "The DMA keeps the bus while it waits",
+  "@panels.side.dma.diag.prescalerContinuous.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.prescalerContinuous.detail": "A prescaler in continuous mode freezes the CPU for the whole block: about {frames} frames for what is left of it. Use burst mode for paced transfers.",
+  "@panels.side.dma.diag.prescalerContinuous.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "frames": "The estimated number of frames, e.g. '6.5'"
+    }
+  },
+  "panels.side.dma.diag.portOff.title": "Port {port} is switched off",
+  "@panels.side.dma.diag.portOff.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are.",
+    "placeholders": {
+      "port": "The DMA port, '$6B' or '$0B'"
+    }
+  },
+  "panels.side.dma.diag.portOff.detail": "NextReg {reg} bit {bit} disables it: writes to it reach nothing.",
+  "@panels.side.dma.diag.portOff.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "reg": "The NextReg, e.g. '$82'",
+      "bit": "The bit number"
+    }
+  },
+  "panels.side.dma.diag.stepAsideIm.title": "Stepping aside needs hardware IM2 mode",
+  "@panels.side.dma.diag.stepAsideIm.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.stepAsideIm.detail": "The enables in NextRegs $CC-$CE work only when NextReg $C0 bit 0 is set; until then interrupts wait for the end of the block.",
+  "@panels.side.dma.diag.stepAsideIm.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.diag.ddmaOn.title": "zxnDDMA settings stay on",
+  "@panels.side.dma.diag.ddmaOn.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.ddmaOn.detail": "{flags} stay until the next $DF or a $C3 reset, and the next transfer uses them.",
+  "@panels.side.dma.diag.ddmaOn.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "flags": "The zxnDDMA flags that are on, e.g. 'physical, 2D' (hardware terms, not translated)"
+    }
+  },
+  "panels.side.dma.diag.prescalerNone.title": "Prescaler {prescaler} has no effect at this speed",
+  "@panels.side.dma.diag.prescalerNone.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are.",
+    "placeholders": {
+      "prescaler": "The prescaler value"
+    }
+  },
+  "panels.side.dma.diag.prescalerNone.detail": "Its wait is not longer than one byte, so bytes move as fast as without a prescaler.",
+  "@panels.side.dma.diag.prescalerNone.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.diag.z80.title": "Z80 DMA mode moves {bytes} bytes",
+  "@panels.side.dma.diag.z80.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are.",
+    "placeholders": {
+      "bytes": "How many bytes the block moves"
+    }
+  },
+  "panels.side.dma.diag.z80.detail": "Through port $0B the counter starts at $FFFF, so a block length of {length} moves one more byte than in zxnDMA mode.",
+  "@panels.side.dma.diag.z80.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are.",
+    "placeholders": {
+      "length": "The block length written to WR0"
+    }
+  },
+  "panels.side.dma.diag.zeroLength.title": "A block length of 0 moves one byte",
+  "@panels.side.dma.diag.zeroLength.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.zeroLength.detail": "The counter is checked only after a byte, never before the first.",
+  "@panels.side.dma.diag.zeroLength.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.diag.framePause.title": "Paused in the middle of a transfer",
+  "@panels.side.dma.diag.framePause.title": {
+    "context": "Diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names (WR0-WR6, $CF, $D3) as they are."
+  },
+  "panels.side.dma.diag.framePause.detail": "The pause came at the end of a frame while the DMA held the bus; the CPU has not run since.",
+  "@panels.side.dma.diag.framePause.detail": {
+    "context": "Explanation under the diagnostic title in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep NextReg numbers, port numbers, hex values and register names as they are."
+  },
+  "panels.side.dma.section.transfer": "Transfer",
+  "@panels.side.dma.section.transfer": {
+    "context": "Section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (shown in upper case).",
+    "maxChars": 24
+  },
+  "panels.side.dma.section.ports": "Ports",
+  "@panels.side.dma.section.ports": {
+    "context": "Section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (shown in upper case).",
+    "maxChars": 24
+  },
+  "panels.side.dma.section.pacing": "Pacing",
+  "@panels.side.dma.section.pacing": {
+    "context": "Section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (shown in upper case).",
+    "maxChars": 24
+  },
+  "panels.side.dma.section.status": "Status and read-back",
+  "@panels.side.dma.section.status": {
+    "context": "Section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (shown in upper case).",
+    "maxChars": 24
+  },
+  "panels.side.dma.section.stepAside": "Steps aside for",
+  "@panels.side.dma.section.stepAside": {
+    "context": "Section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (shown in upper case).",
+    "maxChars": 24
+  },
+  "panels.side.dma.dialect": "Dialect",
+  "@panels.side.dma.dialect": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): which programming dialect the DMA is in (zxnDMA or Z80 DMA)",
+    "maxChars": 12
+  },
+  "panels.side.dma.dialectTooltip": "The port touched last sets it: $6B is zxnDMA mode, $0B Z80 DMA mode. A reset brings back zxnDMA mode.",
+  "@panels.side.dma.dialectTooltip": {
+    "context": "Tooltip of the Dialect row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.dialect.zxn": "port $6B, N bytes",
+  "@panels.side.dma.dialect.zxn": {
+    "context": "Secondary text of the Dialect row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): zxnDMA mode, a block length of N moves N bytes. Keep '$6B' and 'N'.",
+    "maxChars": 20
+  },
+  "panels.side.dma.dialect.z80": "port $0B, N + 1 bytes",
+  "@panels.side.dma.dialect.z80": {
+    "context": "Secondary text of the Dialect row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): Z80 DMA mode, a block length of N moves N + 1 bytes. Keep '$0B' and 'N'.",
+    "maxChars": 22
+  },
+  "panels.side.dma.mode": "Mode",
+  "@panels.side.dma.mode": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's operating mode (byte, continuous or burst)",
+    "maxChars": 12
+  },
+  "panels.side.dma.modeTooltip": "WR4 bits 6-5. Continuous mode keeps the bus for the whole block; burst mode gives it back while the prescaler waits. Byte mode, and burst mode without a prescaler, behave as continuous.",
+  "@panels.side.dma.modeTooltip": {
+    "context": "Tooltip of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.opMode.byte": "byte",
+  "@panels.side.dma.opMode.byte": {
+    "context": "Value of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's operating mode as written to WR4.",
+    "maxChars": 14
+  },
+  "panels.side.dma.opMode.continuous": "continuous",
+  "@panels.side.dma.opMode.continuous": {
+    "context": "Value of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's operating mode as written to WR4.",
+    "maxChars": 14
+  },
+  "panels.side.dma.opMode.burst": "burst",
+  "@panels.side.dma.opMode.burst": {
+    "context": "Value of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's operating mode as written to WR4.",
+    "maxChars": 14
+  },
+  "panels.side.dma.opMode.reserved": "reserved (11)",
+  "@panels.side.dma.opMode.reserved": {
+    "context": "Value of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's operating mode as written to WR4.",
+    "maxChars": 14
+  },
+  "panels.side.dma.behavesContinuous": "behaves as continuous",
+  "@panels.side.dma.behavesContinuous": {
+    "context": "Secondary text of the Mode row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): byte mode, or burst mode without a prescaler, works exactly like continuous mode.",
+    "maxChars": 22
+  },
+  "panels.side.dma.direction": "Direction",
+  "@panels.side.dma.direction": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): which way the bytes flow between port A and port B",
+    "maxChars": 12
+  },
+  "panels.side.dma.directionTooltip": "WR0 bit 2: 1 moves from port A to port B, 0 from B to A.",
+  "@panels.side.dma.directionTooltip": {
+    "context": "Tooltip of the Direction row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.progress": "Progress",
+  "@panels.side.dma.progress": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): how many bytes the block has moved",
+    "maxChars": 12
+  },
+  "panels.side.dma.progressTooltip": "Bytes moved of the bytes the block moves, from the byte counter and the block length (a length of 0 moves one byte; Z80 DMA mode moves one more).",
+  "@panels.side.dma.progressTooltip": {
+    "context": "Tooltip of the Progress row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.progressValue": "{moved} / {total}",
+  "@panels.side.dma.progressValue": {
+    "context": "Value of the Progress row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): bytes moved of bytes to move.",
+    "placeholders": {
+      "moved": "Bytes moved so far",
+      "total": "Bytes the block moves"
+    }
+  },
+  "panels.side.dma.autoRestart": "Auto restart",
+  "@panels.side.dma.autoRestart": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): whether the block repeats when it ends (WR5 bit 5)",
+    "maxChars": 12
+  },
+  "panels.side.dma.autoRestartTooltip": "WR5 bit 5: at the end of a block the DMA loads its start addresses again and starts the next round.",
+  "@panels.side.dma.autoRestartTooltip": {
+    "context": "Tooltip of the Auto restart row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.on": "on",
+  "@panels.side.dma.on": {
+    "context": "A setting that is switched on, in the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "maxChars": 6
+  },
+  "panels.side.dma.off": "off",
+  "@panels.side.dma.off": {
+    "context": "A setting that is switched off, in the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "maxChars": 6
+  },
+  "panels.side.dma.portA": "Port A",
+  "@panels.side.dma.portA": {
+    "context": "Column heading in the ports table of the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "maxChars": 12
+  },
+  "panels.side.dma.portB": "Port B",
+  "@panels.side.dma.portB": {
+    "context": "Column heading in the ports table of the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "maxChars": 12
+  },
+  "panels.side.dma.start": "Start",
+  "@panels.side.dma.start": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the start address written to WR0 (port A) or WR4 (port B)",
+    "maxChars": 12
+  },
+  "panels.side.dma.startTooltip": "The addresses WR0 and WR4 wrote. They become the working addresses only at the next $CF (load).",
+  "@panels.side.dma.startTooltip": {
+    "context": "Tooltip of the Start row in the ports table of the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep WR0, WR4 and $CF."
+  },
+  "panels.side.dma.working": "Working",
+  "@panels.side.dma.working": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the address the next byte comes from or goes to",
+    "maxChars": 12
+  },
+  "panels.side.dma.workingTooltip": "Where the next byte comes from and goes to. A working address that has moved away from its start is shown in the second accent colour.",
+  "@panels.side.dma.workingTooltip": {
+    "context": "Tooltip of the Working row in the ports table of the DMA side-bar panel (ZX Spectrum Next, Machine info activity)."
+  },
+  "panels.side.dma.page": "RAM page",
+  "@panels.side.dma.page": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the 8K RAM page a 22-bit physical address falls in (zxnDDMA)",
+    "maxChars": 12
+  },
+  "panels.side.dma.physicalPage": "page {page} + {offset}",
+  "@panels.side.dma.physicalPage": {
+    "context": "A physical address's 8K RAM page and offset in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) (zxnDDMA physical mode).",
+    "placeholders": {
+      "page": "The RAM page number",
+      "offset": "The offset in the page, e.g. '$0000'"
+    },
+    "maxChars": 20
+  },
+  "panels.side.dma.physicalLow": "below RAM",
+  "@panels.side.dma.physicalLow": {
+    "context": "A physical address below the RAM (the ROM and DivMMC area) in the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "maxChars": 20
+  },
+  "panels.side.dma.kind": "Kind",
+  "@panels.side.dma.kind": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): whether the port is memory or an I/O port",
+    "maxChars": 12
+  },
+  "panels.side.dma.kind.memory": "memory",
+  "@panels.side.dma.kind.memory": {
+    "context": "Value in the Kind row of the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the port is a memory address.",
+    "maxChars": 10
+  },
+  "panels.side.dma.kind.io": "I/O",
+  "@panels.side.dma.kind.io": {
+    "context": "Value in the Kind row of the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the port is an I/O port.",
+    "maxChars": 10
+  },
+  "panels.side.dma.stepLabel": "Step",
+  "@panels.side.dma.stepLabel": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): how the port's address changes after each byte",
+    "maxChars": 12
+  },
+  "panels.side.dma.step.down": "down",
+  "@panels.side.dma.step.down": {
+    "context": "Value in the Step row of the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the address decreases after each byte.",
+    "maxChars": 10
+  },
+  "panels.side.dma.step.up": "up",
+  "@panels.side.dma.step.up": {
+    "context": "Value in the Step row of the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the address increases after each byte.",
+    "maxChars": 10
+  },
+  "panels.side.dma.step.fixed": "fixed",
+  "@panels.side.dma.step.fixed": {
+    "context": "Value in the Step row of the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the address stays the same.",
+    "maxChars": 10
+  },
+  "panels.side.dma.cycle": "Cycle",
+  "@panels.side.dma.cycle": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): how many clocks a read or write of this port takes",
+    "maxChars": 12
+  },
+  "panels.side.dma.cycleTooltip": "Clocks a read or a write of this port takes (its timing byte; 3 after a reset). A byte is one read and one write.",
+  "@panels.side.dma.cycleTooltip": {
+    "context": "Tooltip of the Cycle row in the ports table of the DMA side-bar panel (ZX Spectrum Next, Machine info activity)."
+  },
+  "panels.side.dma.clocks": "{count, plural, one {# clock} other {# clocks}}",
+  "@panels.side.dma.clocks": {
+    "context": "A number of CPU clocks in the DMA side-bar panel (ZX Spectrum Next, Machine info activity).",
+    "placeholders": {
+      "count": "The number of clocks"
+    },
+    "maxChars": 10
+  },
+  "panels.side.dma.prescaler": "Prescaler",
+  "@panels.side.dma.prescaler": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): port B's prescaler, which spaces the bytes out",
+    "maxChars": 12
+  },
+  "panels.side.dma.prescalerTooltip": "WR2's prescaler byte (port B). The DMA waits 32 × P clocks of 28 MHz from the start of one byte before the next.",
+  "@panels.side.dma.prescalerTooltip": {
+    "context": "Tooltip of the Prescaler row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.nominal": "Nominal",
+  "@panels.side.dma.nominal": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the byte rate the prescaler formula promises",
+    "maxChars": 12
+  },
+  "panels.side.dma.nominalTooltip": "The rate the formula promises at every CPU speed: 28 MHz ÷ 32 ÷ P.",
+  "@panels.side.dma.nominalTooltip": {
+    "context": "Tooltip of the Nominal row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.exact": "Exact",
+  "@panels.side.dma.exact": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the byte period worked out for the current CPU speed",
+    "maxChars": 12
+  },
+  "panels.side.dma.exactTooltip": "Worked out for the current CPU speed without wait states: 32 × P clocks of 28 MHz, then 3 CPU clocks to the next byte (4 × P + 3 T-states at 3.5 MHz). Contention, the SD card port and 28 MHz memory waits make real bytes a little later.",
+  "@panels.side.dma.exactTooltip": {
+    "context": "Tooltip of the Exact row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.periodValue": "{clocks} T a byte",
+  "@panels.side.dma.periodValue": {
+    "context": "Value of the Exact row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): CPU clocks (T-states) from one byte to the next.",
+    "placeholders": {
+      "clocks": "The number of T-states"
+    },
+    "maxChars": 16
+  },
+  "panels.side.dma.noEffect": "no effect at this speed",
+  "@panels.side.dma.noEffect": {
+    "context": "Value of the Exact row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) when the prescaler's wait is shorter than a byte.",
+    "maxChars": 24
+  },
+  "panels.side.dma.status": "Status",
+  "@panels.side.dma.status": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA's status byte",
+    "maxChars": 12
+  },
+  "panels.side.dma.statusTooltip": "The byte a status read gives: 00E1101T. E (bit 5) is 0 once the end of a block is reached; T (bit 0) is 1 while a transfer that has moved a byte is under way. Worked out here, not read, so the read sequence does not move.",
+  "@panels.side.dma.statusTooltip": {
+    "context": "Tooltip of the Status row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.statusMeaning": "end of block: {ended, select, yes {reached} other {not reached}} · transfer under way: {moving, select, yes {yes} other {no}}",
+  "@panels.side.dma.statusMeaning": {
+    "context": "Secondary row under the status byte in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): what its E and T bits mean.",
+    "placeholders": {
+      "ended": "'yes' or 'no' (a selector, not shown)",
+      "moving": "'yes' or 'no' (a selector, not shown)"
+    }
+  },
+  "panels.side.dma.readMask": "Read mask",
+  "@panels.side.dma.readMask": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): which entries a read of the DMA port returns",
+    "maxChars": 12
+  },
+  "panels.side.dma.readMaskTooltip": "Set by $BB: bit 0 the status, bits 1-2 the counter, bits 3-4 port A, bits 5-6 port B. $7F after a reset.",
+  "@panels.side.dma.readMaskTooltip": {
+    "context": "Tooltip of the Read mask row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.nextRead": "Next read",
+  "@panels.side.dma.nextRead": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): what the next read of the DMA port returns",
+    "maxChars": 12
+  },
+  "panels.side.dma.nextReadTooltip": "The read sequence: each read of the port gives the next entry the mask enables, then the sequence starts again. $A7 restarts it, $BF makes the next read the status.",
+  "@panels.side.dma.nextReadTooltip": {
+    "context": "Tooltip of the Next read row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.decoder": "Decoder",
+  "@panels.side.dma.decoder": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): what the DMA expects as the next byte written to it",
+    "maxChars": 12
+  },
+  "panels.side.dma.decoderTooltip": "The DMA has no register select: a base byte names a register group and announces follow bytes. Until they have all come, every byte is taken as one of them.",
+  "@panels.side.dma.decoderTooltip": {
+    "context": "Tooltip of the Decoder row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.decoder.ready": "ready for a base byte",
+  "@panels.side.dma.decoder.ready": {
+    "context": "Value of the Decoder row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the next byte written starts a new register group.",
+    "maxChars": 24
+  },
+  "panels.side.dma.decoder.deaf": "deaf until reset",
+  "@panels.side.dma.decoder.deaf": {
+    "context": "Value of the Decoder row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the DMA ignores every byte.",
+    "maxChars": 24
+  },
+  "panels.side.dma.sources": "Sources",
+  "@panels.side.dma.sources": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the interrupt sources the DMA lets go of the bus for",
+    "maxChars": 12
+  },
+  "panels.side.dma.sourcesTooltip": "NextRegs $CC-$CE: in hardware IM2 mode, when one of these sources requests an interrupt, the DMA lets go of the bus after its current byte so the CPU can take it.",
+  "@panels.side.dma.sourcesTooltip": {
+    "context": "Tooltip of the Sources row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.noStepAside": "none: interrupts wait for the end of the block",
+  "@panels.side.dma.noStepAside": {
+    "context": "Value of the Sources row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity) when no source is enabled.",
+    "maxChars": 48
+  },
+  "panels.side.dma.ddmaHint": "core 3.03",
+  "@panels.side.dma.ddmaHint": {
+    "context": "Hint beside the zxnDDMA section heading in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the section exists on core 3.03 and later. Keep 'core 3.03'.",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.flags": "Flags $DF",
+  "@panels.side.dma.ddma.flags": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the zxnDDMA mode flags written by command $DF",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.flagsTooltip": "$DF: bit 0 physical, 1 2D, 2 transparent, 3 fill, 4 Layer 2 X,Y, 5 hidden screen. Each $DF sets all of them; $C3 clears them.",
+  "@panels.side.dma.ddma.flagsTooltip": {
+    "context": "Tooltip of the zxnDDMA flags row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.ddma.ext": "Bits 23-16",
+  "@panels.side.dma.ddma.ext": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): bits 23-16 of the ports' start addresses ($D7, $DB)",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.extTooltip": "$D7 and $DB: bits 23-16 of port A's and port B's start addresses, used in physical mode.",
+  "@panels.side.dma.ddma.extTooltip": {
+    "context": "Tooltip of the Address 23-16 row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.ddma.rect": "Rectangle",
+  "@panels.side.dma.ddma.rect": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): row length × number of rows of a 2D transfer",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.rectTooltip": "$E3 and $E7: the row length and the number of rows of a 2D transfer.",
+  "@panels.side.dma.ddma.rectTooltip": {
+    "context": "Tooltip of the Rectangle row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.ddma.position": "row {row}, byte {byte}",
+  "@panels.side.dma.ddma.position": {
+    "context": "Secondary text of the Rectangle row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): where the 2D transfer is.",
+    "placeholders": {
+      "row": "The current row",
+      "byte": "The byte within the row"
+    },
+    "maxChars": 20
+  },
+  "panels.side.dma.ddma.stride": "Stride",
+  "@panels.side.dma.ddma.stride": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the distance from one row's start to the next (per port)",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.strideTooltip": "$EB and $EF: the distance from the start of one row to the start of the next, per port.",
+  "@panels.side.dma.ddma.strideTooltip": {
+    "context": "Tooltip of the Stride row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
+  },
+  "panels.side.dma.ddma.colours": "Colours",
+  "@panels.side.dma.ddma.colours": {
+    "context": "Row label in the DMA side-bar panel (ZX Spectrum Next, Machine info activity): the transparent colour and the fill value",
+    "maxChars": 12
+  },
+  "panels.side.dma.ddma.coloursTooltip": "$F3: a source byte equal to it is not written (transparent mode). $F7: the value a fill writes.",
+  "@panels.side.dma.ddma.coloursTooltip": {
+    "context": "Tooltip of the Colours row in the DMA side-bar panel (ZX Spectrum Next, Machine info activity). Keep register names (WR0-WR6), port numbers and hex values as they are."
   }
 }

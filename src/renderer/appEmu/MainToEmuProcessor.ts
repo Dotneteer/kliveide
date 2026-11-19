@@ -1818,6 +1818,17 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next DMA's state (the DMA panel's snapshot).
+   */
+  getDmaState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getDmaState();
+  }
+
+  /**
    * Gets the ZX Spectrum Next interrupt event ring's records written since `since`.
    */
   getInterruptEvents(since?: number) {

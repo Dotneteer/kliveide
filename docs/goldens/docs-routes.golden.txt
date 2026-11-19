@@ -188,6 +188,7 @@
 /en/guides/media/trdos-disks/index.html
 /en/guides/media/z88-snapshots/index.html
 /en/guides/next/copper/index.html
+/en/guides/next/dma/index.html
 /en/guides/next/fw-files/index.html
 /en/guides/next/interrupts/index.html
 /en/guides/next/layer2-inspector/index.html

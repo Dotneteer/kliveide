@@ -85,6 +85,7 @@ import {
 } from "./commands/ToolCommands";
 import { HideCopperCommand, ShowCopperCommand, StepCopperCommand } from "./commands/CopperCommands";
 import { HideInterruptTimelineCommand, ShowInterruptTimelineCommand } from "./commands/InterruptCommands";
+import { DmaStateCommand } from "./commands/DmaCommands";
 import { HideNextRegsCommand, ShowNextRegsCommand } from "./commands/NextRegCommands";
 import { ShowTbuCommand } from "./commands/TbuCommands";
 import { ShowFwCommand } from "./commands/FwCommands";
@@ -232,6 +233,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new HideCopperCommand());
   cmdSrv.registerCommand(new StepCopperCommand());
   cmdSrv.registerCommand(new ShowInterruptTimelineCommand());
+  cmdSrv.registerCommand(new DmaStateCommand());
   cmdSrv.registerCommand(new HideInterruptTimelineCommand());
   cmdSrv.registerCommand(new ShowNextRegsCommand());
   cmdSrv.registerCommand(new HideNextRegsCommand());

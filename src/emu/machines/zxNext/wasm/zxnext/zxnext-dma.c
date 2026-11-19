@@ -100,6 +100,23 @@ static uint8_t dmaWrSeq;
 static uint8_t dmaRegTemp;
 static uint8_t dmaRdSeq;
 
+/*
+ * The DMA panel's two diagnostic flags (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §3.2). Neither changes
+ * what the DMA does. Machine state, not volatile: they are deterministic, so a rewind or a state load
+ * brings back the right values with the rest of the DMA.
+ * - dmaStartsSinceLoad: a start address (WR0 port A, WR4 port B, a zxnDDMA extended byte) was written
+ *   after the last $CF, so the working addresses are not the ones just written;
+ * - dmaEnableNote: latched at an enable: bit 0 = dmaStartsSinceLoad was set, bit 1 = the end of block
+ *   had been reached and not cleared (the enable moves one more byte, from just past the end).
+ */
+static uint8_t dmaStartsSinceLoad;
+static uint8_t dmaEnableNote;
+
+/* The note an enable latches */
+static inline void zxnextDmaLatchEnableNote(void) {
+  dmaEnableNote = (uint8_t)((dmaStartsSinceLoad ? 0x01u : 0u) | (dmaEndOfBlockN ? 0u : 0x02u));
+}
+
 #if ZXNEXT_CORE_VERSION >= 30300
 /*
  * The zxnDDMA of core 3.03.00: the DMA's extra commands on port $6B (`dev/plans/ZXNEXT_3_03_PLAN.md`
@@ -185,6 +202,8 @@ void zxnextDmaReset(void) {
   dmaEndOfBlockN = 1;
   dmaRdSeq = DMA_RD_STATUS;
   dmaReadyAt = 0;
+  dmaStartsSinceLoad = 0;
+  dmaEnableNote = 0;
 #if ZXNEXT_CORE_VERSION >= 30300
   zxnextDmaDdmaClear();
   dmaXCmd = 0;
@@ -258,6 +277,7 @@ static void zxnextDmaCommand(uint8_t d) {
       dmaPortBTiming = 1;
       dmaPrescaler = 0;
       dmaAutoRestart = 0;
+      dmaEnableNote = 0;
 #if ZXNEXT_CORE_VERSION >= 30300
       zxnextDmaDdmaClear(); /* 2.6: the flags, $D7/$DB, the rectangle, the colours */
 #endif
@@ -270,11 +290,14 @@ static void zxnextDmaCommand(uint8_t d) {
       break;
     case 0xcfu: // load
       dmaEndOfBlockN = 1;
+      dmaStartsSinceLoad = 0;
+      dmaEnableNote = 0;
       zxnextDmaLoadAddresses();
       dmaCounter = zxnextDmaCounterStart();
       break;
     case 0xd3u: // continue
       dmaEndOfBlockN = 1;
+      dmaEnableNote = 0;
       dmaCounter = zxnextDmaCounterStart();
       break;
     case 0xbfu:
@@ -288,6 +311,7 @@ static void zxnextDmaCommand(uint8_t d) {
       dmaRdSeq = zxnextDmaFirstReadEntry();
       break;
     case 0x87u:
+      zxnextDmaLatchEnableNote();
       dmaSeq = DMA_SEQ_START;
       dmaGrantAfterNextM1 = zxnextCpuInInstruction;
       break;
@@ -327,6 +351,7 @@ static void zxnextDmaLayer2XY(uint8_t xLo, uint8_t xHi, uint8_t y) {
   dmaPortBStart = (uint16_t)(address & 0xffffu);
   dmaExtB = (uint8_t)(address >> 16);
   dmaStrideB = 256u;
+  dmaStartsSinceLoad = 1;
 }
 
 /* A zxnDDMA command's follow byte has come; the last one applies the command */
@@ -334,8 +359,8 @@ static void zxnextDmaDdmaFollow(uint8_t d) {
   dmaXBytes[dmaXIndex++] = d;
   const uint16_t word = (uint16_t)(dmaXBytes[0] | ((uint16_t)d << 8));
   switch (dmaXCmd) {
-    case 0xd7u: dmaExtA = d; break;
-    case 0xdbu: dmaExtB = d; break;
+    case 0xd7u: dmaExtA = d; dmaStartsSinceLoad = 1; break;
+    case 0xdbu: dmaExtB = d; dmaStartsSinceLoad = 1; break;
     case 0xdfu:
       if (dmaXIndex == 1u) {
         dmaFlags = d & 0x3fu; /* bits 7:6: write 0 */
@@ -404,7 +429,10 @@ static void zxnextDmaWriteBase(uint8_t d) {
   switch (d & 0x03u) {
     case 0x00u: // WR3
       dmaRegTemp = d;
-      if (d & 0x40u) dmaSeq = DMA_SEQ_START;
+      if (d & 0x40u) {
+        zxnextDmaLatchEnableNote();
+        dmaSeq = DMA_SEQ_START;
+      }
       dmaWrSeq = (d & 0x08u) ? DMA_WR_R3_BYTE_0 : (d & 0x10u) ? DMA_WR_R3_BYTE_1 : DMA_WR_IDLE;
       return;
     case 0x01u: // WR4
@@ -435,11 +463,13 @@ void zxnextDmaWritePort(uint32_t value) {
       return;
     case DMA_WR_R0_BYTE_0:
       dmaPortAStart = (uint16_t)((dmaPortAStart & 0xff00u) | d);
+      dmaStartsSinceLoad = 1;
       dmaWrSeq = (dmaRegTemp & 0x10u) ? DMA_WR_R0_BYTE_1 : (dmaRegTemp & 0x20u) ? DMA_WR_R0_BYTE_2 :
         (dmaRegTemp & 0x40u) ? DMA_WR_R0_BYTE_3 : DMA_WR_IDLE;
       return;
     case DMA_WR_R0_BYTE_1:
       dmaPortAStart = (uint16_t)((dmaPortAStart & 0x00ffu) | ((uint16_t)d << 8));
+      dmaStartsSinceLoad = 1;
       dmaWrSeq = (dmaRegTemp & 0x20u) ? DMA_WR_R0_BYTE_2 : (dmaRegTemp & 0x40u) ? DMA_WR_R0_BYTE_3 : DMA_WR_IDLE;
       return;
     case DMA_WR_R0_BYTE_2:
@@ -473,10 +503,12 @@ void zxnextDmaWritePort(uint32_t value) {
       return;
     case DMA_WR_R4_BYTE_0:
       dmaPortBStart = (uint16_t)((dmaPortBStart & 0xff00u) | d);
+      dmaStartsSinceLoad = 1;
       dmaWrSeq = (dmaRegTemp & 0x08u) ? DMA_WR_R4_BYTE_1 : DMA_WR_IDLE;
       return;
     case DMA_WR_R4_BYTE_1:
       dmaPortBStart = (uint16_t)((dmaPortBStart & 0x00ffu) | ((uint16_t)d << 8));
+      dmaStartsSinceLoad = 1;
       dmaWrSeq = DMA_WR_IDLE;
       return;
     case DMA_WR_R6_BYTE_0:
@@ -793,6 +825,77 @@ static inline uint32_t zxnextDmaIsActive(void) { return dmaSeq != DMA_SEQ_IDLE |
 static inline uint32_t zxnextDmaGetIpSignal(void) { return 0; }
 
 uint32_t zxnextGetDmaMode(void) { return dmaMode; }
+
+/*
+ * The DMA panel's snapshot (`dev/plans/NEXT_DMA_DEBUGGING_PLAN.md` §3.2): one call fills 64 bytes and
+ * returns their address. Side-effect free: it reads statics only (never zxnextDmaReadStatusByte, which
+ * moves the read sequence on). The layout is `src/common/zxnext/dma/dmaState.ts` `decodeDmaState`'s,
+ * pinned by test/wasm/zxNext/wasm-next-dma-state.test.ts. Little-endian words.
+ */
+#define ZXNEXT_IDE_DMA_STATE_SIZE 64u
+static uint8_t zxnextIdeDmaState[ZXNEXT_IDE_DMA_STATE_SIZE];
+
+static inline void zxnextDmaPutWord(uint8_t *o, uint32_t at, uint32_t value) {
+  o[at] = (uint8_t)value;
+  o[at + 1u] = (uint8_t)(value >> 8);
+}
+
+uint32_t zxnextGetDmaStatePtr(void) {
+  uint8_t *o = zxnextIdeDmaState;
+  for (uint32_t i = 0; i < ZXNEXT_IDE_DMA_STATE_SIZE; i++) o[i] = 0u;
+  o[0] = dmaMode;
+  o[1] = dmaSeq;
+  o[2] = dmaBusRequested;
+  o[3] = dmaBusAcknowledged;
+  o[4] = dmaDirAtoB;
+  o[5] = dmaPortAIsIo;
+  o[6] = dmaPortAAddrMode;
+  o[7] = dmaPortATiming;
+  o[8] = dmaPortBIsIo;
+  o[9] = dmaPortBAddrMode;
+  o[10] = dmaPortBTiming;
+  o[11] = dmaPrescaler;
+  o[12] = dmaTransferMode;
+  o[13] = dmaAutoRestart;
+  o[14] = dmaReadMask;
+  o[15] = dmaRdSeq;
+  zxnextDmaPutWord(o, 16u, dmaPortAStart);
+  zxnextDmaPutWord(o, 18u, dmaPortBStart);
+  zxnextDmaPutWord(o, 20u, dmaBlockLength);
+  zxnextDmaPutWord(o, 22u, dmaCounter);
+  zxnextDmaPutWord(o, 24u, dmaSrc);
+  zxnextDmaPutWord(o, 26u, dmaDest);
+  o[28] = dmaEndOfBlockN;
+  o[29] = dmaAtLeastOne;
+  o[30] = dmaWrSeq;
+  o[31] = dmaRegTemp;
+  o[32] = dmaStartsSinceLoad;
+  o[33] = dmaEnableNote;
+  o[34] = dmaWasDelayed;
+  o[35] = (uint8_t)zxnextDmaDelayed();
+  o[36] = dmaGrantAfterNextM1;
+  o[60] = (uint8_t)(cpuEffectiveSpeed & 0x03u);
+#if ZXNEXT_CORE_VERSION >= 30300
+  o[37] = 1u;
+  o[38] = dmaFlags;
+  o[39] = dmaExtA;
+  o[40] = dmaExtB;
+  o[41] = dmaSrcHi;
+  o[42] = dmaDestHi;
+  o[43] = dmaTransparent;
+  o[44] = dmaFill;
+  o[45] = dmaXCmd;
+  o[46] = dmaXCount;
+  o[47] = dmaXIndex;
+  zxnextDmaPutWord(o, 48u, dmaRowLength);
+  zxnextDmaPutWord(o, 50u, dmaRowCount);
+  zxnextDmaPutWord(o, 52u, dmaStrideA);
+  zxnextDmaPutWord(o, 54u, dmaStrideB);
+  zxnextDmaPutWord(o, 56u, dmaRowByte);
+  zxnextDmaPutWord(o, 58u, dmaRow);
+#endif
+  return (uint32_t)(uintptr_t)o;
+}
 uint32_t zxnextGetDmaSeq(void) { return dmaSeq; }
 uint32_t zxnextGetDmaByteCounter(void) { return dmaCounter; }
 uint32_t zxnextGetDmaAddressA(void) { return dmaDirAtoB ? dmaSrc : dmaDest; }
