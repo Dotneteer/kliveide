@@ -6,6 +6,8 @@ import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ProblemCounter } from "./ProblemCounter";
 import { getGlobalSetting, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -116,6 +118,15 @@ import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 import { pasteTextIntoEditor } from "./monacoClipboard";
 import { BackgroundCompileScheduler } from "./monacoBackgroundCompile";
 import { setEditorModelDropper } from "../editorModelCache";
+import {
+  countProblems,
+  groupLineHints,
+  hintParts,
+  setUndefinedSymbolRanges,
+  UNDEFINED_SYMBOL_CODE,
+  type LineMessage,
+  type UndefinedSymbolRange
+} from "./editorDiagnostics";
 import { t } from "@common/i18n/i18n";
 
 export { initializeMonaco } from "./monacoBootstrap";
@@ -262,6 +273,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Step Into Target's context-menu items (plan §10.2.4), one per routine the stopped statement calls
   const stepTargetActions = useRef<monacoEditor.IDisposable[]>([]);
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
+  // --- The problem counter: this file's error and warning counts, and the overlay node it renders into
+  const [problems, setProblems] = useState({ errors: 0, warnings: 0 });
+  const [problemCounterNode, setProblemCounterNode] = useState<HTMLElement | null>(null);
   const refreshEditorBreakpoints = useRef<() => Promise<void>>(async () => undefined);
 
   // --- Background compiles: debounced after edits, one at a time, none lost (see the helper)
@@ -458,7 +472,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const currentModel = editor.current?.getModel();
     if (currentModel) {
       monacoEditor.editor.setModelMarkers(currentModel, "klive-z80", []);
+      setUndefinedSymbolRanges(currentModel, []);
     }
+    setProblems({ errors: 0, warnings: 0 });
 
     // Don't proceed if no editor or no background result or if background compilation is disabled
     if (!editor.current || !backgroundResult || !allowBackgroundCompile) {
@@ -542,35 +558,44 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         : getLineCols(err.line || 1);
     };
 
-    // --- Monaco renders a long text run as several spans, each with the decoration's class, and the
-    // --- stylesheet joins adjacent same-class spans into one pill. So a line gets one badge per
-    // --- severity, its messages joined, or two messages would fuse into one pill with no separator.
-    const badges = new Map<string, { lineNo: number; messages: string[]; isWarning: boolean }>();
-    const addBadge = (lineNo: number, message: string, isWarning: boolean | undefined) => {
-      const key = `${lineNo}:${!!isWarning}`;
-      const badge = badges.get(key) ?? { lineNo, messages: [], isWarning: !!isWarning };
-      if (!badge.messages.includes(message)) badge.messages.push(message);
-      badges.set(key, badge);
-    };
+    // --- Every message of the file, by line: one quiet hint per line (`editorDiagnostics.ts`)
+    const lineMessages: Array<LineMessage & { lineNo: number }> = [];
+    // --- The exact range of each undefined-symbol error, for the "did you mean" quick fix
+    const undefinedSymbols: UndefinedSymbolRange[] = [];
 
     fileErrors.forEach((err) => {
       const lineNo = err.line || 1;
-      const isWarning = err.isWarning;
+      const isWarning = !!err.isWarning;
       const { startCol, endCol } = getErrorCols(err);
+      const message = err.message || t("panels.feature.editor.issueDetected");
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
       markers.push({
         severity: isWarning
           ? monacoEditor.MarkerSeverity.Warning
           : monacoEditor.MarkerSeverity.Error,
-        message: err.message || t("panels.feature.editor.issueDetected"),
+        message,
+        // --- The hover shows it after the message, and the quick fix finds its errors by it
+        code: err.errorCode || undefined,
         startLineNumber: lineNo,
         startColumn: startCol,
         endLineNumber: lineNo,
         endColumn: endCol
       });
 
-      addBadge(lineNo, err.message || t("panels.feature.editor.issueDetected"), isWarning);
+      lineMessages.push({ lineNo, message, code: err.errorCode || undefined, isWarning });
+      if (
+        err.errorCode === UNDEFINED_SYMBOL_CODE &&
+        typeof err.startColumn === "number" &&
+        typeof err.endColumn === "number" &&
+        err.endColumn > err.startColumn
+      ) {
+        undefinedSymbols.push({
+          lineNo,
+          startColumn: err.startColumn + 1,
+          endColumn: err.endColumn + 1
+        });
+      }
     });
 
     // Add markers for invocation sites found in macro error message prefixes
@@ -588,24 +613,44 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         endLineNumber: lineNo,
         endColumn: endCol
       });
-      addBadge(lineNo, message, isWarning);
+      lineMessages.push({ lineNo, message, isWarning });
     });
 
-    // Custom inline pill/badge displayed after the line content: one per line and severity
-    badges.forEach(({ lineNo, messages, isWarning }) => {
+    // --- The quiet hint (one per line): a faint tint on the line, its number in the status colour,
+    // --- and after the code the first message in the status colour, then its code and "+N" dimmed.
+    // --- Two decorations ending at the same column keep their order by where they start (Monaco
+    // --- sorts injected text by column, then by decoration order, and returns decorations by
+    // --- start), so the detail's range starts one column later than the message's.
+    groupLineHints(lineMessages).forEach((hint) => {
+      const { lineNo, isWarning } = hint;
       const { startCol, endCol } = getLineCols(lineNo);
+      const { message, detail } = hintParts(hint);
+      afterDecorations.push({
+        range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+        options: {
+          isWholeLine: true,
+          className: isWarning ? styles.warningLine : styles.errorLine,
+          lineNumberClassName: isWarning ? styles.warningLineNumber : styles.errorLineNumber
+        }
+      });
       afterDecorations.push({
         range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
         options: {
-          after: {
-            content: messages.join("  \u2022  "),
-            inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
-          },
-          isWholeLine: false
+          after: { content: message, inlineClassName: isWarning ? styles.warningHint : styles.errorHint }
         }
       });
+      if (detail) {
+        afterDecorations.push({
+          range: new monacoEditor.Range(lineNo, Math.max(startCol, endCol - 1), lineNo, endCol),
+          options: { after: { content: detail, inlineClassName: styles.hintDetail } }
+        });
+      }
     });
 
+    setUndefinedSymbolRanges(model, undefinedSymbols);
+    setProblems(
+      countProblems(markers.map((m) => ({ isWarning: m.severity === monacoEditor.MarkerSeverity.Warning })))
+    );
     monacoEditor.editor.setModelMarkers(model, "klive-z80", markers);
     if (afterDecorations.length > 0) {
       errorWarningDecorations.current = editor.current.createDecorationsCollection(afterDecorations);
@@ -627,6 +672,15 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
      * up the Klive palette on a later theme or accent change.
      */
     monacoRef.current = monaco;
+    // --- The problem counter's corner: Monaco keeps a top-right overlay clear of the scrollbar
+    // --- and the minimap (`document` is this component's prop, hence `window.document`)
+    const counterNode = window.document.createElement("div");
+    ed.addOverlayWidget({
+      getId: () => "klive.problemCounter",
+      getDomNode: () => counterNode,
+      getPosition: () => ({ preference: monaco.editor.OverlayWidgetPositionPreference.TOP_RIGHT_CORNER })
+    });
+    setProblemCounterNode(counterNode);
     defineLanguageThemes(monaco, theme.tone as "light" | "dark", accentId);
     monaco.editor.setTheme(themeNameFor(theme.tone));
     // --- Restore the view state to display the editor is it has been left
@@ -1146,6 +1200,20 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         />
       )}
     </AutoSizer>
+    {problemCounterNode &&
+      createPortal(
+        <ProblemCounter
+          errors={problems.errors}
+          warnings={problems.warnings}
+          go={(direction) => {
+            const ed = editor.current;
+            if (!ed) return;
+            ed.focus();
+            ed.trigger("problemCounter", direction > 0 ? "editor.action.marker.next" : "editor.action.marker.prev", null);
+          }}
+        />,
+        problemCounterNode
+      )}
     <ContextMenu state={marginMenuState} onClickOutside={() => marginMenuApi.conceal()}>
       {marginTarget &&
         marginMenuItems(marginTarget).map((item) => (

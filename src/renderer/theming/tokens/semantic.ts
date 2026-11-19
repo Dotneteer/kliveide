@@ -167,6 +167,12 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--status-warning-subtle": alpha(s.warning, 18),
     "--status-success-subtle": alpha(s.success, 18),
     /**
+     * A tint for a whole editor line with an error or warning on it: faint enough that the code's
+     * own colours and the current-line highlight still read through it.
+     */
+    "--status-error-faint": alpha(s.error, 8),
+    "--status-warning-faint": alpha(s.warning, 8),
+    /**
      * The hover step for a *filled* status button, derived exactly as `--accent-solid-hover` is.
      *
      * A destructive commit button needs a hover state, and the only alternatives were a colour

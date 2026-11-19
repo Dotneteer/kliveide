@@ -19,6 +19,7 @@ import {
   type StaticCompletionItem
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
+import { registerUndefinedSymbolQuickFix } from "@renderer/features/editor/monaco/diagnosticQuickFixes";
 import { computeDmaCodeLenses, computeDmaHover, DMA_LINE_RE } from "./dma-editor";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
 // --- Register names: the union of every core's set (`dev/ai/zxnext-models.md` D5)
@@ -1496,6 +1497,13 @@ export function registerZ80Providers(
       };
     }
   });
+
+  // --- "Did you mean" for an undefined symbol, offered from the error's hover
+  registerUndefinedSymbolQuickFix(monaco, LANG, () =>
+    getService()
+      .getCompletionCandidates("")
+      .map((s) => s.name)
+  );
 
   // --- References
   monaco.languages.registerReferenceProvider(LANG, {

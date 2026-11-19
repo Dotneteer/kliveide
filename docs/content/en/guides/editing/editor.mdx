@@ -60,15 +60,20 @@ What Klive adds depends on the language of the file (see [File types](/en/guides
 
 The live features come from [background compilation](/en/guides/projects/background-compilation/):
 Klive compiles the project quietly a moment after you stop typing. With **Settings › Editor ›
-Compile in the background** on, errors are underlined in the editor, with the message beside the line
-and in the hover:
+Compile in the background** on, a line with an error is tinted and underlined, its line number turns
+red, and the message and its code follow the line. The hover shows every message on the line; for a
+mistyped label it offers **Quick Fix...** with the label you probably meant:
 
 <Shot
   src="guides/editing/editor/error.webp"
-  alt="A mistyped label, Dleay, underlined in the editor, with the message Identifier 'Dleay' is not defined yet beside the line and in the hover"
+  alt="A mistyped label, Dleay, underlined on a tinted line with a red line number, the message Identifier 'Dleay' is not defined yet and its code Z0605 after the line, and the hover with View Problem and Quick Fix"
   caption="An inline error from background compilation"
   width={620}
 />
+
+The counter in the editor's top-right corner shows how many errors and warnings the file has, and its
+arrows step through them (<kbd>Alt</kbd>+<kbd>F8</kbd> does the same). A file with errors also shows
+its error count on its tab.
 
 **Go to definition** and opening an `#include` file are remembered as jumps, so
 <kbd>Ctrl</kbd>+<kbd>-</kbd> (macOS) or <kbd>Alt</kbd>+<kbd>←</kbd> (Windows and Linux) takes you

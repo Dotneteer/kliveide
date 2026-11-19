@@ -2601,6 +2601,35 @@
   "@panels.feature.editor.issueDetected": {
     "context": "Fallback text of a code editor error/warning marker when the compiler gave no message."
   },
+  "panels.feature.editor.quickFix.changeTo": "Change to {name}",
+  "@panels.feature.editor.quickFix.changeTo": {
+    "context": "A quick fix offered in the code editor for an assembler error saying a symbol is not defined: replaces the misspelt name with a known symbol of a similar name.",
+    "placeholders": {
+      "name": "The suggested symbol's name, e.g. 'Loop' (not translated)"
+    }
+  },
+  "panels.feature.editor.problems.errors": "{count, plural, one {# error} other {# errors}}",
+  "@panels.feature.editor.problems.errors": {
+    "context": "Tooltip and screen-reader text of the error count in the code editor's problem counter and on a document tab: how many errors the last background build found in the file.",
+    "placeholders": {
+      "count": "The number of errors"
+    }
+  },
+  "panels.feature.editor.problems.warnings": "{count, plural, one {# warning} other {# warnings}}",
+  "@panels.feature.editor.problems.warnings": {
+    "context": "Tooltip of the warning count in the code editor's problem counter: how many warnings the last background build found in the file.",
+    "placeholders": {
+      "count": "The number of warnings"
+    }
+  },
+  "panels.feature.editor.problems.previous": "Previous problem",
+  "@panels.feature.editor.problems.previous": {
+    "context": "Tooltip of a button in the code editor's problem counter (top-right corner): moves to the previous error or warning in the file and shows it."
+  },
+  "panels.feature.editor.problems.next": "Next problem",
+  "@panels.feature.editor.problems.next": {
+    "context": "Tooltip of a button in the code editor's problem counter (top-right corner): moves to the next error or warning in the file and shows it."
+  },
   "panels.feature.editor.action.toggleStatementBreakpoint": "Toggle Breakpoint at Statement",
   "@panels.feature.editor.action.toggleStatementBreakpoint": {
     "context": "Item of the code editor's context menu (Klive BASIC source): adds or removes a breakpoint on the statement under the cursor."

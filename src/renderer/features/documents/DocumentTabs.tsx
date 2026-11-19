@@ -5,6 +5,9 @@ import { type DragEvent, useState } from "react";
 import { type DocumentAreaId } from "./documentAreaLayout";
 import classnames from "classnames";
 import { documentDisplayName } from "./specialDocuments";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
+import { SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE } from "@common/settings/setting-const";
+import { fileErrorCount } from "@renderer/features/editor/monaco/editorDiagnostics";
 
 type TabDropPlacement = "before" | "after";
 
@@ -87,6 +90,9 @@ export function DocumentTabs({
    * overflow list next door has always computed it this way.
    */
   const tabLabels = getDocumentTabLabels(openDocs);
+  // --- The last background build's errors, counted on the tab of the file they are in
+  const allowBackgroundCompile = useGlobalSetting(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE);
+  const backgroundErrors = useSelector((s) => s.compilation?.backgroundResult?.errors);
 
   const getDropPlacement = (event: DragEvent<HTMLDivElement>): TabDropPlacement => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -147,6 +153,9 @@ export function DocumentTabs({
             key={document.id}
             name={docName}
             path={document.path}
+            errorCount={
+              allowBackgroundCompile ? fileErrorCount(backgroundErrors, document.node?.projectPath) : 0
+            }
             isActive={idx === activeDocIndex}
             isInActiveArea={isInActiveArea}
             isTemporary={document.isTemporary}
