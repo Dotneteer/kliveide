@@ -22,7 +22,8 @@ import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
 
 /** One key unit in the drawing */
 const U = 100;
-const MARGIN = 0.42;
+/** The case's frame around the key well (the project author's review: keep it thin) */
+const MARGIN = 0.24;
 /** The gap between two keys, in drawing units */
 const GAP = 7;
 /** The cluster's first column */
@@ -303,9 +304,9 @@ export const SamKeyboard = ({ width, height, apiLoaded }: Props) => {
         onContextMenu={(e) => e.preventDefault()}
         style={{ flexShrink: 0 }}
       >
-        <rect width="100%" height="100%" rx={36} fill={caseColor} />
-        <rect x={8} y={8} width={VW - 16} height={VH - 16} rx={30} fill="none" stroke={caseEdge} strokeWidth={4} />
-        <rect x={X(0) - 16} y={Y(0) - 16} width={(CLUSTER_X + 3) * U + 26} height={5 * U + 26} rx={10} fill={well} />
+        <rect width="100%" height="100%" rx={20} fill={caseColor} />
+        <rect x={3} y={3} width={VW - 6} height={VH - 6} rx={18} fill="none" stroke={caseEdge} strokeWidth={3} />
+        <rect x={X(0) - 10} y={Y(0) - 10} width={(CLUSTER_X + 3) * U + 14} height={5 * U + 14} rx={8} fill={well} />
         {keys}
       </svg>
     </Column>
