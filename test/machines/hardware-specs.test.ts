@@ -105,7 +105,7 @@ describe("hardware specs", () => {
 
 describe("hardware specs in another language", () => {
   // --- Technical values the table keeps verbatim: chip, product and ROM names, sizes
-  const VERBATIM = new Set(["4 MB", "16", "AY-3-8912 PSG", "TurboSound (3 × AY)", "SID", "DivMMC", "Multiface", "BASIC", "KERNAL", "OZ", "Kempston", "C64"]);
+  const VERBATIM = new Set(["4 MB", "16", "AY-3-8912 PSG", "TurboSound (3 × AY)", "SID", "DivMMC", "Multiface", "BASIC", "KERNAL", "OZ", "Kempston", "C64", "SAM Mouse"]);
   const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);
 
   it("names each medium's chip without matching its text", () => {

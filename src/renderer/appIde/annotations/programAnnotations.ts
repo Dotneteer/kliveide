@@ -42,6 +42,8 @@ export const ANNOTATION_MACHINE_MAX_BANK: Record<AnnotationMachine, number> = {
   tvc: 7,
   // --- The Enterprise: segments by their own number (EXOS 00h-01h ... RAM F8h-FFh)
   ep: 255,
+  // --- The SAM Coupé: pages by the machine's partition numbers (internal 00h-1Fh, ROM 40h-41h, external 80h-BFh)
+  sam: 0xbf,
   // --- The Cambridge Z88: banks by their own number (slot 0's ROM 00h-1Fh, internal RAM 20h-3Fh, cards)
   z88: 255,
   rom: 31

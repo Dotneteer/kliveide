@@ -31,7 +31,8 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
       ["zx8081", "z80"],
       ["ht1080z", "z80"],
       ["tvc", "z80"],
-      ["ep", "z80"]
+      ["ep", "z80"],
+      ["sam", "z80"]
     ]);
     for (const model of report.models) {
       expect(model.sharedCpuSource).toBe(report.shared.relativePath);
@@ -83,6 +84,6 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
   });
 
   it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
-    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081", "ht1080z", "tvc", "ep"]);
+    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081", "ht1080z", "tvc", "ep", "sam"]);
   });
 });

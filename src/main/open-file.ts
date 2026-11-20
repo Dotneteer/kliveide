@@ -8,12 +8,12 @@ import { app, BrowserWindow, dialog } from "electron";
 
 import { EMULATOR_FILE_EXTENSIONS, droppedFileAction } from "@common/utils/dropped-file-action";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_TAPE_SUPPORT, MI_HT1080Z, MI_TVC } from "@common/machines/constants";
+import { MC_SAM_DRIVES, MF_TAPE_SUPPORT, MI_HT1080Z, MI_SAM_COUPE, MI_TVC } from "@common/machines/constants";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "./main-store";
 import { saveKliveProject } from "./projects";
 import { appSettings, saveAppSettings } from "./settings-utils";
-import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { loadMachineStateFile } from "./machine-menus/state-menus";
 import { openDebugRecordingFile } from "./debug-recording-menus";
 import { t } from "@common/i18n/i18n";
@@ -41,6 +41,7 @@ export async function pickAndOpenEmulatorFile(window: BrowserWindow): Promise<vo
       { name: t("common.filter.ht1080zTapes"), extensions: ["cas", "cmd", "bas"] },
       { name: t("common.filter.tvcTapes"), extensions: ["cas"] },
       { name: t("common.filter.epTapes"), extensions: ["tap", "wav"] },
+      { name: t("common.filter.samDisks"), extensions: ["mgt", "dsk", "sad", "sbt"] },
       { name: t("common.filter.allFiles"), extensions: ["*"] }
     ],
     properties: ["openFile"]
@@ -102,6 +103,8 @@ export async function openEmulatorFile(
         error = t("emu.media.tape.ht1080z.basNotTokenised", { file: filename });
       }
     }
+  } else if (action.kind === "samDisk") {
+    error = await insertSamDisk(filename, action.ext);
   } else if (action.kind === "htTape") {
     error = await insertHtTape(filename);
   } else if (action.kind === "tape") {
@@ -124,6 +127,26 @@ export async function openEmulatorFile(
     await (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options));
   }
   return error;
+}
+
+/**
+ * Puts a SAM Coupé disk into drive A (`dev/plans/SAM_COUPE_PLAN.md` §11): only while the SAM runs. A `.dsk`
+ * is the SAM's because the SAM runs; on another machine it stays a file this command does not open.
+ * @returns An error message, or undefined when the disk went in
+ */
+async function insertSamDisk(filename: string, ext: string): Promise<string | undefined> {
+  const emulatorState = mainStore.getState()?.emulatorState;
+  const machineId = emulatorState?.machineId;
+  if (machineId !== MI_SAM_COUPE) {
+    if (ext === "dsk") return t("messages.file.unsupportedExt", { ext });
+    const name = machineRegistry.find((m) => m.machineId === machineId)?.displayName;
+    return name ? t("messages.file.samDiskOtherMachine", { machine: name }) : t("messages.file.samDiskNoMachine");
+  }
+  const drives = Number(emulatorState?.config?.[MC_SAM_DRIVES] ?? 1);
+  if (drives < 1) return t("messages.file.samNoDrives");
+  await setSelectedDiskFile(0, filename, false);
+  await saveKliveProject();
+  return undefined;
 }
 
 /**

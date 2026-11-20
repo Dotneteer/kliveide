@@ -20,6 +20,7 @@ import {
   MI_HT1080Z,
   MI_TVC,
   MI_ENTERPRISE,
+  MI_SAM_COUPE,
   MI_ZXNEXT
 } from "@common/machines/constants";
 import {
@@ -53,7 +54,8 @@ const STATE_MACHINES = [
   MI_ZX81,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 ];
 
 /** Can the emulator's machine save its state now (a state machine, running or paused)? */

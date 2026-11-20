@@ -37,7 +37,7 @@ import { nexFileNameOf, sdCardNexName } from "@renderer/appIde/utils/nex-file-na
 import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_Z88, MI_ZX80, MI_ZX81, MI_HT1080Z, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE, MI_SAM_COUPE } from "@common/machines/constants";
 import {
   zx8081ExportFile,
   zx8081ExportFormatOf,
@@ -64,6 +64,8 @@ import { ht1080zExportFile, ht1080zExportFormatOf, ht1080zFormatProblem } from "
 import { tvcExportFile, tvcExportFormatOf, tvcFormatProblem } from "../utils/tvc-code";
 import { epExportFile, epExportFormatOf, epFormatProblem } from "../utils/ep-code";
 import { describeEpPlacementProblem, isEpPlacementProblem, placeEpCode } from "@common/enterprise/codePlacement";
+import { describeSamPlacementProblem, isSamPlacementProblem, placeSamCode } from "@common/samcoupe/codePlacement";
+import { samExportFile, samExportFormatOf, samFormatProblem } from "../utils/sam-code";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -169,7 +171,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     return t("commands.compile.export.description");
   }
   readonly usage =
-    "expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|mdr|p|o|cmd|cas|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+    "expc filename [-n name] [-f tap|tzx|hex|nex|dsk|trd|mdr|p|o|cmd|cas|mgt|bin|epr] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
@@ -251,6 +253,24 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       if (problem) return commandError(problem);
       if (epRequested === "com") {
         const file = epExportFile(output as CompilerOutput);
+        if ("error" in file) return commandError(file.error);
+        try {
+          const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
+          return commandSuccessWith(t("commands.compile.exported", { file: filePath }), { file: filePath });
+        } catch (err) {
+          return commandError(err.toString());
+        }
+      }
+    }
+
+    // --- SAM Coupé code exports as an .mgt disk with a CODE file, or as raw bytes (`renderer/appIde/utils/sam-code.ts`)
+    const samFormat = samExportFormatOf((output as CompilerOutput).modelType, emulatorState?.machineId);
+    if (samFormat) {
+      const samRequested = args["-f"] ?? samFormat;
+      const problem = samFormatProblem(samRequested);
+      if (problem) return commandError(problem);
+      if (samRequested === "mgt" || samRequested === "bin") {
+        const file = samExportFile(samRequested, output as CompilerOutput, args["-n"] ?? args.filename);
         if ("error" in file) return commandError(file.error);
         try {
           const filePath = await context.mainApi.saveBinaryFile(args.filename, file.data, `kliveHome:${EXPORT_FILE_FOLDER}`);
@@ -1025,6 +1045,13 @@ export async function injectCode(
   if (isEp && (result.modelType === undefined || result.modelType === SpectrumModelType.Enterprise)) {
     const placement = placeEpCode(result.segments, result.entryAddress);
     if (isEpPlacementProblem(placement)) return commandError(describeEpPlacementProblem(placement));
+  }
+
+  // --- The SAM Coupé runs code paged in as SAM BASIC pages a program (`common/samcoupe/codePlacement.ts`)
+  const isSam = emulatorState?.machineId === MI_SAM_COUPE;
+  if (isSam && (result.modelType === undefined || result.modelType === SpectrumModelType.SamCoupe)) {
+    const placement = placeSamCode(result.segments, result.entryAddress);
+    if (isSamPlacementProblem(placement)) return commandError(describeSamPlacementProblem(placement));
   }
 
   if (isZxNext && operationType === "inject") {

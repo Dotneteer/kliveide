@@ -56,6 +56,8 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
       return "tvc";
     case SpectrumModelType.Enterprise:
       return "ep";
+    case SpectrumModelType.SamCoupe:
+      return "sam";
     default:
       return null;
   }

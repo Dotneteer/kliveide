@@ -228,6 +228,10 @@
   "@common.filter.epDisks": {
     "context": "File type filter in the Insert Disk dialog for the Enterprise 64/128 home computer: its floppy disk images (.img, .dsk) for the EXDOS disk interface. Keep Enterprise (the computer's name)."
   },
+  "common.filter.samDisks": "SAM Coupé Disks",
+  "@common.filter.samDisks": {
+    "context": "File type filter in the Insert Disk and Open File dialogs for the SAM Coupé home computer: its floppy disk images (.mgt, .dsk, .sad, .sbt). Keep SAM Coupé (the computer's name)."
+  },
   "common.filter.textTrace": "Text trace",
   "@common.filter.textTrace": {
     "context": "File-type filter in an operating-system Open/Save file dialog (the drop-down of file types). An instruction trace as plain text."

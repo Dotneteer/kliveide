@@ -1,5 +1,6 @@
 import type { HistoryRecord } from "../historyRecord";
 import { describeEpContext, epPartitionFor } from "./epContext";
+import { describeSamContext, samPartitionFor } from "./samContext";
 import { describeHt1080zContext, ht1080zPartitionFor } from "./ht1080zContext";
 import { describeSp128Context, sp128PartitionFor } from "./sp128Context";
 import { describeSp48Context, sp48PartitionFor } from "./sp48Context";
@@ -49,6 +50,7 @@ const decoders: Record<string, HistoryContextDecoder> = {
   ht1080z: tStates(ht1080zPartitionFor, describeHt1080zContext),
   tvc: tStates(tvcPartitionFor, describeTvcContext),
   ep: tStates(epPartitionFor, describeEpContext),
+  sam: tStates(samPartitionFor, describeSamContext),
   zxnext: {
     partitionFor: zxNextPartitionFor,
     describe: describeZxNextContext,

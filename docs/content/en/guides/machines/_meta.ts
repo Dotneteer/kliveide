@@ -3,6 +3,7 @@ export default {
   "ht1080z": "The HT-1080Z",
   "videoton-tvc": "The Videoton TVC",
   "enterprise": "The Enterprise 64 and 128",
+  "sam-coupe": "The SAM Coupé",
   "cambridge-z88": "The Cambridge Z88",
   "timex-scorpion": "Timex and Scorpion"
 };

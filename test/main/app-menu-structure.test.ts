@@ -331,7 +331,7 @@ describe("the application menu", () => {
 
   it("offers the Audio Mixer on every machine with sound, and not on one without", () => {
     const views = (machineId: string) => labels(submenu(menu(buildMenu(machineId, undefined, "emu"), "View"), "Machine Views"));
-    for (const machineId of ["sp48", "sp128", "zxnext", "z88", "tvc", "ep"]) {
+    for (const machineId of ["sp48", "sp128", "zxnext", "z88", "tvc", "ep", "sam"]) {
       expect(views(machineId), machineId).toContain("Audio Mixer");
     }
     for (const machineId of ["zx81", "zx80", "c64"]) {
@@ -374,7 +374,8 @@ describe("the application menu", () => {
       ["sp128", pentagonModelId()],
       ["zxnext"],
       ["z88"],
-      ["zx81"]
+      ["zx81"],
+      ["sam"]
     ] as [string, string?][]) {
       for (const focus of ["emu", "ide"] as const) {
         const template = buildMenu(machineId, modelId, focus);
@@ -491,7 +492,7 @@ describe("the menu in the pseudo-locale", () => {
     setLanguage("qps");
   });
 
-  it.each([["sp48"], ["sp128", "pentagon"], ["zxnext"], ["z88"], ["zx81"], ["zx80"], ["timex", "tc2068"], ["timex", "ts2068"], ["sp3e"], ["scorpion"]])(
+  it.each([["sp48"], ["sp128", "pentagon"], ["zxnext"], ["z88"], ["zx81"], ["zx80"], ["timex", "tc2068"], ["timex", "ts2068"], ["sp3e"], ["scorpion"], ["sam"]])(
     "labels every %s item in the current language",
     (machineId, model) => {
       const modelId = model === "pentagon" ? pentagonModelId() : model;

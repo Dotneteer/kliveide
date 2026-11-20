@@ -75,6 +75,7 @@ import { MachineCommand } from "@abstractions/MachineCommand";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { EpDaveDebugState, EpNickDebugState } from "@emu/machines/enterprise/EpDebugState";
+import type { SamAsicDebugState, SamSaaDebugState } from "@emu/machines/samcoupe/SamDebugState";
 import {
   CpuState,
   CpuStateChunk,
@@ -1093,6 +1094,36 @@ class EmuMessageProcessor {
       throw new Error("The Enterprise DAVE chip is not available");
     }
     return machine.getEpDaveState();
+  }
+
+  /**
+   * Gets the SAM Coupé's ASIC state.
+   */
+  getSamAsicState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as Partial<{ getSamAsicState(): SamAsicDebugState }>;
+    if (typeof machine.getSamAsicState !== "function") {
+      throw new Error("The SAM Coupé ASIC is not available");
+    }
+    return machine.getSamAsicState();
+  }
+
+  /**
+   * Gets the SAM Coupé's SAA 1099 state.
+   */
+  getSamSaaState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as Partial<{ getSamSaaState(): SamSaaDebugState }>;
+    if (typeof machine.getSamSaaState !== "function") {
+      throw new Error("The SAM Coupé SAA 1099 is not available");
+    }
+    return machine.getSamSaaState();
   }
 
   /**

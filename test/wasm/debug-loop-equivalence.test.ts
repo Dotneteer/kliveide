@@ -12,6 +12,7 @@ import { createZ88Session, Z88_FLAT_RAM_LAYOUT } from "../harness/z88";
 import { createZx81Session } from "../harness/zx81";
 import { createTvcSession } from "../harness/tvc";
 import { createEpSession } from "../harness/enterprise";
+import { createSamSession } from "../harness/samcoupe";
 
 /**
  * The debugger's in-core loop decides exactly as the instruction-by-instruction loop does
@@ -141,6 +142,15 @@ const MACHINES: Record<string, () => Promise<Setup>> = {
     s.runFrames(20);
     s.wasm.epWritePort(0xb2, 0xfc);
     return { machine: s.machine as unknown as Machine, prefix: "ep", base: 0x8000, counter: 0x9000, di: true, port: 0x0080 };
+  },
+  // --- The program and its counter in internal RAM (page 1 at 8000h, HMPR = 1), and the port the ASIC's
+  // --- (F9h, STATUS): every fetch, counter access and port read waits on the ASIC's contention
+  // --- (`dev/plans/SAM_COUPE_PLAN.md` §3.2)
+  sam: async () => {
+    const s = await createSamSession();
+    s.runFrames(20);
+    s.wasm.samWritePort(0x00fb, 0x01);
+    return { machine: s.machine as unknown as Machine, prefix: "sam", base: 0x8000, counter: 0x9000, di: true, port: 0x00f9 };
   }
 };
 

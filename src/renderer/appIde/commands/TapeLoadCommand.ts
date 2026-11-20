@@ -8,7 +8,8 @@ import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_SCORPION, MI_ZX80, MI_ZX81,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 } from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { ht1080zTapeErrorKey, isHt1080zTapeFor, parseHt1080zTapeFile } from "@emu/machines/ht1080z/Ht1080zTapeFile";
@@ -42,7 +43,10 @@ export const TAPE_LOAD_MACHINES: readonly string[] = [
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_TIMEX,
-  MI_SCORPION
+  MI_SCORPION,
+  // --- The SAM Coupé's ROM loads Spectrum-format .tap/.tzx tapes (`SamTapeFile.ts`), typed LOAD "" at
+  // --- its copyright screen (`SamWasmV2Machine.getTapeLoadFlow`)
+  MI_SAM_COUPE
 ];
 
 /**

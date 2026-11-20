@@ -13,6 +13,7 @@ import { buildZx8081Wasm } from "../../dev/scripts/build-zx8081-wasm.cjs";
 import { buildHt1080zWasm } from "../../dev/scripts/build-ht1080z-wasm.cjs";
 import { buildTvcWasm } from "../../dev/scripts/build-tvc-wasm.cjs";
 import { buildEpWasm } from "../../dev/scripts/build-ep-wasm.cjs";
+import { buildSamWasm } from "../../dev/scripts/build-sam-wasm.cjs";
 import { tvcExportFile } from "@renderer/appIde/utils/tvc-code";
 import { buildZxNextWasmArtifact } from "../wasm/zxNext/wasm-next-test-helpers";
 
@@ -110,6 +111,7 @@ beforeAll(async () => {
   buildZx8081Wasm();
   buildHt1080zWasm();
   buildEpWasm();
+  buildSamWasm();
   await buildZxNextWasmArtifact();
   out = fs.mkdtempSync(path.join(os.tmpdir(), "klive-run-"));
 }, 300_000);
@@ -287,6 +289,14 @@ describe("klive run: inputs", () => {
     expect(run.result.stop).toBe("pc");
     expect(bytesOf("ep.bin")).toEqual(new Uint8Array([10]));
     expect(run.result.registers.pc).toBe(0x010e);
+  }, 120_000);
+
+  it("builds a SAM Coupé project, writes it to page 1 at the copyright screen and starts it at 8000h", async () => {
+    const run = await kliveJson(["run", "runsam", "--until-pc", "Done", "--timeout", "120", "--dump-mem", `Counter:1=${file("sam.bin")}`]);
+    expect(run.code).toBe(0);
+    expect(run.result.stop).toBe("pc");
+    expect(bytesOf("sam.bin")).toEqual(new Uint8Array([10]));
+    expect(run.result.registers.pc).toBe(0x800d);
   }, 120_000);
 
   it("loads a TVC .cas with LOAD, and it starts itself", async () => {

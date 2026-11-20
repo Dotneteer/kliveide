@@ -42,6 +42,8 @@ import { createTvcSession } from "../../harness/tvc";
 import { TvcKeyCode } from "@emu/machines/tvc/TvcKeyCode";
 import { createEpSession } from "../../harness/enterprise";
 import { EpKeyCode } from "@emu/machines/enterprise/EpKeyCode";
+import { createSamSession } from "../../harness/samcoupe";
+import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
 import { ReverseRig, seededRandom, type SpikeCoreId } from "../../harness/reverseSupport";
 import { expectSameBytes } from "../../expectBytes";
 
@@ -574,6 +576,45 @@ async function epMachine(): Promise<Driver> {
 }
 
 /**
+ * The SAM Coupé 512K at SAM BASIC's editor (`dev/plans/SAM_COUPE_PLAN.md` §11): the frame and line
+ * interrupts, the ASIC's contention. Inputs besides keys: memory edits, the border port FEh, a CLUT
+ * entry (F8h, the entry in the high byte), the SAA's address and data ports and a STATUS read.
+ */
+async function samMachine(): Promise<Driver> {
+  const s = (await createSamSession()).bootToBasic();
+  return {
+    rig: new ReverseRig("sam", s.machine),
+    executeFrame: () => s.machine.executeMachineFrame(),
+    key: (key, down) => (down ? s.keyDown(SamKeyCode[key]) : s.keyUp(SamKeyCode[key])),
+    input: (n) => {
+      switch (n & 7) {
+        case 0:
+        case 1:
+          s.poke(0x6000 + ((n >> 3) & 0xff), n >> 11);
+          return;
+        case 2:
+          s.machine.doWritePort(0x00fe, (n >> 3) & 0x27);
+          return;
+        case 3:
+          s.machine.doWritePort((((n >> 3) & 0x0f) << 8) | 0xf8, (n >> 7) & 0x7f);
+          return;
+        case 4:
+        case 5:
+          s.machine.doWritePort(0x01ff, (n >> 3) & 0x1f);
+          s.machine.doWritePort(0x00ff, (n >> 8) & 0xff);
+          return;
+        default:
+          s.machine.doReadPort(0x00f9);
+          return;
+      }
+    },
+    setStepMode: (mode) => (s.machine.executionContext.debugStepMode = mode),
+    saveState: () => s.machine.saveMachineState(),
+    loadState: (parts) => s.machine.loadMachineState(parts)
+  };
+}
+
+/**
  * The Timex TC2048 at the BASIC editor (the 48K's frame loop with the SCLD): inputs besides keys are
  * memory edits, the clock multiplier, and the screen-mode port $FF - standard, second screen, hi-colour,
  * hi-res and its ink colours.
@@ -613,6 +654,7 @@ const NEXT_KEYS = ["A", "Q", "1", "ENTER", "SPACE", "CAPS", "SYM", "P"];
 const HT1080Z_KEYS = ["A", "P", "N1", "Enter", "Space", "Shift", "Break", "Clear"];
 const TVC_KEYS = ["A", "P", "N1", "Return", "Space", "Shift", "Esc", "Up"];
 const EP_KEYS = ["A", "P", "N1", "Enter", "Space", "LShift", "Esc", "Up"];
+const SAM_KEYS = ["A", "P", "N1", "Enter", "Space", "Shift", "Esc", "Up"];
 
 /** Two seeds per variant in CI; `KLIVE_REVERSE_SEEDS=1-40` runs more locally */
 const SEEDS = (() => {
@@ -645,7 +687,8 @@ const cores: [SpikeCoreId, MachineFactory, string[], string?][] = [
   ["zx8081", zx8081Machine(MI_ZX80), ZX8081_KEYS, "zx80"],
   ["ht1080z", ht1080zMachine, HT1080Z_KEYS],
   ["tvc", tvcMachine, TVC_KEYS],
-  ["ep", epMachine, EP_KEYS]
+  ["ep", epMachine, EP_KEYS],
+  ["sam", samMachine, SAM_KEYS]
 ];
 
 /** The cores whose layout stamp names frame-boundary scratch (T5): only they get the scratch proof */

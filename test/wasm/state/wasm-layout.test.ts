@@ -123,7 +123,8 @@ describe("the cores carry a layout", () => {
     ["spp3e", "../../../dev/scripts/build-spp3e-wasm.cjs"],
     ["z88", "../../../dev/scripts/build-z88-wasm.cjs"],
     ["zx8081", "../../../dev/scripts/build-zx8081-wasm.cjs"],
-    ["zxnext", "../../../dev/scripts/build-zxnext-wasm.cjs"]
+    ["zxnext", "../../../dev/scripts/build-zxnext-wasm.cjs"],
+    ["sam", "../../../dev/scripts/build-sam-wasm.cjs"]
   ];
 
   it.each(cores)("%s: two builds agree, and the stamp matches the memory size", (core, script) => {

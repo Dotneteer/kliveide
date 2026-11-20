@@ -1,4 +1,4 @@
-import { MI_C64, MI_ENTERPRISE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
+import { MI_C64, MI_ENTERPRISE, MI_SAM_COUPE, MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
 import { HEADLESS_MACHINE_NAMES } from "@common/headless/headlessMachines";
 
 /*
@@ -7,11 +7,12 @@ import { HEADLESS_MACHINE_NAMES } from "@common/headless/headlessMachines";
  * needs a machine whose code can be injected, which the ZX80/ZX81 do not have yet. The HT-1080Z joined
  * with its code injection (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D9, D-Q6), and the Videoton TVC with
  * its (`dev/ai/videoton-tvc.md`, "Run, Debug and export"): the runner stops its flow at BASIC's
- * prompt. So does the Enterprise's (`dev/plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's.
+ * prompt. So does the Enterprise's (`dev/plans/ENTERPRISE_PLAN.md` Phase 8), at IS-BASIC's, and the SAM
+ * Coupé's (`dev/plans/SAM_COUPE_PLAN.md` §12), at the copyright screen.
  */
 
 /** The machines with a runner (D18); the others get `unsupportedMachineMessage` */
-export const UNIT_TEST_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, MI_HT1080Z, MI_TVC, MI_ENTERPRISE];
+export const UNIT_TEST_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_ZXNEXT, MI_HT1080Z, MI_TVC, MI_ENTERPRISE, MI_SAM_COUPE];
 
 /** Why the runner cannot run on a machine, or `undefined` when it can */
 export function unsupportedMachineMessage(machineId: string | undefined): string | undefined {
@@ -20,6 +21,6 @@ export function unsupportedMachineMessage(machineId: string | undefined): string
   const name = (machineId && HEADLESS_MACHINE_NAMES[machineId]) ?? machineId ?? "this machine";
   return (
     `Unit tests do not run on ${name} yet: they run on the ZX Spectrum 48K, 128K, +2A/+3/+2E/+3E, ` +
-    "the ZX Spectrum Next, the HT-1080Z, the Videoton TVC and the Enterprise 64/128."
+    "the ZX Spectrum Next, the HT-1080Z, the Videoton TVC, the Enterprise 64/128 and the SAM Coupé."
   );
 }

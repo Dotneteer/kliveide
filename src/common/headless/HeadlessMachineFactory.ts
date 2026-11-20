@@ -2,7 +2,7 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
 import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
-import { MI_HT1080Z, MI_TVC, MI_ENTERPRISE, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { MI_HT1080Z, MI_TVC, MI_ENTERPRISE, MI_SAM_COUPE, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import { artifactNameOf, headlessUnsupportedMessage } from "./headlessMachines";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
@@ -14,6 +14,7 @@ import { Ht1080zWasmV2Machine } from "@emu/machines/ht1080z/Ht1080zWasmV2Machine
 import { TvcWasmV2Machine } from "@emu/machines/tvc/TvcWasmV2Machine";
 import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
 import { EpMemoryFileStore } from "@emu/machines/enterprise/EpHostFs";
+import { SamWasmV2Machine } from "@emu/machines/samcoupe/SamWasmV2Machine";
 import { getSp128Model } from "@emu/machines/zxSpectrum128/sp128Timings";
 
 /*
@@ -34,11 +35,12 @@ export type HeadlessMachine =
   | Zx8081WasmV2Machine
   | Ht1080zWasmV2Machine
   | TvcWasmV2Machine
-  | EpWasmV2Machine;
+  | EpWasmV2Machine
+  | SamWasmV2Machine;
 
 /** What a headless machine is created from */
 export type HeadlessMachineSpec = {
-  /** The machine id: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80`, `zx81`, `ht1080z`, `tvc`, `ep` */
+  /** The machine id: `sp48`, `sp128`, `spp3e`, `zxnext`, `zx80`, `zx81`, `ht1080z`, `tvc`, `ep`, `sam` */
   machineId: string;
   /** The model id, as the project names it (`pal-16k`, `fdd1`, ...); the machine's first model when absent */
   modelId?: string;
@@ -103,6 +105,9 @@ export async function createHeadlessMachine(spec: HeadlessMachineSpec): Promise<
       machine = ep;
       break;
     }
+    case MI_SAM_COUPE:
+      machine = new SamWasmV2Machine(spec.machineId, model, config, undefined, loader);
+      break;
     default:
       machine = new ZxNextWasmV2Machine(model, config, undefined, loader);
       break;

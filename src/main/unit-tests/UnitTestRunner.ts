@@ -11,9 +11,10 @@ import type {
   UnitTestSummary
 } from "@common/unit-tests/unitTestTypes";
 
-import { MI_ENTERPRISE, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
+import { MI_ENTERPRISE, MI_SAM_COUPE, MI_TVC, MI_ZXNEXT } from "@common/machines/constants";
 import { EP_CODE_START } from "@common/enterprise/codePlacement";
 import { TVC_CODE_START } from "@common/tvc/codePlacement";
+import { SAM_RUN_HMPR } from "@common/samcoupe/codePlacement";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
@@ -80,6 +81,9 @@ export type RunnerMachine = {
   getCodeInjectionFlow?(model: string): Promise<CodeInjectionFlow>;
   queueKeystroke?(frameOffset: number, frames: number, primary: number, secondary?: number, ternary?: number): void;
   getKeyQueueLength?(): number;
+  /** The SAM Coupé pages its program in through its ports (`pageInSamProgram`) */
+  doReadPort?(address: number): number;
+  doWritePort?(address: number, value: number): void;
 };
 
 /** What a run needs */
@@ -103,7 +107,7 @@ export type UnitTestRunInput = {
  * the machine's own flow otherwise, as the IDE's run does
  * @param machineId The machine
  * @param modelType The compilation's `SpectrumModelType` (`Spectrum48` is 1, `ZX80` 5, `ZX81` 6,
- *   `HT1080Z` 7, `TVC` 8, `Enterprise` 9)
+ *   `HT1080Z` 7, `TVC` 8, `Enterprise` 9, `SamCoupe` 10)
  */
 export function bootModelFor(machineId: string, modelType: number | undefined): string {
   // --- The ZX80/ZX81 flow checks the code's model against the ROM (`dev/ai/zx8081.md`, "Machine code decisions", D4)
@@ -115,6 +119,8 @@ export function bootModelFor(machineId: string, modelType: number | undefined): 
   if (modelType === 8) return "tvc";
   // --- The Enterprise's flow boots IS-BASIC on both models
   if (modelType === 9) return "ep";
+  // --- The SAM Coupé's flow stops at the copyright screen on both models
+  if (modelType === 10) return "sam";
   return modelType === 1 && machineId !== MI_ZXNEXT ? "sp48" : machineId;
 }
 
@@ -175,6 +181,7 @@ export async function runUnitTests(
     onEvent({ kind: "problem", message: `The machine did not boot to its ROM's main loop: ${messageOf(err)}` });
     return finish();
   }
+  if (machine.machineId === MI_SAM_COUPE) pageInSamProgram(machine);
   writeCodeSegments(machine, compilation.segments, isNext);
   // --- The wrapper's CALL must be a `CALL nn` whose operand the runner can patch
   if (readAt(machine, labels.callAddr) !== 0xcd) {
@@ -414,6 +421,17 @@ function installGuards(ds: DebugSupport, guards: BreakpointInfo[]): void {
  */
 export async function bootToInjectionPoint(machine: RunnerMachine, model: string): Promise<void> {
   playInjectionFlow(machine, await machine.getCodeInjectionFlow!(model), { stopAtInject: true });
+}
+
+/**
+ * The SAM Coupé: pages memory as Run does before the code is written (`SamWasmHost.injectCodeToRun`):
+ * ROM0 and page 0 as SAM BASIC has them, ROM1 off, page 1 at 8000h and page 2 at C000h (HMPR = 1), so
+ * the program's CPU addresses reach the pages `common/samcoupe/codePlacement.ts` puts them in
+ */
+function pageInSamProgram(machine: RunnerMachine): void {
+  if (!machine.doReadPort || !machine.doWritePort) return;
+  machine.doWritePort(0x00fa, machine.doReadPort(0x00fa) & ~0x40);
+  machine.doWritePort(0x00fb, SAM_RUN_HMPR);
 }
 
 /** Reads a byte where a label lives: through its partition when it has one (T6) */

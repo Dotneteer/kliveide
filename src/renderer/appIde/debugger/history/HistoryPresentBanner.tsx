@@ -23,6 +23,8 @@ const PRESENT_SUBJECTS = {
   tvcVideo: "panels.side.historyPresent.tvcVideo",
   epNick: "panels.side.historyPresent.epNick",
   epDave: "panels.side.historyPresent.epDave",
+  samAsic: "panels.side.historyPresent.samAsic",
+  samSaa: "panels.side.historyPresent.samSaa",
   listedBytes: "panels.side.historyPresent.listedBytes",
   variables: "panels.side.historyPresent.variables",
   stackMemory: "panels.side.historyPresent.stackMemory"

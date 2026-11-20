@@ -68,7 +68,10 @@
     "check:tvc-wasm-size": "node dev/scripts/check-tvc-wasm-size.cjs",
     "build:ep-wasm": "node dev/scripts/build-ep-wasm.cjs",
     "check:ep-wasm-size": "node dev/scripts/check-ep-wasm-size.cjs",
-    "build:all-wasm": "npm run build:sp48-wasm && npm run build:timex-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm && npm run build:zx8081-wasm && npm run build:ht1080z-wasm && npm run build:tvc-wasm && npm run build:ep-wasm",
+    "build:sam-wasm": "node dev/scripts/build-sam-wasm.cjs",
+    "check:sam-wasm-size": "node dev/scripts/check-sam-wasm-size.cjs",
+    "benchmark:sam-wasm": "node dev/scripts/benchmark-sam-wasm.cjs",
+    "build:all-wasm": "npm run build:sp48-wasm && npm run build:timex-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm && npm run build:zx8081-wasm && npm run build:ht1080z-wasm && npm run build:tvc-wasm && npm run build:ep-wasm && npm run build:sam-wasm",
     "check:wasm-cpu-contract": "node dev/scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node dev/scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node dev/scripts/benchmark-zxnext-wasm.cjs",
@@ -378,6 +381,13 @@
       {
         "from": "src/emu/machines/enterprise/wasm/dist",
         "to": "wasm/enterprise",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/samcoupe/wasm/dist",
+        "to": "wasm/samcoupe",
         "filter": [
           "**/*.wasm"
         ]

@@ -59,6 +59,16 @@ export const EP_FORMAT_OPTIONS: SelectOption[] = [
   HEX_OPTION
 ];
 
+// --- The SAM Coupé's code goes onto an .mgt disk as a CODE file, or into a raw .bin
+// --- (`renderer/appIde/utils/sam-code.ts`)
+export const SAM_MGT_FORMAT = "mgt";
+export const SAM_BIN_FORMAT = "bin";
+export const SAM_FORMAT_OPTIONS: SelectOption[] = [
+  labelled({ value: SAM_MGT_FORMAT, labelKey: "dialog.exportCode.format.samMgt" }),
+  labelled({ value: SAM_BIN_FORMAT, labelKey: "dialog.exportCode.format.samBin" }),
+  HEX_OPTION
+];
+
 // --- A bootable disk (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` B6): a +3DOS `.dsk` on the
 // --- +2A/+3, a TR-DOS `.trd` on the machines with a Beta 128 (the Pentagon, the Scorpion)
 export const DSK_FORMAT = "dsk";
@@ -76,6 +86,7 @@ export function formatOptionsFor(machineId: string | undefined): SelectOption[] 
   if (machineId === "ht1080z") return HT1080Z_FORMAT_OPTIONS;
   if (machineId === "tvc") return TVC_FORMAT_OPTIONS;
   if (machineId === "ep") return EP_FORMAT_OPTIONS;
+  if (machineId === "sam") return SAM_FORMAT_OPTIONS;
   if (machineId === "spp3e") return [...FORMAT_OPTIONS, DSK_OPTION];
   if (machineId === "sp128") return [...FORMAT_OPTIONS, TRD_OPTION, MDR_OPTION];
   if (machineId === "scorpion") return [...FORMAT_OPTIONS, TRD_OPTION];
@@ -282,7 +293,8 @@ export function effectiveFormatOf(state: ExportCodeState): string {
 // --- A HEX file has no tape blocks, so there is no loader to create; a ZX80 program cannot start
 // --- itself. On a ZX81 program the checkbox makes it run once loaded. An HT-1080Z .cmd or .cas
 // --- always carries its start address: SYSTEM's `/` starts it. A TVC .cas (the same "cas") always
-// --- starts itself, and so does an Enterprise .com (EXOS starts it at 0100h).
+// --- starts itself, and so does an Enterprise .com (EXOS starts it at 0100h). A SAM .mgt's CODE file
+// --- carries its exec address, and a .bin is raw bytes.
 export function supportsLoader(state: ExportCodeState): boolean {
   const format = effectiveFormatOf(state);
   return (
@@ -290,7 +302,9 @@ export function supportsLoader(state: ExportCodeState): boolean {
     format !== ZX80_PROGRAM_FORMAT &&
     format !== HT1080Z_CMD_FORMAT &&
     format !== HT1080Z_CAS_FORMAT &&
-    format !== EP_COM_FORMAT
+    format !== EP_COM_FORMAT &&
+    format !== SAM_MGT_FORMAT &&
+    format !== SAM_BIN_FORMAT
   );
 }
 

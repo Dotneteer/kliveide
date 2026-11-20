@@ -62,6 +62,20 @@
       "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
     }
   },
+  "panels.side.historyPresent.samAsic": "The ASIC panel shows the present, not history step {step}",
+  "@panels.side.historyPresent.samAsic": {
+    "context": "Warning band at the top of the ASIC panel (the SAM Coupé's paging, video and interrupt chip) while the debugger's history cursor is in the past. ASIC is the chip's name.",
+    "placeholders": {
+      "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
+    }
+  },
+  "panels.side.historyPresent.samSaa": "The SAA panel shows the present, not history step {step}",
+  "@panels.side.historyPresent.samSaa": {
+    "context": "Warning band at the top of the SAA panel (the SAM Coupé's sound chip) while the debugger's history cursor is in the past. SAA is the chip's name.",
+    "placeholders": {
+      "step": "The history step, e.g. '−12' (a minus sign and a count of steps back)"
+    }
+  },
   "panels.side.historyPresent.listedBytes": "The listed bytes show the present, not history step {step}",
   "@panels.side.historyPresent.listedBytes": {
     "context": "Warning band at the top of the Disassembly view while the debugger's history cursor is in the past: the disassembled bytes are the current memory.",
@@ -6011,5 +6025,346 @@
     "placeholders": {
       "device": "The device: ULA, Layer 2, Sprites or Tilemap"
     }
+  },
+  "panels.side.samAsic.title": "ASIC",
+  "@panels.side.samAsic.title": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): the panel's title. ASIC is the name the SAM's documents give the chip: keep it.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.notAvailable": "ASIC state not available",
+  "@panels.side.samAsic.notAvailable": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): shown instead of the values while no SAM Coupé machine runs."
+  },
+  "panels.side.samAsic.paging": "Paging",
+  "@panels.side.samAsic.paging": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): heading of the section with the paging registers.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.lmpr": "LMPR (port FAh): bits 0-4 the page in section A (B gets the next), bit 5 RAM instead of ROM0, bit 6 ROM1 in section D, bit 7 write-protects section A",
+  "@panels.side.samAsic.lmpr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the LMPR register row. LMPR, ROM0, ROM1 are names; keep them."
+  },
+  "panels.side.samAsic.hmpr": "HMPR (port FBh): bits 0-4 the page in section C (D gets the next), bits 5-6 the mode 3 colour bits, bit 7 external memory in sections C and D",
+  "@panels.side.samAsic.hmpr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the HMPR register row. HMPR is a name; keep it."
+  },
+  "panels.side.samAsic.vmpr": "VMPR (port FCh): bits 0-4 the screen page, bits 5-6 the mode (0-3 for modes 1-4), bit 7 MIDI",
+  "@panels.side.samAsic.vmpr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the VMPR register row. VMPR and MIDI are names; keep them."
+  },
+  "panels.side.samAsic.lepr": "The external memory page in section C (port 80h)",
+  "@panels.side.samAsic.lepr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the LEPR value (the 1 MB memory pack's page register)."
+  },
+  "panels.side.samAsic.hepr": "The external memory page in section D (port 81h)",
+  "@panels.side.samAsic.hepr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the HEPR value (the 1 MB memory pack's page register)."
+  },
+  "panels.side.samAsic.section": "What section {name} ({address}) shows: ROM0/ROM1, an internal RAM page, or an external page",
+  "@panels.side.samAsic.section": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of a row showing what one of the four 16K address windows (sections A-D) holds.",
+    "placeholders": {
+      "name": "The section's letter, A to D",
+      "address": "Its first address, e.g. '8000h'"
+    }
+  },
+  "panels.side.samAsic.screen": "Screen",
+  "@panels.side.samAsic.screen": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): heading of the section with the video registers.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.mode": "The screen mode, 1-4",
+  "@panels.side.samAsic.mode": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the screen mode value."
+  },
+  "panels.side.samAsic.screenPage": "The page the screen is shown from (modes 3 and 4 use this even page and the next)",
+  "@panels.side.samAsic.screenPage": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the screen page value."
+  },
+  "panels.side.samAsic.border": "The border register (port FEh): bits 0-2 and 5 the border colour's CLUT entry, bit 3 MIC, bit 4 the beeper, bit 7 screen off",
+  "@panels.side.samAsic.border": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the border register row. CLUT, MIC are names; keep them."
+  },
+  "panels.side.samAsic.soff": "Screen off: border bit 7 in modes 3 and 4 blanks the picture and removes the screen's memory contention",
+  "@panels.side.samAsic.soff": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the SOFF flag."
+  },
+  "panels.side.samAsic.attr": "The ATTR port (FFh): the last attribute byte the ASIC fetched",
+  "@panels.side.samAsic.attr": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the ATTR value. ATTR is the port's name; keep it."
+  },
+  "panels.side.samAsic.flash": "The FLASH counter: ink and paper swap while bit 4 is set (every 16 frames)",
+  "@panels.side.samAsic.flash": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the flash counter value."
+  },
+  "panels.side.samAsic.mode3Colours": "Mode 3's two high CLUT index bits (HMPR bits 5-6)",
+  "@panels.side.samAsic.mode3Colours": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the mode 3 colour bits value."
+  },
+  "panels.side.samAsic.clut": "Palette (CLUT)",
+  "@panels.side.samAsic.clut": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): heading of the colour look-up table section: 16 entries, each one of 128 colours. CLUT is a name; keep it.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.clutRow": "CLUT entries {lo}-{hi}",
+  "@panels.side.samAsic.clutRow": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of a row of eight colour swatches.",
+    "placeholders": {
+      "lo": "The first entry's number",
+      "hi": "The last entry's number"
+    }
+  },
+  "panels.side.samAsic.clutEntry": "CLUT {index}: colour {value}h{note}",
+  "@panels.side.samAsic.clutEntry": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of one colour swatch: the entry and its 7-bit colour value.",
+    "placeholders": {
+      "index": "The entry's number, 0-15",
+      "value": "The colour value in hex, e.g. '5A'",
+      "note": "Empty, or the 'isBorder' text when this entry is the border's colour"
+    }
+  },
+  "panels.side.samAsic.isBorder": " (the border)",
+  "@panels.side.samAsic.isBorder": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): appended to a colour swatch's tooltip when it is the border's colour. Keep the leading space."
+  },
+  "panels.side.samAsic.interrupts": "Interrupts",
+  "@panels.side.samAsic.interrupts": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): heading of the interrupts section.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.line": "The line interrupt register (port F9h write): the interrupt comes at the start of the right border before that screen line; 192-255 switch it off",
+  "@panels.side.samAsic.line": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the LINE value."
+  },
+  "panels.side.samAsic.lineOff": "off",
+  "@panels.side.samAsic.lineOff": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): the LINE value when the line interrupt is switched off.",
+    "maxChars": 8
+  },
+  "panels.side.samAsic.frameInt": "The frame interrupt is active (STATUS bit 3 low)",
+  "@panels.side.samAsic.frameInt": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the frame interrupt flag. STATUS is the port's name; keep it."
+  },
+  "panels.side.samAsic.lineInt": "The line interrupt is active (STATUS bit 0 low)",
+  "@panels.side.samAsic.lineInt": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the line interrupt flag."
+  },
+  "panels.side.samAsic.midiOutInt": "The MIDI OUT interrupt is active (STATUS bit 4 low)",
+  "@panels.side.samAsic.midiOutInt": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the MIDI OUT interrupt flag. MIDI is a name; keep it."
+  },
+  "panels.side.samAsic.beam": "Beam",
+  "@panels.side.samAsic.beam": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): heading of the raster position section.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.hc": "The T-state within the 384-T line (0 is the start of the right border after a screen line)",
+  "@panels.side.samAsic.hc": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the horizontal counter."
+  },
+  "panels.side.samAsic.vc": "The line within the 312-line frame (0-191 are the screen's lines)",
+  "@panels.side.samAsic.vc": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the vertical counter."
+  },
+  "panels.side.samAsic.contention": "Memory contention at the beam",
+  "@panels.side.samAsic.contention": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): tooltip of the contention region value."
+  },
+  "panels.side.samAsic.contentionMode1": "mode 1 (stripes)",
+  "@panels.side.samAsic.contentionMode1": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): contention region: mode 1, which adds 64-T contended stripes in the border.",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.contentionMode234": "modes 2-4",
+  "@panels.side.samAsic.contentionMode234": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): contention region: modes 2-4 (contended only on the screen's lines).",
+    "maxChars": 24
+  },
+  "panels.side.samAsic.contentionOff": "screen off (border)",
+  "@panels.side.samAsic.contentionOff": {
+    "context": "Debug side-bar panel of the SAM Coupé's ASIC (its custom chip: memory paging, video, interrupts): contention region: the screen is off, so the whole frame counts as border.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.title": "SAA 1099",
+  "@panels.side.samSaa.title": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: the panel's title: the chip's part number. Keep it.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.notAvailable": "SAA 1099 state not available",
+  "@panels.side.samSaa.notAvailable": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: shown instead of the values while no SAM Coupé machine runs."
+  },
+  "panels.side.samSaa.control": "Control",
+  "@panels.side.samSaa.control": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: heading of the section with the chip's global switches.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.soundEnable": "Sound enable (register 1Ch bit 0): off mutes every output",
+  "@panels.side.samSaa.soundEnable": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the sound enable flag."
+  },
+  "panels.side.samSaa.sync": "Sync (register 1Ch bit 1): the generators are held at their start",
+  "@panels.side.samSaa.sync": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the sync flag."
+  },
+  "panels.side.samSaa.address": "The register the next data write goes to (port 1FFh)",
+  "@panels.side.samSaa.address": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the address register value."
+  },
+  "panels.side.samSaa.channel": "Channel {index}",
+  "@panels.side.samSaa.channel": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: heading of one of the six tone channels.",
+    "placeholders": {
+      "index": "The channel's number, 0-5"
+    },
+    "maxChars": 24
+  },
+  "panels.side.samSaa.frequency": "The tone's frequency: 15625 x 2^octave / (511 - offset) Hz",
+  "@panels.side.samSaa.frequency": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's frequency."
+  },
+  "panels.side.samSaa.hz": "{value} Hz",
+  "@panels.side.samSaa.hz": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: a frequency value with its unit.",
+    "placeholders": {
+      "value": "The frequency, e.g. '261.5'"
+    },
+    "maxChars": 16
+  },
+  "panels.side.samSaa.octave": "The octave (registers 10h-12h)",
+  "@panels.side.samSaa.octave": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's octave."
+  },
+  "panels.side.samSaa.offset": "The frequency offset (registers 08h-0Dh)",
+  "@panels.side.samSaa.offset": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's frequency offset."
+  },
+  "panels.side.samSaa.left": "The left amplitude (0-15)",
+  "@panels.side.samSaa.left": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's left amplitude."
+  },
+  "panels.side.samSaa.right": "The right amplitude (0-15)",
+  "@panels.side.samSaa.right": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's right amplitude."
+  },
+  "panels.side.samSaa.toneEnable": "The tone is on (register 14h)",
+  "@panels.side.samSaa.toneEnable": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's tone enable flag."
+  },
+  "panels.side.samSaa.noiseEnable": "The noise is on (register 15h)",
+  "@panels.side.samSaa.noiseEnable": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a channel's noise enable flag."
+  },
+  "panels.side.samSaa.noise": "Noise",
+  "@panels.side.samSaa.noise": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: heading of the noise generators section.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.noiseSource": "Noise generator {index}'s clock (register 16h)",
+  "@panels.side.samSaa.noiseSource": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of a noise generator's clock source.",
+    "placeholders": {
+      "index": "The generator's number, 0 or 1"
+    }
+  },
+  "panels.side.samSaa.noise31k": "31.25 kHz",
+  "@panels.side.samSaa.noise31k": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: a noise generator's clock source: a fixed 31.25 kHz.",
+    "maxChars": 16
+  },
+  "panels.side.samSaa.noise15k": "15.6 kHz",
+  "@panels.side.samSaa.noise15k": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: a noise generator's clock source: a fixed 15.6 kHz.",
+    "maxChars": 16
+  },
+  "panels.side.samSaa.noise7k": "7.8 kHz",
+  "@panels.side.samSaa.noise7k": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: a noise generator's clock source: a fixed 7.8 kHz.",
+    "maxChars": 16
+  },
+  "panels.side.samSaa.noiseTone": "tone {index}",
+  "@panels.side.samSaa.noiseTone": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: a noise generator's clock source: the given tone channel's frequency.",
+    "placeholders": {
+      "index": "The tone channel's number, 0 or 3"
+    },
+    "maxChars": 16
+  },
+  "panels.side.samSaa.envelope": "Envelope {index} (channel {channel})",
+  "@panels.side.samSaa.envelope": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: heading of one of the two envelope generators and the channel it shapes.",
+    "placeholders": {
+      "index": "The generator's number, 0 or 1",
+      "channel": "The channel it acts on, 2 or 5"
+    },
+    "maxChars": 32
+  },
+  "panels.side.samSaa.envEnable": "The envelope is on (bit 7 of 18h/19h)",
+  "@panels.side.samSaa.envEnable": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope enable flag."
+  },
+  "panels.side.samSaa.envLevel": "The envelope's left level now (0-15)",
+  "@panels.side.samSaa.envLevel": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope's level."
+  },
+  "panels.side.samSaa.envShape": "The envelope's shape (bits 1-3)",
+  "@panels.side.samSaa.envShape": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope shape."
+  },
+  "panels.side.samSaa.envResolution": "3-bit resolution (bit 4): 8 steps instead of 16",
+  "@panels.side.samSaa.envResolution": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope resolution flag."
+  },
+  "panels.side.samSaa.envClock": "External clock (bit 5): steps on each write of the envelope's register number, not with tone 1 or 4",
+  "@panels.side.samSaa.envClock": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope clock flag."
+  },
+  "panels.side.samSaa.envMirror": "The right side is the left inverted (bit 0)",
+  "@panels.side.samSaa.envMirror": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope mirror flag."
+  },
+  "panels.side.samSaa.envPosition": "The step within the shape",
+  "@panels.side.samSaa.envPosition": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: tooltip of the envelope's position."
+  },
+  "panels.side.samSaa.shapeZero": "zero",
+  "@panels.side.samSaa.shapeZero": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 0: silence.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeMax": "maximum",
+  "@panels.side.samSaa.shapeMax": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 1: full level.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeDecay": "single decay",
+  "@panels.side.samSaa.shapeDecay": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 2: one fall to zero.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeRepeatDecay": "repeating decay",
+  "@panels.side.samSaa.shapeRepeatDecay": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 3: a falling sawtooth.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeTriangle": "single triangle",
+  "@panels.side.samSaa.shapeTriangle": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 4: one rise and fall.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeRepeatTriangle": "repeating triangle",
+  "@panels.side.samSaa.shapeRepeatTriangle": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 5: a triangle wave.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeAttack": "single attack",
+  "@panels.side.samSaa.shapeAttack": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 6: one rise, then zero.",
+    "maxChars": 24
+  },
+  "panels.side.samSaa.shapeRepeatAttack": "repeating attack",
+  "@panels.side.samSaa.shapeRepeatAttack": {
+    "context": "Debug side-bar panel of the SAM Coupé's SAA 1099 sound chip: envelope shape 7: a rising sawtooth.",
+    "maxChars": 24
   }
 }

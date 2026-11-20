@@ -2596,6 +2596,16 @@
     "context": "Export Code dialog, a choice in the Format list: a program file for the Enterprise 64/128 that its operating system, EXOS, loads and starts. .com is a file extension and EXOS a product name: keep them.",
     "maxChars": 24
   },
+  "dialog.exportCode.format.samMgt": "SAM disk (.mgt)",
+  "@dialog.exportCode.format.samMgt": {
+    "context": "Export Code dialog, a choice in the Format list: an 800K disk image for the SAM Coupé that holds the program as a CODE file. .mgt is a file extension: keep it.",
+    "maxChars": 24
+  },
+  "dialog.exportCode.format.samBin": "Raw bytes (.bin)",
+  "@dialog.exportCode.format.samBin": {
+    "context": "Export Code dialog, a choice in the Format list for the SAM Coupé: the program's bytes as they are, with no header. .bin is a file extension: keep it.",
+    "maxChars": 24
+  },
   "dialog.exportCode.format.tvcCas": "TVC tape (.cas)",
   "@dialog.exportCode.format.tvcCas": {
     "context": "Export Code dialog, a choice in the Format list: a cassette tape image for the Videoton TVC whose program LOAD runs. .cas is a file extension: keep it.",

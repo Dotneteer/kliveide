@@ -21,7 +21,8 @@ const CORE_FOLDERS: Record<string, string> = {
   "zx8081.wasm": "zx8081",
   "ht1080z.wasm": "ht1080z",
   "tvc.wasm": "tvc",
-  "ep.wasm": "enterprise"
+  "ep.wasm": "enterprise",
+  "sam.wasm": "samcoupe"
 };
 
 /**

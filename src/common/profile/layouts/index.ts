@@ -1,6 +1,7 @@
 import { epProfileLayout } from "./ep";
 import { ht1080zProfileLayout } from "./ht1080z";
 import type { ProfileLayout } from "./profileLayout";
+import { samProfileLayout } from "./sam";
 import { scorpionProfileLayout, sp128ProfileLayout } from "./sp128";
 import { sp48ProfileLayout } from "./sp48";
 import { spp3eProfileLayout } from "./spp3e";
@@ -26,7 +27,8 @@ const layouts: Record<string, ProfileLayout> = {
   zx81: zx8081ProfileLayout,
   ht1080z: ht1080zProfileLayout,
   tvc: tvcProfileLayout,
-  ep: epProfileLayout
+  ep: epProfileLayout,
+  sam: samProfileLayout
 };
 
 /** The profile layout of a machine; undefined for a machine whose core does not profile */

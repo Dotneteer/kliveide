@@ -81,3 +81,15 @@ export async function epDriver(model: "ep128" | "ep64" = "ep128"): Promise<Histo
   const { createEpSession } = await import("../../harness/enterprise");
   return driver((await createEpSession({ model })).bootToBasic(), "epGetCpuPrefix");
 }
+
+/**
+ * The SAM Coupé (the 512K by default) at SAM BASIC's editor. A SAM frame starts at the frame interrupt
+ * (`samMachineInfo.ts`), so the driver steps past the interrupt's pulse, to where interrupts are on
+ * again: the suite's first instruction must not be an interrupt.
+ */
+export async function samDriver(model: "sam512" | "sam256" = "sam512"): Promise<HistoryCoreDriver> {
+  const { createSamSession } = await import("../../harness/samcoupe");
+  const s = (await createSamSession({ model })).bootToBasic();
+  for (let i = 0; i < 100_000 && !(s.wasm.samGetFrameTacts() > 2000 && s.machine.iff1); i++) s.step(1);
+  return driver(s, "samGetCpuPrefix");
+}
