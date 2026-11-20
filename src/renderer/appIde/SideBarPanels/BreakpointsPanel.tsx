@@ -13,11 +13,15 @@ import { reportRefreshError } from "@renderer/machineRebuildRejections";
 import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointAddressSpec, getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
+
+/** A palette value (9-bit colour, priority bits 9-10) as three hex digits */
+const toHexa3 = (value: number) => (value & 0x7ff).toString(16).toUpperCase().padStart(3, "0");
 import { useEmuApi } from "@renderer/core/EmuApi";
 import {
   CopperHitEvent,
   CpuState,
   NextRegWriteEvent,
+  PaletteWriteEvent,
   SpriteWriteEvent
 } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -75,11 +79,18 @@ import {
   isCopperBreakpoint,
   isInterruptStop,
   isDmaStop,
+  isPaletteStop,
   isNextRegBreakpoint,
   isSpriteBreakpoint,
   spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
 import { dmaStopOf, matchesDmaStop, type DmaHit } from "@common/zxnext/dma/dmaStops";
+import {
+  describePaletteWriter,
+  matchesPaletteStop,
+  PALETTE_DEVICE_NAMES,
+  paletteStopOf
+} from "@common/zxnext/palette/paletteStops";
 import { interruptStopOf, matchesInterruptStop } from "@common/zxnext/interrupts/interruptStops";
 import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
 import {
@@ -143,6 +154,17 @@ const spriteWriteOf = (state?: CpuState): SpriteWriteEvent | undefined =>
 const interruptStopOfState = (state?: CpuState): InterruptStopEvent | undefined =>
   state && "lastInterruptStop" in state ? state.lastInterruptStop : undefined;
 
+/** The palette write or flip the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
+const paletteWriteOf = (state?: CpuState): PaletteWriteEvent | undefined =>
+  state && "lastPaletteWrite" in state ? state.lastPaletteWrite : undefined;
+
+/** Did the machine stop on a write or flip this palette breakpoint matches? */
+const isPaletteStopCurrent = (bp: BreakpointInfo, state?: CpuState): boolean => {
+  const hit = paletteWriteOf(state);
+  const stop = paletteStopOf(bp.paletteStop);
+  return !!hit && !!stop && matchesPaletteStop(stop, hit);
+};
+
 /** The DMA event the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
 const dmaStopOfState = (state?: CpuState): (DmaHit & { partition?: number }) | undefined =>
   state && "lastDmaStop" in state ? state.lastDmaStop : undefined;
@@ -183,6 +205,7 @@ type BreakpointKindId =
   | "sprite"
   | "interrupt"
   | "dma"
+  | "palette"
   | "memRead"
   | "memWrite"
   | "ioRead"
@@ -191,6 +214,7 @@ type BreakpointKindId =
 const KIND_TITLES: Record<BreakpointKindId, { breakpoint: MessageKey; logpoint: MessageKey }> = {
   interrupt: { breakpoint: "panels.side.breakpoints.title.interrupt", logpoint: "panels.side.breakpoints.title.interruptLog" },
   dma: { breakpoint: "panels.side.breakpoints.title.dma", logpoint: "panels.side.breakpoints.title.dmaLog" },
+  palette: { breakpoint: "panels.side.breakpoints.title.palette", logpoint: "panels.side.breakpoints.title.paletteLog" },
   nextReg: { breakpoint: "panels.side.breakpoints.title.nextReg", logpoint: "panels.side.breakpoints.title.nextRegLog" },
   copper: { breakpoint: "panels.side.breakpoints.title.copper", logpoint: "panels.side.breakpoints.title.copperLog" },
   sprite: { breakpoint: "panels.side.breakpoints.title.sprite", logpoint: "panels.side.breakpoints.title.spriteLog" },
@@ -216,7 +240,8 @@ const breakpointTooltip = (
   lastWrite?: NextRegWriteEvent,
   partitionLabels?: Record<number, string>,
   copperHit?: CopperHitEvent,
-  spriteWrite?: SpriteWriteEvent
+  spriteWrite?: SpriteWriteEvent,
+  paletteWrite?: PaletteWriteEvent
 ): string => {
   const nextRegKind = isNextRegBreakpoint(bp);
   const copperKind = isCopperBreakpoint(bp);
@@ -231,6 +256,8 @@ const breakpointTooltip = (
           ? "interrupt"
           : isDmaStop(bp)
           ? "dma"
+          : isPaletteStop(bp)
+          ? "palette"
           : bp.memoryRead
           ? "memRead"
           : bp.memoryWrite
@@ -276,6 +303,41 @@ const breakpointTooltip = (
   }
   if (isDmaStop(bp)) {
     lines.push(t("panels.side.breakpoints.dmaContract"));
+  }
+  if (isPaletteStop(bp)) {
+    lines.push(t("panels.side.breakpoints.paletteContract"));
+    if (bp.paletteCopper) lines.push(t("panels.side.breakpoints.paletteCopper"));
+    if (bp.paletteChanged) lines.push(t("panels.side.breakpoints.paletteChanged"));
+    const stop = paletteStopOf(bp.paletteStop);
+    if (paletteWrite && stop && matchesPaletteStop(stop, paletteWrite)) {
+      const common = {
+        device: PALETTE_DEVICE_NAMES[paletteWrite.slot & 0x03],
+        writer: describePaletteWriter(paletteWrite),
+        pc: `$${toHexa4(paletteWrite.pc)}`
+      };
+      const paged = pagedIn(t, paletteWrite.partition, partitionLabels);
+      if (paletteWrite.kind === "live") {
+        const args = { ...common, bank: paletteWrite.newValue + 1 };
+        lines.push(
+          paged
+            ? t("panels.side.breakpoints.paletteFlipPaged", { ...args, paged })
+            : t("panels.side.breakpoints.paletteFlip", args)
+        );
+      } else {
+        const args = {
+          ...common,
+          bank: (paletteWrite.slot >> 2) + 1,
+          index: `$${toHexa2(paletteWrite.index)}`,
+          old: `$${toHexa3(paletteWrite.oldValue)}`,
+          new: `$${toHexa3(paletteWrite.newValue)}`
+        };
+        lines.push(
+          paged
+            ? t("panels.side.breakpoints.paletteHitPaged", { ...args, paged })
+            : t("panels.side.breakpoints.paletteHit", args)
+        );
+      }
+    }
   }
   if (copperKind) {
     if (instruction) lines.push(instruction);
@@ -950,13 +1012,17 @@ export const BreakpointsPanel = () => {
                   isCurrent = isInterruptStopCurrent(bp, lastCpuState);
                 } else if (isDmaStop(bp)) {
                   isCurrent = isDmaStopCurrent(bp, lastCpuState);
+                } else if (isPaletteStop(bp)) {
+                  isCurrent = isPaletteStopCurrent(bp, lastCpuState);
                 }
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
               const instruction =
                 bp.instruction ||
-                (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) || isDmaStop(bp) ? "" : "???");
+                (isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) || isDmaStop(bp) || isPaletteStop(bp)
+                  ? ""
+                  : "???");
 
               return (
                 <BreakpointRow
@@ -969,7 +1035,8 @@ export const BreakpointsPanel = () => {
                     nextRegWriteOf(lastCpuState),
                     partitionLabels,
                     copperHitOf(lastCpuState),
-                    spriteWriteOf(lastCpuState)
+                    spriteWriteOf(lastCpuState),
+                    paletteWriteOf(lastCpuState)
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
                   revealed={revealedKey !== undefined && safeStorageKey(bp) === revealedKey}
@@ -993,6 +1060,7 @@ export const BreakpointsPanel = () => {
                     nextReg={bp.nextReg}
                     copper={isCopperBreakpoint(bp)}
                     sprite={isSpriteBreakpoint(bp)}
+                    palette={isPaletteStop(bp)}
                     /*
                      * Told rather than inferred from the type of `address`. Every shape the panel
                      * lists is armed except an unresolved source breakpoint, which is the one the
@@ -1142,6 +1210,35 @@ export const BreakpointsPanel = () => {
                           width="auto"
                           className={classnames(styles.bpCell, regStyles.stateValueAlt)}
                         />
+                      );
+                    })()}
+                  {isPaletteStop(bp) &&
+                    machineState === MachineControllerState.Paused &&
+                    isPaletteStopCurrent(bp, lastCpuState) &&
+                    (() => {
+                      const hit = paletteWriteOf(lastCpuState)!;
+                      return (
+                        <>
+                          {/* The sprite row's treatment: what changed, then where the CPU was */}
+                          <Value
+                            text={
+                              hit.kind === "live"
+                                ? `${PALETTE_DEVICE_NAMES[hit.slot & 0x03]} \u2192 ${hit.newValue + 1}`
+                                : `$${toHexa2(hit.index)} $${toHexa3(hit.oldValue)} \u2192 $${toHexa3(hit.newValue)}`
+                            }
+                            width="auto"
+                            className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                          />
+                          <Value
+                            text={
+                              `${hit.origin === "copper" ? "copper, PC " : hit.origin === "dma" ? "DMA, PC " : "@ "}` +
+                              `$${toHexa4(hit.pc)}` +
+                              (hit.partition === undefined ? "" : ` ${partitionLabels?.[hit.partition] ?? hit.partition}`)
+                            }
+                            width="auto"
+                            className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                          />
+                        </>
                       );
                     })()}
                   {isInterruptStop(bp) &&

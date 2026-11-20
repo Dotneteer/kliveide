@@ -1084,8 +1084,10 @@ one hue. Do not add a gutter column to a table that has none: the index cell alr
 identity, and the menu on the row is where the breakpoint is set.
 
 A new event-breakpoint type gets its own `bp-*` icon in the family's shape: the downward write arrow
-over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell), painted
-with `--color-breakpoint-type` like every other type icon.
+over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell, `bp-palette`
+a 3x2 swatch grid), painted with `--color-breakpoint-type` like every other type icon. The glyph sits
+in the same 16x9.5 box under the arrow as `bp-sprite`'s, so the family keeps one silhouette; the
+group header in the Breakpoints panel reuses the type icon.
 
 A dialog choice among a handful of independent bits (the sprite kind's five attribute bytes) is a
 column of checkboxes, each labelled with its bit and what it holds (`2: palette, mirror, rotate,

@@ -354,6 +354,31 @@ export type BreakpointInfo = {
   dmaStop?: string;
 
   /**
+   * A ZX Spectrum Next **palette breakpoint** (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §3): the
+   * normalized spec after `pal:` - `spr1:$03`, `l2:$00-$0f`, `ula2`, `any`, `tm:live`
+   * (`@common/zxnext/palette/paletteStops`). It stops after the instruction during which a watched
+   * entry is written (by the CPU, the DMA, or with `paletteCopper` the Copper) or the device's live
+   * bank flips.
+   *
+   * Like `dmaStop`, the spec is the binding, the discriminator and the identity. Use
+   * `isPaletteStop` in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition and no
+   * gutter.
+   */
+  paletteStop?: string;
+
+  /**
+   * `-c`: Copper writes stop a palette breakpoint too. Off by default, as for `nextRegCopper` (a
+   * Copper raster effect writes the palette every line). Not part of the identity.
+   */
+  paletteCopper?: boolean;
+
+  /**
+   * `-changed`: only a write that changes the stored value stops a palette breakpoint (an upload
+   * loop rewrites unchanged entries). Not part of the identity.
+   */
+  paletteChanged?: boolean;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

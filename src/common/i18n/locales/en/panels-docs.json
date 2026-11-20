@@ -3452,5 +3452,9 @@
   "panels.doc.dmaXfer.joinedTitle": "This transfer was running when the recording started: what enabled it and the bytes it moved before are unknown",
   "@panels.doc.dmaXfer.joinedTitle": {
     "context": "Tooltip of the 'before recording' cell of the DMA Transfers document (ZX Spectrum Next), which lists every DMA transfer from its enable to its end."
+  },
+  "panels.doc.breakpoint.type.paletteWrite": "Palette write",
+  "@panels.doc.breakpoint.type.paletteWrite": {
+    "context": "Breakpoint kind (ZX Spectrum Next), shown in brackets in the tooltip of a breakpoint glyph: stops when a palette entry is written or a palette's live bank flips."
   }
 }

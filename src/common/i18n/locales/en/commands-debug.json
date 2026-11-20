@@ -967,7 +967,7 @@
   "@commands.bp.nextReg.valueOnly": {
     "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
   },
-  "commands.bp.nextReg.copperOnly": "You can use the -c option only with a NextReg breakpoint",
+  "commands.bp.nextReg.copperOnly": "You can use the -c option only with a NextReg or a palette breakpoint",
   "@commands.bp.nextReg.copperOnly": {
     "context": "Validation error of the 'bp-set' IDE command (shown before the command runs). Option names and syntax are not translated."
   },
@@ -1404,6 +1404,34 @@
   "commands.bp.dma.noAccessOptions": "A DMA stop takes none of -r, -w, -i, -o, -c, -m, -v or -attr",
   "@commands.bp.dma.noAccessOptions": {
     "context": "Error of bp-set dma:... with an access option. Keep the option names."
+  },
+  "commands.bp.palette.nextOnly": "Palette breakpoints are available only on the ZX Spectrum Next",
+  "@commands.bp.palette.nextOnly": {
+    "context": "Error of bp-set pal:... on a machine that is not a ZX Spectrum Next."
+  },
+  "commands.bp.palette.device": "Unknown palette: use ula, l2, spr, tm or any, with 1 or 2 for one bank, e.g. pal:spr1:$03",
+  "@commands.bp.palette.device": {
+    "context": "Error of bp-set pal:... (ZX Spectrum Next palette breakpoints). The device names and the example are syntax, keep them."
+  },
+  "commands.bp.palette.entries": "pal: needs an entry or a range from $00 to $FF, e.g. pal:l2:$00-$0F",
+  "@commands.bp.palette.entries": {
+    "context": "Error of bp-set pal:<device>:<entries>. Keep the example."
+  },
+  "commands.bp.palette.live": "pal:<device>:live watches both banks: leave out the 1 or 2, e.g. pal:tm:live",
+  "@commands.bp.palette.live": {
+    "context": "Error of bp-set pal:spr1:live. Keep the placeholder and the example."
+  },
+  "commands.bp.palette.extra": "A palette breakpoint takes at most one ':'-separated part after the palette",
+  "@commands.bp.palette.extra": {
+    "context": "Error of bp-set pal:... when there are too many ':'-separated parts."
+  },
+  "commands.bp.palette.noAccessOptions": "A palette breakpoint takes none of -r, -w, -i, -o, -m, -v or -attr",
+  "@commands.bp.palette.noAccessOptions": {
+    "context": "Error of bp-set pal:... with an access option. Keep the option names."
+  },
+  "commands.bp.changed.paletteOnly": "You can use the -changed option only with a palette breakpoint (pal:)",
+  "@commands.bp.changed.paletteOnly": {
+    "context": "Validation error of the 'bp-set' IDE command. Option names and syntax are not translated."
   },
   "commands.bp.interrupt.source": "Unknown interrupt source: use one of {sources}",
   "@commands.bp.interrupt.source": {

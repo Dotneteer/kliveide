@@ -209,6 +209,14 @@ export function isDmaStop(bp: BreakpointInfo): boolean {
   return bp?.dmaStop !== undefined;
 }
 
+/**
+ * Is this a ZX Spectrum Next palette breakpoint (`pal:`)? The spec is the binding, as for
+ * `isDmaStop` (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §3).
+ */
+export function isPaletteStop(bp: BreakpointInfo): boolean {
+  return bp?.paletteStop !== undefined;
+}
+
 /** The attribute bytes a sprite breakpoint watches, as a 5-bit mask (all five when unset). */
 export function spriteAttrMaskOf(bp: BreakpointInfo): number {
   const mask = (bp?.spriteAttrMask ?? 0x1f) & 0x1f;
@@ -222,7 +230,12 @@ export function spriteAttrMaskOf(bp: BreakpointInfo): number {
  */
 export function isEventBreakpoint(bp: BreakpointInfo): boolean {
   return (
-    isNextRegBreakpoint(bp) || isCopperBreakpoint(bp) || isSpriteBreakpoint(bp) || isInterruptStop(bp) || isDmaStop(bp)
+    isNextRegBreakpoint(bp) ||
+    isCopperBreakpoint(bp) ||
+    isSpriteBreakpoint(bp) ||
+    isInterruptStop(bp) ||
+    isDmaStop(bp) ||
+    isPaletteStop(bp)
   );
 }
 

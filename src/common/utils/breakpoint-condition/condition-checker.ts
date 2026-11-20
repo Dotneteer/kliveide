@@ -34,6 +34,24 @@ const EIGHT_BIT = new Set<ConditionRegister>([
   "A", "F", "B", "C", "D", "E", "H", "L", "I", "R", "XH", "XL", "YH", "YL"
 ]);
 
+/*
+ * The palette breakpoint's names (NEXT_PALETTE_DEBUGGING_PLAN §9 Q3): parts of `VAL` and `ADDR`, as
+ * `paletteHitAccess` packs them - `VAL` the new stored value, `ADDR` the old value in bits 16-26, the
+ * slot in 8-10 and the entry in 0-7. Expressions over the two specials, so the core's evaluator needs
+ * nothing new. Keyed lower case, like every name.
+ */
+const PALETTE_NAMES: Record<string, CondNode> = {
+  palnew: { k: "special", s: "val" },
+  palindex: { k: "bin", op: "&", l: { k: "special", s: "addr" }, r: { k: "num", v: 0xff } },
+  palslot: {
+    k: "bin",
+    op: "&",
+    l: { k: "bin", op: ">>", l: { k: "special", s: "addr" }, r: { k: "num", v: 8 } },
+    r: { k: "num", v: 0x07 }
+  },
+  palold: { k: "bin", op: ">>", l: { k: "special", s: "addr" }, r: { k: "num", v: 16 } }
+};
+
 /** Flag names and their bit in F (Q3, §3.5). */
 const FLAGS: Record<string, number> = {
   sf: 7, zf: 6, f5f: 5, yf: 5, hf: 4, f3f: 3, xf: 3, pvf: 2, pf: 2, vf: 2, nf: 1, cf: 0
@@ -284,6 +302,10 @@ class Checker {
         );
       }
       resolved = { k: "special", s: lower };
+    } else if (this.env.accessKind === "palette" && PALETTE_NAMES[lower]) {
+      // --- A palette breakpoint's parts of VAL and ADDR (NEXT_PALETTE_DEBUGGING_PLAN §9 Q3), only
+      // --- there: elsewhere these stay ordinary label names
+      resolved = PALETTE_NAMES[lower];
     }
 
     if (resolved) {
@@ -386,12 +408,24 @@ class Checker {
         return { min: 0, max: 1, name: this.source(syntax).toUpperCase() };
       case "special":
         // --- A Copper breakpoint's VAL is the 16-bit instruction word, its ADDR the list index; a
-        // --- sprite breakpoint's VAL is the byte written, its ADDR the attribute byte (0-4)
+        // --- sprite breakpoint's VAL is the byte written, its ADDR the attribute byte (0-4); a
+        // --- palette breakpoint's VAL the stored value (11 bits), its ADDR old value, slot and entry
         return node.s === "val"
-          ? { min: 0, max: this.env.accessKind === "copper" ? 0xffff : 0xff, name: "VAL" }
+          ? {
+              min: 0,
+              max: this.env.accessKind === "copper" ? 0xffff : this.env.accessKind === "palette" ? 0x7ff : 0xff,
+              name: "VAL"
+            }
           : {
               min: 0,
-              max: this.env.accessKind === "copper" ? 0x3ff : this.env.accessKind === "sprite" ? 4 : 0xffff,
+              max:
+                this.env.accessKind === "copper"
+                  ? 0x3ff
+                  : this.env.accessKind === "sprite"
+                    ? 4
+                    : this.env.accessKind === "palette"
+                      ? 0x7ff_ffff
+                      : 0xffff,
               name: "ADDR"
             };
       case "mem": {

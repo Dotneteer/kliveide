@@ -14,6 +14,7 @@ import {
   type CpuState,
   type CopperHitEvent,
   type SpriteWriteEvent,
+  type PaletteWriteEvent,
   type CopperState,
   type NextSpriteState,
   type NextTilemapState,
@@ -53,6 +54,7 @@ import {
   type DmaHit,
   type DmaStepMode
 } from "@common/zxnext/dma/dmaStops";
+import { decodePaletteHit } from "@common/zxnext/palette/paletteStops";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import {
@@ -1129,6 +1131,7 @@ export class ZxNextWasmV2Machine
     let watchesNextReg = false;
     let watchesCopper = false;
     let watchesSprites = false;
+    let watchesPalette = false;
     let watchesInterrupts = false;
     let interruptWaitLimit = 0;
     let watchesDma = false;
@@ -1246,6 +1249,18 @@ export class ZxNextWasmV2Machine
         this.lastSpriteWrite = undefined;
 
         /*
+         * The palette-breakpoint watch (NEXT_PALETTE_DEBUGGING_PLAN §3): pushed whole on entry like the
+         * sprite watch and disarmed (0 flags) when no `pal:` breakpoint is enabled, so the palette write
+         * paths stay free. Like the sprite watch it keeps the run instruction by instruction: the stop
+         * names the instruction that wrote (`opStartAddress`).
+         */
+        const paletteWatch = debugSupport?.buildPaletteWatch?.();
+        watchesPalette = (paletteWatch?.flags ?? 0) !== 0;
+        if (watchesPalette) runtime.paletteWatch.set(paletteWatch!.entries);
+        wasm.zxnextSetPaletteWatchFlags(paletteWatch?.flags ?? 0);
+        this.lastPaletteWrite = undefined;
+
+        /*
          * The interrupt-stop watch (NEXT_INTERRUPTS_DEBUGGING_PLAN §5): pushed on entry, disarmed (0
          * kinds) when no `int:` stop is enabled. Unlike the watches above it keeps the in-core loop: the
          * event records its own PC, and the core returns from `ExecuteUntilStop` as soon as it latches
@@ -1295,7 +1310,7 @@ export class ZxNextWasmV2Machine
         // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
         // --- same way a watchpoint hit is, so it needs this tracked too.
         if (
-          (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites) &&
+          (watchesBusAccess || watchesNextReg || watchesCopper || watchesSprites || watchesPalette) &&
           wasm.zxnextGetCpuPrefix() === 0
         ) {
           this.opStartAddress = this.pc;
@@ -1320,7 +1335,7 @@ export class ZxNextWasmV2Machine
       lastOpStart: () => wasm.zxnextGetDebugOpStart(),
       pushBreakpointFlags: (flags) => runtime.breakpointFlags.set(flags),
       conditionPlan: () => runtime.condPlan,
-      canRunInCore: () => !(watchesNextReg || watchesCopper || watchesSprites),
+      canRunInCore: () => !(watchesNextReg || watchesCopper || watchesSprites || watchesPalette),
       coreFrameCompleted: () => wasm.zxnextGetFrameCompleted() !== 0,
       // --- Past this class's `pc` setter, which would push the value just read from the core back into it
       mirrorPc: () => {
@@ -1357,6 +1372,11 @@ export class ZxNextWasmV2Machine
         // --- A watched sprite attribute byte was written during this instruction (by the CPU, the
         // --- DMA it held the bus for, or the Copper); the machine stops at its end.
         if (watchesSprites && this.acceptWasmV2SpriteHit(wasm.zxnextTakeSpriteHit())) {
+          return FrameTerminationMode.DebugEvent;
+        }
+        // --- A watched palette entry was written, or a watched live bank flipped, during this
+        // --- instruction (by the CPU, the DMA it held the bus for, or with -c the Copper)
+        if (watchesPalette && this.acceptWasmV2PaletteHit(wasm.zxnextTakePaletteHit(), wasm.zxnextGetPaletteHitValues())) {
           return FrameTerminationMode.DebugEvent;
         }
         // --- A watched interrupt event happened during this instruction (an acknowledge stops at the
@@ -1531,6 +1551,19 @@ export class ZxNextWasmV2Machine
       pc,
       partition: this.getPartition(pc)
     };
+    return true;
+  }
+
+  /**
+   * Decodes a palette write or flip the core latched and asks whether a `pal:` breakpoint's filters
+   * (`-c`, `-changed`, hit count, condition) accept it; keeps it for the stop message and the
+   * Breakpoints panel.
+   */
+  private acceptWasmV2PaletteHit(word0: number, word1: number): boolean {
+    const hit = decodePaletteHit(word0, word1);
+    if (!hit || !this.executionContext.debugSupport?.hasPaletteHit?.(hit)) return false;
+    const pc = this.opStartAddress;
+    this.lastPaletteWrite = { ...hit, pc, partition: this.getPartition(pc) };
     return true;
   }
 
@@ -2059,6 +2092,12 @@ export class ZxNextWasmV2Machine
   lastSpriteWrite?: SpriteWriteEvent;
 
   /**
+   * The palette write or live-bank flip a `pal:` breakpoint last stopped on. Set by the debug loop,
+   * cleared when the machine resumes.
+   */
+  lastPaletteWrite?: PaletteWriteEvent;
+
+  /**
    * The interrupt event an `int:` stop last stopped on. Set by the debug loop, cleared when the
    * machine resumes.
    */
@@ -2097,6 +2136,7 @@ export class ZxNextWasmV2Machine
       lastNextRegWrite: this.lastNextRegWrite,
       lastCopperHit: this.lastCopperHit,
       lastSpriteWrite: this.lastSpriteWrite,
+      lastPaletteWrite: this.lastPaletteWrite,
       lastInterruptStop: this.lastInterruptStop,
       lastDmaStop: this.lastDmaStop
     };

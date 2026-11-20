@@ -1364,6 +1364,11 @@ export type Z80CpuState = {
    */
   lastSpriteWrite?: SpriteWriteEvent;
   /**
+   * The palette write or live-bank flip the machine last stopped on. ZX Spectrum Next only, and
+   * absent until a palette breakpoint (`pal:`) fires.
+   */
+  lastPaletteWrite?: PaletteWriteEvent;
+  /**
    * The interrupt event the machine last stopped on. ZX Spectrum Next only, and absent until an
    * interrupt stop (`int:`) fires.
    */
@@ -1571,6 +1576,38 @@ export type CopperState = {
   timing: { lines: number; hcs: number; upperBorder?: number };
   /** The stop's hit, when the last stop was a Copper breakpoint */
   lastHit?: CopperHitEvent;
+};
+
+/**
+ * Who wrote a palette entry or flipped a live bank: the CPU through a NextReg (`$253B` or NEXTREG),
+ * the Copper, the DMA (through `$253B` or port `$FF3B`), or the CPU through port `$FF3B` (ULA+).
+ */
+export type PaletteWriteOrigin = "nextreg" | "copper" | "dma" | "port";
+
+/** The register or port a palette write went through */
+export type PaletteWritePath = "$41" | "$44" | "$FF3B" | "$43" | "$6B";
+
+/**
+ * A palette entry write or live-bank flip a breakpoint stopped on; see
+ * `Z80CpuState.lastPaletteWrite` (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §3). The machine stops
+ * at the end of the instruction during which it happened.
+ */
+export type PaletteWriteEvent = {
+  /** An entry write, or a live-bank flip (`$43` bits 1-3, `$6B` bit 4) */
+  kind: "entry" | "live";
+  /** The core slot, 0-7 (`$43` bits 6-4 order); for a flip, the device's slot now live */
+  slot: number;
+  /** The entry, 0-255; 0 for a flip */
+  index: number;
+  /** The stored value before and after: 9-bit colour, priority bits 9-10; for a flip, the banks 0/1 */
+  oldValue: number;
+  newValue: number;
+  origin: PaletteWriteOrigin;
+  path: PaletteWritePath;
+  /** The first byte of the Z80 instruction during which it happened */
+  pc: number;
+  /** The memory partition `pc` was in, if the machine has partitions */
+  partition?: number;
 };
 
 /**

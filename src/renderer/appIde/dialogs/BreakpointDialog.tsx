@@ -36,6 +36,8 @@ import {
   isFormValid,
   isInterruptKind,
   isDmaKind,
+  isPaletteKind,
+  paletteTriggerText,
   dmaEventTakesArg,
   isSpriteKind,
   isNextRegKind,
@@ -95,6 +97,33 @@ const [INTERRUPT_OPTION]: RadioGroupOption[] = withLabels([
 
 /** The tenth, on the same machines: a DMA event (NEXT_DMA_DEBUGGING_PLAN §12). */
 const [DMA_OPTION]: RadioGroupOption[] = withLabels([{ value: "dma", labelKey: "dialog.breakpoint.kind.dma" }]);
+
+/** The eleventh, on the same machines: a palette write or flip (NEXT_PALETTE_DEBUGGING_PLAN §3). */
+const [PALETTE_OPTION]: RadioGroupOption[] = withLabels([
+  { value: "palette", labelKey: "dialog.breakpoint.kind.palette" }
+]);
+
+/** The palette breakpoint's devices; the hardware names stay as they are */
+const paletteDeviceOptions = (): DropdownOption[] => [
+  { value: "any", label: translate("dialog.breakpoint.palette.device.any") },
+  { value: "ula", label: "ULA" },
+  { value: "l2", label: "Layer 2" },
+  { value: "spr", label: "Sprites" },
+  { value: "tm", label: "Tilemap" }
+];
+
+/** The palette breakpoint's banks */
+const paletteBankOptions = (): DropdownOption[] => [
+  { value: "both", label: translate("dialog.breakpoint.palette.bank.both") },
+  { value: "1", label: translate("dialog.breakpoint.palette.bank.first") },
+  { value: "2", label: translate("dialog.breakpoint.palette.bank.second") }
+];
+
+/** What stops a palette breakpoint */
+const paletteTargetOptions = (): DropdownOption[] => [
+  { value: "entries", label: translate("dialog.breakpoint.palette.target.entries") },
+  { value: "live", label: translate("dialog.breakpoint.palette.target.live") }
+];
 
 /** The DMA stop's events (a function: labels are read at display) */
 const dmaEventOptions = (): DropdownOption[] => [
@@ -192,6 +221,7 @@ const PAGE_FIELDS: Record<BreakpointPage, (keyof BreakpointFormState | "form")[]
     "interruptSource",
     "interruptWait",
     "dmaArg",
+    "paletteEntries",
     "form"
   ],
   condition: ["condition", "hitCount"],
@@ -303,13 +333,22 @@ export const BreakpointDialog = ({
   const spriteKind = isSpriteKind(form.kind);
   const interruptKind = isInterruptKind(form.kind);
   const dmaKind = isDmaKind(form.kind);
+  const paletteKind = isPaletteKind(form.kind);
   // --- The sixth to tenth types are offered only where they mean something.
   // --- `validateBreakpointForm` refuses them anyway, but a type a machine cannot have should not be
   // --- on screen to choose.
   const kindOptions = useMemo(
     () =>
       env.supportsNextRegBreakpoints
-        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION, SPRITE_OPTION, INTERRUPT_OPTION, DMA_OPTION]
+        ? [
+            ...KIND_OPTIONS,
+            NEXT_REG_OPTION,
+            COPPER_OPTION,
+            SPRITE_OPTION,
+            INTERRUPT_OPTION,
+            DMA_OPTION,
+            PALETTE_OPTION
+          ]
         : KIND_OPTIONS,
     [env.supportsNextRegBreakpoints]
   );
@@ -395,7 +434,9 @@ export const BreakpointDialog = ({
           ? (interruptEventOptions().find((o) => o.value === form.interruptEvent)?.label ?? "")
           : dmaKind
             ? (dmaEventOptions().find((o) => o.value === form.dmaEvent)?.label ?? "")
-            : form.address;
+            : paletteKind
+              ? paletteTriggerText(form)
+              : form.address;
   // --- An interrupt stop's event names the type already ("An interrupt is taken")
   const triggerSummary = sourceMode
     ? sourceLocationText(form.source!)
@@ -446,7 +487,9 @@ export const BreakpointDialog = ({
             ? t("dialog.breakpoint.interrupt.stopNote")
             : dmaKind
               ? t("dialog.breakpoint.dma.stopNote")
-              : undefined;
+              : paletteKind
+                ? t("dialog.breakpoint.palette.stopNote")
+                : undefined;
 
   const triggerPage = sourceMode ? (
     <section className={styles.group}>
@@ -735,7 +778,84 @@ export const BreakpointDialog = ({
             </>
           )}
 
-          {!nextRegKind && !copperKind && !spriteKind && !interruptKind && !dmaKind && (
+          {paletteKind && (
+            <>
+              <Field label={t("dialog.breakpoint.palette.deviceLabel")}>
+                <Dropdown
+                  options={paletteDeviceOptions()}
+                  initialValue={form.paletteDevice}
+                  ariaLabel={t("dialog.breakpoint.palette.deviceLabel")}
+                  width="20ch"
+                  onChanged={(paletteDevice) =>
+                    update({ paletteDevice: paletteDevice as BreakpointFormState["paletteDevice"] })
+                  }
+                />
+              </Field>
+              <Field label={t("dialog.breakpoint.palette.targetLabel")}>
+                <Dropdown
+                  options={paletteTargetOptions()}
+                  initialValue={form.paletteTarget}
+                  ariaLabel={t("dialog.breakpoint.palette.targetLabel")}
+                  width="34ch"
+                  onChanged={(paletteTarget) => {
+                    setTouched((t) => ({ ...t, paletteEntries: false }));
+                    update({ paletteTarget: paletteTarget as BreakpointFormState["paletteTarget"] });
+                  }}
+                />
+              </Field>
+              {form.paletteTarget === "entries" && (
+                <>
+                  <Field label={t("dialog.breakpoint.palette.bankLabel")}>
+                    <Dropdown
+                      options={paletteBankOptions()}
+                      initialValue={form.paletteBank}
+                      ariaLabel={t("dialog.breakpoint.palette.bankLabel")}
+                      width="20ch"
+                      onChanged={(paletteBank) =>
+                        update({ paletteBank: paletteBank as BreakpointFormState["paletteBank"] })
+                      }
+                    />
+                  </Field>
+                  <Field label={t("dialog.breakpoint.palette.entriesLabel")}>
+                    <TextInput
+                      value={form.paletteEntries}
+                      width="16ch"
+                      ariaLabel={t("dialog.breakpoint.palette.entriesLabel")}
+                      error={errorFor("paletteEntries")}
+                      onChange={(paletteEntries) => {
+                        setTouched((t) => ({ ...t, paletteEntries: true }));
+                        update({ paletteEntries });
+                      }}
+                    />
+                    <div className={styles.hint}>{t("dialog.breakpoint.palette.entriesHint")}</div>
+                  </Field>
+                  <Field>
+                    <Checkbox
+                      initialValue={form.paletteChanged}
+                      label={t("dialog.breakpoint.palette.changed")}
+                      right={true}
+                      onChange={(paletteChanged) => update({ paletteChanged })}
+                    />
+                  </Field>
+                </>
+              )}
+              <Field>
+                <Checkbox
+                  initialValue={form.paletteCopper}
+                  label={t("dialog.breakpoint.palette.copper")}
+                  right={true}
+                  onChange={(paletteCopper) => update({ paletteCopper })}
+                />
+              </Field>
+              {form.paletteTarget === "live" && errorFor("paletteEntries") && (
+                <div className={styles.error} role="alert">
+                  {errorFor("paletteEntries")}
+                </div>
+              )}
+            </>
+          )}
+
+          {!nextRegKind && !copperKind && !spriteKind && !interruptKind && !dmaKind && !paletteKind && (
             <>
               <Field label={t("dialog.breakpoint.requiredLabel", { label: addressLabel })}>
                 <TextInput

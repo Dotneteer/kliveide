@@ -61,10 +61,21 @@ import {
   isNextRegBreakpoint,
   isInterruptStop,
   isDmaStop,
+  isPaletteStop,
   isSpriteBreakpoint,
   spriteAttrMaskOf,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
+import {
+  buildPaletteWatch,
+  matchesPaletteStop,
+  paletteHitAccess,
+  paletteStopOf,
+  passesPaletteOptions,
+  type PaletteWatch,
+  type PaletteWatchEntry
+} from "@common/zxnext/palette/paletteStops";
+import type { PaletteWriteEvent } from "@common/messaging/EmuApi";
 import {
   buildInterruptWatch,
   interruptStopOf,
@@ -859,6 +870,43 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The ZX Spectrum Next's palette-breakpoint watch (`pal:`, NEXT_PALETTE_DEBUGGING_PLAN §3), built
+   * from every enabled palette breakpoint; `flags` is 0 when there is none. Asked once per debug-loop
+   * entry.
+   */
+  buildPaletteWatch(): PaletteWatch {
+    const watches: PaletteWatchEntry[] = [];
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isPaletteStop(bp) || bp.disabled) continue;
+      const stop = paletteStopOf(bp.paletteStop);
+      if (stop) watches.push({ stop, copper: bp.paletteCopper, changed: bp.paletteChanged });
+    }
+    return buildPaletteWatch(watches);
+  }
+
+  /**
+   * Does any palette breakpoint want to stop on this write or flip? Applies each breakpoint's own
+   * `-c` and `-changed` (the core reports for the union of them), then runs it through `handleHit`,
+   * so hit counts, conditions, logpoints and one-shots apply. In a condition, `VAL` is the stored
+   * value and `ADDR` the old value, slot and entry (`paletteHitAccess`; `palNew`, `palOld`,
+   * `palSlot`, `palIndex` read them apart).
+   */
+  hasPaletteHit(hit: Omit<PaletteWriteEvent, "pc" | "partition">): boolean {
+    let stop = false;
+    const access = paletteHitAccess(hit);
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isPaletteStop(bp) || bp.disabled) continue;
+      const parsed = paletteStopOf(bp.paletteStop);
+      if (!parsed || !matchesPaletteStop(parsed, hit)) continue;
+      if (!passesPaletteOptions(hit, { copper: bp.paletteCopper, changed: bp.paletteChanged })) continue;
+      if (this.handleHit(key, bp, "palette", access.address, access, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -1004,6 +1052,10 @@ export class DebugSupport implements IDebugSupport {
         interruptStop: bp.interruptStop,
         // --- And the DMA stop's event spec.
         dmaStop: bp.dmaStop,
+        // --- And the palette breakpoint's spec, with its two options.
+        paletteStop: bp.paletteStop,
+        paletteCopper: bp.paletteCopper,
+        paletteChanged: bp.paletteChanged,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.
@@ -2494,6 +2546,7 @@ function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (isNextRegBreakpoint(bp)) return "nextReg";
   if (isCopperBreakpoint(bp)) return "copper";
   if (isSpriteBreakpoint(bp)) return "sprite";
+  if (isPaletteStop(bp)) return "palette";
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";

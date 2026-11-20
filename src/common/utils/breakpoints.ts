@@ -17,6 +17,7 @@ import {
   isInterruptStop,
   isDmaStop,
   isNextRegBreakpoint,
+  isPaletteStop,
   isSpriteBreakpoint
 } from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
@@ -216,6 +217,12 @@ function buildBreakpointKey(
   // --- `M` is not a hex digit, so `DMA` cannot be a partition label.
   if (isDmaStop(bp)) {
     return `DMA:${bp.dmaStop!.toUpperCase()}`;
+  }
+
+  // --- A palette breakpoint is named by its spec (NEXT_PALETTE_DEBUGGING_PLAN §3): `PAL:SPR1:$03`,
+  // --- `PAL:TM:LIVE`. `P` is not a hex digit, so `PAL` cannot be a partition label.
+  if (isPaletteStop(bp)) {
+    return `PAL:${bp.paletteStop!.toUpperCase()}`;
   }
 
   if (bp.address !== undefined) {

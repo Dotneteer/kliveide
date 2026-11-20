@@ -175,6 +175,7 @@ export function historicalCpuState(live: Z80CpuState, historical: HistoricalStat
     lastNextRegWrite: _w,
     lastCopperHit: _c,
     lastSpriteWrite: _s,
+    lastPaletteWrite: _p,
     lastInterruptStop: _i,
     lastDmaStop: _dma,
     ...rest

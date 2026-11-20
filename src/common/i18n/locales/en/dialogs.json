@@ -3285,5 +3285,78 @@
   "dialog.breakpoint.dma.stopNote": "An enable, a load or a setup problem stops after the instruction that wrote it; the other events stop inside the transfer, before the CPU's next instruction. A condition reads the registers there.",
   "@dialog.breakpoint.dma.stopNote": {
     "context": "Note in the breakpoint dialog (ZX Spectrum Next DMA stops): where a DMA stop stops."
+  },
+  "dialog.breakpoint.kind.palette": "Palette write",
+  "@dialog.breakpoint.kind.palette": {
+    "context": "Breakpoint type option in the breakpoint dialog (ZX Spectrum Next): stop when a palette entry is written or a palette's live bank flips.",
+    "maxChars": 24
+  },
+  "dialog.breakpoint.palette.deviceLabel": "Palette",
+  "@dialog.breakpoint.palette.deviceLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next palette breakpoints): which device's palette is watched.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.palette.device.any": "Any palette",
+  "@dialog.breakpoint.palette.device.any": {
+    "context": "Option of the palette picker in the breakpoint dialog: every device's palette (ULA, Layer 2, sprites, tilemap).",
+    "maxChars": 24
+  },
+  "dialog.breakpoint.palette.bankLabel": "Bank",
+  "@dialog.breakpoint.palette.bankLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next palette breakpoints): which of the device's two palette banks is watched.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.palette.bank.both": "Both banks",
+  "@dialog.breakpoint.palette.bank.both": {
+    "context": "Option of the bank picker in the breakpoint dialog (palette breakpoints).",
+    "maxChars": 20
+  },
+  "dialog.breakpoint.palette.bank.first": "Bank 1",
+  "@dialog.breakpoint.palette.bank.first": {
+    "context": "Option of the bank picker in the breakpoint dialog (palette breakpoints): the device's first palette.",
+    "maxChars": 20
+  },
+  "dialog.breakpoint.palette.bank.second": "Bank 2",
+  "@dialog.breakpoint.palette.bank.second": {
+    "context": "Option of the bank picker in the breakpoint dialog (palette breakpoints): the device's second palette.",
+    "maxChars": 20
+  },
+  "dialog.breakpoint.palette.targetLabel": "Stop when",
+  "@dialog.breakpoint.palette.targetLabel": {
+    "context": "Field label in the breakpoint dialog (ZX Spectrum Next palette breakpoints): what makes the machine stop.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.palette.target.entries": "An entry is written",
+  "@dialog.breakpoint.palette.target.entries": {
+    "context": "Option in the breakpoint dialog (palette breakpoints): stop when a palette entry is written.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.palette.target.live": "The live bank flips",
+  "@dialog.breakpoint.palette.target.live": {
+    "context": "Option in the breakpoint dialog (palette breakpoints): stop when the device starts drawing with its other palette bank.",
+    "maxChars": 34
+  },
+  "dialog.breakpoint.palette.entriesLabel": "Entries",
+  "@dialog.breakpoint.palette.entriesLabel": {
+    "context": "Field label in the breakpoint dialog (palette breakpoints): which palette entries are watched.",
+    "maxChars": 16
+  },
+  "dialog.breakpoint.palette.entriesHint": "An entry or a range, e.g. $03 or $00-$0F; empty for all 256",
+  "@dialog.breakpoint.palette.entriesHint": {
+    "context": "Hint under the entries field of the breakpoint dialog (palette breakpoints). Keep the examples."
+  },
+  "dialog.breakpoint.palette.copper": "Copper writes stop it too",
+  "@dialog.breakpoint.palette.copper": {
+    "context": "Checkbox in the breakpoint dialog (palette breakpoints): also stop when the Copper writes the palette.",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.palette.changed": "Only when the colour changes",
+  "@dialog.breakpoint.palette.changed": {
+    "context": "Checkbox in the breakpoint dialog (palette breakpoints): writing the value already stored does not stop the machine.",
+    "maxChars": 40
+  },
+  "dialog.breakpoint.palette.stopNote": "Stops after the instruction during which the entry was written or the bank flipped. In a condition, palNew and palOld are the stored values, palSlot and palIndex the bank (0-7) and the entry.",
+  "@dialog.breakpoint.palette.stopNote": {
+    "context": "Note in the breakpoint dialog (ZX Spectrum Next palette breakpoints): where it stops and what a condition can read. palNew, palOld, palSlot and palIndex are names in the condition language: keep them."
   }
 }

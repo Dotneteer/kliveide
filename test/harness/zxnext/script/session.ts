@@ -28,6 +28,7 @@ import type {
   NextRegDescriptors,
   NextRegState,
   PaletteDeviceInfo,
+  PaletteWriteEvent,
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
@@ -865,6 +866,14 @@ export class NextTestSession {
     connectConditionSupport(debugSupport, this.machine);
     this.machine.executionContext.debugSupport = debugSupport;
     return debugSupport;
+  }
+
+  /**
+   * The palette write or live-bank flip a `pal:` breakpoint last stopped on (what the IDE's stop
+   * message and Breakpoints panel read), or undefined.
+   */
+  lastPaletteWrite(): PaletteWriteEvent | undefined {
+    return this.machine.lastPaletteWrite;
   }
 
   /** Continues in debug mode until a breakpoint stops the machine; returns the PC. */

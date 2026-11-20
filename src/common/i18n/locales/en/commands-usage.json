@@ -80,5 +80,9 @@
   "commands.usage.bpSet.dma": "dma:<kind>: (ZX Spectrum Next) stop on a DMA event - dma:enable, dma:load, dma:end at a block's end, dma:count:<n> after n bytes, dma:write:<address>[-<address>] when the DMA writes there, dma:held:<T> when it holds the bus longer, dma:problem on a setup mistake; e.g. bp-set dma:end",
   "@commands.usage.bpSet.dma": {
     "context": "Line of the IDE command help explaining one argument of bp-set. Keep option names, placeholders in <angle brackets>, the specs and the example command exactly as they are."
+  },
+  "commands.usage.bpSet.palette": "pal:<palette>[:<entries>]: (ZX Spectrum Next) stop when a palette entry is written - <palette> is ula, l2, spr, tm or any, with 1 or 2 for one bank; <entries> an entry or a range; pal:<palette>:live stops when its live bank flips. -c stops on Copper writes too, -changed only on writes that change the colour; e.g. bp-set pal:spr1:$03 -changed",
+  "@commands.usage.bpSet.palette": {
+    "context": "Line of the IDE command help explaining one argument of bp-set. Keep option names, placeholders in <angle brackets>, the specs and the example command exactly as they are."
   }
 }

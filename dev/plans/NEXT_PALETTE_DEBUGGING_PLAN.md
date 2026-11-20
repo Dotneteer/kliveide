@@ -1,6 +1,6 @@
 # Next Palette Debugging Plan (palette breakpoints and the Palette document)
 
-Status: **accepted** (2026-11-20; §9 answered). Phase 1 built (§5.1) on `feature/next-palette-debugging`; Phase 2 next. Mockups:
+Status: **accepted** (2026-11-20; §9 answered). Phases 1 and 2 built (§5.1, §3.5) on `feature/next-palette-debugging`; Phase 3 next. Mockups:
 `dev/plans/palette-debugging/PALETTE_DEBUGGING_MOCKUPS.html`.
 
 ## 1. What exists today
@@ -119,6 +119,41 @@ Palette bank flip: Tilemap now draws with bank 2   (Copper, $6B)   at $8F40
 
 The Breakpoints panel lists it under the hardware stops; the condition language gets
 `palIndex`, `palSlot`, `palOld`, `palNew` alongside the existing accessed-value names (§9 Q3).
+
+### 3.5 As built (Phase 2, 2026-11-20)
+
+- **Spec module** `src/common/zxnext/palette/paletteStops.ts`: parse/format, the core watch
+  (`buildPaletteWatch`), the hit decoder, matching, `-c`/`-changed` (`passesPaletteOptions`), the
+  condition packing (`paletteHitAccess`) and the stop message. `PAL:` key, `bp-set`/`bp-del`/`bp-en`
+  (`-changed` is a new command option; `-c` now also means Copper for `pal:`), `bp-list` round trip.
+- **Instruction by instruction, not a core candidate.** Like the sprite watch (`canRunInCore` is false
+  while a `pal:` breakpoint is armed), so the stop names the writing instruction from `opStartAddress`
+  and no debug-loop equivalence test was needed. A debug run with a palette breakpoint therefore runs
+  in TypeScript; the plan's §3.3 core-candidate idea is not built.
+- **Core** (`zxnext-palette.c`): `zxnextPaletteWatch` (one bit per entry), `zxnextPaletteWatchFlags`
+  (armed, Copper, any-write, live devices in bits 4-7) and a first-hit latch with the old and new
+  value; checked in `zxnextPaletteStore` (paths `$41`, `$44`, `$FF3B`), the `$43` live bits and
+  `$6B` bit 4. All volatile; the exports are `debug`/`pure` in the reverse-debugging contract (and
+  `ClearPaletteDirty` from Phase 1 moved from the default "journaled" to `debug`).
+- **Origins** (§9 Q4 answered): the DMA flag the core raises around every DMA port write marks a DMA
+  write to `$253B` or `$FF3B` as the DMA's; a CPU write through `$FF3B` is `port`.
+- **Union filtering.** The core reports Copper writes when any armed breakpoint has `-c`, and writes of
+  the stored value when any has no `-changed`; `DebugSupport.hasPaletteHit` applies each breakpoint's
+  own. The latch keeps the first hit of an instruction, so in the rare case a rejected write precedes
+  an accepted one in the same instruction, the second is not seen (as for the other Next latches).
+- **Conditions**: `VAL` the new stored value (11 bits), `ADDR` = old << 16 | slot << 8 | entry;
+  `palNew`, `palOld`, `palSlot`, `palIndex` resolve to expressions over them, only on a palette
+  breakpoint (elsewhere they stay label names). No new evaluator opcode in any core.
+- **UI**: the Breakpoints panel (Palette group, `bp-palette` glyph, the hit's before/after and
+  writer, tooltip lines), the breakpoint dialog's palette kind (device, stop when, bank, entries,
+  `-changed`, `-c`), `run-to` withdrawn on a `pal:` row.
+- **Tests**: `test/commands/PaletteStopCommands.test.ts` (spec, conditions, command, form),
+  `test/wasm/zxNext/wasm-next-palette-breakpoint.test.ts` (CPU writes, `$44`-free paths, ULA+, flips,
+  `-changed`, conditions, hit counts), `test/zxnext-hw/palette/palette-breakpoint-copper.test.ts`
+  (the Copper and `-c`). Checked in an isolated IDE run: `bp-set`, `bp-list`, two stops (an entry
+  write, then a flip, the unchanged rewrite between them skipped) and the panel rows.
+- **Not covered by a test**: a DMA write end to end (the decoder and the origin rule are tested
+  separately).
 
 ## 4. The Palette document (popped out of the panel)
 
