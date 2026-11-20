@@ -106,7 +106,13 @@ bytes and a (track, sector) link, side 1 as 128+, a 9-byte header first in a ZX 
 image format for the `.mgt` file's order (heads alternate), the Sinclair Wiki's IDEDOS page (partition
 table), and the +3 manual's XDPB. MGT: `.mgt` of 819,200 bytes, 80 directory entries on tracks 0-3,
 files allocated from the map side 0 first, SCREEN$ has its own type (7), a file over 64K is refused,
-names up to 10 characters. IDEDOS: 4K blocks and 512 directory entries in `formatIdedos`. **No
+names up to 10 characters. **SAM Coupé files on MGT** (`dev/plans/SAM_COUPE_PLAN.md` §10.4): types 16-20
+(BASIC, arrays, CODE, SCREEN$; 21 MasterDOS's directory), the SAM's own 9-byte header (type, length mod
+16384, start offset 8000h-BFFFh, FFh FFh, pages, start page) and the entry's 236-244 (start page, offset,
+pages, length mod 16384, exec page or FFh, exec offset / BASIC auto-run line); bit 6 protected, bit 7
+hidden. A disk with SAM files on it (or `MgtFileSystem.blank("sam")`) gets SAM files; `info().format`
+names the DOS (B-DOS by "BDOS" at 232, MasterDOS by a label byte at 210, else SAMDOS). The SAM's emulated
+ROM boots `buildMgtImage` disks (`test/sam-hw/fdc.test.ts`), so SAM images do have an oracle. IDEDOS: 4K blocks and 512 directory entries in `formatIdedos`. **No
 oracle:** Klive emulates neither interface, so these are checked against the documents' own examples
 and by round trips, not by a machine reading what Klive wrote.
 

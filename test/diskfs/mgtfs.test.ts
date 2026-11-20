@@ -98,3 +98,30 @@ describe("MGT disks", () => {
     expect(openDiskFileSystem(new Uint8Array(MGT_IMAGE_SIZE), "game.MGT").system).toBe("mgt");
   });
 });
+
+describe("MGT file system: SAM Coupé files", () => {
+  it("reads a SAM CODE file the SAM's MGT builder wrote, with its load address and length", async () => {
+    const { buildMgtImage, SAM_FILE_CODE } = await import("@common/samcoupe/mgtImage");
+    const data = new Uint8Array(20_000).map((_, i) => i & 0xff);
+    const image = buildMgtImage([{ name: "game", type: SAM_FILE_CODE, data, startPage: 1, startOffset: 0x8000 }]);
+    const fs = new MgtFileSystem(image);
+    expect(fs.info().format).toBe("SAM Coupé (SAMDOS)");
+    const [entry] = fs.list();
+    expect(entry.kind).toBe("code");
+    expect(entry.size).toBe(20_000);
+    expect(entry.start).toBe(32768);
+    expect(Array.from(fs.read("game"))).toEqual(Array.from(data));
+  });
+
+  it("writes SAM files on a SAM disk: the header and the entry's page form", async () => {
+    const { readMgtDirectory } = await import("@common/samcoupe/mgtImage");
+    const fs = MgtFileSystem.blank("sam");
+    fs.write({ name: "screen", kind: "code", data: new Uint8Array(100).fill(7), start: 0x10000 });
+    const [dir] = readMgtDirectory(fs.image());
+    expect(dir.type).toBe(19);
+    expect(dir.startPage).toBe(3);
+    expect(dir.startOffset).toBe(0x8000);
+    expect(dir.length).toBe(100);
+    expect(Array.from(new MgtFileSystem(fs.image()).read("screen"))).toEqual(new Array(100).fill(7));
+  });
+});

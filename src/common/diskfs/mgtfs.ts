@@ -22,6 +22,12 @@ import {
  *   is track 4 sector 1, and the bits run on through side 0, then side 1.
  * - A ZX file (BASIC, arrays, CODE, SCREEN$) starts with the 9-byte header the entry also holds at
  *   211-219; its data follows.
+ * - The SAM Coupé's DOSes (SAMDOS, MasterDOS, B-DOS) use the same disk (`dev/plans/SAM_COUPE_PLAN.md`
+ *   §10.4; STORAGE_FIRMWARE_SOFTWARE.md §4.2). A SAM file (types 16-20: BASIC, arrays, CODE, SCREEN$)
+ *   starts with the SAM's own 9-byte header (type, length mod 16384, start offset, two FFh, pages, start
+ *   page); the entry holds the place at 236-241 (start page, offset, pages, length mod 16384) and the
+ *   exec page and offset (or BASIC's auto-run line) at 242-244. Bit 6 of the type is "protected", bit 7
+ *   "hidden". A disk with SAM files, or one made with `MgtFileSystem.blank("sam")`, gets SAM files.
  */
 
 const SECTOR = 512;
@@ -45,30 +51,49 @@ const TAPE_TYPES: Partial<Record<DiskFileKind, number>> = { basic: 0, numberArra
 const DIR_TYPE_OF: Partial<Record<DiskFileKind, number>> = { basic: 1, numberArray: 2, charArray: 3, code: 4 };
 const SCREEN_TYPE = 7;
 
+/** The SAM's file types (bits 0-5 of byte 0) */
+const SAM_TYPES: Record<number, DiskFileKind> = { 16: "basic", 17: "numberArray", 18: "charArray", 19: "code", 20: "code" };
+const SAM_TYPE_OF: Partial<Record<DiskFileKind, number>> = { basic: 16, numberArray: 17, charArray: 18, code: 19 };
+const isSamType = (type: number) => type >= 16 && type <= 21;
+
+/** The linear BASIC address of a SAM page and offset (8000h-BFFFh form) */
+const samLinear = (page: number, offset: number) => (page & 0x1f) * 0x4000 + (offset & 0x3fff) + 0x4000;
+
+/** Which DOS made a SAM disk: B-DOS's signature at 232, MasterDOS's label at 210, else SAMDOS */
+function samDosOf (first: Uint8Array): string {
+  if (String.fromCharCode(...first.subarray(232, 236)) === "BDOS") return "B-DOS";
+  if (first[210] !== 0x00 && first[210] !== 0xff) return "MasterDOS";
+  return "SAMDOS";
+}
+
 type Slot = { index: number; entry: Uint8Array };
 
 export class MgtFileSystem implements DiskFileSystem {
   readonly system = "mgt";
   private readonly bytes: Uint8Array;
+  /** Whether new files are SAM files: a disk with SAM files on it, or a blank SAM disk */
+  private readonly sam: boolean;
 
-  constructor (bytes: Uint8Array) {
+  constructor (bytes: Uint8Array, flavour?: "plusD" | "sam") {
     if (bytes.length !== MGT_IMAGE_SIZE) {
       throw new DiskFsError("unformatted", `An MGT image is ${MGT_IMAGE_SIZE} bytes; this one is ${bytes.length}.`);
     }
     this.bytes = bytes.slice();
+    this.sam = flavour === "sam" || (flavour === undefined && this.live().some((s) => isSamType(s.entry[0] & 0x3f)));
   }
 
-  /** A blank, formatted disk: an empty directory */
-  static blank (): MgtFileSystem {
-    return new MgtFileSystem(new Uint8Array(MGT_IMAGE_SIZE));
+  /** A blank, formatted disk: an empty directory (+D files by default, SAM files with "sam") */
+  static blank (flavour?: "plusD" | "sam"): MgtFileSystem {
+    return new MgtFileSystem(new Uint8Array(MGT_IMAGE_SIZE), flavour ?? "plusD");
   }
 
   info (): DiskFsInfo {
     const used = this.usedSectors();
     const live = this.live();
+    const first = this.entryAt(0);
     return {
       system: "MGT",
-      format: "+D/DISCiPLE",
+      format: this.sam ? `SAM Coupé (${samDosOf(first)})` : "+D/DISCiPLE",
       totalBytes: MAP_SECTORS * DATA,
       freeBytes: (MAP_SECTORS - used.size) * DATA,
       blockSize: DATA,
@@ -84,6 +109,11 @@ export class MgtFileSystem implements DiskFileSystem {
   read (name: string): Uint8Array {
     const slot = this.find(name);
     const raw = this.chainBytes(slot.entry);
+    const type = slot.entry[0] & 0x3f;
+    if (isSamType(type)) {
+      const length = slot.entry[239] * 0x4000 + (slot.entry[240] | ((slot.entry[241] & 0x3f) << 8));
+      return raw.slice(HEADER, HEADER + length);
+    }
     const kind = DIR_TYPES[slot.entry[0] & 0x1f];
     if (!kind) return raw;
     const length = slot.entry[212] | (slot.entry[213] << 8);
@@ -101,6 +131,7 @@ export class MgtFileSystem implements DiskFileSystem {
     const slot = this.freeSlot();
     if (slot === undefined) throw new DiskFsError("directoryFull", `The directory has no room for ${name}.`, { name });
 
+    if (this.sam) return this.writeSam(file, name, slot);
     // --- A ZX file's header holds a 16-bit length
     if (file.data.length > 0xffff) {
       throw new DiskFsError("unsupported", `${name} is larger than a ZX Spectrum file can be (64K).`, { name });
@@ -157,6 +188,71 @@ export class MgtFileSystem implements DiskFileSystem {
     return this.entryOf({ index: slot, entry });
   }
 
+  /** A SAM file: its own 9-byte header, the place and exec address in the entry */
+  private writeSam (file: NewDiskFile, name: string, slot: number): DiskFileEntry {
+    const kind = file.kind === "raw" ? "code" : file.kind;
+    const length = file.data.length;
+    if (length > 32 * 0x4000) throw new DiskFsError("unsupported", `${name} is larger than a SAM's memory.`, { name });
+    // --- CODE at its load address (default 32768: page 1, 8000h); BASIC at page 0, the program's usual place
+    const linear = kind === "code" ? file.start ?? 32768 : 0x5cb6;
+    const page = Math.floor((linear - 0x4000) / 0x4000) & 0x1f;
+    const offset = 0x8000 + ((linear - 0x4000) & 0x3fff);
+    const header = new Uint8Array(HEADER);
+    header[0] = SAM_TYPE_OF[kind] ?? 19;
+    header[1] = length & 0xff;
+    header[2] = (length >> 8) & 0x3f;
+    header[3] = offset & 0xff;
+    header[4] = offset >> 8;
+    header[5] = 0xff;
+    header[6] = 0xff;
+    header[7] = Math.floor(length / 0x4000);
+    header[8] = page;
+    const content = new Uint8Array(HEADER + length);
+    content.set(header);
+    content.set(file.data, HEADER);
+    const count = Math.max(1, Math.ceil(content.length / DATA));
+    const used = this.usedSectors();
+    const free: number[] = [];
+    for (let bit = 0; bit < MAP_SECTORS && free.length < count; bit++) if (!used.has(bit)) free.push(bit);
+    if (free.length < count) throw new DiskFsError("diskFull", `The disk has no room for ${name}.`, { name });
+    const entry = new Uint8Array(ENTRY);
+    entry[0] = header[0];
+    writeName(entry, name);
+    entry[11] = (count >> 8) & 0xff;
+    entry[12] = count & 0xff;
+    const first = sectorOfBit(free[0]);
+    entry[13] = first.track;
+    entry[14] = first.sector;
+    for (let i = 0; i < count; i++) {
+      const bit = free[i];
+      entry[MAP_AT + (bit >> 3)] |= 1 << (bit & 7);
+      const at = sectorOfBit(bit);
+      const next = i + 1 < count ? sectorOfBit(free[i + 1]) : { track: 0, sector: 0 };
+      const sector = new Uint8Array(SECTOR);
+      sector.set(content.subarray(i * DATA, (i + 1) * DATA));
+      sector[DATA] = next.track;
+      sector[DATA + 1] = next.sector;
+      this.bytes.set(sector, offsetOf(at.track, at.sector));
+    }
+    entry[236] = page;
+    entry[237] = offset & 0xff;
+    entry[238] = offset >> 8;
+    entry[239] = header[7];
+    entry[240] = header[1];
+    entry[241] = header[2];
+    // --- No exec address; BASIC: no auto-run line
+    entry[242] = 0xff;
+    entry[243] = 0xff;
+    entry[244] = 0xff;
+    if (kind === "basic" && file.start !== undefined && file.start < 0xff00) {
+      entry[242] = 0;
+      entry[243] = file.start & 0xff;
+      entry[244] = file.start >> 8;
+    }
+    this.writeEntry(slot, entry);
+    return this.entryOf({ index: slot, entry });
+  }
+
   delete (name: string): void {
     const slot = this.find(name);
     const entry = slot.entry.slice();
@@ -191,6 +287,10 @@ export class MgtFileSystem implements DiskFileSystem {
   }
 
   // -----------------------------------------------------------------------------------------------
+
+  private samEntryOf (s: Slot): DiskFileEntry {
+    return samEntryOfBytes(s.entry);
+  }
 
   private entryAt (index: number): Uint8Array {
     const track = Math.floor(index / (SECTORS * 2));
@@ -256,6 +356,7 @@ export class MgtFileSystem implements DiskFileSystem {
 
   private entryOf (s: Slot): DiskFileEntry {
     const e = s.entry;
+    if (isSamType(e[0] & 0x3f)) return this.samEntryOf(s);
     const dirType = e[0] & 0x1f;
     const kind = DIR_TYPES[dirType] ?? "raw";
     const count = (e[11] << 8) | e[12];
@@ -280,6 +381,34 @@ export class MgtFileSystem implements DiskFileSystem {
       hidden: (e[0] & 0x80) !== 0
     };
   }
+}
+
+/** A SAM file's entry */
+function samEntryOfBytes (e: Uint8Array): DiskFileEntry {
+  const type = e[0] & 0x3f;
+  const kind = SAM_TYPES[type] ?? "raw";
+  const count = (e[11] << 8) | e[12];
+  const length = e[239] * 0x4000 + (e[240] | ((e[241] & 0x3f) << 8));
+  const execPage = e[242];
+  const name = readName(e);
+  return {
+    name,
+    baseName: name,
+    extension: "",
+    kind,
+    size: length,
+    allocated: count * SECTOR,
+    start:
+      kind === "code"
+        ? samLinear(e[236], e[237] | (e[238] << 8))
+        : kind === "basic" && execPage !== 0xff
+          ? e[243] | (e[244] << 8)
+          : undefined,
+    attributes: { readOnly: (e[0] & 0x40) !== 0, system: false, archive: false },
+    deleted: false,
+    sectors: [],
+    hidden: (e[0] & 0x80) !== 0
+  };
 }
 
 /** The image offset of a sector: `track` is 0-79 on side 0, 128-207 on side 1; `sector` is 1-10 */
