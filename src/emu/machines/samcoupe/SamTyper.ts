@@ -1,9 +1,9 @@
 /*
  * Text as SAM Coupé keystrokes, for the IDE's typing, Run and the tests (`dev/plans/SAM_COUPE_PLAN.md`
- * §9.1). The legends are the SAM's keycaps (SOUND_INPUT_IO.md §3.2): plain keys give lower case, SHIFT
- * upper case and the digit keys' symbols as on a Spectrum (SAM BASIC keeps the Spectrum's shifted digits),
- * SYMBOL the second legend of the punctuation keys. `test/sam-hw/keyboard.test.ts` reads every one back
- * from the running ROM.
+ * §9.1). Every character here was typed into ROM 3.0's editor - plain, with SHIFT and with SYMBOL - and
+ * read back from the BASIC line it stored (`test/sam-hw/keyboard.test.ts`): plain keys give lower case,
+ * SHIFT upper case, the digit row's symbols (0 gives ~) and the second legend of -, + and =, SYMBOL the
+ * rest of the ASCII punctuation. ; : , . " give the same character with SHIFT.
  */
 
 /** A keystroke: `SamKeyCode` names, the key first and its modifier after it */
@@ -11,6 +11,7 @@ export type SamStroke = { keys: string[] };
 
 const plain = (key: string): SamStroke => ({ keys: [key] });
 const shifted = (key: string): SamStroke => ({ keys: [key, "Shift"] });
+const symbol = (key: string): SamStroke => ({ keys: [key, "Symbol"] });
 
 const STROKES = new Map<string, SamStroke>();
 for (let i = 0; i < 26; i++) {
@@ -38,17 +39,36 @@ for (const [digit, symbol] of DIGITS) {
 const PAIRS: [string, string, string][] = [
   ["Minus", "-", "/"],
   ["Plus", "+", "*"],
-  ["Equals", "=", "_"],
-  ["Quote", '"', "`"],
-  ["Semicolon", ";", "<"],
-  ["Colon", ":", ">"],
-  ["Comma", ",", "{"],
-  ["Period", ".", "}"],
-  ["Inv", "\\", "|"]
+  ["Equals", "=", "_"]
 ];
 for (const [key, lower, upper] of PAIRS) {
   STROKES.set(lower, plain(key));
   STROKES.set(upper, shifted(key));
+}
+for (const [char, key] of [
+  ['"', "Quote"],
+  [";", "Semicolon"],
+  [":", "Colon"],
+  [",", "Comma"],
+  [".", "Period"]
+] as const) {
+  STROKES.set(char, plain(key));
+}
+STROKES.set("\\", shifted("Inv"));
+/** The characters SYMBOL gives (read back from the ROM's stored lines) */
+for (const [char, key] of [
+  ["<", "Comma"],
+  [">", "Period"],
+  ["|", "N9"],
+  ["{", "F"],
+  ["}", "G"],
+  ["^", "H"],
+  ["[", "R"],
+  ["]", "T"],
+  ["?", "X"],
+  ["`", "L"]
+] as const) {
+  STROKES.set(char, symbol(key));
 }
 STROKES.set(" ", plain("Space"));
 STROKES.set("\n", plain("Enter"));
