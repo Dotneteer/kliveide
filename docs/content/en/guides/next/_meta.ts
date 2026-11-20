@@ -10,6 +10,7 @@ export default {
   "tilemap-inspector": "The Tilemap Inspector",
   "layer2-inspector": "The Layer 2 Inspector",
   "layers": "Video layers",
+  "palettes": "Debugging palettes",
   "picture-troubleshooting": "Why does my picture look wrong?",
   "sprite-palette-editors": "Sprite and palette editors",
   "sd-card": "The SD card",

@@ -35,7 +35,8 @@ export function breakpointCommandSpec(
   if ((bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1) {
     parts.push(`-len ${bp.length}`);
   }
-  if (bp.nextRegCopper) parts.push("-c");
+  if (bp.nextRegCopper || bp.paletteCopper) parts.push("-c");
+  if (bp.paletteChanged) parts.push("-changed");
   if (bp.spriteIndex !== undefined && spriteAttrMaskOf(bp) !== SPRITE_ATTR_ALL) {
     parts.push(`-attr ${formatSpriteAttrList(spriteAttrMaskOf(bp))}`);
   }
@@ -82,5 +83,6 @@ export function breakpointKind(bp: BreakpointInfo): string {
   if (bp.spriteIndex !== undefined) return "sprite";
   if (bp.interruptStop !== undefined) return "interrupt";
   if (bp.dmaStop !== undefined) return "dma";
+  if (bp.paletteStop !== undefined) return "palette";
   return "exec";
 }

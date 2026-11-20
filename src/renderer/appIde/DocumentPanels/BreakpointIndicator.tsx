@@ -39,6 +39,8 @@ type Props = {
   copper?: boolean;
   /** This row is a sprite-attribute breakpoint (`sp:`); `address` then carries its `SP:$xx` spec. */
   sprite?: boolean;
+  /** This row is a palette breakpoint (`pal:`); `address` then carries its `PAL:...` spec. */
+  palette?: boolean;
   memoryRead?: boolean;
   memoryWrite?: boolean;
   ioRead?: boolean;
@@ -117,6 +119,7 @@ export const BreakpointIndicator = ({
   nextReg,
   copper,
   sprite,
+  palette,
   memoryRead,
   memoryWrite,
   ioRead,
@@ -182,6 +185,9 @@ export const BreakpointIndicator = ({
   } else if (sprite) {
     bpType = "panels.doc.breakpoint.type.spriteWrite";
     typeIcon = "bp-sprite";
+  } else if (palette) {
+    bpType = "panels.doc.breakpoint.type.paletteWrite";
+    typeIcon = "bp-palette";
   }
   // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
   // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.
@@ -196,7 +202,8 @@ export const BreakpointIndicator = ({
    * NR:$07` is not a spec any command accepts. The gesture is withdrawn rather than left to fail,
    * and the tooltip stops advertising it.
    */
-  const canRunTo = nextReg === undefined;
+  // --- Likewise a palette breakpoint: `run-to` takes no `pal:` spec
+  const canRunTo = nextReg === undefined && !palette;
   const filterText = filterLines?.length ? `${filterLines.join("\n")}\n` : "";
   const tooltip =
     `${tooltipCommon}\n` +

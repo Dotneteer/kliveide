@@ -936,5 +936,10 @@
   "@debug.bpGroup.dma": {
     "context": "Group header in the Breakpoints panel: the ZX Spectrum Next's DMA stops.",
     "maxChars": 24
+  },
+  "debug.bpGroup.palette": "Palette",
+  "@debug.bpGroup.palette": {
+    "context": "Group header in the Breakpoints panel: the ZX Spectrum Next's palette breakpoints (writes to palette entries and live-bank flips).",
+    "maxChars": 24
   }
 }

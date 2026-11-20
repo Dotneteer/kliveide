@@ -1005,6 +1005,14 @@
       "device": "The device owning the palette: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)"
     }
   },
+  "panels.side.palette.writtenBank": "Bank {bank}: {count, plural, one {# entry} other {# entries}} written since the last stop",
+  "@panels.side.palette.writtenBank": {
+    "context": "One line in the tooltip of the small dot after a device's name in the Next Palettes panel: how many entries of one of the device's two palette banks the program wrote since the machine last stopped (while running: since the run started). One line per bank that was written.",
+    "placeholders": {
+      "bank": "The bank's number, 1 or 2",
+      "count": "The number of palette entries written, 1 to 256"
+    }
+  },
   "panels.side.palette.liveBank": "Live — the machine is drawing with this bank",
   "@panels.side.palette.liveBank": {
     "context": "Line in the tooltip of a Next Palettes bank button when that bank is the one the hardware uses now."
@@ -5902,5 +5910,106 @@
   "@panels.side.dma.openTransfers": {
     "context": "Link at the bottom of the DMA side-bar panel (ZX Spectrum Next): opens the DMA Transfers document.",
     "maxChars": 24
+  },
+  "panels.side.breakpoints.title.palette": "Palette breakpoint {target}",
+  "@panels.side.breakpoints.title.palette": {
+    "context": "First tooltip line of a ZX Spectrum Next palette breakpoint in the Breakpoints panel.",
+    "placeholders": {
+      "target": "The breakpoint's spec, e.g. 'PAL:SPR1:$03' (syntax, not translated)"
+    }
+  },
+  "panels.side.breakpoints.title.paletteLog": "Palette logpoint {target}",
+  "@panels.side.breakpoints.title.paletteLog": {
+    "context": "First tooltip line of a ZX Spectrum Next palette breakpoint that only logs (a logpoint).",
+    "placeholders": {
+      "target": "The breakpoint's spec, e.g. 'PAL:SPR1:$03' (syntax, not translated)"
+    }
+  },
+  "panels.side.breakpoints.paletteContract": "Stops after the instruction during which a watched entry is written (NextReg $41 or $44, or port $FF3B; by the CPU or the DMA) or the live bank flips",
+  "@panels.side.breakpoints.paletteContract": {
+    "context": "Tooltip line of a palette breakpoint row in the Breakpoints panel (ZX Spectrum Next): when it stops. $41, $44 and $FF3B are register and port numbers; NextReg, CPU and DMA are hardware names."
+  },
+  "panels.side.breakpoints.paletteCopper": "Copper writes stop it too",
+  "@panels.side.breakpoints.paletteCopper": {
+    "context": "Tooltip line of a palette breakpoint set with -c: writes the Copper makes also stop the machine."
+  },
+  "panels.side.breakpoints.paletteChanged": "Only a write that changes the stored colour stops it",
+  "@panels.side.breakpoints.paletteChanged": {
+    "context": "Tooltip line of a palette breakpoint set with -changed: writing the value already stored does not stop the machine."
+  },
+  "panels.side.breakpoints.paletteHit": "{device} bank {bank}, entry {index}: {old} -> {new} through {writer}; CPU at {pc}",
+  "@panels.side.breakpoints.paletteHit": {
+    "context": "Line of a palette breakpoint's tooltip after it stopped: the entry write that hit it.",
+    "placeholders": {
+      "device": "The palette's device: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)",
+      "bank": "The bank's number, 1 or 2",
+      "index": "The entry, e.g. '$03'",
+      "old": "The value before, e.g. '$1C7'",
+      "new": "The value written, e.g. '$003'",
+      "writer": "Who wrote and through what, in English, e.g. 'NextReg $41' or 'the Copper (NextReg $41)'",
+      "pc": "The CPU address, e.g. '$8123'"
+    }
+  },
+  "panels.side.breakpoints.paletteHitPaged": "{device} bank {bank}, entry {index}: {old} -> {new} through {writer}; CPU at {pc} {paged}",
+  "@panels.side.breakpoints.paletteHitPaged": {
+    "context": "As panels.side.breakpoints.paletteHit, with the memory page the CPU was in.",
+    "placeholders": {
+      "device": "The palette's device: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)",
+      "bank": "The bank's number, 1 or 2",
+      "index": "The entry, e.g. '$03'",
+      "old": "The value before, e.g. '$1C7'",
+      "new": "The value written, e.g. '$003'",
+      "writer": "Who wrote and through what, in English, e.g. 'NextReg $41'",
+      "pc": "The CPU address, e.g. '$8123'",
+      "paged": "The text of panels.side.breakpoints.pagedIn, e.g. 'in R0'"
+    }
+  },
+  "panels.side.breakpoints.paletteFlip": "{device} now draws with bank {bank}, through {writer}; CPU at {pc}",
+  "@panels.side.breakpoints.paletteFlip": {
+    "context": "Line of a palette breakpoint's tooltip after a live-bank flip stopped it.",
+    "placeholders": {
+      "device": "The palette's device: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)",
+      "bank": "The bank's number, 1 or 2",
+      "writer": "Who wrote and through what, in English, e.g. 'NextReg $6B'",
+      "pc": "The CPU address, e.g. '$8123'"
+    }
+  },
+  "panels.side.breakpoints.paletteFlipPaged": "{device} now draws with bank {bank}, through {writer}; CPU at {pc} {paged}",
+  "@panels.side.breakpoints.paletteFlipPaged": {
+    "context": "As panels.side.breakpoints.paletteFlip, with the memory page the CPU was in.",
+    "placeholders": {
+      "device": "The palette's device: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)",
+      "bank": "The bank's number, 1 or 2",
+      "writer": "Who wrote and through what, in English, e.g. 'NextReg $6B'",
+      "pc": "The CPU address, e.g. '$8123'",
+      "paged": "The text of panels.side.breakpoints.pagedIn, e.g. 'in R0'"
+    }
+  },
+  "panels.breakpointForm.paletteUnsupported": "Palette breakpoints exist only on the ZX Spectrum Next",
+  "@panels.breakpointForm.paletteUnsupported": {
+    "context": "Error in the breakpoint dialog when a palette breakpoint is chosen on another machine."
+  },
+  "panels.breakpointForm.paletteEntries": "An entry or a range from $00 to $FF, e.g. $03 or $00-$0F",
+  "@panels.breakpointForm.paletteEntries": {
+    "context": "Error in the breakpoint dialog (palette breakpoints) when the entries field does not parse. Keep the examples."
+  },
+  "panels.side.historyPresent.nextPalettes": "The palettes show the present, not history step {step}",
+  "@panels.side.historyPresent.nextPalettes": {
+    "context": "Band over the ZX Spectrum Next Palette document while the execution history cursor is in the past: the palettes are read from the machine now. {step} is the history step number.",
+    "placeholders": {
+      "step": "The history step number"
+    }
+  },
+  "panels.side.palette.popOut": "Open the Palette document",
+  "@panels.side.palette.popOut": {
+    "context": "Tooltip of the pop-out button in the Next Palettes panel's header: opens the palettes as a document.",
+    "maxChars": 40
+  },
+  "panels.side.palette.watched": "A palette breakpoint watches {device}",
+  "@panels.side.palette.watched": {
+    "context": "Tooltip of the breakpoint dot after a device's name in the Next Palettes panel. {device} is ULA, Layer 2, Sprites or Tilemap.",
+    "placeholders": {
+      "device": "The device: ULA, Layer 2, Sprites or Tilemap"
+    }
   }
 }

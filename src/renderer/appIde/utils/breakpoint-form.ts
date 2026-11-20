@@ -12,6 +12,7 @@ import {
   isInterruptStop,
   isDmaStop,
   isNextRegBreakpoint,
+  isPaletteStop,
   isSpriteBreakpoint,
   spriteAttrMaskOf
 } from "@common/utils/breakpoint-scope";
@@ -25,6 +26,33 @@ import {
 } from "@common/zxnext/interrupts/interruptStops";
 import { NEXT_INT_SOURCE_IDS } from "@common/zxnext/interrupts/interruptState";
 import { dmaStopOf, formatDmaStop, parseDmaStop, type DmaStop, type DmaStopKind } from "@common/zxnext/dma/dmaStops";
+import {
+  formatPaletteStop,
+  paletteStopOf,
+  parsePaletteStop,
+  type PaletteStop,
+  type PaletteStopDevice
+} from "@common/zxnext/palette/paletteStops";
+
+/** A palette breakpoint's form fields (the empty ones for any other breakpoint) */
+function paletteFieldsOf(
+  bp: BreakpointInfo
+): Pick<
+  BreakpointFormState,
+  "paletteDevice" | "paletteBank" | "paletteTarget" | "paletteEntries" | "paletteCopper" | "paletteChanged"
+> {
+  const stop = paletteStopOf(bp.paletteStop);
+  const hex = (v: number) => `$${toHexa2(v).toUpperCase()}`;
+  return {
+    paletteDevice: stop?.device ?? "any",
+    paletteBank: stop?.bank === undefined ? "both" : stop.bank === 0 ? "1" : "2",
+    paletteTarget: stop?.live ? "live" : "entries",
+    paletteEntries:
+      stop?.from === undefined ? "" : stop.from === stop.to ? hex(stop.from) : `${hex(stop.from)}-${hex(stop.to!)}`,
+    paletteCopper: !!bp.paletteCopper,
+    paletteChanged: !!bp.paletteChanged
+  };
+}
 
 /** A DMA stop's form fields (the empty ones for any other breakpoint) */
 function dmaFieldsOf(bp: BreakpointInfo): Pick<BreakpointFormState, "dmaEvent" | "dmaArg"> {
@@ -115,7 +143,9 @@ export type BreakpointKind =
   /** The ZX Spectrum Next's `int:<kind>`: an interrupt event (NEXT_INTERRUPTS_DEBUGGING_PLAN §5). */
   | "interrupt"
   /** The ZX Spectrum Next's `dma:<kind>`: a DMA event (NEXT_DMA_DEBUGGING_PLAN §12). */
-  | "dma";
+  | "dma"
+  /** The ZX Spectrum Next's `pal:<palette>`: a palette write or flip (NEXT_PALETTE_DEBUGGING_PLAN §3). */
+  | "palette";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -172,6 +202,18 @@ export type BreakpointFormState = {
   dmaEvent: DmaStopKind;
   /** Raw input, DMA kind only: the byte count (`count`), the address or range (`write`) or the T-states (`held`). */
   dmaArg: string;
+  /** Palette kind only: the device (`ula`, `l2`, `spr`, `tm`, `any`). */
+  paletteDevice: PaletteStopDevice;
+  /** Palette kind only: one bank, or both. Ignored for a live-bank flip. */
+  paletteBank: "both" | "1" | "2";
+  /** Palette kind only: stop on entry writes, or on the live bank flipping. */
+  paletteTarget: "entries" | "live";
+  /** Raw input, palette kind only: an entry or a range (`$03`, `$00-$0F`); empty means all 256. */
+  paletteEntries: string;
+  /** Palette kind only: Copper writes stop too (`-c`). */
+  paletteCopper: boolean;
+  /** Palette kind only: only a write that changes the stored value stops (`-changed`). */
+  paletteChanged: boolean;
   disabled: boolean;
   /**
    * "Remove after it stops" (`dev/plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
@@ -304,6 +346,7 @@ export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean 
     isSpriteBreakpoint(bp ?? {}) ||
     isInterruptStop(bp ?? {}) ||
     isDmaStop(bp ?? {}) ||
+    isPaletteStop(bp ?? {}) ||
     isBankRelative(bp ?? {})
   );
 }
@@ -377,6 +420,12 @@ export function createEmptyForm(): BreakpointFormState {
     interruptWait: "",
     dmaEvent: "end",
     dmaArg: "",
+    paletteDevice: "any",
+    paletteBank: "both",
+    paletteTarget: "entries",
+    paletteEntries: "",
+    paletteCopper: false,
+    paletteChanged: false,
     disabled: false,
     oneShot: false,
     length: "",
@@ -416,6 +465,34 @@ export function isSpriteKind(kind: BreakpointKind): boolean {
 /** True for the kind bound to a DMA event. */
 export function isDmaKind(kind: BreakpointKind): boolean {
   return kind === "dma";
+}
+
+/** True for the kind bound to a palette write or a live-bank flip. */
+export function isPaletteKind(kind: BreakpointKind): boolean {
+  return kind === "palette";
+}
+
+/**
+ * The palette form's fields as a stop, or the field that is wrong. A flip watches both banks, so the
+ * bank picker is ignored for it.
+ */
+export function paletteStopFromForm(
+  form: Pick<BreakpointFormState, "paletteDevice" | "paletteBank" | "paletteTarget" | "paletteEntries">
+): PaletteStop | { field: "paletteEntries" } {
+  const live = form.paletteTarget === "live";
+  const bank = live || form.paletteBank === "both" ? "" : form.paletteBank;
+  const entries = form.paletteEntries.trim().replace(/\s+/g, "");
+  const spec = `${form.paletteDevice}${bank}${live ? ":live" : entries ? `:${entries}` : ""}`;
+  const parsed = parsePaletteStop(spec);
+  return "error" in parsed ? { field: "paletteEntries" } : parsed;
+}
+
+/** The palette form as `bp-set` spells it (`PAL:SPR1:$03`), for the dialog's summary line */
+export function paletteTriggerText(
+  form: Pick<BreakpointFormState, "paletteDevice" | "paletteBank" | "paletteTarget" | "paletteEntries">
+): string {
+  const stop = paletteStopFromForm(form);
+  return "field" in stop ? "PAL:?" : `PAL:${formatPaletteStop(stop).toUpperCase()}`;
 }
 
 /** The DMA events that take an argument */
@@ -480,6 +557,7 @@ export function applyKindChange(
   const sprite = isSpriteKind(kind);
   const interrupt = isInterruptKind(kind);
   const dma = isDmaKind(kind);
+  const palette = isPaletteKind(kind);
   return {
     ...form,
     kind,
@@ -491,11 +569,18 @@ export function applyKindChange(
     interruptWait: interrupt ? form.interruptWait : "",
     dmaEvent: dma ? form.dmaEvent : "end",
     dmaArg: dma ? form.dmaArg : "",
+    paletteDevice: palette ? form.paletteDevice : "any",
+    paletteBank: palette ? form.paletteBank : "both",
+    paletteTarget: palette ? form.paletteTarget : "entries",
+    paletteEntries: palette ? form.paletteEntries : "",
+    paletteCopper: palette ? form.paletteCopper : false,
+    paletteChanged: palette ? form.paletteChanged : false,
     // --- A NextReg breakpoint has no address and no partition; the address field is not merely
     // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
     // --- unreachable.
-    address: nextReg || copper || sprite || interrupt || dma ? "" : form.address,
-    partition: isIoKind(kind) || nextReg || copper || sprite || interrupt || dma ? undefined : form.partition,
+    address: nextReg || copper || sprite || interrupt || dma || palette ? "" : form.address,
+    partition:
+      isIoKind(kind) || nextReg || copper || sprite || interrupt || dma || palette ? undefined : form.partition,
     ioMask: isIoKind(kind) ? form.ioMask : "",
     nextReg: nextReg ? form.nextReg : "",
     filterValue: nextReg ? form.filterValue : false,
@@ -652,6 +737,24 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     };
   }
 
+  // --- A palette breakpoint: an event kind, bound to palette entries or a live bank
+  if (isPaletteKind(form.kind)) {
+    const stop = paletteStopFromForm(form);
+    const live = form.paletteTarget === "live";
+    return {
+      paletteStop: "field" in stop ? undefined : formatPaletteStop(stop),
+      paletteCopper: form.paletteCopper || undefined,
+      // --- A flip always changes something, so `-changed` means nothing there
+      paletteChanged: (!live && form.paletteChanged) || undefined,
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   // --- An interrupt stop: an event kind, bound to an interrupt event
   if (isInterruptKind(form.kind)) {
     const stop = interruptStopFromForm(form);
@@ -743,6 +846,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
       ? "interrupt"
       : isDmaStop(bp)
       ? "dma"
+      : isPaletteStop(bp)
+      ? "palette"
       : bp.memoryRead
       ? "memRead"
       : bp.memoryWrite
@@ -768,6 +873,7 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     spriteAttrMask: bp.spriteIndex === undefined ? SPRITE_ATTR_ALL : spriteAttrMaskOf(bp),
     ...interruptFieldsOf(bp),
     ...dmaFieldsOf(bp),
+    ...paletteFieldsOf(bp),
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -891,6 +997,17 @@ export function validateBreakpointForm(
           : form.dmaEvent === "write"
             ? t("panels.breakpointForm.dmaWrite")
             : t("panels.breakpointForm.dmaHeld");
+    }
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
+  // --- The palette breakpoint's rules, on their own path like the DMA ones
+  if (isPaletteKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.paletteEntries = t("panels.breakpointForm.paletteUnsupported");
+    } else if ("field" in paletteStopFromForm(form)) {
+      errors.paletteEntries = t("panels.breakpointForm.paletteEntries");
     }
     addDuplicateKeyError(errors, form, env);
     return errors;
@@ -1097,6 +1214,8 @@ export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind
       return "copper";
     case "sprite":
       return "sprite";
+    case "palette":
+      return "palette";
     // --- An interrupt stop's condition reads the registers after the event, as an execution one does
     default:
       return "exec";

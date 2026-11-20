@@ -1968,5 +1968,21 @@
   "commands.dma.hideTransfersDescription": "Closes the ZX Spectrum Next DMA Transfers, which stops its recording and the Memory panel's overlay",
   "@commands.dma.hideTransfersDescription": {
     "context": "Description of the 'hide-dma-transfers' IDE command."
+  },
+  "commands.palettes.showDescription": "Displays the Palette document, optionally showing a device (ula, l2, spr, tm)",
+  "@commands.palettes.showDescription": {
+    "context": "Description of the 'show-palettes' IDE command in the command help. ula, l2, spr and tm are argument values: keep them."
+  },
+  "commands.palettes.hideDescription": "Hides the Palette document",
+  "@commands.palettes.hideDescription": {
+    "context": "Description of the 'hide-palettes' IDE command in the command help."
+  },
+  "commands.palettes.nextOnly": "The Palette document exists on the ZX Spectrum Next only",
+  "@commands.palettes.nextOnly": {
+    "context": "Error of the 'show-palettes' IDE command when the current machine is not a ZX Spectrum Next."
+  },
+  "commands.palettes.badDevice": "Unknown palette device '{device}'; use ula, l2, spr or tm",
+  "@commands.palettes.badDevice": {
+    "context": "Error of the 'show-palettes' IDE command for an unknown device argument. {device} is what the user typed; ula, l2, spr and tm are argument values: keep them."
   }
 }

@@ -1066,6 +1066,26 @@ user (`useNextSpriteState`). On an image rather than a table (the Tilemap Inspec
 dot goes in the changed cell's top-right corner, drawn on the overlay canvas — still a marker, never a
 tint over the machine's pixels.
 
+A sidebar row that names a device rather than an index (the Next Palettes panel's ULA / Layer 2 /
+Sprites / Tilemap rows) carries the same 5px dot right after the device's name, which is the row's
+identity there; its tooltip and accessible name say what changed (the count per bank). The dot is
+there only while something changed: an always-present marker in another state would say nothing.
+"Changed" may honestly mean *written* when that is what the machine can report (a palette entry
+rewritten with its own colour counts); the tooltip's wording says which. A breakpoint watching the
+device adds the gutter dot (`circle-filled` in `--color-breakpoint-binary`) **before** the name, as on
+a table row. `--color-breakpoint-binary` (`--status-info`) and `--color-state-changed` can resolve to
+the same hue, so two dots side by side after the name were indistinguishable: the place tells them
+apart, not the colour.
+
+On a colour swatch (the Palette document's grids, `NextPaletteViewer`) the marks cannot rely on the
+theme surface, so they split by what they mean: *written* is an inset 2px ring in
+`--color-state-changed` (inset, so the swatch keeps its size); the colour at the previous stop is a
+triangle in the bottom-left corner painted in that old colour, so before and after sit on one swatch
+without a log; a watching breakpoint is the breakpoint dot in the bottom-right corner, ringed in the
+swatch's own contrast colour like the transparency and priority marks. The details column repeats
+the old value as text in `--color-state-changed` ("was $007") beside the current one in
+`--color-state-value`.
+
 ## A Breakpoint On A Table Row Is The Gutter Dot, Before The Index
 
 A table that is not a code listing still marks a row with a breakpoint the way the Copper List's
@@ -1077,8 +1097,10 @@ one hue. Do not add a gutter column to a table that has none: the index cell alr
 identity, and the menu on the row is where the breakpoint is set.
 
 A new event-breakpoint type gets its own `bp-*` icon in the family's shape: the downward write arrow
-over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell), painted
-with `--color-breakpoint-type` like every other type icon.
+over a small glyph of the thing written (`bp-nextreg` sliders, `bp-sprite` a sprite cell, `bp-palette`
+a 3x2 swatch grid), painted with `--color-breakpoint-type` like every other type icon. The glyph sits
+in the same 16x9.5 box under the arrow as `bp-sprite`'s, so the family keeps one silhouette; the
+group header in the Breakpoints panel reuses the type icon.
 
 A dialog choice among a handful of independent bits (the sprite kind's five attribute bytes) is a
 column of checkboxes, each labelled with its bit and what it holds (`2: palette, mirror, rotate,

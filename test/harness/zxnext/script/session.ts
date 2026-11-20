@@ -28,6 +28,7 @@ import type {
   NextRegDescriptors,
   NextRegState,
   PaletteDeviceInfo,
+  PaletteWriteEvent,
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
@@ -359,6 +360,16 @@ export class NextTestSession {
   captureCheckpoint(key: string): this {
     this.machine.captureCheckpoint(key);
     this.checkpoint = { key, frames: this.frames, lastFrame: this.lastFrame };
+    return this;
+  }
+
+  /**
+   * What the IDE's machine controller does when a run starts (a start, a continue, every step):
+   * the machine's `onRunStart`. The Next clears its palette's "written since the last stop" marks
+   * there (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5); the run methods here do not call it.
+   */
+  beginRun(): this {
+    this.machine.onRunStart?.();
     return this;
   }
 
@@ -855,6 +866,14 @@ export class NextTestSession {
     connectConditionSupport(debugSupport, this.machine);
     this.machine.executionContext.debugSupport = debugSupport;
     return debugSupport;
+  }
+
+  /**
+   * The palette write or live-bank flip a `pal:` breakpoint last stopped on (what the IDE's stop
+   * message and Breakpoints panel read), or undefined.
+   */
+  lastPaletteWrite(): PaletteWriteEvent | undefined {
+    return this.machine.lastPaletteWrite;
   }
 
   /** Continues in debug mode until a breakpoint stops the machine; returns the PC. */

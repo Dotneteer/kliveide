@@ -1169,6 +1169,15 @@ class EmuApiImpl {
   }
 
   /**
+   * The ZX Spectrum Next palette's version: it changes whenever an entry is written, a live bank
+   * flips or the machine's state is restored, so a reader can skip `getPalettedDeviceInfo` (2048
+   * entries) while it is unchanged (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5).
+   */
+  async getPaletteVersion(): Promise<number> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a register value in the emulator.
    * @param _register The register name.
    * @param _value The value to set.
@@ -1290,6 +1299,11 @@ export type CpuStateChunk = {
   tacts: number;
   /** The history cursor's steps back from the present; 0 or absent at the present */
   historyPosition?: number;
+  /**
+   * A ZX Spectrum Next's palette version (`getPaletteVersion`), so the state listener refreshes the
+   * panels when a palette changes while nothing else moved; absent on other machines
+   */
+  paletteVersion?: number;
 };
 
 // --- The response with the CPU state information
@@ -1349,6 +1363,11 @@ export type Z80CpuState = {
    * a sprite-attribute breakpoint (`sp:`) fires.
    */
   lastSpriteWrite?: SpriteWriteEvent;
+  /**
+   * The palette write or live-bank flip the machine last stopped on. ZX Spectrum Next only, and
+   * absent until a palette breakpoint (`pal:`) fires.
+   */
+  lastPaletteWrite?: PaletteWriteEvent;
   /**
    * The interrupt event the machine last stopped on. ZX Spectrum Next only, and absent until an
    * interrupt stop (`int:`) fires.
@@ -1557,6 +1576,38 @@ export type CopperState = {
   timing: { lines: number; hcs: number; upperBorder?: number };
   /** The stop's hit, when the last stop was a Copper breakpoint */
   lastHit?: CopperHitEvent;
+};
+
+/**
+ * Who wrote a palette entry or flipped a live bank: the CPU through a NextReg (`$253B` or NEXTREG),
+ * the Copper, the DMA (through `$253B` or port `$FF3B`), or the CPU through port `$FF3B` (ULA+).
+ */
+export type PaletteWriteOrigin = "nextreg" | "copper" | "dma" | "port";
+
+/** The register or port a palette write went through */
+export type PaletteWritePath = "$41" | "$44" | "$FF3B" | "$43" | "$6B";
+
+/**
+ * A palette entry write or live-bank flip a breakpoint stopped on; see
+ * `Z80CpuState.lastPaletteWrite` (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §3). The machine stops
+ * at the end of the instruction during which it happened.
+ */
+export type PaletteWriteEvent = {
+  /** An entry write, or a live-bank flip (`$43` bits 1-3, `$6B` bit 4) */
+  kind: "entry" | "live";
+  /** The core slot, 0-7 (`$43` bits 6-4 order); for a flip, the device's slot now live */
+  slot: number;
+  /** The entry, 0-255; 0 for a flip */
+  index: number;
+  /** The stored value before and after: 9-bit colour, priority bits 9-10; for a flip, the banks 0/1 */
+  oldValue: number;
+  newValue: number;
+  origin: PaletteWriteOrigin;
+  path: PaletteWritePath;
+  /** The first byte of the Z80 instruction during which it happened */
+  pc: number;
+  /** The memory partition `pc` was in, if the machine has partitions */
+  partition?: number;
 };
 
 /**
@@ -1935,6 +1986,21 @@ export type PaletteDeviceInfo = {
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;
+  /**
+   * The palette's version (`getPaletteVersion`) when this was read; absent from an older reader.
+   */
+  version?: number;
+  /**
+   * The entries written since the last stop: 256 bytes, one bit per entry - byte `slot * 32 + index
+   * / 8`, bit `index % 8`, the slots in the `$43` order (0-3 the first ULA / Layer 2 / sprite /
+   * tilemap banks, 4-7 the second ones). See `NEXT_PALETTE_DEBUGGING_PLAN.md` §5.
+   */
+  written?: number[];
+  /**
+   * Next Reg $14, the global transparency colour: a ULA or Layer 2 pixel whose `$41` byte (the
+   * colour's top eight bits) equals it is transparent. Absent from an older reader.
+   */
+  globalTransparency?: number;
 };
 
 /** The emulated picture: `width` × `height` pixels, four bytes each (R, G, B, A) */

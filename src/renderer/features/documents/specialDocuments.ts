@@ -24,6 +24,8 @@ import {
   LAYER2_PANEL_ID,
   LAYERS_EDITOR,
   LAYERS_PANEL_ID,
+  PALETTES_EDITOR,
+  PALETTES_PANEL_ID,
   AUDIO_MIXER_EDITOR,
   AUDIO_MIXER_PANEL_ID,
   HISTORY_EDITOR,
@@ -53,6 +55,7 @@ export type SpecialDocumentId =
   | typeof TILEMAP_PANEL_ID
   | typeof LAYER2_PANEL_ID
   | typeof LAYERS_PANEL_ID
+  | typeof PALETTES_PANEL_ID
   | typeof AUDIO_MIXER_PANEL_ID
   | typeof HISTORY_PANEL_ID
   | typeof PROFILER_PANEL_ID
@@ -154,6 +157,13 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     iconName: "layers",
     workspaceRestorable: true
   }, { name: "panels.document.layers" }),
+  // --- The ZX Spectrum Next palettes (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4)
+  [PALETTES_PANEL_ID]: withTexts({
+    id: PALETTES_PANEL_ID,
+    type: PALETTES_EDITOR,
+    iconName: "palette",
+    workspaceRestorable: true
+  }, { name: "panels.document.nextPalettes" }),
   // --- The audio mixer (`dev/plans/AUDIO_MIXER_PLAN.md` §3.4)
   [AUDIO_MIXER_PANEL_ID]: withTexts({
     id: AUDIO_MIXER_PANEL_ID,

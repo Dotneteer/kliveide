@@ -10,6 +10,7 @@ import {
   isNextRegBreakpoint,
   isInterruptStop,
   isDmaStop,
+  isPaletteStop,
   isSpriteBreakpoint
 } from "@common/utils/breakpoint-scope";
 import { isLogpoint } from "@common/utils/breakpoint-filters";
@@ -40,7 +41,8 @@ export type BreakpointGroup =
   | "copper"
   | "sprite"
   | "interrupt"
-  | "dma";
+  | "dma"
+  | "palette";
 
 /** Group order, matching the dialog's type selector so the two read the same way. */
 export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
@@ -53,7 +55,8 @@ export const BREAKPOINT_GROUP_ORDER: readonly BreakpointGroup[] = [
   "copper",
   "sprite",
   "interrupt",
-  "dma"
+  "dma",
+  "palette"
 ];
 
 /**
@@ -70,7 +73,8 @@ export const BREAKPOINT_GROUP_TITLES: Readonly<Record<BreakpointGroup, string>> 
   copper: "debug.bpGroup.copper",
   sprite: "debug.bpGroup.sprite",
   interrupt: "debug.bpGroup.interrupt",
-  dma: "debug.bpGroup.dma"
+  dma: "debug.bpGroup.dma",
+  palette: "debug.bpGroup.palette"
 });
 
 /**
@@ -89,7 +93,8 @@ export const BREAKPOINT_GROUP_ICONS: Record<BreakpointGroup, string> = {
   copper: "bp-copper",
   sprite: "bp-sprite",
   interrupt: "int-timeline",
-  dma: "dma-log"
+  dma: "dma-log",
+  palette: "bp-palette"
 };
 
 /** A header, or a breakpoint. One flat array, because `VirtualizedList` takes one. */
@@ -121,6 +126,7 @@ export function groupOf(bp: BreakpointInfo): BreakpointGroup {
   if (isSpriteBreakpoint(bp)) return "sprite";
   if (isInterruptStop(bp)) return "interrupt";
   if (isDmaStop(bp)) return "dma";
+  if (isPaletteStop(bp)) return "palette";
   if (bp.memoryRead) return "memRead";
   if (bp.memoryWrite) return "memWrite";
   if (bp.ioRead) return "ioRead";
@@ -143,6 +149,7 @@ export function shapeRank(bp: BreakpointInfo): number {
   if (isSpriteBreakpoint(bp)) return 0;
   if (isInterruptStop(bp)) return 0;
   if (isDmaStop(bp)) return 0;
+  if (isPaletteStop(bp)) return 0;
   if (isBankRelative(bp)) return 1;
   if (isLabelAnchored(bp)) return 2;
   return 3;

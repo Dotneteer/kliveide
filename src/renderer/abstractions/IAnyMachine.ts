@@ -121,6 +121,12 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   onStop(): void;
 
   /**
+   * Called when a run starts: a start, a continue and every step, a resume from a pause included.
+   * A machine clears what it reports as "since the last stop" here.
+   */
+  onRunStart?(): void;
+
+  /**
    * Width of the screen in native machine screen pixels
    */
   get screenWidthInPixels(): number;

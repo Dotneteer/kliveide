@@ -121,6 +121,13 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextSpriteWatchArmed",
   "zxnextSpriteHit",
   "zxnextSpriteWriteFromDma",
+  // --- The palette's "written since the last stop" bitmap: the host clears it (NEXT_PALETTE_DEBUGGING_PLAN §5)
+  "zxnextPaletteDirty",
+  // --- The palette-breakpoint watch and latch (NEXT_PALETTE_DEBUGGING_PLAN §3)
+  "zxnextPaletteWatch",
+  "zxnextPaletteWatchFlags",
+  "zxnextPaletteHit",
+  "zxnextPaletteHitValues",
   // --- The Sprite Inspector's resolve buffer (SPRITE_INSPECTOR_PLAN trap T3)
   "zxnextIdeResolvedSprites",
   "zxnextIdeResolveScratch",
@@ -366,6 +373,13 @@ const productionExports = [
   "zxnextGetPaletteControl",
   "zxnextGetPaletteSecondWrite",
   "zxnextGetPaletteStoredValue",
+  "zxnextGetPaletteGeneration",
+  "zxnextGetPaletteDirtyByte",
+  "zxnextClearPaletteDirty",
+  "zxnextPaletteWatchPtr",
+  "zxnextSetPaletteWatchFlags",
+  "zxnextTakePaletteHit",
+  "zxnextGetPaletteHitValues",
   "zxnextSetLayer2Enabled",
   "zxnextGetLayer2Enabled",
   "zxnextGetLayer2Resolution",

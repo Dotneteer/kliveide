@@ -10,6 +10,8 @@ import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import type { InterruptWatch } from "@common/zxnext/interrupts/interruptStops";
 import type { DmaHit, DmaStepMode, DmaWatch } from "@common/zxnext/dma/dmaStops";
+import type { PaletteWatch } from "@common/zxnext/palette/paletteStops";
+import type { PaletteWriteEvent } from "@common/messaging/EmuApi";
 import type { NextIntEvent } from "@common/zxnext/interrupts/interruptState";
 
 /**
@@ -121,6 +123,18 @@ export interface IDebugSupport {
    * @param value The value written (a condition's `VAL`)
    */
   hasSpriteHit(sprite: number, attribute: number, value: number): boolean;
+
+  /**
+   * The ZX Spectrum Next palette-breakpoint watch (`pal:`) to arm in the core; `flags` is 0 when no
+   * palette breakpoint is enabled. Optional: only the Next's debug support needs it.
+   */
+  buildPaletteWatch?(): PaletteWatch;
+
+  /**
+   * Does any palette breakpoint want to stop on this entry write or live-bank flip?
+   * @param hit The write the core latched
+   */
+  hasPaletteHit?(hit: Omit<PaletteWriteEvent, "pc" | "partition">): boolean;
 
   /**
    * The ZX Spectrum Next interrupt-stop watch (`int:`) to arm in the core; `kinds` is 0 when no

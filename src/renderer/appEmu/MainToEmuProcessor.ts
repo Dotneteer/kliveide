@@ -175,6 +175,7 @@ export function historicalCpuState(live: Z80CpuState, historical: HistoricalStat
     lastNextRegWrite: _w,
     lastCopperHit: _c,
     lastSpriteWrite: _s,
+    lastPaletteWrite: _p,
     lastInterruptStop: _i,
     lastDmaStop: _dma,
     ...rest
@@ -2247,6 +2248,17 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the palette's version (NEXT_PALETTE_DEBUGGING_PLAN §5).
+   */
+  getPaletteVersion() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getPaletteVersion();
+  }
+
+  /**
    * Sets a register value in the emulator.
    * @param register The register name.
    * @param value The value to set.
@@ -2524,7 +2536,8 @@ class EmuMessageProcessor {
       state: controller.state,
       pcValue: position ? (cursor!.state()?.record.regs.pc ?? machine.pc) : machine.pc,
       tacts: machine.tacts,
-      ...(position ? { historyPosition: position } : {})
+      ...(position ? { historyPosition: position } : {}),
+      ...(isZxNextIdeMachine(machine) ? { paletteVersion: machine.getPaletteVersion() } : {})
     };
   }
 

@@ -12,12 +12,18 @@ const emuApi = vi.hoisted(() => {
   let tacts = 0;
   return {
     getPalettedDeviceInfo: vi.fn(),
-    getCpuStateChunk: vi.fn(async () => ({ state: 3, pcValue: 0, tacts: tacts++ }))
+    getPaletteVersion: vi.fn(),
+    getCpuStateChunk: vi.fn(async () => ({ state: 3, pcValue: 0, tacts: tacts++ })),
+    listBreakpoints: vi.fn(async () => ({ breakpoints: [] as any[] }))
   };
 });
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
+const executeCommand = vi.hoisted(() => vi.fn());
+vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
+  useAppServices: () => ({ ideCommandsService: { executeCommand } })
+}));
 
-import { PalettePanel } from "@renderer/appIde/SideBarPanels/PalettePanel";
+import { PalettePanel, PalettePanelActions } from "@renderer/appIde/SideBarPanels/PalettePanel";
 
 /** The ULA power-on palette as `PaletteDevice` stores it — device layout, repeating every 16. */
 const DEF_ULA = [
@@ -63,6 +69,8 @@ describe("PalettePanel", () => {
   beforeEach(() => {
     emuApi.getPalettedDeviceInfo.mockReset();
     emuApi.getPalettedDeviceInfo.mockResolvedValue(info());
+    emuApi.getPaletteVersion.mockReset();
+    emuApi.getPaletteVersion.mockRejectedValue(new Error("no version"));
   });
 
   const render = async () => {
@@ -225,9 +233,71 @@ describe("PalettePanel", () => {
     });
   });
 
+  describe("palette changes (NEXT_PALETTE_DEBUGGING_PLAN §5)", () => {
+    /** Written marks: `slot` (the $43 order) with `count` entries from index 0 */
+    const writtenMarks = (slot: number, count: number) => {
+      const bytes = new Array(256).fill(0);
+      for (let i = 0; i < count; i++) bytes[slot * 32 + (i >> 3)] |= 1 << (i & 7);
+      return bytes;
+    };
+
+    it("puts a changed-state dot after a device written since the last stop, with counts per bank", async () => {
+      // --- Sprites: slot 2 is its first bank, slot 6 its second
+      const written = writtenMarks(2, 3).map((b, i) => b | writtenMarks(6, 1)[i]);
+      emuApi.getPalettedDeviceInfo.mockResolvedValue(info({ written }));
+      await render();
+      const marks = screen.getAllByRole("img");
+      expect(marks).toHaveLength(1);
+      expect(marks[0].getAttribute("aria-label")).toBe(
+        "Bank 1: 3 entries written since the last stop\nBank 2: 1 entry written since the last stop"
+      );
+      expect(screen.getByText("Sprites").contains(marks[0])).toBe(true);
+    });
+
+    it("shows no dot when nothing was written", async () => {
+      emuApi.getPalettedDeviceInfo.mockResolvedValue(info({ written: new Array(256).fill(0) }));
+      await render();
+      expect(screen.queryAllByRole("img")).toHaveLength(0);
+    });
+
+    it("does not read the palettes again while their version is unchanged", async () => {
+      emuApi.getPalettedDeviceInfo.mockResolvedValue(info({ version: 7 }));
+      emuApi.getPaletteVersion.mockResolvedValue(7);
+      await render();
+      await waitFor(() => expect(emuApi.getPaletteVersion).toHaveBeenCalled(), { timeout: 3000 });
+      expect(emuApi.getPalettedDeviceInfo).toHaveBeenCalledTimes(1);
+
+      // --- A new version: the panel reads again and shows the new state
+      emuApi.getPalettedDeviceInfo.mockResolvedValue(info({ version: 8, written: writtenMarks(0, 1) }));
+      emuApi.getPaletteVersion.mockResolvedValue(8);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1), { timeout: 3000 });
+      expect(emuApi.getPalettedDeviceInfo).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("reports an empty state until the emulator has answered", () => {
     emuApi.getPalettedDeviceInfo.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<PalettePanel />);
     expect(screen.getByText("No palette information")).toBeTruthy();
+  });
+
+  // --- NEXT_PALETTE_DEBUGGING_PLAN §4 (mockup 1): the breakpoint dot and the pop-out button
+  describe("palette breakpoints and the Palette document", () => {
+    it("marks a device an enabled pal: breakpoint watches, and no other", async () => {
+      emuApi.listBreakpoints.mockResolvedValue({
+        breakpoints: [{ paletteStop: "spr1:$03" }, { paletteStop: "tm:live", disabled: true }]
+      });
+      await render();
+      const mark = await screen.findByRole("img", { name: "A palette breakpoint watches Sprites" });
+      expect(screen.getByText("Sprites").contains(mark)).toBe(true);
+      expect(screen.queryByRole("img", { name: "A palette breakpoint watches Tilemap" })).toBeNull();
+      emuApi.listBreakpoints.mockResolvedValue({ breakpoints: [] });
+    });
+
+    it("pops out into the Palette document", () => {
+      renderWithProviders(<PalettePanelActions panelId="nextPalettePanel" expanded={true} />);
+      fireEvent.click(screen.getByRole("button"));
+      expect(executeCommand).toHaveBeenCalledWith("show-palettes");
+    });
   });
 });

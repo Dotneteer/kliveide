@@ -1,0 +1,273 @@
+@use "@styles/core.scss" as *;
+
+// --- The Palette document (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4): one device's two banks
+// --- beside a details column. Written-since-the-last-stop is `--color-state-changed` everywhere
+// --- (the tab dot, the bank's count, the swatch ring); a `pal:` breakpoint is the breakpoint dot;
+// --- values are `--color-state-value`. See `dev/ai/ui-theming-intent-and-lessons.md`.
+
+.panel {
+  overflow: hidden;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38ch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.banksScroll,
+.detailsScroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.banks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+// ─── The device tabs ─────────────────────────────────────────────────────────
+
+.devices {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.deviceTab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-selected="true"] {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+.liveChip {
+  font-family: var(--monospace-font);
+  opacity: 0.75;
+}
+
+// --- A breakpoint before the name (the gutter dot), written after it (the changed dot): the two
+// --- can share a hue, so their place tells them apart
+.tabWritten {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-state-changed);
+}
+
+.tabWatch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+// ─── A bank ──────────────────────────────────────────────────────────────────
+
+.bank {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bankHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--row-size-list);
+}
+
+.bankName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag {
+  padding: 0 var(--space-1_5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-100);
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.tagLive {
+  border-color: var(--accent-solid);
+  color: var(--accent-solid);
+}
+
+.tagWritten {
+  border-color: var(--color-state-changed);
+  color: var(--color-state-changed);
+}
+
+// ─── The details column ──────────────────────────────────────────────────────
+
+.details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.detailsTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detailsBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.swatchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+// --- The entry's colour; a written entry's colour at the last stop in the bottom-left corner, as
+// --- on the grid's swatches
+.bigSwatch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bigSwatchOld {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-bottom: 24px solid;
+  border-right: 24px solid transparent;
+}
+
+.swatchStatus {
+  color: var(--data-secondary);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  margin: 0;
+
+  dt {
+    color: var(--data-label);
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.value {
+  font-family: var(--monospace-font);
+  color: var(--color-state-value);
+}
+
+.oldValue {
+  margin-left: var(--space-2);
+  font-family: var(--monospace-font);
+  color: var(--color-state-changed);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  padding: var(--space-0_5) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-primary);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    border-color: var(--accent-solid);
+  }
+}
+
+.actionDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-breakpoint-binary);
+}
+
+.command {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  code {
+    font-family: var(--monospace-font);
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+  }
+}
+
+// --- On the selected tab's accent fill both marks can vanish (they may share its hue): ring them
+.deviceTab[aria-selected="true"] {
+  .tabWritten,
+  .tabWatch {
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px var(--text-on-accent);
+  }
+}

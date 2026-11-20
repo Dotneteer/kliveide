@@ -233,6 +233,13 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetPaletteControl: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteSecondWrite: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteStoredValue: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteGeneration: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteDirtyByte: ZxNextWasmV2ExportFunction;
+  zxnextClearPaletteDirty: ZxNextWasmV2ExportFunction;
+  zxnextPaletteWatchPtr: ZxNextWasmV2ExportFunction;
+  zxnextSetPaletteWatchFlags: ZxNextWasmV2ExportFunction;
+  zxnextTakePaletteHit: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteHitValues: ZxNextWasmV2ExportFunction;
   zxnextSetLayer2Enabled: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Enabled: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Resolution: ZxNextWasmV2ExportFunction;
@@ -524,6 +531,8 @@ export type ZxNextWasmV2Runtime = {
   readonly copperWatch: Uint8Array;
   /** One byte per sprite, bits 0-4 the watched attribute bytes: the sprite-attribute breakpoint watch (G3.8) */
   readonly spriteWatch: Uint8Array;
+  /** The palette-breakpoint watch: one bit per entry, 8 slots x 256 (NEXT_PALETTE_DEBUGGING_PLAN §3) */
+  readonly paletteWatch: Uint8Array;
   /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
   readonly copperMemory: Uint8Array;
   /** The Interrupts panel's 96-byte snapshot, filled by `zxnextGetInterruptStatePtr` (read only by the IDE) */
@@ -762,6 +771,13 @@ const requiredV2Exports = [
   "zxnextGetPaletteControl",
   "zxnextGetPaletteSecondWrite",
   "zxnextGetPaletteStoredValue",
+  "zxnextGetPaletteGeneration",
+  "zxnextGetPaletteDirtyByte",
+  "zxnextClearPaletteDirty",
+  "zxnextPaletteWatchPtr",
+  "zxnextSetPaletteWatchFlags",
+  "zxnextTakePaletteHit",
+  "zxnextGetPaletteHitValues",
   "zxnextSetLayer2Enabled",
   "zxnextGetLayer2Enabled",
   "zxnextGetLayer2Resolution",
@@ -1096,6 +1112,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
   assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "spriteWatch", exports.zxnextSpriteWatchPtr(), 128, memoryBuffer);
+  assertViewRange(artifactName, "paletteWatch", exports.zxnextPaletteWatchPtr(), 256, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "interruptState", exports.zxnextGetInterruptStatePtr(), 96, memoryBuffer);
   assertViewRange(artifactName, "dmaState", exports.zxnextGetDmaStatePtr(), 64, memoryBuffer);
@@ -1124,6 +1141,7 @@ export function createZxNextWasmV2Views(
     nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
     copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
     spriteWatch: new Uint8Array(memoryBuffer, exports.zxnextSpriteWatchPtr(), 128),
+    paletteWatch: new Uint8Array(memoryBuffer, exports.zxnextPaletteWatchPtr(), 256),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     interruptState: new Uint8Array(memoryBuffer, exports.zxnextGetInterruptStatePtr(), 96),
     dmaState: new Uint8Array(memoryBuffer, exports.zxnextGetDmaStatePtr(), 64),

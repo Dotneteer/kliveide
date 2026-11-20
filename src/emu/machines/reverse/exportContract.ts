@@ -90,6 +90,11 @@ const OVERRIDES: Record<string, ExportClass> = {
   TakeCopperHit: "debug",
   SetSpriteWatchArmed: "debug",
   TakeSpriteHit: "debug",
+  // --- The Next's palette tracking and palette-breakpoint watch (NEXT_PALETTE_DEBUGGING_PLAN §3, §5):
+  // --- the written marks, the watch and the latch are volatile; the write count is never changed here
+  ClearPaletteDirty: "debug",
+  SetPaletteWatchFlags: "debug",
+  TakePaletteHit: "debug",
   TakeAutoRunHit: "debug",
   // --- The Next's interrupt event ring and interrupt-stop watch (NEXT_INTERRUPTS_DEBUGGING_PLAN §4.1,
   // --- §5): all volatile, and recording never changes what the machine does

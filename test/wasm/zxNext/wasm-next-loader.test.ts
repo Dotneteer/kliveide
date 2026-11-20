@@ -102,6 +102,7 @@ function createViewExports(
     // --- The Copper watch and list RAM share the NextReg watch's page; only their ranges are checked
     zxnextCopperWatchPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextSpriteWatchPtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextPaletteWatchPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextCopperMemoryPtr: () => options.nextRegWatchOffset ?? 0,
     // --- So do the sprite attribute slots and the 128K of 8-bit pattern variants (from offset 0)
     zxnextSpriteAttributesPtr: () => options.nextRegWatchOffset ?? 0,

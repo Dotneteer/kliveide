@@ -324,7 +324,8 @@ describe("the application menu", () => {
       "Sprite Inspector",
       "Tilemap Inspector",
       "Layer 2 Inspector",
-      "Layers"
+      "Layers",
+      "Palettes"
     ]);
   });
 

@@ -65,6 +65,19 @@ import {
   type InterruptStopParseError
 } from "@common/zxnext/interrupts/interruptStops";
 import { formatDmaStop, parseDmaStop, type DmaStopParseError } from "@common/zxnext/dma/dmaStops";
+import {
+  formatPaletteStop,
+  parsePaletteStop,
+  type PaletteStopParseError
+} from "@common/zxnext/palette/paletteStops";
+
+/** The `pal:` spec's errors (keys at definition, text at display) */
+const PALETTE_STOP_ERRORS: Record<PaletteStopParseError, MessageKey> = {
+  device: "commands.bp.palette.device",
+  entries: "commands.bp.palette.entries",
+  live: "commands.bp.palette.live",
+  extra: "commands.bp.palette.extra"
+};
 
 /** The `dma:` spec's errors (keys at definition, text at display) */
 const DMA_STOP_ERRORS: Record<DmaStopParseError, MessageKey> = {
@@ -221,7 +234,11 @@ export type BreakpointWithAddressArgs = {
   interruptStop?: string;
   /** The normalized event spec of a `dma:` stop (ZX Spectrum Next only): `end`, `count:256`, ... */
   dmaStop?: string;
-  /** Also break on copper writes (NextReg breakpoints only). */
+  /** The normalized spec of a `pal:` breakpoint (ZX Spectrum Next only): `spr1:$03`, `tm:live`, ... */
+  paletteStop?: string;
+  /** Palette breakpoints only: stop only on writes that change the stored value. */
+  "-changed"?: boolean;
+  /** Also break on copper writes (NextReg and palette breakpoints only). */
   "-c"?: boolean;
   /** Break only on this written value (NextReg breakpoints only); `-m` masks the comparison. */
   "-v"?: number;
@@ -278,6 +295,7 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
   const isSprite = args.spriteIndex !== undefined;
   const isInterrupt = args.interruptStop !== undefined;
   const isDma = args.dmaStop !== undefined;
+  const isPalette = args.paletteStop !== undefined;
   const attrMask = isSprite && args["-attr"] !== undefined ? parseSpriteAttrList(args["-attr"]) : undefined;
   return {
     address: args.address,
@@ -293,14 +311,28 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     // --- `-m` is the port mask for an I/O breakpoint and the value mask for a NextReg one, so each
     // --- kind takes it and the other must not, or a mask meant for one would arrive as the other.
     nextRegMask: isNextReg && args["-v"] !== undefined ? args["-m"] : undefined,
-    nextRegCopper: args["-c"],
+    nextRegCopper: isPalette ? undefined : args["-c"],
     copperIndex: args.copperIndex,
     spriteIndex: args.spriteIndex,
     // --- All five bytes is the default, so it is not stored
     spriteAttrMask: attrMask !== undefined && attrMask !== SPRITE_ATTR_ALL ? attrMask : undefined,
     interruptStop: args.interruptStop,
     dmaStop: args.dmaStop,
-    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper || isSprite || isInterrupt || isDma),
+    paletteStop: args.paletteStop,
+    paletteCopper: isPalette && args["-c"] ? true : undefined,
+    paletteChanged: isPalette && args["-changed"] ? true : undefined,
+    exec: !(
+      args["-r"] ||
+      args["-w"] ||
+      args["-i"] ||
+      args["-o"] ||
+      isNextReg ||
+      isCopper ||
+      isSprite ||
+      isInterrupt ||
+      isDma ||
+      isPalette
+    ),
     memoryRead: args["-r"],
     memoryWrite: args["-w"],
     ioRead: args["-i"],
@@ -361,7 +393,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-once"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-changed", "-once"],
     namedOptions: [
       {
         name: "-m",
@@ -446,6 +478,25 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
              * `dma:<kind>[:<argument>]` - a DMA stop (NEXT_DMA_DEBUGGING_PLAN §12). `M` is not a hex
              * digit, so `dma` cannot be a partition label either.
              */
+            /*
+             * `pal:<palette>[:<entries>]` or `pal:<palette>:live` - a palette breakpoint
+             * (NEXT_PALETTE_DEBUGGING_PLAN §3). `P` is not a hex digit, so `pal` cannot be a
+             * partition label.
+             */
+            if (segments[0] === "pal" && segments.length >= 2) {
+              const { machine } = context.service.machineService.getMachineInfo();
+              if (machine.machineId !== MI_ZXNEXT) {
+                messages = [validationError(t("commands.bp.palette.nextOnly"))];
+                break;
+              }
+              const parsed = parsePaletteStop(segments.slice(1).join(":"));
+              if ("error" in parsed) {
+                messages = [validationError(t(PALETTE_STOP_ERRORS[parsed.error]))];
+                break;
+              }
+              args.paletteStop = formatPaletteStop(parsed);
+              break;
+            }
             if (segments[0] === "dma" && segments.length >= 2) {
               const { machine } = context.service.machineService.getMachineInfo();
               if (machine.machineId !== MI_ZXNEXT) {
@@ -802,6 +853,15 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
     ) {
       return [validationError(t("commands.bp.dma.noAccessOptions"))];
     }
+    if (
+      args.paletteStop !== undefined &&
+      (bpOptions > 0 || args["-v"] !== undefined || args["-m"] !== undefined || args["-attr"] !== undefined)
+    ) {
+      return [validationError(t("commands.bp.palette.noAccessOptions"))];
+    }
+    if (args["-changed"] && args.paletteStop === undefined) {
+      return [validationError(t("commands.bp.changed.paletteOnly"))];
+    }
     if (args["-attr"] !== undefined) {
       if (args.spriteIndex === undefined) {
         return [validationError(t("commands.bp.attr.spriteOnly"))];
@@ -820,7 +880,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
     if (args["-v"] !== undefined && !isNextReg) {
       return [validationError(t("commands.bp.nextReg.valueOnly"))];
     }
-    if (args["-c"] && !isNextReg) {
+    if (args["-c"] && !isNextReg && args.paletteStop === undefined) {
       return [validationError(t("commands.bp.nextReg.copperOnly"))];
     }
     if (isNextReg && args["-m"] !== undefined && args["-v"] === undefined) {
@@ -872,12 +932,13 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   // --- The first line is syntax (English); the explanations are translated (`dev/ai/localization.md`)
   get usage(): string[] {
     return [
-      "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
+      "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-changed] [-m <mask>] [-v <value>] [-len <bytes>] [-attr <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
       t("commands.usage.bpSet.len"),
       t("commands.usage.bpSet.copper"),
       t("commands.usage.bpSet.sprite"),
       t("commands.usage.bpSet.interrupt"),
       t("commands.usage.bpSet.dma"),
+      t("commands.usage.bpSet.palette"),
       t("commands.usage.bpSet.once"),
       t("commands.usage.bpSet.log", { example: '-log "[LOOP] B={B} HL={HL:hex16}"' }),
       t("commands.usage.bpSet.hit"),
@@ -1013,7 +1074,7 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-once"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-changed", "-once"],
     namedOptions: [
       { name: "-m", type: "number" },
       { name: "-v", type: "number" },
@@ -1057,6 +1118,7 @@ function accessKindOfArgs(args: BreakpointWithAddressArgs): ConditionAccessKind 
   if (args.nextReg !== undefined) return "nextReg";
   if (args.copperIndex !== undefined) return "copper";
   if (args.spriteIndex !== undefined) return "sprite";
+  if (args.paletteStop !== undefined) return "palette";
   if (args["-r"] || args["-w"]) return "memory";
   if (args["-i"] || args["-o"]) return "io";
   return "exec";
@@ -1314,7 +1376,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-d", "-c", "-once"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-d", "-c", "-changed", "-once"],
     namedOptions: [
       {
         name: "-m",

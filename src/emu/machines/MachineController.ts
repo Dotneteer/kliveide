@@ -22,9 +22,11 @@ import type { MachineInfo } from "@common/machines/info-types";
 import type {
   CopperHitEvent,
   NextRegWriteEvent,
-  SpriteWriteEvent
+  SpriteWriteEvent,
+  PaletteWriteEvent
 } from "@common/messaging/EmuApi";
 import { describeSpriteStop } from "@common/zxnext/sprites/spriteBreakpoints";
+import { describePaletteStop } from "@common/zxnext/palette/paletteStops";
 import { describeInterruptStop } from "@common/zxnext/interrupts/interruptStops";
 import { describeDmaStop, type DmaHit } from "@common/zxnext/dma/dmaStops";
 import type { InterruptStopEvent } from "@common/zxnext/interrupts/interruptState";
@@ -1998,6 +2000,7 @@ export class MachineController implements IMachineController {
 
     // --- Set up the state
     this.machine.resetContentionDelaySincePause();
+    this.machine.onRunStart?.();
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings - not while replaying from the past: the journal carries the
@@ -2587,6 +2590,10 @@ export class MachineController implements IMachineController {
     const spriteWrite = (this.machine as { lastSpriteWrite?: SpriteWriteEvent }).lastSpriteWrite;
     if (spriteWrite) {
       return describeSpriteStop(spriteWrite, this.machine.getPartitionLabels?.());
+    }
+    const paletteWrite = (this.machine as { lastPaletteWrite?: PaletteWriteEvent }).lastPaletteWrite;
+    if (paletteWrite) {
+      return describePaletteStop(paletteWrite, this.machine.getPartitionLabels?.());
     }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {

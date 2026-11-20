@@ -31,7 +31,8 @@ const ARGS = {
   slot: 2, slots: "2, 3", register: "HL", shown: 5, reg: "$12",
   length: 32, vector: "$B6", blocker: "Line", im: 1, handler: "$FFFF", sources: "UART 0 Rx",
   base: "$91", portA: "$C000", portB: "$00DF", group: "WR0", prescaler: 55, bytes: 17, moved: 811, clocks: 223,
-  ended: "yes", moving: "no", byte: 5, row: 2, summary: "s", from: "$C000", to: "$00DF", rate: 15695
+  ended: "yes", moving: "no", byte: 5, row: 2, summary: "s", from: "$C000", to: "$00DF", rate: 15695,
+  writer: "NextReg $41"
 };
 
 const KEYS = Object.keys(panelsSide).filter((key) => !key.startsWith("@")) as MessageKey[];

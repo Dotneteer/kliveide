@@ -841,6 +841,24 @@ uint32_t zxnextGetPaletteIndex(void) { return zxnextPaletteGetPaletteIndex(); }
 uint32_t zxnextGetPaletteControl(void) { return zxnextPaletteGetControl(); }
 uint32_t zxnextGetPaletteSecondWrite(void) { return zxnextPaletteGetSecondWrite(); }
 uint32_t zxnextGetPaletteStoredValue(void) { return zxnextPaletteGetStoredValue(); }
+/* The palette's change tracking (NEXT_PALETTE_DEBUGGING_PLAN §5): the write count and the dirty bitmap */
+uint32_t zxnextGetPaletteGeneration(void) { return zxnextPaletteGetGeneration(); }
+uint32_t zxnextGetPaletteDirtyByte(uint32_t offset) { return zxnextPaletteGetDirtyByte(offset); }
+uint32_t zxnextClearPaletteDirty(void) { return zxnextPaletteClearDirty(); }
+/* The palette-breakpoint watch (NEXT_PALETTE_DEBUGGING_PLAN §3): the entry bitmap, pushed whole */
+uint32_t zxnextPaletteWatchPtr(void) { return (uint32_t)(uintptr_t)zxnextPaletteWatch; }
+/* The watch flags (0 disarms); clears a stale hit */
+void zxnextSetPaletteWatchFlags(uint32_t flags) {
+  zxnextPaletteWatchFlags = (uint8_t)flags;
+  zxnextPaletteHit = 0u;
+}
+/* Take the latched hit (bit 31: present), if there is one, and clear it; then read its values */
+uint32_t zxnextTakePaletteHit(void) {
+  uint32_t hit = zxnextPaletteHit;
+  zxnextPaletteHit = 0u;
+  return hit;
+}
+uint32_t zxnextGetPaletteHitValues(void) { return zxnextPaletteHitValues; }
 void zxnextSetLayer2Enabled(uint32_t enabled) { zxnextLayer2SetEnabled(enabled); }
 uint32_t zxnextGetLayer2Enabled(void) { return zxnextLayer2GetEnabled(); }
 uint32_t zxnextGetLayer2Resolution(void) { return zxnextLayer2GetResolution(); }

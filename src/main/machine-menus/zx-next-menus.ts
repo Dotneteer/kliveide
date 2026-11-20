@@ -875,7 +875,8 @@ function isMachineStopped(): boolean {
  * pop-out), the Copper List document (`dev/plans/COPPER_DEBUGGING_PLAN.md`
  * §4.5), the Sprite Inspector (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
  * (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), the Layer 2 Inspector (`dev/plans/LAYER2_INSPECTOR_PLAN.md`
- * §4.4) and the Layers document (`dev/plans/LAYER_COMPOSITION_PLAN.md`). All go through the IDE's
+ * §4.4), the Layers document (`dev/plans/LAYER_COMPOSITION_PLAN.md`) and the Palette document
+ * (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4). All go through the IDE's
  * commands, so the menu, the command line and the panels share one implementation. The layer
  * toggles themselves live on the Layers strip under the screen, which has every one of them.
  */
@@ -885,7 +886,8 @@ export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
   { id: "show_sprite_inspector", label: t("menu.next.spriteInspector"), click: ideCommand("show-sprites") },
   { id: "show_tilemap_inspector", label: t("menu.next.tilemapInspector"), click: ideCommand("show-tilemap") },
   { id: "show_layer2_inspector", label: t("menu.next.layer2Inspector"), click: ideCommand("show-layer2") },
-  { id: "next_layers_document", label: t("menu.next.layers"), click: ideCommand("show-layers") }
+  { id: "next_layers_document", label: t("menu.next.layers"), click: ideCommand("show-layers") },
+  { id: "next_palettes_document", label: t("menu.next.palettes"), click: ideCommand("show-palettes") }
 ];
 
 /** Debug › Step Copper, Debug › Interrupt Timeline and Debug › DMA Port Log on the Next */

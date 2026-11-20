@@ -21,6 +21,8 @@ export type NextPaletteDeviceDef = {
   id: NextPaletteDeviceId;
   label: string;
   banks: [(info: PaletteDeviceInfo) => number[], (info: PaletteDeviceInfo) => number[]];
+  /** The banks' palette slots in the core (`$43` bits 6-4), first and second: what `written` is keyed by. */
+  slots: [number, number];
   /** Which bank the hardware is currently drawing from. */
   liveBank: (info: PaletteDeviceInfo) => 0 | 1;
   /** The register bit that decides it, for the bank control's tooltip. */
@@ -40,6 +42,7 @@ export const NEXT_PALETTE_DEVICES: NextPaletteDeviceDef[] = [
     id: "ula",
     label: "ULA",
     banks: [(i) => i.ulaFirst, (i) => i.ulaSecond],
+    slots: [0, 4],
     liveBank: (i) => ((i.reg43Value ?? 0) & 0x02 ? 1 : 0),
     liveSource: "Reg $43, bit 1"
   },
@@ -47,6 +50,7 @@ export const NEXT_PALETTE_DEVICES: NextPaletteDeviceDef[] = [
     id: "layer2",
     label: "Layer 2",
     banks: [(i) => i.layer2First, (i) => i.layer2Second],
+    slots: [1, 5],
     liveBank: (i) => ((i.reg43Value ?? 0) & 0x04 ? 1 : 0),
     liveSource: "Reg $43, bit 2"
   },
@@ -54,6 +58,7 @@ export const NEXT_PALETTE_DEVICES: NextPaletteDeviceDef[] = [
     id: "sprites",
     label: "Sprites",
     banks: [(i) => i.spriteFirst, (i) => i.spriteSecond],
+    slots: [2, 6],
     liveBank: (i) => ((i.reg43Value ?? 0) & 0x08 ? 1 : 0),
     liveSource: "Reg $43, bit 3",
     transparencyIndex: (i) => i.spriteTransparencyIndex
@@ -62,6 +67,7 @@ export const NEXT_PALETTE_DEVICES: NextPaletteDeviceDef[] = [
     id: "tilemap",
     label: "Tilemap",
     banks: [(i) => i.tilemapFirst, (i) => i.tilemapSecond],
+    slots: [3, 7],
     liveBank: (i) => ((i.reg6bValue ?? 0) & 0x10 ? 1 : 0),
     liveSource: "Reg $6B, bit 4",
     transparencyIndex: (i) => i.tilemapTransparencyIndex

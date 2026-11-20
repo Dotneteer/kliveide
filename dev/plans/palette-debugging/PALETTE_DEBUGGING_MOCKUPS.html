@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next Palette Debugging</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* A proposal page in the DMA mockups' style: a short brief beside a to-scale mockup in Klive's dark
+   theme tokens (neutral ramp, Sinclair Blue accent). The palette colours are computed from the real
+   power-on palettes in zxnext-palette.c. */
+:root {
+  --page: #0f1012; --canvas: #141517; --chrome: #1b1d21; --panel: #17191c; --raised: #202329;
+  --hover: #24272e; --border: #2e3238; --border-subtle: #24272b; --text: #e4e6ea; --text-2: #949aa4;
+  --text-3: #7f8690; --accent: #45a5e6; --accent-2: #939cf0; --pal: #d77be8; --warn: #e5a03a;
+  --danger: #e5484d; --ok: #30a46c;
+  --pal-wash: rgba(215, 123, 232, 0.15); --accent-wash: rgba(69, 165, 230, 0.14);
+  --danger-wash: rgba(229, 72, 77, 0.13); --warn-wash: rgba(229, 160, 58, 0.12);
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --page: #eceef1; --canvas: #ffffff; --chrome: #f1f2f4; --panel: #f7f8f9; --raised: #ffffff;
+    --hover: #e8eaee; --border: #d5d8dd; --border-subtle: #e5e7ea; --text: #1b1d21; --text-2: #565c66;
+    --text-3: #6b717b; --accent: #0a6fb8; --accent-2: #0a18b8; --pal: #9a2bb0; --warn: #9a5b00;
+    --danger: #c62828; --ok: #1f7a4a; --pal-wash: rgba(154, 43, 176, 0.10);
+    --accent-wash: rgba(10, 111, 184, 0.10); --danger-wash: rgba(198, 40, 40, 0.09);
+    --warn-wash: rgba(154, 91, 0, 0.10); color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --page: #eceef1; --canvas: #ffffff; --chrome: #f1f2f4; --panel: #f7f8f9; --raised: #ffffff;
+  --hover: #e8eaee; --border: #d5d8dd; --border-subtle: #e5e7ea; --text: #1b1d21; --text-2: #565c66;
+  --text-3: #6b717b; --accent: #0a6fb8; --accent-2: #0a18b8; --pal: #9a2bb0; --warn: #9a5b00;
+  --danger: #c62828; --ok: #1f7a4a; --pal-wash: rgba(154, 43, 176, 0.10);
+  --accent-wash: rgba(10, 111, 184, 0.10); --danger-wash: rgba(198, 40, 40, 0.09);
+  --warn-wash: rgba(154, 91, 0, 0.10); color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--text); font-family: var(--font-body); font-size: 15px;
+  line-height: 1.55; padding: 40px max(16px, env(safe-area-inset-left, 0px)) 80px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
+h1, h2, h3 { font-family: var(--font-head); text-wrap: balance; margin: 0; }
+h1 { font-size: 2.4rem; line-height: 1.1; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; line-height: 1.2; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pal); }
+header { display: flex; flex-direction: column; gap: 16px; }
+.lede { font-size: 1.08rem; color: var(--text-2); max-width: 72ch; }
+.today { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.today div { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; background: var(--canvas); font-size: 0.9rem; color: var(--text-2); }
+.today b { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
+.today div.verdict { border-color: var(--pal); background: var(--pal-wash); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { font-size: 0.85rem; text-decoration: none; color: var(--text); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; background: var(--canvas); }
+.toc a:hover, .toc a:focus-visible { border-color: var(--accent); outline: none; }
+.toc a span { font-family: var(--font-mono); color: var(--pal); margin-right: 6px; }
+
+section.tool { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+.tool-head { display: flex; flex-direction: column; gap: 8px; }
+.split { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.split > * { min-width: 0; }
+.brief { display: flex; flex-direction: column; gap: 8px; }
+.brief h4 { margin: 0; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); font-weight: 600; }
+.brief ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 0.92rem; display: flex; flex-direction: column; gap: 4px; }
+.brief li b { color: var(--text); font-weight: 600; }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- IDE chrome ------------------------------------------------------------------------------- */
+.ide { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; font-size: 12.5px; line-height: 1.45; box-shadow: 0 8px 28px rgba(0,0,0,0.22); }
+.scroll { overflow-x: auto; }
+.ide-title { display: flex; align-items: center; gap: 8px; background: var(--chrome); border-bottom: 1px solid var(--border); padding: 6px 10px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); font-weight: 600; }
+.grow { flex: 1; }
+.tabs { display: flex; background: var(--chrome); border-bottom: 1px solid var(--border); font-size: 12px; }
+.tabs span { padding: 7px 14px; color: var(--text-3); border-right: 1px solid var(--border-subtle); white-space: nowrap; }
+.tabs span.on { color: var(--text); background: var(--panel); box-shadow: inset 0 2px 0 var(--accent); }
+.iconbtn { font-family: var(--font-body); font-size: 11.5px; color: var(--text); background: var(--raised); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; text-transform: none; letter-spacing: 0; font-weight: 500; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.iconbtn:hover, .iconbtn:focus-visible { border-color: var(--accent); outline: none; }
+.iconbtn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.iconbtn.new { box-shadow: 0 0 0 2px var(--pal); }
+.iconbtn svg { width: 13px; height: 13px; }
+.callout { font-family: var(--font-mono); font-size: 10px; color: var(--pal); text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* Sidebar panel */
+.dev { border-bottom: 1px solid var(--border-subtle); }
+.dev-h { display: flex; align-items: center; gap: 8px; padding: 5px 10px; }
+.dev-h:hover { background: var(--hover); }
+.chev { width: 10px; color: var(--text-3); font-size: 10px; }
+.dev-name { width: 8ch; color: var(--text); }
+.thumb { display: grid; grid-template-columns: repeat(16, 2px); grid-auto-rows: 2px; width: 32px; height: 32px; border: 1px solid var(--border); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pal); flex: none; }
+.dot.off { background: transparent; }
+.bdot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); flex: none; }
+.banks { display: inline-flex; gap: 3px; }
+.bank { width: 18px; height: 18px; border-radius: 3px; border: 1px solid var(--border); color: var(--text-2); font-size: 11px; display: grid; place-items: center; font-family: var(--font-mono); }
+.bank.shown { background: var(--accent); color: #0e0f11; border-color: var(--accent); }
+.bank.live { box-shadow: 0 0 0 1.5px var(--accent); }
+.dev-body { padding: 6px 10px 10px 28px; }
+
+/* Palette grids */
+.pgrid { display: grid; grid-template-columns: repeat(16, var(--sw, 14px)); grid-auto-rows: var(--sw, 14px); gap: 1px; background: var(--border-subtle); border: 1px solid var(--border); width: max-content; }
+.pgrid i { position: relative; display: block; }
+.pgrid i.chg { outline: 2px solid var(--pal); outline-offset: -2px; z-index: 1; }
+.pgrid i.chg::after { content: ""; position: absolute; left: 0; top: 0; border-style: solid; border-width: 7px 7px 0 0; border-color: var(--old) transparent transparent transparent; }
+.pgrid i.sel { outline: 2px solid var(--text); outline-offset: -1px; z-index: 2; }
+.pgrid i.tr { background-image: repeating-linear-gradient(45deg, transparent 0 2px, rgba(255,255,255,.55) 2px 3px) !important; }
+.pgrid i.bp::before { content: ""; position: absolute; right: 1px; bottom: 1px; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 1px #000; }
+
+/* Document */
+.doc-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-2); }
+.devtabs { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.devtabs > span { padding: 2px 10px; border-right: 1px solid var(--border); display: inline-flex; gap: 6px; align-items: center; color: var(--text-2); }
+.devtabs > span:last-child { border-right: 0; }
+.devtabs > span.on { background: var(--accent-wash); color: var(--accent); }
+.doc-body { display: grid; grid-template-columns: max-content max-content minmax(240px, 1fr); gap: 18px; padding: 12px; min-width: 860px; }
+.bankcol h5 { margin: 0 0 6px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.tag { font-family: var(--font-mono); font-size: 10px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); text-transform: none; letter-spacing: 0; }
+.tag.pal { border-color: var(--pal); color: var(--pal); }
+.tag.dim { border-color: var(--border); color: var(--text-3); }
+.axis { display: grid; grid-template-columns: repeat(16, var(--sw)); gap: 1px; font-family: var(--font-mono); font-size: 9px; color: var(--text-3); margin-left: 1px; margin-bottom: 2px; text-align: center; }
+.details { border: 1px solid var(--border); border-radius: 4px; background: var(--canvas); }
+.details .hd { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border-subtle); }
+.swbig { width: 36px; height: 36px; border-radius: 3px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+.swbig .o { position: absolute; inset: 0 50% 0 0; }
+.kv { display: grid; grid-template-columns: 12ch 1fr; gap: 1px 8px; padding: 6px 10px; }
+.kv span { color: var(--text-2); }
+.kv b { font-family: var(--font-mono); font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+.kv b.prev { color: var(--text-3); text-decoration: line-through; }
+.actions { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--border-subtle); }
+.actions .iconbtn { justify-content: flex-start; }
+
+/* Log */
+table.grid { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 760px; }
+table.grid th { background: var(--chrome); text-align: left; font-weight: 600; font-size: 11px; color: var(--text-3); letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 10px; border-bottom: 1px solid var(--border); }
+table.grid td { padding: 2px 10px; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+table.grid td.m { font-family: var(--font-mono); }
+table.grid td.v { font-family: var(--font-mono); color: var(--accent); }
+table.grid tr.sel td { background: var(--accent-wash); }
+table.grid tr.hit td { background: var(--danger-wash); }
+.sw { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--border); vertical-align: -1px; margin-right: 4px; }
+.org { font-family: var(--font-mono); font-size: 10.5px; border: 1px solid; border-radius: 3px; padding: 0 4px; }
+.org.cpu { color: var(--accent); }
+.org.cop { color: var(--accent-2); }
+.org.dma { color: var(--warn); }
+.flip td { color: var(--pal); font-style: italic; }
+
+/* Breakpoints & stop */
+.cmd { font-family: var(--font-mono); font-size: 12px; background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; white-space: pre; overflow-x: auto; color: var(--text); line-height: 1.6; }
+.cmd .c { color: var(--text-3); }
+.cmd .k { color: var(--pal); }
+.cmd .o { color: var(--accent-2); }
+.stopbar { display: flex; gap: 10px; align-items: center; padding: 7px 10px; background: var(--danger-wash); border-bottom: 1px solid var(--danger); font-size: 12px; }
+.stopbar b { font-weight: 600; }
+.bprow { display: grid; grid-template-columns: 16px 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 3px 10px; border-bottom: 1px solid var(--border-subtle); }
+.bprow .spec { font-family: var(--font-mono); }
+.bprow .spec .k { color: var(--pal); }
+.bprow .meta { color: var(--text-3); font-size: 11.5px; }
+.bprow.hit { background: var(--danger-wash); }
+.chk { width: 12px; height: 12px; border: 1px solid var(--accent); border-radius: 2px; background: var(--accent); }
+.menu { position: absolute; background: var(--raised); border: 1px solid var(--border); border-radius: 5px; box-shadow: 0 10px 30px rgba(0,0,0,.35); padding: 4px 0; font-size: 12px; min-width: 250px; z-index: 5; }
+.menu div { padding: 4px 12px; display: flex; justify-content: space-between; gap: 16px; }
+.menu div:hover, .menu div.on { background: var(--accent-wash); }
+.menu hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 4px 0; }
+.menu .sec { color: var(--text-3); font-family: var(--font-mono); font-size: 11px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 14px; height: 14px; display: inline-block; border: 1px solid var(--border); position: relative; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Proposal · dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md</span>
+  <h1>Next palette debugging</h1>
+  <p class="lede">The Next Palettes panel shows the eight palette banks, but only as a sample: it re-reads them on the
+  shared state poll, and nothing tells you what changed or who changed it. This page proposes a <code>PAL:</code>
+  breakpoint and a Palette document that pops out of the panel.</p>
+  <div class="today">
+    <div><b>Does the panel refresh today?</b>Yes, by polling: at once after every stop or step, at most every
+    750 ms while running, every 5 s when nothing moves. Each refresh reads all 2048 entries.</div>
+    <div><b>What it misses</b>Everything between two samples (fades, Copper raster colours), what changed since
+    the last stop, and who wrote it.</div>
+    <div class="verdict"><b>Does a palette change deserve a breakpoint?</b>Yes. The target is computed state
+    (<code>$40</code> index + <code>$43</code> select at write time), so no address, I/O or <code>NR:</code> breakpoint
+    can name it. The sprite watch is the template in the core.</div>
+  </div>
+  <nav class="toc" aria-label="Mockups">
+    <a href="#panel"><span>1</span>Sidebar panel</a>
+    <a href="#doc"><span>2</span>Palette document</a>
+    <a href="#bp"><span>3</span>PAL: breakpoints</a>
+    <a href="#log"><span>4</span>Write log</a>
+  </nav>
+</header>
+
+<!-- 1 ------------------------------------------------------------------------------------------>
+<section class="tool" id="panel">
+  <div class="tool-head"><span class="eyebrow">Mockup 1 · Phase 1 and 3</span><h2>The Next Palettes panel, kept compact</h2></div>
+  <div class="split">
+    <div class="brief">
+      <h4>What changes</h4>
+      <ul>
+        <li><b>Pop-out button</b> in the header opens the Palette document.</li>
+        <li><b>Change dot</b>: the device had a palette write since the last stop (from a core dirty bitmap).</li>
+        <li><b>Breakpoint dot</b>: a <code>PAL:</code> breakpoint watches this device.</li>
+        <li><b>Refresh on change</b>: a core generation counter makes the panel refresh when the palette changed, and skip the read when it did not.</li>
+        <li>The bank chips and the thumbnail stay as they are.</li>
+      </ul>
+    </div>
+    <div class="ide" style="max-width:340px">
+      <div class="ide-title">Next Palettes <span class="grow"></span>
+        <span class="callout">new →</span>
+        <button class="iconbtn new" title="Open in a document"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></button>
+      </div>
+      <div id="sidebar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ------------------------------------------------------------------------------------------>
+<section class="tool" id="doc">
+  <div class="tool-head"><span class="eyebrow">Mockup 2 · Phase 3</span><h2>The Palette document</h2>
+  <p>Both banks of one device side by side, what changed since the last stop, and an entry's details with the
+  breakpoint actions. Click a swatch to select it.</p></div>
+  <div class="legend">
+    <span><i style="background:#2a5; outline:2px solid var(--pal); outline-offset:-2px"></i>written since last stop (corner = old colour)</span>
+    <span><i style="background:#777; background-image:repeating-linear-gradient(45deg,transparent 0 2px,rgba(255,255,255,.55) 2px 3px)"></i>transparency index</span>
+    <span><i style="background:#447"><b style="position:absolute;right:1px;bottom:1px;width:6px;height:6px;border-radius:50%;background:var(--danger)"></b></i>watched by a PAL: breakpoint</span>
+  </div>
+  <div class="ide">
+    <div class="tabs"><span>main.asm</span><span>Sprites</span><span class="on">Next Palettes</span></div>
+    <div class="scroll">
+      <div class="doc-tools" style="min-width:860px">
+        <span class="devtabs" id="devtabs"></span>
+        <span class="grow"></span>
+        <label class="iconbtn on" title="Jump to the device and bank of the latest write">● Follow changes</label>
+        <button class="iconbtn">Clear changes</button>
+        <button class="iconbtn">Pop out</button>
+      </div>
+      <div class="doc-body" id="docbody"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 ------------------------------------------------------------------------------------------>
+<section class="tool" id="bp">
+  <div class="tool-head"><span class="eyebrow">Mockup 3 · Phase 2</span><h2><code>PAL:</code> breakpoints</h2>
+  <p>A hardware stop like <code>SP:</code>, <code>INT:</code> and <code>DMA:</code>: no address, no gutter. Set it from
+  the command line, a swatch's context menu or the details pane.</p></div>
+  <div class="two">
+    <div style="display:flex;flex-direction:column;gap:14px">
+<div class="cmd"><span class="c">; any write to sprite bank 1, entry 3</span>
+bp-set <span class="k">PAL:SPR1:$03</span>
+<span class="c">; Layer 2 entries 0-15 in either bank, real changes only</span>
+bp-set <span class="k">PAL:L2:$00-$0F</span> <span class="o">-changed</span>
+<span class="c">; Copper writes count too (off by default, as for NR:)</span>
+bp-set <span class="k">PAL:ULA2</span> <span class="o">-c</span>
+<span class="c">; the tilemap's live bank flips ($6B bit 4)</span>
+bp-set <span class="k">PAL:TM:LIVE</span>
+<span class="c">; filters work as everywhere else</span>
+bp-set <span class="k">PAL:ANY</span> <span class="o">-if</span> palNew == $1C7 <span class="o">-log</span> "{palSlot} {palIndex}"</div>
+      <div class="ide" style="position:relative;padding:14px 14px 150px">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Right-click on a swatch</div>
+        <div id="ctxgrid"></div>
+        <div class="menu" style="left:150px;top:46px">
+          <div class="on">Break on writes to entry $03 <span class="sec">PAL:SPR1:$03</span></div>
+          <div>Break when entry $03 changes <span class="sec">-changed</span></div>
+          <div>Break on writes to this bank <span class="sec">PAL:SPR1</span></div>
+          <hr>
+          <div>Copy colour <span class="sec">$1C7</span></div>
+          <div>Copy bp-set command</div>
+        </div>
+      </div>
+    </div>
+    <div class="ide">
+      <div class="stopbar"><span class="bdot"></span><b>Paused</b> Palette write: Sprites bank 1, entry $03
+        <span class="mono"><span class="sw" style="background:#f0f"></span>$1C7 → <span class="sw" style="background:#000024"></span>$003</span></div>
+      <div style="padding:6px 10px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)">
+        by <span class="org cpu">CPU</span> <span class="mono">NEXTREG $41,A</span> at <span class="mono" style="color:var(--accent)">$8123</span> · frame 412, line 87 · <span class="mono">$40</span>=$03 <span class="mono">$43</span>=$20
+      </div>
+      <div class="ide-title">Breakpoints<span class="grow"></span></div>
+      <div class="bprow"><span class="chk"></span><span></span><span class="spec">$8000</span><span class="meta">exec</span></div>
+      <div class="bprow"><span class="chk"></span><span></span><span class="spec">NR:$07</span><span class="meta">nextreg</span></div>
+      <div class="bprow hit"><span class="chk"></span><span class="bdot"></span><span class="spec"><span class="k">PAL:SPR1:$03</span></span><span class="meta">palette · 1 hit</span></div>
+      <div class="bprow"><span class="chk"></span><span></span><span class="spec"><span class="k">PAL:L2:$00-$0F</span> -changed</span><span class="meta">palette</span></div>
+      <div class="bprow"><span class="chk"></span><span></span><span class="spec"><span class="k">PAL:TM:LIVE</span></span><span class="meta">palette · bank flip</span></div>
+      <div class="bprow"><span class="chk"></span><span></span><span class="spec">SP:$0C -attr 2,3</span><span class="meta">sprite</span></div>
+      <div style="padding:10px;font-size:11.5px;color:var(--text-3)">The stop names the slot, the entry, old → new, the writer and the path; the
+      condition gets <code>palSlot</code>, <code>palIndex</code>, <code>palOld</code>, <code>palNew</code> (plan §9 Q3).</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 ------------------------------------------------------------------------------------------>
+<section class="tool" id="log">
+  <div class="tool-head"><span class="eyebrow">Mockup 4 · Phase 4 (optional)</span><h2>Write log</h2>
+  <p>A volatile ring of recent palette writes in the document's lower pane, recorded only while the document is
+  open. It shows what a fade or a Copper effect did between two stops; a row selects its entry above.</p></div>
+  <div class="ide scroll">
+    <div class="doc-tools" style="min-width:760px">
+      <span>Palette writes · 214 since last stop</span><span class="grow"></span>
+      <span class="iconbtn on">All devices</span><span class="iconbtn">ULA</span><span class="iconbtn">Layer 2</span><span class="iconbtn">Sprites</span><span class="iconbtn">Tilemap</span>
+      <span class="iconbtn on">Copper</span><span class="iconbtn">Record ●</span>
+    </div>
+    <table class="grid">
+      <thead><tr><th>Frame</th><th>Line</th><th>PC</th><th>By</th><th>Via</th><th>Bank</th><th>Entry</th><th>Old</th><th>New</th></tr></thead>
+      <tbody id="logbody"></tbody>
+    </table>
+  </div>
+</section>
+
+</div>
+<script>
+// --- RGB333 (RRRGGGBBB) to CSS
+const css = (v) => {
+  const s = (n) => Math.round((n * 255) / 7);
+  return `rgb(${s((v >> 6) & 7)},${s((v >> 3) & 7)},${s(v & 7)})`;
+};
+// --- The power-on palettes (zxnext-palette.c, zxnextPaletteHardReset)
+const ulaBase = [0x000,0x005,0x140,0x145,0x028,0x02d,0x168,0x16d,0x000,0x007,0x1c0,0x1c7,0x038,0x03f,0x1f8,0x1ff];
+const ula = Array.from({ length: 256 }, (_, i) => ((i & 15) === 11 ? 0x1cf : ulaBase[i & 15]));
+const ramp = Array.from({ length: 256 }, (_, i) => ((i << 1) | (i & 2 ? 1 : 0)) & 0x1ff);
+// --- A program's edits: a fade on sprite bank 1, a blue gradient in Layer 2 bank 2
+const spr1 = ramp.slice(); const spr2 = ramp.slice();
+const changes = { 3: 0x1c7, 4: 0x1c0, 5: 0x180, 6: 0x140, 0x13: 0x007, 0x14: 0x006, 0x15: 0x005 };
+const newSpr1 = spr1.slice(); Object.entries(changes).forEach(([k, v]) => (newSpr1[k] = v));
+newSpr1[3] = 0x003;
+const changed = new Set(Object.keys(changes).map(Number));
+
+function grid(values, opts = {}) {
+  const g = document.createElement("div");
+  g.className = "pgrid";
+  if (opts.sw) g.style.setProperty("--sw", opts.sw + "px");
+  values.forEach((v, i) => {
+    const c = document.createElement("i");
+    c.style.background = css(v);
+    c.title = `$${i.toString(16).toUpperCase().padStart(2, "0")}: $${v.toString(16).toUpperCase().padStart(3, "0")}`;
+    if (opts.changed?.has(i)) { c.classList.add("chg"); c.style.setProperty("--old", css(opts.old[i])); }
+    if (opts.tr === i) c.classList.add("tr");
+    if (opts.bp?.has(i)) c.classList.add("bp");
+    if (opts.sel === i) c.classList.add("sel");
+    if (opts.onPick) c.addEventListener("click", () => opts.onPick(i));
+    g.appendChild(c);
+  });
+  return g;
+}
+
+// --- Mockup 1: sidebar
+const devices = [
+  { name: "ULA", banks: [ula, ula], live: 0, chg: false, bp: false },
+  { name: "Layer 2", banks: [ramp, ramp], live: 1, chg: true, bp: true },
+  { name: "Sprites", banks: [newSpr1, spr2], live: 0, chg: true, bp: true, open: true, tr: 0xe3 },
+  { name: "Tilemap", banks: [ramp, ramp], live: 0, chg: false, bp: false }
+];
+const sidebar = document.getElementById("sidebar");
+devices.forEach((d) => {
+  const el = document.createElement("div");
+  el.className = "dev";
+  const thumb = d.banks[d.live].map((v) => `<i style="background:${css(v)}"></i>`).join("");
+  el.innerHTML = `<div class="dev-h"><span class="chev">${d.open ? "▾" : "▸"}</span><span class="dev-name">${d.name}</span>
+    <span class="thumb">${thumb}</span>
+    <span class="dot ${d.chg ? "" : "off"}" title="Written since the last stop"></span>
+    ${d.bp ? '<span class="bdot" title="Watched by a PAL: breakpoint"></span>' : '<span style="width:7px"></span>'}
+    <span class="grow"></span>
+    <span class="banks"><span class="bank ${d.live === 0 ? "shown live" : ""}">1</span><span class="bank ${d.live === 1 ? "shown live" : ""}">2</span></span></div>`;
+  if (d.open) {
+    const body = document.createElement("div");
+    body.className = "dev-body";
+    body.appendChild(grid(d.banks[0], { sw: 14, changed, old: spr1, tr: d.tr, bp: new Set([3]) }));
+    el.appendChild(body);
+  }
+  sidebar.appendChild(el);
+});
+
+// --- Mockup 2: document
+document.getElementById("devtabs").innerHTML = devices
+  .map((d) => `<span class="${d.name === "Sprites" ? "on" : ""}">${d.name}${d.chg ? '<span class="dot"></span>' : ""}</span>`)
+  .join("");
+const docbody = document.getElementById("docbody");
+let sel = 3;
+const hex = (v, n) => "$" + v.toString(16).toUpperCase().padStart(n, "0");
+function renderDoc() {
+  docbody.innerHTML = "";
+  const axis = () => {
+    const a = document.createElement("div"); a.className = "axis"; a.style.setProperty("--sw", "17px");
+    a.innerHTML = Array.from({ length: 16 }, (_, i) => `<span>${i.toString(16).toUpperCase()}</span>`).join("");
+    return a;
+  };
+  [[newSpr1, "Bank 1", true], [spr2, "Bank 2", false]].forEach(([vals, label, live], b) => {
+    const col = document.createElement("div"); col.className = "bankcol";
+    col.innerHTML = `<h5>${label} ${live ? '<span class="tag">live</span>' : '<span class="tag dim">$43 bit 3 = 0</span>'}
+      ${b === 0 ? '<span class="tag pal">7 changed</span>' : ""}</h5>`;
+    col.appendChild(axis());
+    col.appendChild(grid(vals, {
+      sw: 17, changed: b === 0 ? changed : null, old: spr1, tr: 0xe3, bp: b === 0 ? new Set([3]) : null,
+      sel: b === 0 ? sel : -1, onPick: b === 0 ? (i) => { sel = i; renderDoc(); } : null
+    }));
+    docbody.appendChild(col);
+  });
+  const v = newSpr1[sel], o = spr1[sel], wasChanged = changed.has(sel);
+  const d = document.createElement("div"); d.className = "details";
+  d.innerHTML = `<div class="hd"><span class="swbig" style="background:${css(v)}">${wasChanged ? `<span class="o" style="background:${css(o)}"></span>` : ""}</span>
+      <div><div style="font-weight:600">Sprites · bank 1 · entry ${hex(sel, 2)}</div>
+      <div style="font-size:11.5px;color:var(--text-3)">${wasChanged ? "written since the last stop (left: old)" : "unchanged since the last stop"}</div></div></div>
+    <div class="kv">
+      <span>RGB333</span><b>${hex(v, 3)} ${wasChanged ? `<b class="prev">${hex(o, 3)}</b>` : ""}</b>
+      <span>R / G / B</span><b>${(v >> 6) & 7} / ${(v >> 3) & 7} / ${v & 7}</b>
+      <span>$41 byte</span><b>${hex(v >> 1, 2)}</b>
+      <span>$44 pair</span><b>${hex(v >> 1, 2)}, ${hex(v & 1, 2)}</b>
+      <span>CSS</span><b>${css(v)}</b>
+      <span>Transparent</span><b>${sel === 0xe3 ? "yes ($4B)" : "no"}</b>
+      <span>Last write</span><b>${wasChanged ? "PC $8123 · frame 412 · CPU $41" : "power-on"}</b>
+    </div>
+    <div class="actions">
+      <button class="iconbtn"><span class="bdot"></span>Break on writes to ${hex(sel, 2)}</button>
+      <button class="iconbtn">Break when ${hex(sel, 2)} changes</button>
+      <button class="iconbtn">Copy bp-set PAL:SPR1:${hex(sel, 2)}</button>
+    </div>`;
+  docbody.appendChild(d);
+}
+renderDoc();
+
+// --- Mockup 3: context grid (first two rows only)
+document.getElementById("ctxgrid").appendChild(grid(newSpr1.slice(0, 32), { sw: 17, sel: 3, bp: new Set([3]) }));
+
+// --- Mockup 4: log
+const rows = [
+  [410, 192, "$8123", "cpu", "$41", "SPR 1", 3, 0x007, 0x1c7],
+  [410, 192, "$8123", "cpu", "$41", "SPR 1", 4, 0x008, 0x1c0],
+  [411, "", "", "", "", "", "", "", ""],
+  [411, 30, "$C000", "cop", "$41", "L2 2", 0, 0x000, 0x001],
+  [411, 31, "$C002", "cop", "$41", "L2 2", 0, 0x001, 0x002],
+  [411, 32, "$C004", "cop", "$41", "L2 2", 0, 0x002, 0x003],
+  [411, 200, "$8F40", "cpu", "$43", "flip", "", "", ""],
+  [412, 64, "$7A10", "dma", "$FF3B", "ULA 1", 0xc5, 0x000, 0x0e3],
+  [412, 87, "$8123", "cpu", "$41", "SPR 1", 3, 0x1c7, 0x003]
+];
+const org = { cpu: '<span class="org cpu">CPU</span>', cop: '<span class="org cop">Copper</span>', dma: '<span class="org dma">DMA</span>' };
+document.getElementById("logbody").innerHTML = rows.map((r, i) => {
+  if (r[1] === "") return `<tr><td class="m" colspan="9" style="color:var(--text-3)">… 205 Copper writes to L2 2 entry $00 (frame 411) …</td></tr>`;
+  if (r[5] === "flip") return `<tr class="flip"><td class="m">${r[0]}</td><td class="m">${r[1]}</td><td class="v">${r[2]}</td><td>${org[r[3]]}</td><td class="m">${r[4]}</td><td colspan="4">Layer 2 live bank 1 → 2</td></tr>`;
+  const cls = i === rows.length - 1 ? "hit" : i === 0 ? "sel" : "";
+  return `<tr class="${cls}"><td class="m">${r[0]}</td><td class="m">${r[1]}</td><td class="v">${r[2]}</td><td>${org[r[3]]}</td><td class="m">${r[4]}</td><td>${r[5]}</td>
+    <td class="m">${hex(r[6], 2)}</td><td class="m"><span class="sw" style="background:${css(r[7])}"></span>${hex(r[7], 3)}</td>
+    <td class="m"><span class="sw" style="background:${css(r[8])}"></span>${hex(r[8], 3)}</td></tr>`;
+}).join("");
+</script>
+</body>
+</html>

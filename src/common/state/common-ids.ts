@@ -29,6 +29,10 @@ export const LAYER2_PANEL_ID = "$layer2";
 export const LAYER2_EDITOR = "Layer2Inspector";
 export const LAYERS_PANEL_ID = "$layers";
 export const LAYERS_EDITOR = "LayersDocument";
+// --- The ZX Spectrum Next palettes as a document, popped out of the Next Palettes panel
+// --- (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4)
+export const PALETTES_PANEL_ID = "$palettes";
+export const PALETTES_EDITOR = "NextPalettes";
 export const AUDIO_MIXER_PANEL_ID = "$audioMixer";
 export const AUDIO_MIXER_EDITOR = "AudioMixerDocument";
 export const HISTORY_PANEL_ID = "$history";

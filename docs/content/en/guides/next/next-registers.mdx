@@ -111,8 +111,13 @@ its palette and a pair of buttons for the **First palette** and the **Second pal
 - Expand a device to see its palette as a grid. The sprite and tilemap palettes mark their
   transparency index.
 
-To edit a palette file rather than read the machine's, use the
-[palette editor](/en/guides/next/sprite-palette-editors/).
+- A dot after a device's name means its palette was written since the last stop; a dot before it,
+  that a palette breakpoint watches it.
+
+The pop-out button in the panel's header opens the **Palette document**, which shows both banks side
+by side, the colours written entries replaced, and palette breakpoints: see
+[Debugging palettes](/en/guides/next/palettes/). To edit a palette file rather than read the
+machine's, use the [palette editor](/en/guides/next/sprite-palette-editors/).
 
 ## While stepping through history
 
@@ -125,4 +130,5 @@ Registers document and the Next Memory Mapping panel keep showing the present an
 - [Machine-state panels](/en/guides/debugging/machine-state-panels/)
 - [The Copper view](/en/guides/next/copper/)
 - [Next breakpoints](/en/guides/next/next-breakpoints/)
+- [Debugging palettes](/en/guides/next/palettes/)
 - [Why does my Next picture look wrong?](/en/guides/next/picture-troubleshooting/)
