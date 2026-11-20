@@ -5992,5 +5992,24 @@
   "panels.breakpointForm.paletteEntries": "An entry or a range from $00 to $FF, e.g. $03 or $00-$0F",
   "@panels.breakpointForm.paletteEntries": {
     "context": "Error in the breakpoint dialog (palette breakpoints) when the entries field does not parse. Keep the examples."
+  },
+  "panels.side.historyPresent.nextPalettes": "The palettes show the present, not history step {step}",
+  "@panels.side.historyPresent.nextPalettes": {
+    "context": "Band over the ZX Spectrum Next Palette document while the execution history cursor is in the past: the palettes are read from the machine now. {step} is the history step number.",
+    "placeholders": {
+      "step": "The history step number"
+    }
+  },
+  "panels.side.palette.popOut": "Open the Palette document",
+  "@panels.side.palette.popOut": {
+    "context": "Tooltip of the pop-out button in the Next Palettes panel's header: opens the palettes as a document.",
+    "maxChars": 40
+  },
+  "panels.side.palette.watched": "A palette breakpoint watches {device}",
+  "@panels.side.palette.watched": {
+    "context": "Tooltip of the breakpoint dot after a device's name in the Next Palettes panel. {device} is ULA, Layer 2, Sprites or Tilemap.",
+    "placeholders": {
+      "device": "The device: ULA, Layer 2, Sprites or Tilemap"
+    }
   }
 }

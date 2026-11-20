@@ -166,6 +166,50 @@
   z-index: 1;
 }
 
+/*
+ * The Palette document's marks (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4).
+ *
+ * Written since the last stop: the shared changed-state colour as an inset ring, so the swatch
+ * keeps its size. Its colour at that stop: a triangle in the bottom-left corner, opposite the
+ * priority notch, so before and after are both on the swatch. A `pal:` breakpoint: the breakpoint
+ * dot in the bottom-right corner, ringed in the swatch's own contrast colour (`borderColor`, set per
+ * swatch) because nothing on a swatch can rely on a theme surface.
+ */
+.writtenMark {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 2px var(--color-state-changed);
+  pointer-events: none;
+}
+
+.previousMark {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-bottom: calc(var(--palette-cell) * 0.5) solid;
+  border-right: calc(var(--palette-cell) * 0.5) solid transparent;
+}
+
+.watchMark {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  box-sizing: border-box;
+  width: calc(var(--palette-cell) * 0.36);
+  height: calc(var(--palette-cell) * 0.36);
+  min-width: 5px;
+  min-height: 5px;
+  border: 1px solid;
+  border-radius: var(--radius-full);
+  background: var(--color-breakpoint-binary);
+}
+
+.watchDisabled {
+  background: var(--color-breakpoint-disabled);
+}
+
 .paletteTooltip {
   font-family: var(--monospace-font);
   white-space: nowrap;

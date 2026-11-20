@@ -81,6 +81,15 @@
   background: var(--color-state-changed);
 }
 
+/* --- An enabled `pal:` breakpoint watches the device: the breakpoint dot after the written dot */
+.watchMark {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-breakpoint-binary);
+}
+
 .bankSwitch {
   display: inline-flex;
   flex: 0 0 auto;

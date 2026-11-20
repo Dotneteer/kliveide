@@ -1,6 +1,6 @@
 # Next Palette Debugging Plan (palette breakpoints and the Palette document)
 
-Status: **accepted** (2026-11-20; §9 answered). Phases 1 and 2 built (§5.1, §3.5) on `feature/next-palette-debugging`; Phase 3 next. Mockups:
+Status: **accepted** (2026-11-20; §9 answered). Phases 1-3 built (§5.1, §3.5, §4.1) on `feature/next-palette-debugging`; Phase 4 (optional) or 5 next. Mockups:
 `dev/plans/palette-debugging/PALETTE_DEBUGGING_MOCKUPS.html`.
 
 ## 1. What exists today
@@ -179,6 +179,37 @@ Layout (mockup 2):
 
 The sidebar panel stays the compact overview; the document is where palettes are debugged (the
 Copper panel / Copper List split, `COPPER_DEBUGGING_PLAN.md` D16).
+
+### 4.1 As built (Phase 3, 2026-11-20)
+
+- **The document** `$palettes` (`NextPalettes`, `DocumentPanels/NextPalettes/PaletteDocumentPanel.tsx`),
+  opened by the panel header's pop-out button (`headerActions`, the `square-arrow-out-up-right` glyph),
+  View › Machine Views › Palettes, and **`show-palettes [ula|l2|spr|tm]`** / `hide-palettes`
+  (`shpal`/`hpal`; named like the other `show-*` documents rather than the `pal-open` proposed above).
+  Its view state (device, bank, entry, Follow) is kept with the document.
+- **View model** `features/next-palette/paletteDocumentModel.ts` (pure, tested without rendering):
+  entry decoding (RGB333, components, the `$41` byte, the `$44` pair with the priority bits),
+  transparency (`$4B`/`$4C` index, or the `$14` colour match for ULA and Layer 2: `PaletteDeviceInfo`
+  gained `globalTransparency`), written entries, the previous stop's value, watched entries, entry
+  breakpoint specs and the Follow target.
+- **Previous stop**: `useNextPaletteState` keeps the palettes at the last two stops at module level
+  (as `useNextRegState` does), so a written entry shows the colour it replaced in a corner triangle,
+  and the details say "was $007". No core history (D5).
+- **Breakpoints**: the swatch context menu and the details' buttons set `pal:<dev><bank>:$nn`
+  (with `-changed` for "Break when it changes"), remove it or open the breakpoint dialog, all through
+  the commands (`usePaletteBreakpoints`); watched entries carry the breakpoint dot. The panel marks a
+  device an enabled `pal:` breakpoint watches (`usePaletteBreakpointList`, kept apart so the panel does
+  not load the dialog).
+- **Follow**: once per stop, to the write a `pal:` breakpoint stopped on (a flip to the newly live
+  bank), otherwise to the first entry written since the last stop in slot order.
+- **"Last write"** is shown only for the write a palette breakpoint stopped on: without the Phase 4
+  log the core does not know who wrote other entries.
+- **Not built from the mockup**: "Clear changes" (the marks reset at the next run anyway) and a
+  "Pop out" button (floating is the document framework's, from the tab).
+- **Tests**: `test/renderer/paletteDocumentModel.test.ts`, `test/renderer/PaletteDocumentPanel.test.tsx`,
+  `test/commands/PaletteCommands.test.ts`, the panel's in `test/controls/PalettePanel.test.tsx`.
+  Checked in an isolated IDE run: `pal:spr1:$03`, Follow to the stop, `$1C0 was $007`, the last write
+  at `$800C`, the watched and transparency marks, the context menu.
 
 ## 5. Fixing the refresh (cheap, independent)
 

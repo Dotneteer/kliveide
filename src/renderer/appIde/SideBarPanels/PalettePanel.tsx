@@ -15,6 +15,12 @@ import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { NEXT_PALETTE_DEVICES as DEVICES, type NextPaletteDeviceDef as DeviceDef } from "@renderer/features/next-palette/nextPaletteDevices";
 import { readNextPalette, writtenEntryCount } from "@renderer/features/next-palette/nextPaletteRead";
+import { deviceIsWatched } from "@renderer/features/next-palette/paletteDocumentModel";
+import { usePaletteBreakpointList } from "@renderer/features/next-palette/usePaletteBreakpointList";
+import type { SideBarPanelBadgeProps } from "@renderer/abstractions/SideBarPanelInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { SmallIconButton } from "@controls/IconButton";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./PalettePanel.module.scss";
 import { useT } from "@common/i18n/useT";
@@ -46,6 +52,7 @@ export const PalettePanel = () => {
   }, [emuApi]);
 
   useEmuStateListener(emuApi, refresh);
+  const { breakpoints } = usePaletteBreakpointList();
 
   if (!paletteState) {
     return (
@@ -58,7 +65,7 @@ export const PalettePanel = () => {
   return (
     <DataPanel autoHeight xclass={styles.palettePanel}>
       {DEVICES.map((device) => (
-        <DeviceSection key={device.id} device={device} info={paletteState} />
+        <DeviceSection key={device.id} device={device} info={paletteState} breakpoints={breakpoints} />
       ))}
     </DataPanel>
   );
@@ -67,9 +74,10 @@ export const PalettePanel = () => {
 type DeviceSectionProps = {
   device: DeviceDef;
   info: PaletteDeviceInfo;
+  breakpoints: BreakpointInfo[];
 };
 
-const DeviceSection = ({ device, info }: DeviceSectionProps) => {
+const DeviceSection = ({ device, info, breakpoints }: DeviceSectionProps) => {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
   /**
@@ -113,6 +121,14 @@ const DeviceSection = ({ device, info }: DeviceSectionProps) => {
         <span className={styles.deviceName}>
           {device.label}
           <WrittenMark device={device} info={info} />
+          {deviceIsWatched(breakpoints, device.id) && (
+            <span
+              className={styles.watchMark}
+              role="img"
+              aria-label={t("panels.side.palette.watched", { device: device.label })}
+              title={t("panels.side.palette.watched", { device: device.label })}
+            />
+          )}
         </span>
         {/*
           * The always-on preview.
@@ -276,3 +292,20 @@ function gradientFor(palette: number[], from: number, to: number): string {
   }
   return `linear-gradient(to right, ${stops.join(",")})`;
 }
+
+/**
+ * The panel header's pop-out button: opens the Palette document, which shows a device's two banks
+ * side by side, what was written since the last stop, and the breakpoint actions
+ * (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4).
+ */
+export const PalettePanelActions = (_props: SideBarPanelBadgeProps) => {
+  const t = useT();
+  const { ideCommandsService } = useAppServices();
+  return (
+    <SmallIconButton
+      iconName="square-arrow-out-up-right"
+      title={t("panels.side.palette.popOut")}
+      clicked={() => void ideCommandsService.executeCommand("show-palettes")}
+    />
+  );
+};

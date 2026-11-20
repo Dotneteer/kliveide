@@ -3456,5 +3456,198 @@
   "panels.doc.breakpoint.type.paletteWrite": "Palette write",
   "@panels.doc.breakpoint.type.paletteWrite": {
     "context": "Breakpoint kind (ZX Spectrum Next), shown in brackets in the tooltip of a breakpoint glyph: stops when a palette entry is written or a palette's live bank flips."
+  },
+  "panels.doc.palettes.notAvailable": "The Palette document shows the ZX Spectrum Next's palettes; the current machine has none",
+  "@panels.doc.palettes.notAvailable": {
+    "context": "Empty state of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side, on another machine."
+  },
+  "panels.doc.palettes.devices": "Palette devices",
+  "@panels.doc.palettes.devices": {
+    "context": "Accessible name of the device tabs (ULA, Layer 2, Sprites, Tilemap) of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side."
+  },
+  "panels.doc.palettes.deviceWrittenTitle": "{device}: {count} entries written since the last stop",
+  "@panels.doc.palettes.deviceWrittenTitle": {
+    "context": "Tooltip of a device tab in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side. {device} is ULA, Layer 2, Sprites or Tilemap; {count} counts entries in both banks.",
+    "placeholders": {
+      "device": "The device: ULA, Layer 2, Sprites or Tilemap",
+      "count": "A number of palette entries, 1 to 512"
+    }
+  },
+  "panels.doc.palettes.deviceWatched": "A palette breakpoint watches this device",
+  "@panels.doc.palettes.deviceWatched": {
+    "context": "Accessible name of the breakpoint dot on a device tab of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side."
+  },
+  "panels.doc.palettes.liveBankChip": "bank {bank}",
+  "@panels.doc.palettes.liveBankChip": {
+    "context": "Chip on a device tab of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the bank (1 or 2) the device draws with now.",
+    "maxChars": 10,
+    "placeholders": {
+      "bank": "The bank's number, 1 or 2"
+    }
+  },
+  "panels.doc.palettes.follow": "Follow changes",
+  "@panels.doc.palettes.follow": {
+    "context": "Switch in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: after each stop, select the entry the program wrote.",
+    "maxChars": 20
+  },
+  "panels.doc.palettes.followTitle": "After each stop, show the device, bank and entry of the palette write that stopped the machine, or of the first entry written since the last stop",
+  "@panels.doc.palettes.followTitle": {
+    "context": "Tooltip of the Follow changes switch in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side."
+  },
+  "panels.doc.palettes.bankTitle": "Bank {bank}",
+  "@panels.doc.palettes.bankTitle": {
+    "context": "Heading of one of the two banks (1 or 2) of a device's palette in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side.",
+    "maxChars": 12,
+    "placeholders": {
+      "bank": "The bank's number, 1 or 2"
+    }
+  },
+  "panels.doc.palettes.live": "live",
+  "@panels.doc.palettes.live": {
+    "context": "Tag beside a bank's heading in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the device draws with this bank now. Lower case.",
+    "maxChars": 10
+  },
+  "panels.doc.palettes.writtenCount": "{count} written",
+  "@panels.doc.palettes.writtenCount": {
+    "context": "Tag beside a bank's heading in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: how many of its entries were written since the last stop.",
+    "maxChars": 16,
+    "placeholders": {
+      "count": "A number of palette entries, 1 to 512"
+    }
+  },
+  "panels.doc.palettes.details": "Entry details",
+  "@panels.doc.palettes.details": {
+    "context": "Accessible name of the details column of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side, which decodes the selected palette entry."
+  },
+  "panels.doc.palettes.entryTitle": "{device} · bank {bank} · entry {entry}",
+  "@panels.doc.palettes.entryTitle": {
+    "context": "Heading of the details column of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side. {device} is ULA, Layer 2, Sprites or Tilemap; {bank} is 1 or 2; {entry} is a hex number like $03.",
+    "placeholders": {
+      "device": "The device: ULA, Layer 2, Sprites or Tilemap",
+      "bank": "The bank's number, 1 or 2",
+      "entry": "The palette entry as a hex number, e.g. $03"
+    }
+  },
+  "panels.doc.palettes.unchanged": "Not written since the last stop",
+  "@panels.doc.palettes.unchanged": {
+    "context": "Status beside the selected entry's colour in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side."
+  },
+  "panels.doc.palettes.written": "Written since the last stop; the corner shows the colour before",
+  "@panels.doc.palettes.written": {
+    "context": "Status beside the selected entry's colour in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the entry was written and changed; the swatch's bottom-left corner shows the old colour."
+  },
+  "panels.doc.palettes.rewritten": "Written since the last stop, with the colour it already had",
+  "@panels.doc.palettes.rewritten": {
+    "context": "Status beside the selected entry's colour in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the program stored the same value again."
+  },
+  "panels.doc.palettes.rgb333": "RGB333",
+  "@panels.doc.palettes.rgb333": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the entry's 9-bit colour. Technical term: keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.was": "was {value}",
+  "@panels.doc.palettes.was": {
+    "context": "After the entry's colour in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: its value at the last stop. {value} is a hex number like $007.",
+    "maxChars": 16,
+    "placeholders": {
+      "value": "A 9-bit colour as a hex number, e.g. $007"
+    }
+  },
+  "panels.doc.palettes.components": "R / G / B",
+  "@panels.doc.palettes.components": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the red, green and blue levels, 0-7 each.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.nextReg41": "$41 byte",
+  "@panels.doc.palettes.nextReg41": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the byte a Next Reg $41 write of this colour sends. $41 is a register number: keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.nextReg44": "$44 pair",
+  "@panels.doc.palettes.nextReg44": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the two bytes Next Reg $44 takes to store this value. $44 is a register number: keep it.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.priority": "Priority",
+  "@panels.doc.palettes.priority": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side (Layer 2 only): whether the colour is drawn over the other layers.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.css": "CSS colour",
+  "@panels.doc.palettes.css": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the colour as the IDE draws it, e.g. #DB0000.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.transparent": "Transparent",
+  "@panels.doc.palettes.transparent": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: whether the device draws this entry as transparent.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.transparentYes": "yes (Next Reg {reg})",
+  "@panels.doc.palettes.transparentYes": {
+    "context": "Value in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the entry is transparent because of a register. {reg} is $14, $4B or $4C.",
+    "maxChars": 24,
+    "placeholders": {
+      "reg": "A Next register number: $14, $4B or $4C"
+    }
+  },
+  "panels.doc.palettes.yes": "yes",
+  "@panels.doc.palettes.yes": {
+    "context": "Value in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side.",
+    "maxChars": 10
+  },
+  "panels.doc.palettes.no": "no",
+  "@panels.doc.palettes.no": {
+    "context": "Value in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side.",
+    "maxChars": 10
+  },
+  "panels.doc.palettes.lastWrite": "Last write",
+  "@panels.doc.palettes.lastWrite": {
+    "context": "Label in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: the write a palette breakpoint stopped on.",
+    "maxChars": 14
+  },
+  "panels.doc.palettes.lastWriteValue": "at {pc}, {writer}",
+  "@panels.doc.palettes.lastWriteValue": {
+    "context": "Value in the details of the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: where the write that stopped the machine happened. {pc} is an address like $8009; {writer} is e.g. 'NextReg $41' or 'the Copper through $41'.",
+    "placeholders": {
+      "pc": "A Z80 address, e.g. $8009",
+      "writer": "Who wrote the entry and through which register, e.g. 'NextReg $41'"
+    }
+  },
+  "panels.doc.palettes.breakOnWrites": "Break on writes to {entry}",
+  "@panels.doc.palettes.breakOnWrites": {
+    "context": "Button and context-menu item in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: sets a palette breakpoint on the entry. {entry} is a hex number like $03.",
+    "maxChars": 32,
+    "placeholders": {
+      "entry": "The palette entry as a hex number, e.g. $03"
+    }
+  },
+  "panels.doc.palettes.breakWhenChanged": "Break when {entry} changes",
+  "@panels.doc.palettes.breakWhenChanged": {
+    "context": "Button and context-menu item in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: sets a palette breakpoint that stops only when the entry gets a different colour. {entry} is a hex number like $03.",
+    "maxChars": 32,
+    "placeholders": {
+      "entry": "The palette entry as a hex number, e.g. $03"
+    }
+  },
+  "panels.doc.palettes.removeBreakpoint": "Remove breakpoint",
+  "@panels.doc.palettes.removeBreakpoint": {
+    "context": "Button and context-menu item in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: removes the entry's palette breakpoint.",
+    "maxChars": 32
+  },
+  "panels.doc.palettes.editBreakpoint": "Edit breakpoint…",
+  "@panels.doc.palettes.editBreakpoint": {
+    "context": "Button and context-menu item in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: opens the breakpoint dialog on the entry's palette breakpoint.",
+    "maxChars": 32
+  },
+  "panels.doc.palettes.copyBpSet": "Copy the bp-set command",
+  "@panels.doc.palettes.copyBpSet": {
+    "context": "Context-menu item and button tooltip in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side: copies the command that sets this entry's palette breakpoint. bp-set is a command name: keep it.",
+    "maxChars": 32
+  },
+  "panels.doc.palettes.copied": "Copied",
+  "@panels.doc.palettes.copied": {
+    "context": "Tooltip of the copy button in the Palette document (ZX Spectrum Next), which shows one device's two palette banks side by side after it copied the command.",
+    "maxChars": 16
   }
 }

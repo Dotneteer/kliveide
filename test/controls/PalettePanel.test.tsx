@@ -13,12 +13,17 @@ const emuApi = vi.hoisted(() => {
   return {
     getPalettedDeviceInfo: vi.fn(),
     getPaletteVersion: vi.fn(),
-    getCpuStateChunk: vi.fn(async () => ({ state: 3, pcValue: 0, tacts: tacts++ }))
+    getCpuStateChunk: vi.fn(async () => ({ state: 3, pcValue: 0, tacts: tacts++ })),
+    listBreakpoints: vi.fn(async () => ({ breakpoints: [] as any[] }))
   };
 });
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
+const executeCommand = vi.hoisted(() => vi.fn());
+vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
+  useAppServices: () => ({ ideCommandsService: { executeCommand } })
+}));
 
-import { PalettePanel } from "@renderer/appIde/SideBarPanels/PalettePanel";
+import { PalettePanel, PalettePanelActions } from "@renderer/appIde/SideBarPanels/PalettePanel";
 
 /** The ULA power-on palette as `PaletteDevice` stores it — device layout, repeating every 16. */
 const DEF_ULA = [
@@ -274,5 +279,25 @@ describe("PalettePanel", () => {
     emuApi.getPalettedDeviceInfo.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<PalettePanel />);
     expect(screen.getByText("No palette information")).toBeTruthy();
+  });
+
+  // --- NEXT_PALETTE_DEBUGGING_PLAN §4 (mockup 1): the breakpoint dot and the pop-out button
+  describe("palette breakpoints and the Palette document", () => {
+    it("marks a device an enabled pal: breakpoint watches, and no other", async () => {
+      emuApi.listBreakpoints.mockResolvedValue({
+        breakpoints: [{ paletteStop: "spr1:$03" }, { paletteStop: "tm:live", disabled: true }]
+      });
+      await render();
+      const mark = await screen.findByRole("img", { name: "A palette breakpoint watches Sprites" });
+      expect(screen.getByText("Sprites").contains(mark)).toBe(true);
+      expect(screen.queryByRole("img", { name: "A palette breakpoint watches Tilemap" })).toBeNull();
+      emuApi.listBreakpoints.mockResolvedValue({ breakpoints: [] });
+    });
+
+    it("pops out into the Palette document", () => {
+      renderWithProviders(<PalettePanelActions panelId="nextPalettePanel" expanded={true} />);
+      fireEvent.click(screen.getByRole("button"));
+      expect(executeCommand).toHaveBeenCalledWith("show-palettes");
+    });
   });
 });

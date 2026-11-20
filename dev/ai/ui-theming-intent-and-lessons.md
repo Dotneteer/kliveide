@@ -1071,7 +1071,17 @@ Sprites / Tilemap rows) carries the same 5px dot right after the device's name, 
 identity there; its tooltip and accessible name say what changed (the count per bank). The dot is
 there only while something changed: an always-present marker in another state would say nothing.
 "Changed" may honestly mean *written* when that is what the machine can report (a palette entry
-rewritten with its own colour counts); the tooltip's wording says which.
+rewritten with its own colour counts); the tooltip's wording says which. A breakpoint watching the
+device adds the breakpoint dot (`--color-breakpoint-binary`) after the changed dot, the same size.
+
+On a colour swatch (the Palette document's grids, `NextPaletteViewer`) the marks cannot rely on the
+theme surface, so they split by what they mean: *written* is an inset 2px ring in
+`--color-state-changed` (inset, so the swatch keeps its size); the colour at the previous stop is a
+triangle in the bottom-left corner painted in that old colour, so before and after sit on one swatch
+without a log; a watching breakpoint is the breakpoint dot in the bottom-right corner, ringed in the
+swatch's own contrast colour like the transparency and priority marks. The details column repeats
+the old value as text in `--color-state-changed` ("was $007") beside the current one in
+`--color-state-value`.
 
 ## A Breakpoint On A Table Row Is The Gutter Dot, Before The Index
 

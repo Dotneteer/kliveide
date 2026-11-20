@@ -1996,6 +1996,11 @@ export type PaletteDeviceInfo = {
    * tilemap banks, 4-7 the second ones). See `NEXT_PALETTE_DEBUGGING_PLAN.md` §5.
    */
   written?: number[];
+  /**
+   * Next Reg $14, the global transparency colour: a ULA or Layer 2 pixel whose `$41` byte (the
+   * colour's top eight bits) equals it is transparent. Absent from an older reader.
+   */
+  globalTransparency?: number;
 };
 
 /** The emulated picture: `width` × `height` pixels, four bytes each (R, G, B, A) */

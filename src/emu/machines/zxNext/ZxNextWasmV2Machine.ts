@@ -2725,7 +2725,8 @@ export class ZxNextWasmV2Machine
       reg6bValue: ex.zxnextGetNextRegisterDirect(0x6b),
       ulaNextFormat: ex.zxnextGetNextRegisterDirect(0x42),
       version: this.getPaletteVersion(),
-      written: Array.from({ length: 256 }, (_, i) => ex.zxnextGetPaletteDirtyByte(i))
+      written: Array.from({ length: 256 }, (_, i) => ex.zxnextGetPaletteDirtyByte(i)),
+      globalTransparency: ex.zxnextGetNextRegisterDirect(0x14)
     };
   }
 

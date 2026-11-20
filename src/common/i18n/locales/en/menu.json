@@ -1057,5 +1057,10 @@
   "@menu.next.dmaTransfers": {
     "context": "Debug menu (ZX Spectrum Next): opens the DMA Transfers document, which lists every DMA transfer and tints the selected one's bytes in the Memory panel.",
     "maxChars": 30
+  },
+  "menu.next.palettes": "Palettes",
+  "@menu.next.palettes": {
+    "context": "View › Machine Views (ZX Spectrum Next): opens the Palette document (the device palettes, what was written since the last stop, palette breakpoints).",
+    "maxChars": 30
   }
 }

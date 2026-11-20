@@ -7,6 +7,7 @@ import {
 } from "@emu/machines/zxNext/palette";
 import { Tooltip } from "./Tooltip";
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { KeyHandler } from "./generic/KeyHandler";
 import classnames from "classnames";
 import { useT } from "@common/i18n/useT";
@@ -72,9 +73,23 @@ type Props = {
   rowCount?: number;
   usePriority?: boolean;
   transparencyIndex?: number;
+  /**
+   * More entries drawn transparent, beside `transparencyIndex`: the ULA and Layer 2 compare a colour
+   * with Next Reg $14, so any number of entries can match.
+   */
+  transparentIndexes?: ReadonlySet<number>;
+  /**
+   * The Palette document's marks (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §4): entries written
+   * since the last stop get a ring, with their colour at that stop (register layout) in a corner
+   * when it is known; entries a `pal:` breakpoint watches get a dot (`true` when one is enabled).
+   */
+  writtenIndexes?: ReadonlySet<number>;
+  previousCodes?: ReadonlyMap<number, number>;
+  watchedIndexes?: ReadonlyMap<number, boolean>;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
-  onRightClick?: (index: number) => void;
+  /** A right click on a swatch; the event places a context menu */
+  onRightClick?: (index: number, e: ReactMouseEvent) => void;
   selectedIndex?: number;
   onPriority?: (index: number) => void;
   onOtherKey?: (code: string) => void;
@@ -87,6 +102,10 @@ export const NextPaletteViewer = ({
   rowCount = ROWS,
   usePriority = false,
   transparencyIndex,
+  transparentIndexes,
+  writtenIndexes,
+  previousCodes,
+  watchedIndexes,
   allowSelection,
   onSelection,
   onRightClick,
@@ -156,8 +175,8 @@ export const NextPaletteViewer = ({
   );
 
   const handleRightClick = useCallback(
-    (idx: number) => {
-      if (allowSelection) onRightClick?.(idx);
+    (idx: number, e: ReactMouseEvent) => {
+      if (allowSelection) onRightClick?.(idx, e);
     },
     [allowSelection, onRightClick]
   );
@@ -215,9 +234,11 @@ export const NextPaletteViewer = ({
     const [r, g, b] = getRgbPartsForPaletteCode(value);
     const flags = [
       usePriority && !!(value & 0x8000) ? t("panels.controls.nextPalette.flag.priority") : null,
-      hovered.index === transparencyIndex
+      hovered.index === transparencyIndex || transparentIndexes?.has(hovered.index)
         ? t("panels.controls.nextPalette.flag.transparency")
-        : null
+        : null,
+      writtenIndexes?.has(hovered.index) ? t("panels.controls.nextPalette.flag.written") : null,
+      watchedIndexes?.has(hovered.index) ? t("panels.controls.nextPalette.flag.watched") : null
     ].filter(Boolean);
     const args = { index: `$${toHexa2(hovered.index)}`, r, g, b };
     return flags.length
@@ -226,7 +247,7 @@ export const NextPaletteViewer = ({
           flags: flags.join(t("panels.controls.nextPalette.flagSeparator"))
         })
       : t("panels.controls.nextPalette.tooltip", args);
-  }, [hovered, palette, usePriority, transparencyIndex, t]);
+  }, [hovered, palette, usePriority, transparencyIndex, transparentIndexes, writtenIndexes, watchedIndexes, t]);
 
   return (
     <KeyHandler tabIndex={0} xclass={styles.paletteWrapper} onKey={handleKey}>
@@ -250,6 +271,10 @@ export const NextPaletteViewer = ({
             palette={palette}
             usePriority={usePriority}
             transparencyIndex={transparencyIndex}
+            transparentIndexes={transparentIndexes}
+            writtenIndexes={writtenIndexes}
+            previousCodes={previousCodes}
+            watchedIndexes={watchedIndexes}
             allowSelection={allowSelection}
             onSelection={handleSelection}
             onRightClick={handleRightClick}
@@ -274,9 +299,13 @@ type PaletteRowProps = {
   palette: number[];
   usePriority?: boolean;
   transparencyIndex?: number;
+  transparentIndexes?: ReadonlySet<number>;
+  writtenIndexes?: ReadonlySet<number>;
+  previousCodes?: ReadonlyMap<number, number>;
+  watchedIndexes?: ReadonlyMap<number, boolean>;
   allowSelection?: boolean;
   onSelection: (index: number) => void;
-  onRightClick: (index: number) => void;
+  onRightClick: (index: number, e: ReactMouseEvent) => void;
   onPriority: (index: number) => void;
   onEnter: (el: HTMLElement, index: number) => void;
   onLeave: () => void;
@@ -296,6 +325,10 @@ const PaletteRow = ({
   palette,
   usePriority,
   transparencyIndex,
+  transparentIndexes,
+  writtenIndexes,
+  previousCodes,
+  watchedIndexes,
   allowSelection,
   onSelection,
   onRightClick,
@@ -318,7 +351,10 @@ const PaletteRow = ({
             topRule={row > topRow && row % 4 === 0}
             column={col}
             usePriority={usePriority}
-            isTransparency={index === transparencyIndex}
+            isTransparency={index === transparencyIndex || !!transparentIndexes?.has(index)}
+            isWritten={!!writtenIndexes?.has(index)}
+            previousCode={previousCodes?.get(index)}
+            watch={watchedIndexes?.has(index) ? (watchedIndexes.get(index) ? "enabled" : "disabled") : undefined}
             isSelected={allowSelection && index === selectedIndex}
             allowSelection={allowSelection}
             onSelection={onSelection}
@@ -341,10 +377,16 @@ type PaletteItemProps = {
   column: number;
   usePriority?: boolean;
   isTransparency: boolean;
+  /** Written since the last stop: a ring */
+  isWritten?: boolean;
+  /** The colour at the last stop (register layout), drawn in the bottom-left corner of a written entry */
+  previousCode?: number;
+  /** A `pal:` breakpoint watches it */
+  watch?: "enabled" | "disabled";
   isSelected: boolean;
   allowSelection?: boolean;
   onSelection: (index: number) => void;
-  onRightClick: (index: number) => void;
+  onRightClick: (index: number, e: ReactMouseEvent) => void;
   onPriority: (index: number) => void;
   onEnter: (el: HTMLElement, index: number) => void;
   onLeave: () => void;
@@ -372,6 +414,9 @@ const PaletteItem = memo(
     column,
     usePriority,
     isTransparency,
+    isWritten,
+    previousCode,
+    watch,
     isSelected,
     allowSelection,
     onSelection,
@@ -407,7 +452,7 @@ const PaletteItem = memo(
         onMouseEnter={(e) => onEnter(e.currentTarget, index)}
         onMouseLeave={onLeave}
         onClick={() => allowSelection && onSelection(index)}
-        onContextMenu={() => allowSelection && onRightClick(index)}
+        onContextMenu={(e) => allowSelection && onRightClick(index, e)}
         onDoubleClick={() => allowSelection && onPriority(index)}
       >
         {isTransparency && (
@@ -415,6 +460,19 @@ const PaletteItem = memo(
         )}
         {hasPriority && (
           <span className={styles.priorityMark} style={{ borderTopColor: markColor }} />
+        )}
+        {isWritten && previousCode !== undefined && previousCode !== value && (
+          <span
+            className={styles.previousMark}
+            style={{ borderBottomColor: getCssStringForPaletteCode(previousCode) }}
+          />
+        )}
+        {isWritten && <span className={styles.writtenMark} />}
+        {watch && (
+          <span
+            className={classnames(styles.watchMark, { [styles.watchDisabled]: watch === "disabled" })}
+            style={{ borderColor: markColor }}
+          />
         )}
         {isSelected && <span className={styles.selectionMark} style={{ borderColor: markColor }} />}
       </div>

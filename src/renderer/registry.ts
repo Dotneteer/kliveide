@@ -50,6 +50,7 @@ import {
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
   LAYERS_EDITOR,
+  PALETTES_EDITOR,
   AUDIO_MIXER_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
@@ -82,6 +83,7 @@ import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspec
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
 import { createLayersDocumentPanel } from "./appIde/DocumentPanels/LayersDocument/LayersDocumentPanel";
+import { createPaletteDocumentPanel } from "./appIde/DocumentPanels/NextPalettes/PaletteDocumentPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -222,7 +224,7 @@ import { DmaPanel } from "./appIde/SideBarPanels/DmaPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
 import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
-import { PalettePanel } from "./appIde/SideBarPanels/PalettePanel";
+import { PalettePanel, PalettePanelActions } from "./appIde/SideBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
 import { M6510CpuPanel } from "./appIde/SideBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LanguageProvider";
@@ -404,6 +406,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "nextPalettePanel",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: PalettePanel,
+    // --- Pops the panel out into the Palette document (NEXT_PALETTE_DEBUGGING_PLAN §4)
+    headerActions: PalettePanelActions,
     restrictTo: [MI_ZXNEXT]
   }, { title: "panels.sideBar.nextPalettes" }),
   withTexts({
@@ -605,6 +609,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: LAYERS_EDITOR,
     renderer: createLayersDocumentPanel,
     icon: "layers"
+  },
+  {
+    // --- The Next palettes, popped out of the Next Palettes panel (NEXT_PALETTE_DEBUGGING_PLAN §4)
+    id: PALETTES_EDITOR,
+    renderer: createPaletteDocumentPanel,
+    icon: "palette"
   },
   {
     id: AUDIO_MIXER_EDITOR,

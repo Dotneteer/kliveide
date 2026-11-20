@@ -16,6 +16,7 @@ const PRESENT_SUBJECTS = {
   memory: "panels.side.historyPresent.memory",
   systemVariables: "panels.side.historyPresent.systemVariables",
   nextRegisters: "panels.side.historyPresent.nextRegisters",
+  nextPalettes: "panels.side.historyPresent.nextPalettes",
   watchedMemory: "panels.side.historyPresent.watchedMemory",
   memoryMapping: "panels.side.historyPresent.memoryMapping",
   ula: "panels.side.historyPresent.ula",

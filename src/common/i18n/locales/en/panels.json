@@ -1115,5 +1115,10 @@
   "@panels.document.dmaTransfers": {
     "context": "Name of the DMA Transfers document tab (ZX Spectrum Next): every DMA transfer from its enable to its end.",
     "maxChars": 20
+  },
+  "panels.document.nextPalettes": "Palettes",
+  "@panels.document.nextPalettes": {
+    "context": "Title of the ZX Spectrum Next Palette document's tab: both banks of each device's palette, what was written since the last stop, and palette breakpoints.",
+    "maxChars": 24
   }
 }

@@ -1343,5 +1343,13 @@
   "@emu.soundPopover.unmuteAll": {
     "context": "Emulator window, the sound popover (opened from the chevron of the toolbar's sound button: the volume, then each sound source of the machine with mute and solo buttons and a level meter): a link that clears every source's mute and solo.",
     "maxChars": 14
+  },
+  "panels.controls.nextPalette.flag.written": "written since the last stop",
+  "@panels.controls.nextPalette.flag.written": {
+    "context": "Role of a ZX Spectrum Next palette entry, listed in its tooltip: the program wrote this entry since the machine last stopped. Lower case, as it appears inside brackets."
+  },
+  "panels.controls.nextPalette.flag.watched": "palette breakpoint",
+  "@panels.controls.nextPalette.flag.watched": {
+    "context": "Role of a ZX Spectrum Next palette entry, listed in its tooltip: a palette breakpoint watches this entry. Lower case, as it appears inside brackets."
   }
 }
