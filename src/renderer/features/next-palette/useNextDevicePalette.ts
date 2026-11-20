@@ -4,6 +4,7 @@ import { paletteCodeFromDeviceValue } from "@emu/machines/zxNext/palette";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { nextPaletteDevice, type NextPaletteDeviceId } from "./nextPaletteDevices";
+import { readNextPalette } from "./nextPaletteRead";
 
 /*
  * The live palette of one Next device (`dev/plans/TILEMAP_INSPECTOR_PLAN.md` §4.6, D6): the bank the
@@ -56,11 +57,15 @@ export function useNextDevicePalette(
   const def = nextPaletteDevice(device);
 
   const enabled = options.enabled ?? true;
+  // --- The last read, so an unchanged palette is not read again (NEXT_PALETTE_DEBUGGING_PLAN §5)
+  const lastInfo = useRef<PaletteDeviceInfo | undefined>(undefined);
   const refresh = useCallback(async () => {
     if (!enabled) return;
     try {
-      setInfo(await emuApi.getPalettedDeviceInfo());
+      lastInfo.current = await readNextPalette(emuApi, lastInfo.current);
+      setInfo(lastInfo.current);
     } catch {
+      lastInfo.current = undefined;
       // --- No machine controller, or not a Next: the caller shows its own empty state or fallback
       setInfo(undefined);
     }

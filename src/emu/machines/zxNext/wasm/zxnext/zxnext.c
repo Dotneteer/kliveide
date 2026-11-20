@@ -841,6 +841,10 @@ uint32_t zxnextGetPaletteIndex(void) { return zxnextPaletteGetPaletteIndex(); }
 uint32_t zxnextGetPaletteControl(void) { return zxnextPaletteGetControl(); }
 uint32_t zxnextGetPaletteSecondWrite(void) { return zxnextPaletteGetSecondWrite(); }
 uint32_t zxnextGetPaletteStoredValue(void) { return zxnextPaletteGetStoredValue(); }
+/* The palette's change tracking (NEXT_PALETTE_DEBUGGING_PLAN §5): the write count and the dirty bitmap */
+uint32_t zxnextGetPaletteGeneration(void) { return zxnextPaletteGetGeneration(); }
+uint32_t zxnextGetPaletteDirtyByte(uint32_t offset) { return zxnextPaletteGetDirtyByte(offset); }
+uint32_t zxnextClearPaletteDirty(void) { return zxnextPaletteClearDirty(); }
 void zxnextSetLayer2Enabled(uint32_t enabled) { zxnextLayer2SetEnabled(enabled); }
 uint32_t zxnextGetLayer2Enabled(void) { return zxnextLayer2GetEnabled(); }
 uint32_t zxnextGetLayer2Resolution(void) { return zxnextLayer2GetResolution(); }

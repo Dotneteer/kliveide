@@ -6705,6 +6705,7 @@ export type MessageKey =
   | "panels.side.palette.secondBank"
   | "panels.side.palette.secondBankLive"
   | "panels.side.palette.secondDevicePalette"
+  | "panels.side.palette.writtenBank"
   | "panels.side.psg.channelBit"
   | "panels.side.psg.channelCounter"
   | "panels.side.psg.channelEnvelopeEnabled"

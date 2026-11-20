@@ -132,9 +132,9 @@ export const TRANSLATED_CATALOGS: Readonly<Record<string, Catalog>> = {
 
 /** How much of English each language translates, and how much of that is outdated */
 export const TRANSLATION_STATUS: Readonly<Record<string, { translated: number; total: number; outdated: number }>> = {
-  "de": { translated: 5818, total: 8039, outdated: 25 },
-  "es": { translated: 5818, total: 8039, outdated: 25 },
-  "hu": { translated: 5818, total: 8039, outdated: 25 },
-  "pt-BR": { translated: 5818, total: 8039, outdated: 25 },
-  "pt-PT": { translated: 5818, total: 8039, outdated: 25 }
+  "de": { translated: 5818, total: 8040, outdated: 25 },
+  "es": { translated: 5818, total: 8040, outdated: 25 },
+  "hu": { translated: 5818, total: 8040, outdated: 25 },
+  "pt-BR": { translated: 5818, total: 8040, outdated: 25 },
+  "pt-PT": { translated: 5818, total: 8040, outdated: 25 }
 };

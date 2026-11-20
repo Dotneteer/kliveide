@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import classnames from "classnames";
 
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
@@ -14,6 +14,7 @@ import { DataPanel, EmptyState, SectionHeader } from "@renderer/controls/data";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { NEXT_PALETTE_DEVICES as DEVICES, type NextPaletteDeviceDef as DeviceDef } from "@renderer/features/next-palette/nextPaletteDevices";
+import { readNextPalette, writtenEntryCount } from "@renderer/features/next-palette/nextPaletteRead";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./PalettePanel.module.scss";
 import { useT } from "@common/i18n/useT";
@@ -36,9 +37,12 @@ export const PalettePanel = () => {
   const t = useT();
   const emuApi = useEmuApi();
   const [paletteState, setPaletteState] = useState<PaletteDeviceInfo>(null);
+  // --- The last read: an unchanged palette is not read again (NEXT_PALETTE_DEBUGGING_PLAN §5)
+  const lastInfo = useRef<PaletteDeviceInfo | undefined>(undefined);
 
   const refresh = useCallback(async () => {
-    setPaletteState(await emuApi.getPalettedDeviceInfo());
+    lastInfo.current = await readNextPalette(emuApi, lastInfo.current);
+    setPaletteState(lastInfo.current);
   }, [emuApi]);
 
   useEmuStateListener(emuApi, refresh);
@@ -106,7 +110,10 @@ const DeviceSection = ({ device, info }: DeviceSectionProps) => {
           fill="--color-chevron"
           rotate={expanded ? 90 : 0}
         />
-        <span className={styles.deviceName}>{device.label}</span>
+        <span className={styles.deviceName}>
+          {device.label}
+          <WrittenMark device={device} info={info} />
+        </span>
         {/*
           * The always-on preview.
           *
@@ -194,6 +201,35 @@ const BankButton = ({ bank, device, isShown, isLive, clicked }: BankButtonProps)
           device.liveSource
         }
       />
+    </>
+  );
+};
+
+/**
+ * "Written since the last stop": the shared changed-state dot after the device's name
+ * (`dev/ai/ui-theming-intent-and-lessons.md`, the `--color-state-changed` marker), with the count
+ * per bank in its tooltip. Nothing when neither bank was written.
+ *
+ * A *write*, not a change of colour: the core marks every stored entry, so a program rewriting a
+ * colour with its own value still shows here - which is what a reader asking "who touches this
+ * palette" wants (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5). While the machine runs it reads
+ * "since the run started".
+ */
+const WrittenMark = ({ device, info }: { device: DeviceDef; info: PaletteDeviceInfo }) => {
+  const t = useT();
+  const ref = useTooltipRef<HTMLSpanElement>();
+  const counts = device.slots.map((slot) => writtenEntryCount(info, slot));
+  if (!counts[0] && !counts[1]) return null;
+  const text = counts
+    .map((count, bank) =>
+      count ? t("panels.side.palette.writtenBank", { bank: bank + 1, count }) : undefined
+    )
+    .filter((line) => line !== undefined)
+    .join("\n");
+  return (
+    <>
+      <span ref={ref} className={styles.writtenMark} role="img" aria-label={text} />
+      <TooltipFactory refElement={ref.current} placement="bottom" content={text} />
     </>
   );
 };

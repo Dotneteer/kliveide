@@ -49,6 +49,9 @@
 }
 
 .deviceName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -65,6 +68,19 @@
  * exactly one — and a switch per bank (which is what this panel had) says the opposite: that each
  * can be independently on or off.
  */
+/*
+ * "Written since the last stop": the shared changed-state marker after the device's name - a dot in
+ * `--color-state-changed`, never a fill (`dev/ai/ui-theming-intent-and-lessons.md`). 5px, the Memory
+ * Map's size: the name is the row's identity, as an index is in a table.
+ */
+.writtenMark {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-state-changed);
+}
+
 .bankSwitch {
   display: inline-flex;
   flex: 0 0 auto;

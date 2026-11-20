@@ -21,5 +21,8 @@ static uint32_t zxnextPaletteGetSecondWrite(void);
 static uint32_t zxnextPaletteGetStoredValue(void);
 static void zxnextPaletteSetSecondTilemap(uint32_t value);
 static uint32_t zxnextPaletteGetSecondTilemap(void);
+static uint32_t zxnextPaletteGetGeneration(void);
+static uint32_t zxnextPaletteGetDirtyByte(uint32_t offset);
+static uint32_t zxnextPaletteClearDirty(void);
 
 #endif

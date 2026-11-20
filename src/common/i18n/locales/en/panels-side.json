@@ -1005,6 +1005,14 @@
       "device": "The device owning the palette: 'ULA', 'Layer 2', 'Sprites' or 'Tilemap' (hardware names, not translated)"
     }
   },
+  "panels.side.palette.writtenBank": "Bank {bank}: {count, plural, one {# entry} other {# entries}} written since the last stop",
+  "@panels.side.palette.writtenBank": {
+    "context": "One line in the tooltip of the small dot after a device's name in the Next Palettes panel: how many entries of one of the device's two palette banks the program wrote since the machine last stopped (while running: since the run started). One line per bank that was written.",
+    "placeholders": {
+      "bank": "The bank's number, 1 or 2",
+      "count": "The number of palette entries written, 1 to 256"
+    }
+  },
   "panels.side.palette.liveBank": "Live — the machine is drawing with this bank",
   "@panels.side.palette.liveBank": {
     "context": "Line in the tooltip of a Next Palettes bank button when that bank is the one the hardware uses now."

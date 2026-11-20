@@ -233,6 +233,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetPaletteControl: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteSecondWrite: ZxNextWasmV2ExportFunction;
   zxnextGetPaletteStoredValue: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteGeneration: ZxNextWasmV2ExportFunction;
+  zxnextGetPaletteDirtyByte: ZxNextWasmV2ExportFunction;
+  zxnextClearPaletteDirty: ZxNextWasmV2ExportFunction;
   zxnextSetLayer2Enabled: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Enabled: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Resolution: ZxNextWasmV2ExportFunction;
@@ -762,6 +765,9 @@ const requiredV2Exports = [
   "zxnextGetPaletteControl",
   "zxnextGetPaletteSecondWrite",
   "zxnextGetPaletteStoredValue",
+  "zxnextGetPaletteGeneration",
+  "zxnextGetPaletteDirtyByte",
+  "zxnextClearPaletteDirty",
   "zxnextSetLayer2Enabled",
   "zxnextGetLayer2Enabled",
   "zxnextGetLayer2Resolution",

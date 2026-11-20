@@ -218,6 +218,13 @@ type ZxNextWasmV2Checkpoint = {
   lastRenderedFrameTact: number;
 };
 
+/** Palette epochs, shared by every Next machine instance (`ZxNextWasmV2Machine.paletteEpoch`) */
+let paletteEpochCounter = 0;
+function nextPaletteEpoch(): number {
+  paletteEpochCounter = (paletteEpochCounter + 1) % 0x20_0000;
+  return paletteEpochCounter;
+}
+
 export class ZxNextWasmV2Machine
   extends ZxNextWasmHost
   implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource, IAccessProfileSource
@@ -256,6 +263,13 @@ export class ZxNextWasmV2Machine
   private piI2sScratch = new Int16Array(0);
   /** The core's since-pause contention count when the IDE last restarted it (see resetContentionDelaySincePause). */
   private wasmV2ContentionPauseBase = 0;
+  /**
+   * The high half of the palette's version (`getPaletteVersion`): renewed when this machine is
+   * created and whenever its state is restored, so a version a reader saw before never names a
+   * different palette - not across a machine rebuild, nor after a restore that lands on the same
+   * core write count.
+   */
+  private paletteEpoch = nextPaletteEpoch();
   /** The DS1307's host side: which clock it follows, and keeping it (`dev/ai/zxnext-rtc.md`) */
   readonly rtcHost = new NextRtcHost(
     () => this.wasmV2Runtime?.exports as unknown as NextRtcExports | undefined,
@@ -776,6 +790,7 @@ export class ZxNextWasmV2Machine
   restoreHostState(state: unknown): void {
     const runtime = this.requireWasmV2Runtime();
     this.applyHostFields(state);
+    this.paletteRestored(runtime);
     this.emulatedKeyStrokes.length = 0;
     this.setFrameCommand(null);
     this.wasmV2AudioSamples.length = 0;
@@ -818,6 +833,7 @@ export class ZxNextWasmV2Machine
     }
     restoreWasmImage(parts, coreId, runtime.module, runtime.exports.memory.buffer);
     this.applyHostFields(parts.host);
+    this.paletteRestored(runtime);
     // --- As a checkpoint restore: queued work of the replaced run goes; the audio rate is re-pushed
     this.emulatedKeyStrokes.length = 0;
     this.setFrameCommand(null);
@@ -886,6 +902,7 @@ export class ZxNextWasmV2Machine
     this.setFrameCommand(null);
     this.wasmV2AudioSamples.length = 0;
 
+    this.paletteRestored(runtime);
     this.syncCpuFromWasmV2(runtime);
     // --- The image carried the debug view of its time: put back today's (D2)
     this.reapplyLayerDebug(runtime);
@@ -2666,7 +2683,9 @@ export class ZxNextWasmV2Machine
       tilemapTransparencyIndex: ex.zxnextGetNextRegisterDirect(0x4c) & 0x0f,
       reg43Value: ex.zxnextGetNextRegisterDirect(0x43),
       reg6bValue: ex.zxnextGetNextRegisterDirect(0x6b),
-      ulaNextFormat: ex.zxnextGetNextRegisterDirect(0x42)
+      ulaNextFormat: ex.zxnextGetNextRegisterDirect(0x42),
+      version: this.getPaletteVersion(),
+      written: Array.from({ length: 256 }, (_, i) => ex.zxnextGetPaletteDirtyByte(i))
     };
   }
 
@@ -3033,6 +3052,32 @@ export class ZxNextWasmV2Machine
     // --- which the core's own counter does not, so it is measured from the base taken then.
     this.totalContentionDelaySinceStart = wasm.zxnextGetTotalContentionDelaySinceStart();
     this.contentionDelaySincePause = wasm.zxnextGetContentionDelaySincePause() - this.wasmV2ContentionPauseBase;
+  }
+
+  /** A run starts: "written since the last stop" starts over (NEXT_PALETTE_DEBUGGING_PLAN §5) */
+  onRunStart(): void {
+    // --- Clearing marks changes what a reader shows, so it must change the version too; the core's
+    // --- write count is machine state and stays the replay's to count
+    if (this.wasmV2Runtime?.exports.zxnextClearPaletteDirty()) this.paletteEpoch = nextPaletteEpoch();
+  }
+
+  /**
+   * The palette's version: the core's write count under this machine's epoch. A double holds it
+   * exactly while the epoch stays below 2^21.
+   */
+  getPaletteVersion(): number {
+    const generation = this.wasmV2Runtime?.exports.zxnextGetPaletteGeneration() ?? 0;
+    return this.paletteEpoch * 0x1_0000_0000 + (generation >>> 0);
+  }
+
+  /**
+   * The core changed under the wrapper: a new epoch, so readers re-read the palette, and the written
+   * marks go - they belonged to the run that was replaced, and the bitmap is volatile, so the
+   * restore kept the live bytes.
+   */
+  private paletteRestored(runtime: ZxNextWasmV2Runtime): void {
+    this.paletteEpoch = nextPaletteEpoch();
+    runtime.exports.zxnextClearPaletteDirty();
   }
 
   override resetContentionDelaySincePause(): void {

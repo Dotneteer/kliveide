@@ -20,6 +20,29 @@ static uint8_t zxnextPaletteEnableUlaNext;
 static uint8_t zxnextPaletteSecondWrite;
 static uint8_t zxnextPaletteStoredValue;
 
+/*
+ * The palette's change tracking (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5, Phase 1).
+ *
+ * `zxnextPaletteGeneration` counts every stored entry write, every change of a live-bank or ULANext bit
+ * ($43 bits 0-3, $6B bit 4) and every hard reset, whoever caused it. The IDE compares it with the last
+ * value it read, so a panel re-reads 2048 entries only when something changed. It is machine state:
+ * a fast frame and a debug run count the same writes, and a restore brings back the count of the
+ * restored state, so it differs from what the IDE last saw.
+ *
+ * `zxnextPaletteDirty` has one bit per entry (slot * 32 + index / 8, bit index % 8): written since the
+ * host last cleared it, which it does when a run starts, so it reads "written since the last stop". The
+ * host decides when it is cleared, so it is volatile (`build-zxnext-wasm.cjs`).
+ */
+static uint32_t zxnextPaletteGeneration;
+static uint8_t zxnextPaletteDirty[ZXNEXT_PALETTE_COUNT * ZXNEXT_PALETTE_SIZE / 8u];
+
+/* Stores one entry: the only way an entry is written outside a hard reset. */
+static void zxnextPaletteStore(uint32_t slot, uint32_t index, uint16_t value) {
+  zxnextPalettes[slot & 0x07u][index & 0xffu] = value;
+  zxnextPaletteGeneration++;
+  zxnextPaletteDirty[((slot & 0x07u) << 5u) | ((index & 0xffu) >> 3u)] |= (uint8_t)(1u << (index & 0x07u));
+}
+
 static uint32_t zxnextPaletteCurrentSlot(void) {
   switch (zxnextPaletteSelected & 0x07u) {
     case 0u: return 0u;
@@ -38,6 +61,8 @@ static uint32_t zxnextPaletteCurrentSlot(void) {
  * flag, $43 and the stored first byte; the palette RAMs (dpram2, no reset port) keep their contents.
  */
 static void zxnextPaletteReset(void) {
+  /* --- The live banks go back to the first ones: the picture's colours may change */
+  zxnextPaletteGeneration++;
   zxnextPaletteIndex = 0u;
   zxnextPaletteDisableAutoInc = 0u;
   zxnextPaletteSelected = 0u;
@@ -82,12 +107,14 @@ static void zxnextPaletteSetNextReg(uint32_t reg, uint32_t value) {
       zxnextPaletteSecondWrite = 0u;
       break;
     case 0x41u:
-      zxnextPalettes[slot][zxnextPaletteIndex] =
-        (uint16_t)(((byteValue << 1u) | ((byteValue & 0x03u) ? 1u : 0u)) & 0x1ffu);
+      zxnextPaletteStore(slot, zxnextPaletteIndex,
+        (uint16_t)(((byteValue << 1u) | ((byteValue & 0x03u) ? 1u : 0u)) & 0x1ffu));
       if (!zxnextPaletteDisableAutoInc) zxnextPaletteIndex = (uint8_t)(zxnextPaletteIndex + 1u);
       zxnextPaletteSecondWrite = 0u;
       break;
     case 0x43u:
+      /* --- A live-bank or ULANext switch changes the picture's colours without an entry write */
+      if ((byteValue & 0x0fu) != (zxnextPaletteGetNextReg(0x43u) & 0x0fu)) zxnextPaletteGeneration++;
       zxnextPaletteDisableAutoInc = (byteValue & 0x80u) != 0u;
       zxnextPaletteSelected = (byteValue >> 4u) & 0x07u;
       zxnextPaletteSecondSprite = (byteValue & 0x08u) != 0u;
@@ -105,11 +132,11 @@ static void zxnextPaletteSetNextReg(uint32_t reg, uint32_t value) {
       if (!zxnextPaletteSecondWrite) {
         zxnextPaletteStoredValue = byteValue;
       } else {
-        zxnextPalettes[slot][zxnextPaletteIndex] =
+        zxnextPaletteStore(slot, zxnextPaletteIndex,
           (uint16_t)(((uint32_t)zxnextPaletteStoredValue << 1u) |
             (byteValue & 0x01u) |
             ((byteValue & 0x80u) ? 0x200u : 0u) |
-            ((byteValue & 0x40u) ? 0x400u : 0u));
+            ((byteValue & 0x40u) ? 0x400u : 0u)));
         if (!zxnextPaletteDisableAutoInc) zxnextPaletteIndex = (uint8_t)(zxnextPaletteIndex + 1u);
       }
       zxnextPaletteSecondWrite = !zxnextPaletteSecondWrite;
@@ -151,7 +178,7 @@ static uint32_t zxnextPaletteGetUlaNextEnabled(void) { return zxnextPaletteEnabl
 static void zxnextPaletteWriteUlaPlus(uint32_t index, uint32_t grb) {
   uint32_t slot = (zxnextPaletteSelected & 0x04u) ? 4u : 0u;
   uint32_t rgb = (((grb >> 2u) & 0x07u) << 5u) | (((grb >> 5u) & 0x07u) << 2u) | (grb & 0x03u);
-  zxnextPalettes[slot][0xc0u | (index & 0x3fu)] = (uint16_t)(((rgb << 1u) | ((rgb & 0x03u) ? 1u : 0u)) & 0x1ffu);
+  zxnextPaletteStore(slot, 0xc0u | (index & 0x3fu), (uint16_t)(((rgb << 1u) | ((rgb & 0x03u) ? 1u : 0u)) & 0x1ffu));
 }
 
 static uint32_t zxnextPaletteReadUlaPlus(uint32_t index) {
@@ -184,5 +211,23 @@ static uint32_t zxnextPaletteGetPaletteIndex(void) { return zxnextPaletteIndex; 
 static uint32_t zxnextPaletteGetControl(void) { return zxnextPaletteGetNextReg(0x43u); }
 static uint32_t zxnextPaletteGetSecondWrite(void) { return zxnextPaletteSecondWrite; }
 static uint32_t zxnextPaletteGetStoredValue(void) { return zxnextPaletteStoredValue; }
-static void zxnextPaletteSetSecondTilemap(uint32_t value) { zxnextPaletteSecondTilemap = value != 0u; }
+static void zxnextPaletteSetSecondTilemap(uint32_t value) {
+  uint8_t second = value != 0u;
+  if (second != zxnextPaletteSecondTilemap) zxnextPaletteGeneration++;
+  zxnextPaletteSecondTilemap = second;
+}
+static uint32_t zxnextPaletteGetGeneration(void) { return zxnextPaletteGeneration; }
+/* One byte of the dirty bitmap, `0..255` (slot * 32 + index / 8). */
+static uint32_t zxnextPaletteGetDirtyByte(uint32_t offset) {
+  return zxnextPaletteDirty[offset % (ZXNEXT_PALETTE_COUNT * ZXNEXT_PALETTE_SIZE / 8u)];
+}
+/* Clears the dirty bitmap; 1 when any bit was set, so the host knows its readers must re-read. */
+static uint32_t zxnextPaletteClearDirty(void) {
+  uint8_t any = 0u;
+  for (uint32_t i = 0u; i < ZXNEXT_PALETTE_COUNT * ZXNEXT_PALETTE_SIZE / 8u; i++) {
+    any |= zxnextPaletteDirty[i];
+    zxnextPaletteDirty[i] = 0u;
+  }
+  return any != 0u;
+}
 static uint32_t zxnextPaletteGetSecondTilemap(void) { return zxnextPaletteSecondTilemap; }

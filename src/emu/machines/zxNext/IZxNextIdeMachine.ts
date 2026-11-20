@@ -44,6 +44,12 @@ export interface IZxNextIdeMachine {
   getPaletteDeviceInfo(): PaletteDeviceInfo;
 
   /**
+   * The palette's version: changes with every entry write, live-bank flip, reset and state restore
+   * (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5). Cheap; polled with the CPU state.
+   */
+  getPaletteVersion(): number;
+
+  /**
    * The ULA & I/O panel's state. Must not have side effects: it is polled while the machine runs,
    * so it must not perform a port read (the floating-bus value is not sampled here).
    */

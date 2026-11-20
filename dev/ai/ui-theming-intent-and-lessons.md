@@ -1066,6 +1066,13 @@ user (`useNextSpriteState`). On an image rather than a table (the Tilemap Inspec
 dot goes in the changed cell's top-right corner, drawn on the overlay canvas — still a marker, never a
 tint over the machine's pixels.
 
+A sidebar row that names a device rather than an index (the Next Palettes panel's ULA / Layer 2 /
+Sprites / Tilemap rows) carries the same 5px dot right after the device's name, which is the row's
+identity there; its tooltip and accessible name say what changed (the count per bank). The dot is
+there only while something changed: an always-present marker in another state would say nothing.
+"Changed" may honestly mean *written* when that is what the machine can report (a palette entry
+rewritten with its own colour counts); the tooltip's wording says which.
+
 ## A Breakpoint On A Table Row Is The Gutter Dot, Before The Index
 
 A table that is not a code listing still marks a row with a breakpoint the way the Copper List's

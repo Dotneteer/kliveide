@@ -1169,6 +1169,15 @@ class EmuApiImpl {
   }
 
   /**
+   * The ZX Spectrum Next palette's version: it changes whenever an entry is written, a live bank
+   * flips or the machine's state is restored, so a reader can skip `getPalettedDeviceInfo` (2048
+   * entries) while it is unchanged (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5).
+   */
+  async getPaletteVersion(): Promise<number> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a register value in the emulator.
    * @param _register The register name.
    * @param _value The value to set.
@@ -1290,6 +1299,11 @@ export type CpuStateChunk = {
   tacts: number;
   /** The history cursor's steps back from the present; 0 or absent at the present */
   historyPosition?: number;
+  /**
+   * A ZX Spectrum Next's palette version (`getPaletteVersion`), so the state listener refreshes the
+   * panels when a palette changes while nothing else moved; absent on other machines
+   */
+  paletteVersion?: number;
 };
 
 // --- The response with the CPU state information
@@ -1935,6 +1949,16 @@ export type PaletteDeviceInfo = {
   reg43Value: number;
   reg6bValue: number;
   ulaNextFormat: number;
+  /**
+   * The palette's version (`getPaletteVersion`) when this was read; absent from an older reader.
+   */
+  version?: number;
+  /**
+   * The entries written since the last stop: 256 bytes, one bit per entry - byte `slot * 32 + index
+   * / 8`, bit `index % 8`, the slots in the `$43` order (0-3 the first ULA / Layer 2 / sprite /
+   * tilemap banks, 4-7 the second ones). See `NEXT_PALETTE_DEBUGGING_PLAN.md` §5.
+   */
+  written?: number[];
 };
 
 /** The emulated picture: `width` × `height` pixels, four bytes each (R, G, B, A) */

@@ -1998,6 +1998,7 @@ export class MachineController implements IMachineController {
 
     // --- Set up the state
     this.machine.resetContentionDelaySincePause();
+    this.machine.onRunStart?.();
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings - not while replaying from the past: the journal carries the

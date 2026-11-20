@@ -362,6 +362,16 @@ export class NextTestSession {
     return this;
   }
 
+  /**
+   * What the IDE's machine controller does when a run starts (a start, a continue, every step):
+   * the machine's `onRunStart`. The Next clears its palette's "written since the last stop" marks
+   * there (`dev/plans/NEXT_PALETTE_DEBUGGING_PLAN.md` §5); the run methods here do not call it.
+   */
+  beginRun(): this {
+    this.machine.onRunStart?.();
+    return this;
+  }
+
   /** Puts the machine back to the checkpoint captured under `key` (see captureCheckpoint). */
   restoreCheckpoint(key: string): this {
     if (this.checkpoint?.key !== key || !this.machine.tryRestoreCheckpoint(key)) throw new Error(`No checkpoint "${key}" to restore.`);
