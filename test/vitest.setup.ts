@@ -179,7 +179,7 @@ if (typeof HTMLCanvasElement !== "undefined") {
  */
 if (process.env.KLIVE_TEST_TIER === "unit") {
   // --- `cond*`: the breakpoint condition evaluator's test build, which runs the cores' C code
-  const CORE_EXPORT = /^(sp48|sp128|spp3e|timex|zxnext|z88|zx8081|ht1080z|tvc|ep|z80|cond)[A-Z]/;
+  const CORE_EXPORT = /^(sp48|sp128|spp3e|timex|zxnext|z88|zx8081|ht1080z|tvc|ep|sam|z80|cond)[A-Z]/;
   const refuseCore = (instance: WebAssembly.Instance | undefined): void => {
     const core = Object.keys(instance?.exports ?? {}).find((name) => CORE_EXPORT.test(name));
     if (core) {

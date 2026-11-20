@@ -17,6 +17,8 @@ export const MI_HT1080Z = "ht1080z";
 export const MI_TVC = "tvc";
 /** The Enterprise 64/128 (`dev/plans/ENTERPRISE_PLAN.md`): the 128 and the 64 as models */
 export const MI_ENTERPRISE = "ep";
+/** The SAM Coupé (`dev/plans/SAM_COUPE_PLAN.md`): the 512K and the 256K as models */
+export const MI_SAM_COUPE = "sam";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
@@ -29,7 +31,8 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
   MI_TIMEX,
   MI_SCORPION,
   MI_HT1080Z,
-  MI_TVC
+  MI_TVC,
+  MI_SAM_COUPE
 ];
 
 /**
@@ -48,7 +51,8 @@ export const BEAM_POSITION_MACHINE_IDS: string[] = [
   MI_ZXNEXT,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 ];
 
 /**
@@ -113,6 +117,16 @@ export const MC_EP_PALETTE = "epPalette";
 export const MC_EP_HOSTFS = "epHostFs";
 /** Enterprise only: the EXDOS floppy interface card, with its EXDOS 1.3 ROM at segments 20h-21h (true: fitted) */
 export const MC_EP_EXDOS = "epExdos";
+/** SAM Coupé only: the model the core runs (`samMachineInfo.ts`): "512" or "256" */
+export const MC_SAM_MODEL = "samModel";
+/** SAM Coupé only: the internal disk drives fitted, 0, 1 (absent: the default) or 2 */
+export const MC_SAM_DRIVES = "samDrives";
+/** SAM Coupé only: external memory, in MB: 0 (absent) or 1 (one 1 MB pack on ports 80h/81h) */
+export const MC_SAM_EXTMEM = "samExtMem";
+/** SAM Coupé only: the MGT mouse interface on FFFEh (absent or true: fitted) */
+export const MC_SAM_MOUSE = "samMouse";
+/** SAM Coupé only: the ROM: "30" (absent: ROM 3.0) or "31" (`SamRoms.ts`) */
+export const MC_SAM_ROM = "samRom";
 /**
  * The 48K, the 128K (its own timing, not the Pentagon's or the Scorpion's) and the +2A/+3/+2E/+3E: a
  * DivMMC is connected (`dev/plans/DISK_IMAGES_AND_FILE_SYSTEMS_PLAN.md` C5). It boots the esxDOS ROM the

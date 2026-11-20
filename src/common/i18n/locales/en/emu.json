@@ -1299,6 +1299,16 @@
     "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the noise channel of the Enterprise's DAVE sound chip (a channel that plays noise rather than a tone).",
     "maxChars": 10
   },
+  "emu.audioMixer.channel.saaLeft": "SAA left",
+  "@emu.audioMixer.channel.saaLeft": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the SAM Coupé's SAA 1099 sound chip's left output (all six of its channels mixed for the left side). SAA is the chip's name: keep it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.channel.saaRight": "SAA right",
+  "@emu.audioMixer.channel.saaRight": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the name of the SAM Coupé's SAA 1099 sound chip's right output (all six of its channels mixed for the right side). SAA is the chip's name: keep it.",
+    "maxChars": 24
+  },
   "emu.audioMixer.group.blink": "Blink",
   "@emu.audioMixer.group.blink": {
     "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the Cambridge Z88's sound group: the Blink is the name of the Z88's custom chip that drives its speaker. Keep the name.",
@@ -1322,6 +1332,16 @@
   "emu.audioMixer.group.ay8910": "AY-3-8910",
   "@emu.audioMixer.group.ay8910": {
     "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the group of the HT-1080Z's AY sound chip's three channels. AY-3-8910 is the chip's part number: keep it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.saa": "SAA 1099",
+  "@emu.audioMixer.group.saa": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the SAM Coupé's sound chip group. SAA 1099 is the chip's part number: keep it.",
+    "maxChars": 24
+  },
+  "emu.audioMixer.group.asic": "ASIC",
+  "@emu.audioMixer.group.asic": {
+    "context": "Audio mixer (a list of the emulated machine's sound sources, each with a level meter, a spectrum, mute and solo buttons and a level fader): the heading of the SAM Coupé's ASIC group (the beeper and the tape signal, both driven by the custom chip the SAM calls its ASIC). Keep the abbreviation.",
     "maxChars": 24
   },
   "emu.soundPopover.title": "Sound",
