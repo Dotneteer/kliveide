@@ -380,7 +380,20 @@ export const DEVICE = {
   epStrip: "#d6d4d6",
   epStripRule: "#a9a7aa",
   legendEpStripInk: "#1f1f23",
-  epKnob: "#1e201f"
+  epKnob: "#1e201f",
+  /*
+   * The SAM Coupé (sampled from the homecomputermuseum.nl photo, `SamKeyboard.tsx`): beige character,
+   * function and cursor keys, darker taupe control keys, near-black legends, the off-white case and the
+   * dark well the keys sit in
+   */
+  keySam: "#d3cfc1",
+  keySamEdge: "#a9a594",
+  keySamCtl: "#8e897b",
+  keySamCtlEdge: "#6d695e",
+  legendSamInk: "#1d1d1b",
+  samCase: "#dcd9cf",
+  samCaseEdge: "#c4c0b4",
+  samWell: "#3b3a36"
 } as const;
 
 /**

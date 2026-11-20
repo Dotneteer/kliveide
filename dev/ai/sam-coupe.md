@@ -46,13 +46,15 @@ that README before changing the core.
   guest's writes come back as whole MGT images. SAM files in the File Manager's MGT file system
   (`src/common/diskfs/mgtfs.ts`, `dev/ai/file-manager.md`).
 - Tape: TZX/TAP through the shared reader; the deck starts itself while the ROM polls EAR.
+- Virtual keyboard: `SamKeyboard.tsx`, from the homecomputermuseum.nl photo and the mockup the project
+  author approved (without the case's SAM coupé / MGT branding: it costs screen space). Its colours are
+  `--device-*-sam` tokens; `guides-samcoupe.cjs` shoots it for the guide.
 - Panels: ASIC and SAA 1099 (Debug activity, SAM only); the disassembler lists the byte after `RST 8`
   (error codes and DOS hooks).
 - Assembler: `.model SAMCOUPE`; code goes to page 1 at 8000h (`common/samcoupe/codePlacement.ts`).
 
 ## Open
 
-- **No virtual keyboard** yet: the plan asks for its design (from a photograph) to be approved first.
 - **SAASound's PDM amplitude table** for enveloped channels (port SAASound, BSD-3).
 - **Oracle runs in SimCoupé 1.2.17**: the timing programs, interrupt positions and pictures have not been
   compared with it yet.
