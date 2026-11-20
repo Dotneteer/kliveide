@@ -466,6 +466,11 @@ export class SamWasmV2Machine extends SamWasmHost implements IExecutionHistorySo
     this.diskProblems[drive] = this.disks.insert(drive, contents, !!this.getMachineProperty(drive ? DISK_B_WP : DISK_A_WP));
   }
 
+  /** Run's boot disk in drive 1 (the media store keeps the user's disk; the next start puts it back) */
+  protected insertRunDisk(image: Uint8Array): void {
+    this.disks?.insert(0, image, true);
+  }
+
   /** The guest's writes, as the drives' whole new images, for the main process to write back */
   private publishDiskChanges(): void {
     const published = this.disks?.publish();

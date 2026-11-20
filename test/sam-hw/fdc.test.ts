@@ -26,7 +26,7 @@ describe("SAM disks", () => {
     const image = buildMgtImage([{ name: "boot", type: SAM_FILE_CODE, data: bootFile([0x3e, 0x05, 0xd3, 0xfe, 0xf3, 0x18, 0xfe]), startPage: 1, startOffset: 0x8000 }]);
     s.insertDisk(0, image);
     s.bootToCopyright();
-    s.pressKey(SamKeyCode.F9);
+    s.pressKey(SamKeyCode.Space).runFrames(20).pressKey(SamKeyCode.F9);
     s.runUntil(() => s.wasm.samGetBorder() === 0x05, { maxFrames: 400 }, "the boot file's border");
     // --- Into the page below the screen (pages 30-31), at 8000h
     expect(s.wasm.samGetHmpr() & 0x1f).toBe(29);
@@ -39,7 +39,7 @@ describe("SAM disks", () => {
     data[247] = 0;
     s.insertDisk(0, buildMgtImage([{ name: "x", type: SAM_FILE_CODE, data, startPage: 1, startOffset: 0x8000 }]));
     s.bootToCopyright();
-    s.pressKey(SamKeyCode.F9).runFrames(300);
+    s.pressKey(SamKeyCode.Space).runFrames(20).pressKey(SamKeyCode.F9).runFrames(300);
     expect(s.wasm.samGetBorder() & 0x27).not.toBe(0x05);
   });
 

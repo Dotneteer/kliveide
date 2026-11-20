@@ -14,6 +14,7 @@ import { samKeyMappings } from "./SamKeyMappings";
 import { samStrokesForText } from "./SamTyper";
 import { samSysVars } from "./SamSysVars";
 import { SAM_CLOCK, SAM_TACTS_IN_FRAME, resolveSamHardware, type SamHardware } from "./samMachineInfo";
+import { buildSamBootDisk } from "@common/samcoupe/samBootDisk";
 import {
   SAM_RUN_HMPR,
   describeSamPlacementProblem,
@@ -188,10 +189,15 @@ export abstract class SamWasmHost extends Z80MachineBase {
   abstract doWritePort(address: number, value: number): void;
   abstract doReadPort(address: number): number;
 
+  /** Puts a disk image into drive 1 for Run, without changing the media the user chose (the subclass) */
+  protected abstract insertRunDisk(image: Uint8Array): void;
+
   /**
-   * Run and Debug: power on, let the ROM reach its copyright screen (where it waits for a key), write the
-   * program's pages, page it in as a SAM BASIC program runs (HMPR = 1, ROM1 off) and start it. The disk
-   * export (`samBootDisk.ts`) boots the same placement through the Klive loader.
+   * Run and Debug (D7): power on, let the ROM reach its copyright screen (where it waits for a key), put
+   * a disk with Klive's boot loader and the program into drive 1 (`samBootDisk.ts`), leave the copyright
+   * screen with a key and press F9 in the editor: the
+   * ROM boots the loader, the loader loads the program through the disk controller and starts it with
+   * Run's paging. The `.mgt` export writes the same disk. Debugging one unit test injects directly.
    */
   async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
     if (model !== this.machineId) {
@@ -205,12 +211,31 @@ export abstract class SamWasmHost extends Z80MachineBase {
         message: "The SAM shows its copyright screen",
         checkpoint: `sam-copyright-${this.hardware.ramPages}-${this.hardware.rom.id}`
       },
-      { type: "Inject" }
+      { type: "Inject", message: "F9 boots the program through Klive's boot loader" },
+      { type: "KeepPc" }
     ];
   }
 
-  /** Writes the program's pages and pages them in; returns the entry point */
+  /**
+   * Builds the boot disk and presses F9 (the program starts once the loader has loaded it); a unit test
+   * being debugged is written straight into its pages instead
+   */
   injectCodeToRun(codeToInject: CodeToInject): number {
+    const placement = this.placeCode(codeToInject);
+    if (codeToInject.unitTest) return this.injectCodeDirectly(codeToInject);
+    this.insertRunDisk(buildSamBootDisk(placement));
+    // --- The key that leaves the copyright screen is consumed; F9 then boots from the editor (observed,
+    // --- `test/sam-hw/boot-loader.test.ts`)
+    this.queueKeystroke(2, 4, SamKeyCode.Space);
+    this.queueKeystroke(20, 4, SamKeyCode.F9);
+    return placement.entry;
+  }
+
+  /**
+   * Writes the program's pages and pages them in as the loader would; returns the entry point (the unit
+   * tests' and the CLI's fast path, plan §12)
+   */
+  injectCodeDirectly(codeToInject: CodeToInject): number {
     const placement = this.placeCode(codeToInject);
     for (const block of placement.blocks) {
       for (let i = 0; i < block.bytes.length; i++) this.writePageByte(block.page, block.offset + i, block.bytes[i]);
