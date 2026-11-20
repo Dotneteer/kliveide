@@ -22,10 +22,12 @@ import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
 
 /** One key unit in the drawing */
 const U = 100;
-/** The case's frame around the key well (the project author's review: keep it thin) */
-const MARGIN = 0.24;
+/** The key well's padding around the keys; the case shows only as a hairline (the project author's review) */
+const MARGIN = 0.12;
 /** The gap between two keys, in drawing units */
 const GAP = 7;
+/** The cap's inset on the key's base: a narrow shaded side, as in the photo (the project author's review) */
+const CAP_INSET = 4;
 /** The cluster's first column */
 const CLUSTER_X = 15;
 /** The whole keyboard in drawing units */
@@ -216,7 +218,6 @@ export const SamKeyboard = ({ width, height, apiLoaded }: Props) => {
 
   const color = (token: string) => theme.getThemeProperty(token);
   const caseColor = color("--bgcolor-keyboardsam");
-  const caseEdge = color("--color-keyboardsam-edge");
   const well = color("--bgcolor-keyboardsam-well");
   const light = { face: color("--bgcolor-keysam"), edge: color("--color-keysam-edge"), pressed: color("--bgcolor-hilitedsam") };
   const faces: Record<SamKeyKind, { face: string; edge: string; pressed: string }> = {
@@ -277,7 +278,7 @@ export const SamKeyboard = ({ width, height, apiLoaded }: Props) => {
       <g key={id} transform={`translate(${(X(def.x) + GAP / 2).toFixed(1)} ${(Y(def.y) + GAP / 2).toFixed(1)})`} data-sam-key={def.name}>
         <g {...zoneProps(id, code, "main")}>
           <g fill={edge}>{outline(def, w, h, 0)}</g>
-          <g fill={down ? pressed : face}>{outline(def, w, h, 9)}</g>
+          <g fill={down ? pressed : face}>{outline(def, w, h, CAP_INSET)}</g>
           {label}
         </g>
         {def.top && (
@@ -304,9 +305,7 @@ export const SamKeyboard = ({ width, height, apiLoaded }: Props) => {
         onContextMenu={(e) => e.preventDefault()}
         style={{ flexShrink: 0 }}
       >
-        <rect width="100%" height="100%" rx={20} fill={caseColor} />
-        <rect x={3} y={3} width={VW - 6} height={VH - 6} rx={18} fill="none" stroke={caseEdge} strokeWidth={3} />
-        <rect x={X(0) - 10} y={Y(0) - 10} width={(CLUSTER_X + 3) * U + 14} height={5 * U + 14} rx={8} fill={well} />
+        <rect width="100%" height="100%" rx={12} fill={well} stroke={caseColor} strokeWidth={4} />
         {keys}
       </svg>
     </Column>

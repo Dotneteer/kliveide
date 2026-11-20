@@ -283,7 +283,6 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--device-key-ctl-edge-sam": DEVICE.keySamCtlEdge,
     "--device-legend-sam-ink": DEVICE.legendSamInk,
     "--device-body-sam": DEVICE.samCase,
-    "--device-body-edge-sam": DEVICE.samCaseEdge,
     "--device-well-sam": DEVICE.samWell,
     /*
      * The accent on a device surface, whatever the app's tone: device surfaces have no light mode

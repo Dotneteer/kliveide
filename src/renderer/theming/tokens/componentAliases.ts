@@ -342,7 +342,6 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-hilitedep-stop": "var(--accent-device-pressed-ep-stop)",
   // --- The SAM Coupé virtual keyboard (`SamKeyboard.tsx`)
   "--bgcolor-keyboardsam": "var(--device-body-sam)",
-  "--color-keyboardsam-edge": "var(--device-body-edge-sam)",
   "--bgcolor-keyboardsam-well": "var(--device-well-sam)",
   "--bgcolor-keysam": "var(--device-key-sam)",
   "--color-keysam-edge": "var(--device-key-edge-sam)",
