@@ -1,7 +1,8 @@
 # SAM Coupé on the WASM Core — Implementation Plan
 
-**Status:** Draft (2026-11-18). Nothing implemented. Decisions D1–D10 (§16) are **proposed** and wait
-for the project author; D3 (ROM rights) also waits for an answer from the ROM's author.
+**Status:** Draft (2026-11-18; ROM rights updated 2026-11-20). Nothing implemented. Decisions D1–D10
+(§16) are **proposed** and wait for the project author. D3 (ROM rights) is settled by Andy Wright's
+2008 grant (§16).
 **Input:** the research pack `dev/research/sam-coupe/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM position;
 - `ASIC_VIDEO_MEMORY_TIMING.md` §1–§5 (the frame, paging, modes, **contention**, interrupts) and §8;
@@ -45,7 +46,9 @@ and harder in one: **there is no permissively licensed SAM emulator to port from
 - **Running** SimCoupé 1.2.17 as a behavioural oracle is allowed (the Klive BASIC plan's D12, the
   Enterprise's D1): only the observed results of Klive's own test programs are recorded, never generated
   code, and never in CI. The MiSTer core is a second opinion if someone runs it on hardware.
-- **ROMs: open, decision D3** (§16).
+- **ROMs: settled, decision D3** (§16): bundled under Andy Wright's 2008 grant, which names the ROMs
+  ("all my SAM Coupé titles (including ROMs)… freely (re)distributed"). Recorded in
+  `src/public/roms/sam-roms-readme.txt`.
 - **ROM annotations:** none in this plan. A published annotated ROM 3.0 disassembly exists
   (worldofsam); under `dev/ai/rom-annotations/README.md` rule D4 it is **never fetched into the repository
   or read for this work**. Facts the emulator needs from the ROM (the memory-size probe, the boot and
@@ -134,7 +137,7 @@ From `dev/ai/wasm-migration-intent-and-lessons.md` ("Shared CPU Intent") and the
 | Keyboard matrix, joysticks | SOUND §3 | `sam-keyboard.c`, `SamKeyCode.ts` |
 | Mouse | SOUND §4 | `sam-mouse.c` |
 | Tape hardware and the ROM's format | SOUND §5 | `sam-tape.c`, `SamTapeFile.ts` |
-| ROMs, versions, CRCs, rights | STORAGE §2 | `SamRoms.ts`, §16 D3 |
+| ROMs, versions, CRCs, rights | STORAGE §2 | `src/public/roms/sam-*.rom`, `sam-roms-readme.txt`, `SamRoms.ts`, §16 D3 |
 | Boot sequence, landmarks, jump table, sysvars | STORAGE §3 | §9.3 loader, §11 debugger, `SamSysVars.ts` |
 | VL1772 ports, directory, file header, images | STORAGE §4 | `sam-fdc.c` on `common/wasm/wd1793.c`, `SamDiskImage.ts`, `mgtfs.ts` |
 | Loading code without a disk, user code placement | STORAGE §6 | §12 |
@@ -194,6 +197,10 @@ The ASIC's pixel clock is 12 MHz: a mode-3 pixel is one clock, a mode 1/2/4 pixe
 The ROM boots nothing by itself; F9/`BOOT` loads track 4 sector 1 into the page below the screen at
 8000h and jumps to 8009h if bytes 256–259 say "BOOT" (STORAGE §3.2). Everything after that is the DOS on
 the disk — SAMDOS, whose rights are unknown (STORAGE §2.3, OQ2).
+- Andy Wright's 2008 grant (D3) covers his DOSes too (MasterDOS; and SAMDOS if it is his: MGT
+  contracted him for "the ROM and DOS", while Spectrum Computing credits SAMDOS to Bruce Gordon,
+  STORAGE OQ2). Even so, Run should not depend on which DOS a user has, and an exported disk should boot
+  with nothing else on it.
 - **Proposal: a Klive-written boot loader**, as the Enterprise got its own `FILE:` ROM: Z80 source in the
   repository (`src/public/sam/sam-klive-boot.asm`), built to a boot file by Klive's own assembler in a
   script, with a test that the shipped image matches the source.
@@ -282,14 +289,15 @@ A separation test like the Enterprise's: the host imports no TS device code.
 
 | Model id | RAM | ROM | Notes |
 |---|---|---|---|
-| `sam512` (default) | 512K (pages 0–31) | 3.0 (or 3.1, D3) | The common machine; most software assumes 512K |
+| `sam512` (default) | 512K (pages 0–31) | 3.0 (D3) | The common machine; most software assumes 512K |
 | `sam256` | 256K (pages 0–15) | same | Pages 16–31 read FFh (OQ1 default) |
 
 Machine config keys:
 - `MC_SAM_DRIVES`: 0, 1 (default) or 2 internal drives.
 - `MC_SAM_EXTMEM`: 0 (default) to 4 MB of external packs (Phase 9).
 - `MC_SAM_MOUSE` (on by default): the mouse interface on FFFEh.
-- `MC_SAM_ROM`: the bundled image, or a user-supplied file (D3).
+- `MC_SAM_ROM`: the bundled ROM 3.0 (default) or 3.1, or a user-supplied file (an Élite's 3.5, a
+  boot ROM).
 
 ---
 
@@ -643,7 +651,7 @@ Each gets one constant or define, its default and its reason in the core README.
 
 | Phase | Content | Exit criteria |
 |---|---|---|
-| **0. Decisions** | Settle D1–D10 (§16). Write to Dr Andy Wright about the ROM (D3). Fetch the reference documents the pack lists (the Technical Manual PDF or Drissen's transcription, the datasheets repository, the 1 MB pack manual), not the annotated ROM disassembly. Pin SAASound's commit into `dev/research/sam-coupe/saasound/`. | D1–D10 accepted; D3 either settled or "user-supplied ROM until settled". |
+| **0. Decisions** | Settle D1–D10 (§16). Add ROM 3.0 and 3.1 to `src/public/roms/` from World of SAM's archive with `sam-roms-readme.txt` (the 2008 grant, its source, the CRCs) and a `test/machines/sam-rom-images.test.ts` like the Enterprise's. Fetch the reference documents the pack lists (the Technical Manual PDF or Drissen's transcription, the datasheets repository, the 1 MB pack manual), not the annotated ROM disassembly. Pin SAASound's commit into `dev/research/sam-coupe/saasound/`. | D1–D10 accepted; the ROMs committed with their readme and test. |
 | **1. Skeleton** | `sam.c` TU; pages and LMPR/HMPR/VMPR; ROM upload; ports; the cell stepper with frame/line interrupts and STATUS but no pixels; keyboard matrix; frame loop from the frame interrupt; loader; host; registry entry for `sam512`; build and contract scripts. | `bootToBasic()` reaches the copyright screen's key wait; the ROM reports 512K (ALLOCT); `asic.test.ts`, `memory.test.ts`. |
 | **2. Timing** | §6: memory and I/O contention, the phase sweep export. | `timing.test.ts` reproduces the Owen-table values; the SAM in `debug-loop-equivalence.test.ts`; an oracle comparison with SimCoupé recorded. |
 | **3. Picture** | §7: the four modes, CLUT, palette, border, SOFF, FLASH, ATTR, LPEN/HPEN, the TV window, beam position. | The copyright screen and the BASIC prompt hashes (checked by eye); `video.test.ts`; a mode-3/mode-4 split screen and a line-interrupt palette effect seen in the running app. |
@@ -653,7 +661,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | **7. IDE** | §11: partitions, ASIC and SAA panels, disassembler (`RST 8`), SysVars, charset, menus, state files, history, profile, reverse debugging; the BASIC listing if §11.1 finds the table. | History, profile, charset, debug-state tests; the SAM in the export contract, journal replay, state determinism, debug recordings and hardware-specs suites; panels and memory view seen in the running app. |
 | **8. Assembler, Run and tape** | §9.3 loader, §12 (`.model SAMCOUPE`, Run/Debug, exports, template, CLI), §9.4 tape. | `sam-klive-boot.test.ts`, `code-injection.test.ts`, `project-templates.test.ts`, `tape.test.ts`; `klive run --machine sam`; a new project from the template runs; an exported `.mgt` boots in SimCoupé. |
 | **9. 256K and external memory** | `sam256`; `MC_SAM_EXTMEM`, ports 80h/81h, uncontended external pages. | `sam256.test.ts` (the ROM reports 256K), `extmem.test.ts`; the TopGun demo by hand. |
-| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: SAASound, SAMdisk if ported; the ROM readme), docs pages, an `AGENTS.md` section, `dev/ai/sam-coupe.md` (decisions, as-built notes, open items), the landing page's machine table, `README.md`'s machine list, the competitive analysis (D10), lessons in `dev/ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, disks and tape checked in the built app. |
+| **10. Ship** | Notices (`THIRD_PARTY_NOTICES.md`: SAASound, SAMdisk if ported; the ROM readme and Andy Wright's grant), docs pages, an `AGENTS.md` section, `dev/ai/sam-coupe.md` (decisions, as-built notes, open items), the landing page's machine table, `README.md`'s machine list, the competitive analysis (D10), lessons in `dev/ai/wasm-migration-intent-and-lessons.md`, one `feature` changeset. `npm run test:slow` before release. | Gates, `test:fast`, `test:slow`, `doc:build` + `doc:check` green; both models, Run, disks and tape checked in the built app. |
 
 The changeset comes with the commit that completes the plan (AGENTS.md); phase commits carry none.
 Docs for Phase 10: `docs/content/en/guides/machines/sam-coupe.mdx` (screenshots from a
@@ -680,14 +688,27 @@ an "Under the hood" article on the ASIC's contention and the line interrupt, wri
   oracle only.
 - **D2 — one machine ID, `sam`, with the models `sam512` (default) and `sam256`** (§4.3).
   *Recommendation: yes.*
-- **D3 — ROMs.** *Open.* The author (Dr Andy Wright) gave written permission for worldofsam's ROM archive
-  and a blanket grant to distribute his SAM titles freely; SimCoupé ships the ROM (3.1) crediting his
-  permission. None of it says "bundled in another product". *Recommendation:* write to Andy Wright (and ask
-  Simon Owen for SimCoupé's wording) for permission covering ROM 3.0/3.1 in Klive's installer, quoting the
-  Enterprise precedent (free use, no charge, names kept). Until an answer, development and CI use the
-  ROM fetched by a script into the git-ignored `.local/` (the SD-card pattern) and the app asks the user for
-  a ROM file; `SamRoms.ts` keeps this a settings change, not a rewrite. **Ship 3.0 or 3.1?** 3.1 (MAME's
-  default and SimCoupé's actual image) unless Wright's permission names 3.0.
+- **D3 — ROMs.** *Settled 2026-11-20:* bundled. Dr Andrew J. A. Wright, the ROM's author, wrote on
+  16 April 2008, in reply to Hans de Goede on the Fedora extras commits list (the thread "Sam Coupe
+  ROM"): "I hereby allow all my SAM Coupé titles (including ROMs) and associated manuals to be freely
+  (re)distributed." World of SAM reproduces it on its ROM page (https://www.worldofsam.org/products/rom,
+  "Trivia"), beside the archive's own 2006 permission
+  (https://www.worldofsam.org/copyrights/sam-coupe-rom-images). The grant names the ROMs and sets no
+  conditions; Klive still ships the images unmodified, charges nothing and credits him, as it does the
+  Enterprise's.
+  - `src/public/roms/sam-roms-readme.txt` quotes the sentence with its date, recipient and both URLs,
+    and lists the CRCs; `test/machines/sam-rom-images.test.ts` checks them.
+  - **Still to do in Phase 0:** read the original message in the Red Hat archive
+    (https://listman.redhat.com/archives/fedora-extras-commits/2008-April/msg07874.html, unreachable
+    from the research environment on 2026-11-20) and record that the wording matches.
+  - **Which images:** ROM **3.0** as the default (the last official release, and the one Simon Owen's
+    `samrom` source builds), and **3.1** as an option (MAME's default and SimCoupé's bundled image; it
+    differs only in the version byte and "PLC"). World of SAM offers both (`SAM30-PLC.zip`, `SAM31.zip`)
+    and the SAM Computers 3.0 variant; record which 3.0 (the "plc" or "PLC" splash) matches MAME's CRC
+    e535c25d. Not the 3.5 (West Coast's Élite ROM is not Wright's alone) or the third-party boot ROMs.
+  - `SamRoms.ts` keeps a user-supplied ROM a setting, for the Élite and boot ROMs.
+  - What the grant does **not** settle: using the ROM's *source* (`samrom`, GPL-2.0) to write Klive's
+    annotations. That stays D10's question.
 - **D4 — time base:** whole T-states, the frame starting at the frame interrupt, the ASIC stepped per 8-T
   cell inside `Z80_TACT_PLUS_N` (§3.1). *Recommendation: yes.*
 - **D5 — contention:** the closed-form 4/8-T grid with named phase constants fitted to Owen's published
@@ -696,23 +717,29 @@ an "Under the hood" article on the ASIC's contention and the line interrupt, wri
   *Recommendation: yes.*
 - **D7 — program loading:** a Klive-written boot loader in the repository; Run builds an MGT image and
   presses F9; direct injection only for tests and the CLI (§3.4, §9.3). *Recommendation: yes.* The
-  alternatives — bundling SAMDOS (no permission trail) or injection for Run (skips the ROM's and the
-  controller's real behaviour, and the export would not be the thing that was run) — are worse.
+  alternatives — making Run depend on a DOS (SAMDOS's authorship is unclear, and a user's DOS disk may
+  be any of four) or injection for Run (skips the ROM's and the controller's real behaviour, and the
+  export would not be the thing that was run) — are worse.
 - **D8 — SAA model defaults:** SAASound's where it and MAME disagree (§8.1). *Recommendation: yes*; it is
   the only one checked against a chip.
-- **D9 — no DOS bundled.** *Recommendation: yes* for SAMDOS and MasterDOS; B-DOS (freeware) only with the
-  Atom Lite follow-up.
+- **D9 — no DOS bundled in this plan.** *Recommendation: yes.* Run and export use the Klive loader (D7),
+  so no DOS is needed. Wright's 2008 grant would allow bundling MasterDOS (and SAMDOS, if STORAGE OQ2
+  shows it is his), and B-DOS is freeware: offering a DOS disk with Klive is a follow-up, once the
+  authorship of SAMDOS is settled.
 - **D10 — the competitive analysis's ROM-annotation claim.** Either the SAM ships after a ROM 3.0/3.1
   annotation plan, or the claim names the SAM as the exception (as it already names IS-BASIC 2.0).
-  *Recommendation:* name the exception; annotate in a follow-up plan.
+  *Recommendation:* name the exception; annotate in a follow-up plan. Wright's grant covers
+  redistributing the ROM, not deriving annotations from its GPL-2.0 source (`samrom`): that follow-up
+  either writes them from scratch (rule D4) or first asks him, as the Z88's OZ annotations were done
+  from OZ's source with its author's permission.
 
 ---
 
 ## 17. Risks
 
-- **ROM rights (D3).** The whole machine depends on a ROM whose bundling permission is not in writing in a
-  form that covers Klive. Keep every ROM access behind `SamRoms.ts` from Phase 1, and keep tests working
-  with a fetched ROM, so a "no" means a settings dialog, not a rewrite.
+- **ROM rights (D3).** The grant is an email reproduced on a fan site, not a licence file. Read the
+  original in the Red Hat archive in Phase 0 and keep the readme's quote exact. Keep every ROM access
+  behind `SamRoms.ts`, so a later objection means a settings dialog, not a rewrite.
 - **No permissive reference.** Every ASIC behaviour is written from prose and measurements, and checked
   only against a GPL oracle we may run but not read. The research pack must carry every fact the code
   needs; a gap found during implementation is closed by a Klive test on the oracle, recorded in Klive's

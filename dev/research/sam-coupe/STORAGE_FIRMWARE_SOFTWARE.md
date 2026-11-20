@@ -102,6 +102,7 @@ A per-version changelog was not found (OQ3).
 | Item | What exists | Source |
 |---|---|---|
 | Who holds the ROM rights | Quazar calls Dr Andrew Wright "the author and copyright holder of the Sam ROM". *Inference*: no source shows MGT/SAM Computers/West Coast asserting rights in the ROM code; MGT's own copyright line is in the ROM splash. Who owns MGT's residual rights after the 1990 receivership and the 2005 West Coast liquidation is undocumented. worldofsam has an "MGT" copyright entry with **no status and no text** (posted 25 March 2022). | https://samcoupe.com/hardrom.htm ; https://www.worldofsam.org/copyrights/mgt |
+| **Wright's 2008 grant (names the ROMs)** | "I hereby allow all my SAM Coupé titles (including ROMs) and associated manuals to be freely (re)distributed." Signed Andrew J. A. Wright, 16/04/2008, in a reply ("Re: Sam Coupe ROM") to Hans de Goede on the Fedora extras commits list. No conditions stated. Found 2026-11-20, after this file was first written; it settles OQ1 for redistribution (not for deriving work from the ROM's source). Reproduced in World of SAM's "Trivia"; the original was not reachable from the research environment. | https://www.worldofsam.org/products/rom ; https://listman.redhat.com/archives/fedora-extras-commits/2008-April/msg07874.html |
 | ROM archive permission | worldofsam's ROM image archive (many versions, 2006) is released "with kind permission from the ROM author, Dr Andy Wright" (status "Granted", 15 May 2006). No wording about emulators. | https://www.worldofsam.org/copyrights/sam-coupe-rom-images |
 | Andy Wright's blanket grant | "I hereby allow distribution of all my SAM Coupé titles and associated manuals freely" (signed 1 Oct 2006). The full sentence ends "…on any site carrying such material". It does not name the ROM. | https://www.worldofsam.org/copyrights/andy-wright |
 | SimCoupé | ReadMe credits "Dr Andy Wright - Permission to distribute the SAM ROMs". SimCoupé is GPL-2.0 (GitHub API `gpl-2.0`; file headers "version 2 … or (at your option) any later version") but ships `samcoupe.rom`, `atom.rom`, `atomlite.rom` and `samdos2.sbt` as resources outside that licence. | https://github.com/simonowen/simcoupe (ReadMe.md, Resource/) |
@@ -455,7 +456,8 @@ page/offset; SAD/EDSK for existing software.
 
 ## Open questions
 
-1. **OQ1 ROM bundling permission**: is Andy Wright's permission (worldofsam 2006, SimCoupé credit)
+1. **OQ1 ROM bundling permission** — *settled 2026-11-20 by the 2008 grant above (§2.3); confirm its
+   wording in the Red Hat archive.* The original question: is Andy Wright's permission (worldofsam 2006, SimCoupé credit)
    enough to bundle ROM 3.0/3.1 in Klive's installer? Who, if anyone, holds MGT's residual rights
    (the worldofsam "MGT" entry is empty)? Ask Wright directly; ask Simon Owen for the wording of
    SimCoupé's permission.

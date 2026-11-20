@@ -53,14 +53,17 @@ against the repository (GitHub API) and the file headers.
   checked on a real SAM; kosarev/z80 issue #10 (a logic-analyser trace) puts the wait sampling at T2
   of memory cycles and TW of I/O cycles. The pages carry no licence: record facts in Klive's words,
   do not copy the tables.
-- **ROMs: not settled.** Dr Andy Wright is named as the author and copyright holder of the SAM ROM.
-  Written permission exists for worldofsam's ROM archive (2006), and Wright's blanket 2006 grant covers
-  free distribution of "all my SAM Coupé titles" on any site carrying them, but **no wording found
-  covers bundling the ROM in another product**; SimCoupé's credit says only that Wright gave
-  permission to distribute the ROMs. Who holds MGT's residual rights is undocumented. SimCoupé's
-  bundled image is in fact **ROM 3.1** (CRC32 0b7e3585), which differs from 3.0 (e535c25d) only in the
-  version byte and "PLC" vs "plc". **SAMDOS has no permission trail at all**, though SimCoupé and z88dk
-  ship it; B-DOS is explicitly freeware. See STORAGE §2.3 and the plan's decision D3.
+- **ROMs: settled on 2026-11-20.** Dr Andrew J. A. Wright, the ROM's author, wrote on 16 April 2008
+  (to Hans de Goede, Fedora extras commits list): "I hereby allow all my SAM Coupé titles (including
+  ROMs) and associated manuals to be freely (re)distributed." World of SAM reproduces it on its ROM page
+  (https://www.worldofsam.org/products/rom), which also offers 3.0 ("plc" and "PLC"), the SAM Computers
+  3.0 and 3.1. The original message
+  (https://listman.redhat.com/archives/fedora-extras-commits/2008-April/msg07874.html) was not reachable
+  from the research environment; read it before committing the readme. Klive can therefore bundle the
+  ROMs. SimCoupé's bundled image is in fact **ROM 3.1** (CRC32 0b7e3585), which differs from 3.0
+  (e535c25d) only in the version byte and "PLC" vs "plc". The grant also covers Wright's MasterDOS and
+  MasterBASIC; **SAMDOS's author is unclear** (credited to Bruce Gordon, though MGT contracted Wright for
+  "the ROM and DOS"); B-DOS is explicitly freeware. See STORAGE §2.3 and the plan's decision D3.
 - **The ROM-annotation rule applies here too**: a published annotated ROM 3.0 disassembly exists
   (worldofsam). Under `dev/ai/rom-annotations/README.md` D4 it must never feed Klive's sidecars; facts
   the emulator needs from the ROM (the memory-size probe, the boot landmarks) come from running the ROM
@@ -90,9 +93,9 @@ Each file's own "Open questions" section has the full list.
 
 ## Suggested next steps before the plan is accepted
 
-- Ask Dr Andy Wright (or Simon Owen, for SimCoupé's correspondence) for wording that covers bundling
-  ROM 3.0/3.1 in Klive's installer (STORAGE OQ1). Until then the plan keeps ROM loading behind one
-  table so a user-supplied ROM is a setting, not a rewrite.
+- Read the 2008 grant in the Red Hat archive and confirm the wording World of SAM reproduces; then add
+  ROM 3.0 and 3.1 to `src/public/roms/` with a readme quoting it (the Enterprise's `ep-roms-readme.txt`
+  pattern).
 - Fetch, with permission, the reference documents the files list: the Technical Manual v3.0 PDF (or
   Stefan Drissen's Markdown transcription), the sam-users datasheet repository (SAA 1099, VL1772), the
   One Meg RAM pack manual, Owen's ATTR test program. **Not** the annotated ROM disassembly (above).
