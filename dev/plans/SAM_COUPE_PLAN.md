@@ -1,8 +1,9 @@
 # SAM Coupé on the WASM Core — Implementation Plan
 
-**Status:** Draft (2026-11-18; ROM rights updated 2026-11-20). Nothing implemented. Decisions D1–D10
-(§16) are **proposed** and wait for the project author. D3 (ROM rights) is settled by Andy Wright's
-2008 grant (§16).
+**Status:** Implemented on 2026-11-20 (branch `sam-coupe`), D1–D10 accepted as recommended. The as-built
+record, the deviations and what is open are `dev/ai/sam-coupe.md`; the core's hardware model is
+`src/emu/machines/samcoupe/wasm/README.md`. Not done: the virtual keyboard (its design waits for
+approval), the "Under the hood" article, oracle runs in SimCoupé, SAASound's PDM table.
 **Input:** the research pack `dev/research/sam-coupe/`. Read these first:
 - `README.md`: the machine at a glance, the disagreements table and the ROM position;
 - `ASIC_VIDEO_MEMORY_TIMING.md` §1–§5 (the frame, paging, modes, **contention**, interrupts) and §8;

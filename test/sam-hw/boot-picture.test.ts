@@ -9,8 +9,9 @@ import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
 
 /*
  * The boot pictures (plan Phase 3): ROM 3.0's copyright screen on both models (the colour bars, the
- * company line and the memory size), and SAM BASIC's empty screen with its cursor after a key. The hashes were recorded only after the pictures were checked by eye; `SAM_SHOTS_PNG=<dir>`
- * writes them as PNGs.
+ * company line and the memory size), and SAM BASIC's empty screen with its cursor after a key. The
+ * hashes were recorded only after the pictures were checked by eye; `SAM_SHOTS_PNG=<dir>` writes them
+ * as PNGs.
  */
 
 const EXPECTED: Record<string, string> = {

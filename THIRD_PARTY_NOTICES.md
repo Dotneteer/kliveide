@@ -123,6 +123,17 @@ not be removed. They will be removed on request from a rights holder. The detail
 images and the file list are kept beside them in `ep-roms-readme.txt`. `ep-klive-fileio.rom` is not
 one of them: it is Klive's own, assembled from `src/emu/machines/enterprise/fileio/ep-klive-fileio.asm`.
 
+## The SAM Coupé ROMs
+
+`src/public/roms/sam-rom30.rom` and `sam-rom31.rom` (shipped under `roms/`) are the SAM Coupé's system
+ROM, versions 3.0 and 3.1 (SAM BASIC and its firmware), by Dr Andrew J. A. Wright for Miles Gordon
+Technology plc, unmodified. They are not covered by the MIT licence above, nor by Klive's own. They are
+included under the author's grant of 16 April 2008: "I hereby allow all my SAM Coupé titles (including
+ROMs) and associated manuals to be freely (re)distributed." Klive charges nothing for them and credits
+the author; they will be removed on request from a rights holder. The details, the grant's sources and the
+images' checksums are kept beside them in `sam-roms-readme.txt`. Klive's SAM boot loader is not part of
+them: it is Klive's own, assembled from `src/public/sam/sam-klive-boot.asm`.
+
 ## The ZX Spectrum +2A/+3 ROMs
 
 `src/public/roms/spp3-40-*.rom`, `spp3-41-*.rom` and `spp3-41es-*.rom` (shipped under `roms/`) are
