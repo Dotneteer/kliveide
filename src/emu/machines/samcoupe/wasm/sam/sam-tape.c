@@ -3,8 +3,13 @@
  *
  * The host turns a tape file into a list of half-periods in 3.5 MHz Spectrum T-states (the shared tape
  * layer's unit), which the core plays at the SAM's 6 MHz with the remainder carried: an edge of n
- * Spectrum T-states lasts n * 12 / 7 SAM T-states. The tape plays while the host says so (the SAM has
- * no motor control); EAR idles at 1. While a tape plays, its level is echoed into the audio.
+ * Spectrum T-states lasts n * 12 / 7 SAM T-states. EAR idles at 1. While a tape plays, its level is
+ * echoed into the audio.
+ *
+ * The SAM has no motor control, so the deck plays on its own (SimCoupé starts its tape the same way, from
+ * the ROM's behaviour): a frame in which the CPU reads FEh at least SAM_TAPE_AUTOPLAY_READS times - a
+ * loader polling EAR - starts a loaded tape, and SAM_TAPE_AUTOSTOP_FRAMES frames in a row with fewer stop
+ * it again where it is. The host's Play and Stop override it (`samTapePlay`).
  *
  * SAVE: every MIC change while recording is kept as a half-period (in SAM T-states) in a ring the host
  * decodes.
@@ -30,6 +35,13 @@ static uint32_t samTapeMicSince;
 
 static uint64_t samTapeClock7(void);
 
+#define SAM_TAPE_AUTOPLAY_READS 1000u
+#define SAM_TAPE_AUTOSTOP_FRAMES 50u
+/* FEh reads in the current frame, and frames in a row with few */
+static uint32_t samTapeEarReads;
+static uint32_t samTapeQuietFrames;
+static uint8_t samTapeAuto = 1u;
+
 /* Plays the edges that are due by now */
 static void samTapeAdvance(void) {
   if (!samTapePlaying) return;
@@ -48,6 +60,7 @@ static void samTapeAdvance(void) {
 }
 
 static uint8_t samTapeEarBit(void) {
+  samTapeEarReads++;
   samTapeAdvance();
   return samTapeLevel ? 0x40u : 0u;
 }
@@ -61,6 +74,22 @@ static void samTapeMicChanged(uint8_t border) {
   }
   samTapeMicLevel = level;
   samTapeMicSince = cpu.tacts;
+}
+
+void samTapePlay(uint32_t play);
+
+/* The frame ends: the auto-play rule */
+static void samTapeFrameEnds(void) {
+  if (samTapeAuto) {
+    if (!samTapePlaying && samTapeEarReads >= SAM_TAPE_AUTOPLAY_READS && samTapePosition < samTapeLength) {
+      samTapePlay(1u);
+      samTapeQuietFrames = 0u;
+    } else if (samTapePlaying) {
+      samTapeQuietFrames = samTapeEarReads < SAM_TAPE_AUTOPLAY_READS ? samTapeQuietFrames + 1u : 0u;
+      if (samTapeQuietFrames >= SAM_TAPE_AUTOSTOP_FRAMES) samTapePlay(0u);
+    }
+  }
+  samTapeEarReads = 0u;
 }
 
 static void samTapeReset(void) {
@@ -92,6 +121,8 @@ void samTapeRewind(void) {
   samTapeLevel = 1u;
 }
 uint32_t samTapeGetPosition(void) { return samTapePosition; }
+/* Whether the deck starts and stops itself (the default) */
+void samTapeSetAuto(uint32_t on) { samTapeAuto = on != 0u; }
 uint32_t samTapeGetPlaying(void) { return samTapePlaying; }
 uint32_t samTapeGetLevel(void) { return samTapeLevel; }
 void samTapeSetRecording(uint32_t on) {

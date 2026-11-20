@@ -49,8 +49,9 @@ export function samTapeFromBlocks(blocks: readonly TapeDataBlock[]): SamTape {
 
 /** Decodes the SAVE recording (MIC half-periods in SAM T-states) into bytes per block, Spectrum style */
 export function samDecodeSavedEdges(edges: ArrayLike<number>): Uint8Array[] {
-  // --- At 6 MHz: a pilot half-period is about 3716 T, a 0 bit's 1466 T, a 1 bit's 2931 T at speed 112;
-  // --- faster speeds scale all of them. Bits are told apart by comparing each pair with the block's sync.
+  // --- At 6 MHz the ROM's speed 112 makes a pilot half-period of 3688 T, sync pulses of about 1000 T, a 0
+  // --- bit's 1496 T and a 1 bit's 2984 T (observed, `test/sam-hw/tape.test.ts`); faster speeds scale them.
+  // --- Bits are told apart by comparing each pair with the block's pilot.
   const blocks: Uint8Array[] = [];
   let i = 0;
   while (i < edges.length) {
@@ -76,7 +77,8 @@ export function samDecodeSavedEdges(edges: ArrayLike<number>): Uint8Array[] {
     while (i + 1 < edges.length) {
       const a = edges[i];
       const b = edges[i + 1];
-      if (a > pilot * 1.5 || b > pilot * 1.5) break;
+      // --- A bit's half-period is at most 0.81 pilot (a 1 at speed 112): anything longer ends the block
+      if (a > pilot * 0.9 || b > pilot * 0.9) break;
       current = (current << 1) | (a + b > pilot * 1.2 ? 1 : 0);
       i += 2;
       if (++bits === 8) {

@@ -188,6 +188,7 @@ const productionExports = [
   "samTapePlay",
   "samTapeRewind",
   "samTapeSavedPtr",
+  "samTapeSetAuto",
   "samTapeSetLength",
   "samTapeSetRecording",
   "samWriteMemory",

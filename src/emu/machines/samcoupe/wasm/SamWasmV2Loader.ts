@@ -223,6 +223,7 @@ export const samWasmV2RequiredExports = [
   "samTapePlay",
   "samTapeRewind",
   "samTapeSavedPtr",
+  "samTapeSetAuto",
   "samTapeSetLength",
   "samTapeSetRecording",
   "samWriteMemory",

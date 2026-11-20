@@ -26,7 +26,8 @@ import { importAccessLog } from "../wasmAccessLog";
 import { captureWasmImage, restoreWasmImage, type MachineStateParts } from "../state/wasmStateImage";
 import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 import { loadSamWasmV2 } from "./wasm/SamWasmV2Loader";
-import { SamWasmHost } from "./SamWasmHost";
+import { SAM_COPYRIGHT_KEY_WAIT, SamWasmHost } from "./SamWasmHost";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { SamKeyCode } from "./SamKeyCode";
 import { SamDisks } from "./SamDisks";
 import { readSamAsicDebugState, readSamSaaDebugState, type SamAsicDebugState, type SamSaaDebugState } from "./SamDebugState";
@@ -523,17 +524,20 @@ export class SamWasmV2Machine extends SamWasmHost implements IExecutionHistorySo
   }
 
   /**
-   * Load and Run: the machine starts, the deck plays, and `LOAD ""` is typed at the copyright screen
-   * (SAM BASIC accepts it there); the ROM decodes the tape.
+   * Load and Run: the machine starts, a key leaves the copyright screen (it is consumed) and `LOAD ""` is
+   * typed in the editor; the deck starts itself when the ROM polls EAR (`sam-tape.c`) and the ROM decodes
+   * the tape.
    */
-  getTapeLoadFlow() {
+  getTapeLoadFlow(): CodeInjectionFlow {
     const tape = this.getMachineProperty(MEDIA_TAPE);
     if (!tape) throw new Error("There is no tape in the deck.");
     return [
-      { type: "ReachExecPoint" as const, rom: 0, execPoint: 0x0fa2, message: "The SAM shows its copyright screen" },
-      { type: "Start" as const },
-      { type: "TypeText" as const, text: 'LOAD ""\n', delayFrames: 10 },
-      { type: "KeepPc" as const }
+      { type: "ReachExecPoint", rom: 0, execPoint: SAM_COPYRIGHT_KEY_WAIT, message: "The SAM shows its copyright screen" },
+      { type: "Start" },
+      { type: "QueueKey", primary: SamKeyCode.Space, delayFrames: 2, wait: 0 },
+      { type: "WaitKeyQueue" },
+      { type: "TypeText", text: 'LOAD ""\n', delayFrames: 20 },
+      { type: "KeepPc" }
     ];
   }
 

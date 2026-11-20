@@ -161,6 +161,7 @@ static void samFrameEnds(void) {
   samFrameCompleted = 1u;
   samLineKilled = 0u;
   (void)samMidiTransmitting();
+  samTapeFrameEnds();
 }
 
 // -----------------------------------------------------------------------------
