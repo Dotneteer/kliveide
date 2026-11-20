@@ -81,13 +81,11 @@
   background: var(--color-state-changed);
 }
 
-/* --- An enabled `pal:` breakpoint watches the device: the breakpoint dot after the written dot */
+/* --- An enabled `pal:` breakpoint watches the device: the gutter dot, before the name */
 .watchMark {
+  display: inline-flex;
   flex: 0 0 auto;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-breakpoint-binary);
+  align-items: center;
 }
 
 .bankSwitch {

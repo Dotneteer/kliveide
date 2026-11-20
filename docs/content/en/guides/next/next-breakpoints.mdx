@@ -1,5 +1,5 @@
 ---
-description: "Stop the ZX Spectrum Next when a Next Register is written, when the Copper completes an instruction, when a sprite's attributes change, or on an interrupt event."
+description: "Stop the ZX Spectrum Next when a Next Register is written, when the Copper completes an instruction, when a sprite's attributes or a palette entry change, or on an interrupt event."
 ---
 
 import { Callout } from 'nextra/components'
@@ -19,9 +19,10 @@ changed the palette, what moved sprite 12.
 | the Copper completes a list instruction | **Copper instruction** | `bp-set cu:$00B` | the Copper List's gutter, a `.copper` source line |
 | an attribute byte of a sprite is written | **Sprite attribute write** | `bp-set sp:$0C` | the Sprite Inspector's row menu |
 | an interrupt is taken, lost or waits too long, or an NMI is taken | **Interrupt event** | `bp-set int:ack:line` | see [Debugging interrupts](/en/guides/next/interrupts/#stopping-on-an-interrupt) |
+| a palette entry is written, or a device's live palette bank flips | **Palette write** | `bp-set pal:spr1:$03` | the Palette document; see [Debugging palettes](/en/guides/next/palettes/#palette-breakpoints) |
 
 The types are offered by the [Breakpoint dialog](/en/guides/debugging/breakpoints/) as well. Hit
-counts, conditions, logpoints and one-shots work on all four, as on any other breakpoint.
+counts, conditions, logpoints and one-shots work on all of them, as on any other breakpoint.
 
 ## NextReg Write Breakpoints (ZX Spectrum Next)
 
@@ -208,4 +209,5 @@ a checkbox for each attribute byte.
 - [The Copper view](/en/guides/next/copper/)
 - [The Sprite Inspector](/en/guides/next/sprite-inspector/)
 - [Debugging interrupts](/en/guides/next/interrupts/)
+- [Debugging palettes](/en/guides/next/palettes/)
 - [`bp-set` in the command reference](/en/reference/commands#bp-set)

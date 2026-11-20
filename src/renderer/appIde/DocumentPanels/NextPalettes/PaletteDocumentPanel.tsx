@@ -10,6 +10,7 @@ import { setIdeStatusMessageAction } from "@common/state/actions";
 import { paletteCodeFromDeviceValue } from "@emu/machines/zxNext/palette";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { SmallIconButton } from "@controls/IconButton";
+import { Icon } from "@renderer/controls/Icon";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -62,7 +63,7 @@ import styles from "./PaletteDocument.module.scss";
  */
 
 /** The swatch size of the document's grids */
-const CELL_SIZE = 18;
+const CELL_SIZE = 16;
 
 const PaletteDocumentPanel = ({ document, viewState }: DocumentProps<Partial<PaletteDocumentViewState>>) => {
   const t = useT();
@@ -229,7 +230,11 @@ const DeviceTab = ({
       }
       onClick={onSelect}
     >
-      {watched && <span className={styles.tabWatch} aria-label={t("panels.doc.palettes.deviceWatched")} />}
+      {watched && (
+        <span className={styles.tabWatch} role="img" aria-label={t("panels.doc.palettes.deviceWatched")}>
+          <Icon iconName="circle-filled" width={7} height={7} fill="--color-breakpoint-binary" />
+        </span>
+      )}
       <span>{device.label}</span>
       <span className={styles.liveChip}>{t("panels.doc.palettes.liveBankChip", { bank: device.liveBank(info) + 1 })}</span>
       {written > 0 && <span className={styles.tabWritten} />}

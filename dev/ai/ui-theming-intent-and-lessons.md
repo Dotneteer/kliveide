@@ -1072,7 +1072,10 @@ identity there; its tooltip and accessible name say what changed (the count per 
 there only while something changed: an always-present marker in another state would say nothing.
 "Changed" may honestly mean *written* when that is what the machine can report (a palette entry
 rewritten with its own colour counts); the tooltip's wording says which. A breakpoint watching the
-device adds the breakpoint dot (`--color-breakpoint-binary`) after the changed dot, the same size.
+device adds the gutter dot (`circle-filled` in `--color-breakpoint-binary`) **before** the name, as on
+a table row. `--color-breakpoint-binary` (`--status-info`) and `--color-state-changed` can resolve to
+the same hue, so two dots side by side after the name were indistinguishable: the place tells them
+apart, not the colour.
 
 On a colour swatch (the Palette document's grids, `NextPaletteViewer`) the marks cannot rely on the
 theme surface, so they split by what they mean: *written* is an inset 2px ring in

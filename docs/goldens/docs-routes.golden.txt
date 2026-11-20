@@ -197,6 +197,7 @@
 /en/guides/next/next-breakpoints/index.html
 /en/guides/next/next-models/index.html
 /en/guides/next/next-registers/index.html
+/en/guides/next/palettes/index.html
 /en/guides/next/picture-troubleshooting/index.html
 /en/guides/next/real-time-clock/index.html
 /en/guides/next/sd-card/index.html

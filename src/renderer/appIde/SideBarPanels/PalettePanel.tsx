@@ -119,16 +119,23 @@ const DeviceSection = ({ device, info, breakpoints }: DeviceSectionProps) => {
           rotate={expanded ? 90 : 0}
         />
         <span className={styles.deviceName}>
-          {device.label}
-          <WrittenMark device={device} info={info} />
+          {/*
+            * A breakpoint goes before the name, as the gutter dot goes before a row's index; the
+            * written dot stays after it. Both resolve to the same hue in some accents, so their
+            * place is what tells them apart.
+            */}
           {deviceIsWatched(breakpoints, device.id) && (
             <span
               className={styles.watchMark}
               role="img"
               aria-label={t("panels.side.palette.watched", { device: device.label })}
               title={t("panels.side.palette.watched", { device: device.label })}
-            />
+            >
+              <Icon iconName="circle-filled" width={8} height={8} fill="--color-breakpoint-binary" />
+            </span>
           )}
+          {device.label}
+          <WrittenMark device={device} info={info} />
         </span>
         {/*
           * The always-on preview.

@@ -55,7 +55,7 @@ developers use it.
 | Asm source-level debugging | ✅ Klive asm; sjasmplus with bank-aware SLD on the 128K, +3 and Next (not yet checked in the IDE, G10.3) | ✅ | labels only | ✗ | ✗ | ✗ |
 | **C source-level debugging** | ✅ z88dk (sccz80): C-line breakpoints, stepping, call stack, typed parameters, locals and globals | ◐ (line level) | ✗ | ✗ | ✗ | ✗ |
 | Exec / memory / I/O breakpoints | ✅ bank-relative and partition-scoped; every data access of an instruction watched | ✅ | ◐ | ✅ | ✅ | via CSpect |
-| Next-specific breakpoints | ✅ **(apparently unique)** NextReg writes (value/mask, old→new), Copper (`cu:`, Step Copper), sprite attributes (`sp:`, by CPU, DMA or Copper) | ? | ? | — | — | ✗ |
+| Next-specific breakpoints | ✅ **(apparently unique)** NextReg writes (value/mask, old→new), Copper (`cu:`, Step Copper), sprite attributes (`sp:`, by CPU, DMA or Copper), palette entry writes and bank flips (`pal:`, old→new colour, `-changed`; after v0.69.0) | ? | ? | — | — | ✗ |
 | **Conditional / hit-count breakpoints, logpoints** | ✅ conditions on registers, memory in any bank, values, paging, NextRegs and labels on every kind; logpoints; DeZog `LOGPOINT`/`ASSERTION`/`WPMEM` comments; one-shots; range watchpoints | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
 | **Reverse debugging / execution history** | ✅ every Z80 machine: the whole machine in the past (keyframes and a self-checking input journal), every breakpoint kind in reverse, Take over here; history viewer; trace export for diffing; debug recordings (`.klr`) that reopen with their past | ✅ | ? | ✗ | frame trace | ✗ |
 | **Unit tests / coverage / profiler** | ✅ per-bank coverage and heat map, SMC detection, LCOV; flat and call-graph profiler with interrupts as roots, speedscope/callgrind exports; DeZog-compatible unit tests with both assemblers, deterministic, T-states per test; `klive test` in CI (JUnit, LCOV) | ✅ (DeZog; VS Code only, no CI) | ✗ | profiler | memory diff | ✗ |
@@ -63,7 +63,7 @@ developers use it.
 | Disassembly insight | ✅ branch verdicts with T-state cost, flow arrows between jumps and targets, label reference counts and an inspector per instruction, find in the listing (after v0.69.0), system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
 | NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
 | General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
-| **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique) | ✅ (ZEsarUX) | ? | — | — | ✗ |
+| **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique), a Palette document marking the entries written since the last stop with the colours they replaced (after v0.69.0) | ✅ (ZEsarUX) | ? | — | — | ✗ |
 | **Next interrupt debugging** | ✅ the daisy chain at a pause (in service, requesting, held, the vector table's handler words) with diagnostics for the usual traps; an interrupt timeline over 1-4 frames with latencies; interrupt stops (taken, lost, RETN in a handler, a long wait, NMI) (after v0.69.0) | ? | ? | — | — | ✗ |
 | **Next DMA debugging** | ✅ the DMA at a pause: dialect, mode, start and working addresses side by side, progress, the prescaler's exact period at the CPU speed, the status byte and read sequence, the zxnDDMA settings, with warnings for the usual setup traps (enable without a load, deaf, locked bus); a `dma` command; `.dma` summaries, hovers and warnings in the editor; a port write log decoded as the DMA took it; DMA stops and stepping; a bus timeline with lost interrupts; a transfers list with source and destination tinted in the Memory panel (after v0.69.0) | ? | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
@@ -85,7 +85,7 @@ developers use it.
 1. **One app, no assembly required:** emulator, editor with real language intelligence, assembler,
    compilers and debugger on Mac, Windows and Linux; templates for every machine and language.
 2. **BASIC and C as debug languages:** source-level debugging that no competitor offers reliably.
-3. **Next-native:** NextReg, Copper, sprite and interrupt breakpoints, bank breakpoints, the live
+3. **Next-native:** NextReg, Copper, sprite, palette and interrupt breakpoints, bank breakpoints, the live
    inspectors, the interrupt and DMA views, the
    `.dma`/`.copper` DSLs, `.savenex`, asset editors, a cached NextZXOS boot.
 4. **NEX and ROM reverse engineering:** debug any `.nex` with no project; annotations on every

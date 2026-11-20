@@ -1,6 +1,6 @@
 # Next Palette Debugging Plan (palette breakpoints and the Palette document)
 
-Status: **accepted** (2026-11-20; §9 answered). Phases 1-3 built (§5.1, §3.5, §4.1) on `feature/next-palette-debugging`; Phase 4 (optional) or 5 next. Mockups:
+Status: **accepted** (2026-11-20; §9 answered). **Complete** (2026-11-20): Phases 1-3 and 5 built (§5.1, §3.5, §4.1, §7.1) on `feature/next-palette-debugging`; Phase 4 (the optional write log) was skipped by the project author and is not built. Mockups:
 `dev/plans/palette-debugging/PALETTE_DEBUGGING_MOCKUPS.html`.
 
 ## 1. What exists today
@@ -269,6 +269,22 @@ Copper panel / Copper List split, `COPPER_DEBUGGING_PLAN.md` D16).
 Tests: `test/zxnext-hw/palette/` through the harness (each write path and origin, `-changed`,
 bank flips, every profile via `forEachProfile`), the equivalence test, spec parse/format round trips,
 the document's view model without rendering.
+
+### 7.1 As built (Phase 5, 2026-11-20)
+
+- **Guides**: `docs/content/en/guides/next/palettes.mdx` ("Debugging palettes": finding who writes a
+  colour, the document, the panel, `pal:` breakpoints), with screenshots from
+  `dev/scripts/doc-shots/recipes/guides-palettes.cjs`; linked from the Guides overview, Next
+  breakpoints (a table row) and Next Registers. The command reference has `pal:` in `bp-set`,
+  `bp-del` and `bp-en`, `-changed`, and `show-palettes` / `hide-palettes`.
+- **Competitive analysis** §2 (Next-specific breakpoints, live Next inspectors) and §3. The feature is
+  not on `CLOSING_THE_GAPS_PLAN.md`, so the roadmap and §4 are unchanged.
+- **Changeset** `dev/changes/zx-spectrum-next-palette-debugging-*.md` (feature) for the whole plan.
+- The guide shots showed two layout faults, fixed here: at the guide window width the banks wrapped
+  (the swatches are now 16px), and the written and breakpoint dots on a device row can share a hue
+  (the breakpoint mark moved before the name).
+- **Phase 4 not built**: without the write log, "Last write" is known only for the write a palette
+  breakpoint stopped on.
 
 ## 8. Risks
 

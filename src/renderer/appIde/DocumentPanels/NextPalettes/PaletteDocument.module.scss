@@ -13,7 +13,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40ch;
+  grid-template-columns: minmax(0, 1fr) 38ch;
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -28,7 +28,7 @@
 .banks {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-6);
+  gap: var(--space-4);
   padding: var(--space-4);
 }
 
@@ -76,20 +76,20 @@
   opacity: 0.75;
 }
 
-.tabWritten,
-.tabWatch {
+// --- A breakpoint before the name (the gutter dot), written after it (the changed dot): the two
+// --- can share a hue, so their place tells them apart
+.tabWritten {
   flex: 0 0 auto;
   width: 5px;
   height: 5px;
   border-radius: 50%;
-}
-
-.tabWritten {
   background: var(--color-state-changed);
 }
 
 .tabWatch {
-  background: var(--color-breakpoint-binary);
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
 }
 
 // ─── A bank ──────────────────────────────────────────────────────────────────
@@ -260,5 +260,14 @@
     font-family: var(--monospace-font);
     color: var(--text-secondary);
     overflow-wrap: anywhere;
+  }
+}
+
+// --- On the selected tab's accent fill both marks can vanish (they may share its hue): ring them
+.deviceTab[aria-selected="true"] {
+  .tabWritten,
+  .tabWatch {
+    border-radius: 50%;
+    box-shadow: 0 0 0 1.5px var(--text-on-accent);
   }
 }
