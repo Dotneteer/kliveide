@@ -340,6 +340,17 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-hilitedep-fn": "var(--accent-device-pressed-ep-fn)",
   "--bgcolor-hilitedep-f": "var(--accent-device-pressed-ep-f)",
   "--bgcolor-hilitedep-stop": "var(--accent-device-pressed-ep-stop)",
+  // --- The SAM Coupé virtual keyboard (`SamKeyboard.tsx`)
+  "--bgcolor-keyboardsam": "var(--device-body-sam)",
+  "--bgcolor-keyboardsam-well": "var(--device-well-sam)",
+  "--bgcolor-keysam": "var(--device-key-sam)",
+  "--color-keysam-edge": "var(--device-key-edge-sam)",
+  "--bgcolor-keysam-ctl": "var(--device-key-ctl-sam)",
+  "--color-keysam-ctl-edge": "var(--device-key-ctl-edge-sam)",
+  "--color-keysam-main": "var(--device-legend-sam-ink)",
+  "--color-keysam-highlight": "var(--accent-on-device-light)",
+  "--bgcolor-hilitedsam": "var(--accent-device-pressed-sam)",
+  "--bgcolor-hilitedsam-ctl": "var(--accent-device-pressed-sam-ctl)",
 
   // --- Document area ----------------------------------------------------------------------------
   "--bgcolor-docspanel": "var(--surface-canvas)",

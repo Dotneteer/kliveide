@@ -1,0 +1,83 @@
+---
+description: "Assemble, run, debug, and export machine code for the SAM Coupé with the Klive assembler: .model SAMCOUPE, where code goes, how Run boots it from a disk, and .mgt export."
+---
+
+# SAM Coupé Development
+
+Klive assembles machine code for the SAM Coupé, runs it in the emulated machine, debugs it at the source
+level, and exports it as a bootable `.mgt` disk.
+
+*Applies to: SAM Coupé 512K, SAM Coupé 256K*
+
+## Quick Start
+
+Create a project for the SAM Coupé, and its `code/code.kz80.asm` is a program that cycles the border's
+colours:
+
+```z80klive
+    .model SAMCOUPE
+
+Start:
+    di
+    ld sp,$BFFF         ; a stack of the program's own, at the top of page 1
+    xor a
+NextColour:
+    out ($FE),a         ; the border: bits 0-2 pick one of the first eight palette entries
+    ld bc,$1000
+Delay:
+    dec bc
+    ld e,a
+    ld a,b
+    or c
+    ld a,e
+    jr nz,Delay
+    inc a
+    and $07
+    jr NextColour
+```
+
+Press **Run** to start it, or **Debug** to start it under the debugger.
+
+## Where code goes
+
+The SAM's 64K address space is four 16K sections. While a program runs, Klive pages them as SAM BASIC
+does:
+
+| Address | Holds |
+|---|---|
+| `$0000-$3FFF` | the ROM (ROM0) |
+| `$4000-$7FFF` | RAM page 0: SAM BASIC's system variables and stack |
+| `$8000-$BFFF` | RAM page 1 |
+| `$C000-$FFFF` | RAM page 2 |
+
+- Code with no `.org` starts at `$8000`, in page 1.
+- Code at `$4000-$7FFF` goes to page 0, over SAM BASIC's own memory: use it only if you know what is
+  there.
+- Code below `$4000` is refused: that is the ROM.
+- A segment with `.bank n` goes to RAM page `n` (0-31) at its offset, whatever address it was
+  assembled for.
+
+The program starts at the first segment's address, or at the entry point the build names. It runs with
+interrupts on and the ROM's interrupt handler in place.
+
+## How Run starts the program
+
+Klive boots the machine to its copyright screen, puts a disk in the first drive, leaves the copyright
+screen with a key and presses F9. The disk holds a boot loader of Klive's own and your program as a
+CODE file. The ROM loads the boot loader, which reads your program through the disk controller into
+its pages, pages them in as above, and jumps to the entry point. No DOS is needed. Debugging one unit
+test writes the code straight into memory instead.
+
+## Export
+
+**Export code** writes:
+
+- `.mgt`: the disk Run boots. Press F9 with it in the first drive of a real SAM or another emulator.
+  The program is an ordinary CODE file on it, with its load address and start address, so a DOS can
+  load it too.
+- `.bin`: the program's bytes, from its lowest address to its highest.
+
+## Calling the ROM
+
+`RST 8` is followed by a code byte: an error number, which SAM BASIC reports, or a DOS hook (128 and
+up). The disassembler shows the byte as data with its meaning, and Step Over steps past it.

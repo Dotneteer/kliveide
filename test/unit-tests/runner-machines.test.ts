@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE, runProgram } from "./unitTestSupport";
+import { MI_HT1080Z, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TVC, MI_ZXNEXT, MI_ENTERPRISE, MI_SAM_COUPE, runProgram } from "./unitTestSupport";
 
 /*
  * The unit-test runner on the 128K, the +2A/+3/+3E and the Next (`dev/plans/Z80_UNIT_TESTS_PLAN.md`
@@ -247,6 +247,54 @@ UT_Fails:
     expect(results.UT_Adds.status).toBe("passed");
     expect(results.UT_ReadsLpPointer.status).toBe("passed");
     expect(results.UT_CallsExos.status).toBe("passed");
+    expect(results.UT_Fails.message).toContain("(A=$01, B=$02)");
+  });
+});
+
+describe("unit-test runner, SAM Coupé", () => {
+  // --- Booted by the machine's own flow to the copyright screen; the code in page 1 at $8000 and a
+  // --- routine in page 2 at $C000, paged in as Run pages a program (HMPR = 1, ROM1 off)
+  it.each(["sam512", "sam256"])("runs tests on %s, in pages 1 and 2", async (modelId) => {
+    const { results, summary, problems } = await runProgram(
+      `
+  .model SAMCOUPE
+  UNITTEST_INITIALIZE()
+    ret
+
+UT_Adds:
+    ld a,40
+    add a,2
+    TEST_A(42)
+    TC_END()
+
+UT_ReadsHmpr:
+    in a,($fb)           ; HMPR: page 1 at $8000, as Run pages a program
+    and $1f
+    TEST_A(1)
+    TC_END()
+
+UT_CallsPage2:
+    call InPage2
+    TEST_A($42)
+    TC_END()
+
+UT_Fails:
+    ld a,1
+    TEST_A(2)
+    TC_END()
+
+  .org $C000
+InPage2:
+    ld a,$42
+    ret
+`,
+      { machineId: MI_SAM_COUPE, modelId, model: SpectrumModelType.SamCoupe }
+    );
+    expect(problems).toEqual([]);
+    expect(summary).toMatchObject({ total: 4, passed: 3, failed: 1, errors: 0 });
+    expect(results.UT_Adds.status).toBe("passed");
+    expect(results.UT_ReadsHmpr.status).toBe("passed");
+    expect(results.UT_CallsPage2.status).toBe("passed");
     expect(results.UT_Fails.message).toContain("(A=$01, B=$02)");
   });
 });

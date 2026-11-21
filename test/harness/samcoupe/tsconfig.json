@@ -1,0 +1,8 @@
+{
+  // Type-checks the SAM Coupé harness and the tests that use it:
+  //   npx tsc -p test/harness/samcoupe/tsconfig.json
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "lib": ["ESNext", "DOM"], "module": "esnext" },
+  "include": ["./**/*.ts", "../../sam-hw/**/*.ts"],
+  "exclude": ["node_modules"]
+}

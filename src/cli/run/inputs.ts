@@ -32,7 +32,8 @@ import { machineOf, parseMachineOption } from "../verbs/test";
 /*
  * What `klive run` starts (`dev/plans/COMMAND_LINE_AUTOMATION_PLAN.md` D15): a project's build, injected
  * as the IDE's `run` does it, or a file - a tape, a snapshot, a Klive state, a NEX file, a ZX80/81
- * program, an HT-1080Z tape (`.cas`, `.cmd`, `.bas`) or, with `--machine tvc`, a Videoton TVC `.cas`. The loads are the IDE's own where they do not need the emulator window: the snapshot and
+ * program, an HT-1080Z tape (`.cas`, `.cmd`, `.bas`) or, with `--machine tvc`, a Videoton TVC `.cas`; a
+ * `.tap`/`.tzx` with `--machine sam` is loaded by the SAM Coupé's ROM (`LOAD ""`). The loads are the IDE's own where they do not need the emulator window: the snapshot and
  * state loaders (`spectrumSnapshotLoad.ts`, `machineStateFile.ts`) run against a headless controller,
  * and tapes play through the machine's own tape-load flow.
  */

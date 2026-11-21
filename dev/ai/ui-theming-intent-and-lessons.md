@@ -670,6 +670,16 @@ the actual 16x16 grid, at an integer 2px per entry, says "palette" instantly and
 palettes' real two-dimensional structure. When a summary needs its own encoding to fit, that is the
 signal it is too small, not that it needs a cleverer encoding.
 
+**A device keyboard spends its pixels on keys, not on the case.** The SAM Coupé's keyboard
+(`SamKeyboard.tsx`, `--device-*-sam`) is the dark key well with the case as a hairline around it, and its
+light keys have narrow, darker sides (a 4-unit cap inset): at the project author's review the photo's logo
+strip, a wide case rim and wide pale key sides all read as wasted, whitish border. The keyboard panel's
+size is the scarce resource; drop decoration that adds rows or rims.
+
+**Chip panels share one swatch style.** The Enterprise's NICK panel and the SAM Coupé's ASIC panel (its
+16 CLUT entries) both use `.swatch` from `EpChipPanels.module.scss`: the machine colour inline, the frame
+`--border-strong`. A new chip panel reuses it rather than adding a third swatch rule.
+
 **Anything drawn *on top of* user colour takes its contrast from that colour, never from a token.**
 A swatch is arbitrary machine colour, not a themed surface, so there is no tone-dependent value that
 stays legible across a palette: one fixed alpha disappears over half of any of them and a theme

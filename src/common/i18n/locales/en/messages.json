@@ -343,6 +343,21 @@
   "@messages.file.noTapeDeckCurrent": {
     "context": "Error text: a tape file was opened, but the emulated machine has no tape."
   },
+  "messages.file.samDiskOtherMachine": "This is a SAM Coupé disk; the current machine is {machine}. Switch to the SAM Coupé to insert it.",
+  "@messages.file.samDiskOtherMachine": {
+    "context": "Error text: a SAM Coupé disk image (.mgt, .sad or .sbt) was opened or dropped onto the emulator while another machine runs. SAM Coupé is a machine name: keep it.",
+    "placeholders": {
+      "machine": "The name of the current machine"
+    }
+  },
+  "messages.file.samDiskNoMachine": "This is a SAM Coupé disk; no machine is selected. Switch to the SAM Coupé to insert it.",
+  "@messages.file.samDiskNoMachine": {
+    "context": "Error text: a SAM Coupé disk image (.mgt, .sad or .sbt) was opened or dropped onto the emulator while no machine is selected. SAM Coupé is a machine name: keep it."
+  },
+  "messages.file.samNoDrives": "This SAM Coupé has no disk drive. Fit one in Machine › Disks first.",
+  "@messages.file.samNoDrives": {
+    "context": "Error text: a disk image was opened or dropped onto the emulator while the SAM Coupé runs with no internal disk drive fitted. Machine › Disks is the menu path where drives are fitted: translate it as the menu's own items are translated."
+  },
   "messages.file.unsupportedExt": "Klive cannot open .{ext} files in the emulator. Open a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, a .klr debug recording, an .rzx recording, or a .tap or .tzx tape.",
   "@messages.file.unsupportedExt": {
     "context": "Error text: a file of an unknown kind was opened or dropped. Keep the file extensions.",

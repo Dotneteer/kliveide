@@ -45,7 +45,8 @@ import {
   MI_ZXNEXT,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 } from "./constants";
 import {
   ZX80_ROM,
@@ -88,6 +89,16 @@ import {
   EP_TACTS_IN_FRAME
 } from "@emu/machines/enterprise/epMachineInfo";
 import { EP_ROM_SETS, type EpRomSetId } from "@emu/machines/enterprise/EpRoms";
+import {
+  SAM_CLOCK,
+  SAM_LINES_PER_FRAME,
+  SAM_PIXEL_ASPECT,
+  SAM_SCREEN_HEIGHT,
+  SAM_SCREEN_WIDTH,
+  SAM_TACTS_IN_FRAME,
+  SAM_TACTS_PER_LINE
+} from "@emu/machines/samcoupe/samMachineInfo";
+import { SAM_DEFAULT_ROM, SAM_ROM_IMAGES } from "@emu/machines/samcoupe/SamRoms";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -601,6 +612,55 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
     },
     // --- The 64: EXOS 2.0 and IS-BASIC 2.0 in 64K (FCh-FFh, all of it video RAM)
     models: { ep64: { rom: epRoms("20"), ramKb: 64 } }
+  },
+  [MI_SAM_COUPE]: {
+    // --- samMachineInfo.ts, SamRoms.ts, wasm/sam/sam.c (`dev/plans/SAM_COUPE_PLAN.md`)
+    base: {
+      cpu: "Zilog Z80B",
+      clockHz: SAM_CLOCK,
+      rom: [
+        {
+          id: SAM_ROM_IMAGES[SAM_DEFAULT_ROM].name,
+          kb: SAM_ROM_IMAGES[SAM_DEFAULT_ROM].size / 1024,
+          role: tx("hardware.rom.sam")
+        }
+      ],
+      ramKb: 512,
+      bankKb: 16,
+      addressSpace: tx("hardware.addressSpace.sam"),
+      display: {
+        kind: "crt",
+        // --- The screen in mode 3's pixels (12 MHz); mode 4's are two of them
+        width: 512,
+        height: 192,
+        rasterWidth: SAM_SCREEN_WIDTH,
+        rasterHeight: SAM_SCREEN_HEIGHT,
+        pixelAspect: SAM_PIXEL_ASPECT,
+        colours: tx("hardware.colours.sam"),
+        otherSizes: tx("hardware.otherSizes.sam"),
+        videoChip: "ASIC"
+      },
+      timing: {
+        unit: "T-states",
+        perLine: SAM_TACTS_PER_LINE,
+        linesPerFrame: SAM_LINES_PER_FRAME,
+        perFrame: SAM_TACTS_IN_FRAME,
+        note: tx("hardware.timing.sam")
+      },
+      sound: [BEEPER, tx("hardware.sound.sam")],
+      media: [
+        { text: tx("hardware.media.samTape"), chip: TAPE_CHIP },
+        { text: tx("hardware.media.samDisks"), chip: tx("hardware.chip.floppyAB") }
+      ],
+      input: [
+        { label: KEYBOARD, value: tx("hardware.keyboard.sam") },
+        { label: tx("hardware.input.mouse"), value: "SAM Mouse" },
+        { label: tx("hardware.input.joysticks"), value: tx("hardware.joystick.sam") },
+        { label: tx("hardware.input.midi"), value: tx("hardware.midi.sam") }
+      ]
+    },
+    // --- The 256K: pages 16-31 not fitted
+    models: { sam256: { ramKb: 256 } }
   },
   [MI_ZX80]: {
     base: {

@@ -34,6 +34,14 @@ export const EP_AUDIO_CHANNELS: readonly CoreAudioChannel[] = [
   { id: "noise", slot: 3, labelKey: "emu.audioMixer.channel.noise", group: "dave", groupLabelKey: "emu.audioMixer.group.dave" }
 ];
 
+/** The SAM Coupé (`sam-audio.c`): the SAA 1099's two sides, the beeper (FEh bit 4) and the tape's EAR level */
+export const SAM_AUDIO_CHANNELS: readonly CoreAudioChannel[] = [
+  { id: "saaLeft", slot: 0, labelKey: "emu.audioMixer.channel.saaLeft", group: "saa", groupLabelKey: "emu.audioMixer.group.saa" },
+  { id: "saaRight", slot: 1, labelKey: "emu.audioMixer.channel.saaRight", group: "saa", groupLabelKey: "emu.audioMixer.group.saa" },
+  { id: "beeper", slot: 2, labelKey: "emu.audioMixer.channel.beeper", group: "asic", groupLabelKey: "emu.audioMixer.group.asic" },
+  { id: "tape", slot: 3, labelKey: "emu.audioMixer.channel.tape", group: "asic", groupLabelKey: "emu.audioMixer.group.asic" }
+];
+
 export const HT1080Z_AUDIO_CHANNELS: readonly CoreAudioChannel[] = [
   {
     id: "beeper",

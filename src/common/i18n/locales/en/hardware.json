@@ -23,6 +23,10 @@
   "@hardware.colours.enterprise": {
     "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: 256 colours exist; a line can show 2, 4, 16 or all 256 of them at once."
   },
+  "hardware.colours.sam": "128; 16 on screen through the CLUT, 4 in mode 3",
+  "@hardware.colours.sam": {
+    "context": "Value of the Colours row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé, a British home computer of 1989 with a custom ASIC for video and the SAA 1099 sound chip: 128 colours exist; a 16-entry colour look-up table (CLUT) picks the ones on screen, and the 512-pixel mode 3 shows 4. CLUT is a hardware term: keep it."
+  },
   "hardware.attributes.spectrum": "32 × 24 cells of 8 × 8 px, FLASH",
   "@hardware.attributes.spectrum": {
     "context": "Value of the Attributes row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): colour is set per character cell, 32 columns by 24 rows of 8 by 8 pixels, and cells can FLASH. FLASH is a BASIC keyword: keep it."
@@ -67,6 +71,10 @@
   "@hardware.otherSizes.z88": {
     "context": "Value of the Other sizes row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Cambridge Z88: the LCD can be configured as 640 pixels wide by 256, 320 or 480 pixels high."
   },
+  "hardware.otherSizes.sam": "Modes 1-4: Spectrum screen, 8 × 1 attributes, 512 × 192 in 4 colours, 256 × 192 in 16 colours",
+  "@hardware.otherSizes.sam": {
+    "context": "Value of the Other sizes row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: its four screen modes - mode 1 is the ZX Spectrum's screen layout, mode 2 has colour attributes for every 8 × 1 pixels, mode 3 is 512 × 192 pixels in 4 colours, mode 4 is 256 × 192 pixels in 16 colours. Keep the numbers as they are."
+  },
   "hardware.raster.outputBuffer": "output buffer",
   "@hardware.raster.outputBuffer": {
     "context": "Follows the pixel size in the Raster row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX Spectrum Next (\"720 × 288 output buffer\"): the size of the picture the emulator renders, not of the TV picture. Lowercase.",
@@ -79,6 +87,10 @@
   "hardware.addressSpace.timex2068": "64K as eight 8K chunks, each HOME, DOCK or EXROM (port $F4)",
   "@hardware.addressSpace.timex2068": {
     "context": "Value of the Address space row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the TC2068/TS2068: the 64K memory map is split into eight 8K chunks, each mapped to one of three memory banks. HOME, DOCK and EXROM are bank names: keep them. Keep chip, port and register names, numbers, $hex values and file extensions as they are."
+  },
+  "hardware.addressSpace.sam": "64K as four 16K sections, paged by LMPR and HMPR; up to 1 MB external",
+  "@hardware.addressSpace.sam": {
+    "context": "Value of the Address space row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: the 64K the processor sees is four 16K sections, each showing a page of RAM or ROM chosen by two registers (LMPR and HMPR, keep the names), and an external memory pack adds up to 1 MB. Keep chip, port and register names and numbers as they are."
   },
   "hardware.timing.timexNtsc": "60 Hz at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt",
   "@hardware.timing.timexNtsc": {
@@ -111,6 +123,10 @@
   "hardware.timing.enterprise": "NICK runs on its own 14.24 MHz clock, 57 slots a line; the CPU waits on video RAM",
   "@hardware.timing.enterprise": {
     "context": "Value of the timing note in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: the video chip has a clock of its own, a line is 57 time slots, and the processor is held back when it uses the video memory."
+  },
+  "hardware.timing.sam": "The ASIC makes the CPU wait on memory and I/O, longer while it draws the screen",
+  "@hardware.timing.sam": {
+    "context": "Value of the timing note in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: its video chip (the ASIC, keep the name) holds the processor back when it reads or writes memory or ports, and more often while the screen is being drawn."
   },
   "hardware.rom.timexHome": "HOME ROM; your copy, or the 48K ROM",
   "@hardware.rom.timexHome": {
@@ -184,6 +200,10 @@
   "@hardware.rom.epBasic": {
     "context": "Role of a ROM image in the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: the 16K cartridge holding IS-BASIC. IS-BASIC is a name, keep it."
   },
+  "hardware.rom.sam": "SAM BASIC and the boot code",
+  "@hardware.rom.sam": {
+    "context": "Role of a ROM image in the ROM row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: the 32K ROM holding SAM BASIC and the code that starts the machine and boots a disk. SAM BASIC is a name, keep it."
+  },
   "hardware.rom.ozFlash": "OZ, {cardType} flash",
   "@hardware.rom.ozFlash": {
     "context": "Role of the Cambridge Z88's internal ROM in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) when it sits in a flash chip. OZ is the Z88's operating system: keep it.",
@@ -210,6 +230,10 @@
   "hardware.sound.enterprise": "DAVE: three tone channels and noise, stereo",
   "@hardware.sound.enterprise": {
     "context": "Value of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: DAVE is the sound chip's name, keep it."
+  },
+  "hardware.sound.sam": "SAA 1099: six channels, stereo",
+  "@hardware.sound.sam": {
+    "context": "An item of the Sound row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: the Philips SAA 1099 sound chip, with six tone channels and stereo output. SAA 1099 is a chip name, keep it."
   },
   "hardware.sound.nextDac": "4-channel DAC (SpecDrum)",
   "@hardware.sound.nextDac": {
@@ -250,6 +274,14 @@
   "hardware.media.tvcTape": "Tape (.CAS)",
   "@hardware.media.tvcTape": {
     "context": "Value of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Videoton TV Computer (TVC): it loads and saves programs on cassette tape, stored as .CAS files."
+  },
+  "hardware.media.samTape": "Tape (.TAP, .TZX, .CSW)",
+  "@hardware.media.samTape": {
+    "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: the file types its tape input takes. Keep the file extensions as they are."
+  },
+  "hardware.media.samDisks": "2 × VL1772 3.5\" 800K drives (.MGT, .SAD, .DSK)",
+  "@hardware.media.samDisks": {
+    "context": "An item of the Media row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: two 3.5-inch floppy disk drives of 800K each, run by VL1772 controllers, and the disk image files they take. Keep the chip name and file extensions as they are."
   },
   "hardware.media.zx80Tape": "Tape (.O)",
   "@hardware.media.zx80Tape": {
@@ -322,6 +354,11 @@
     "context": "Label of a row in the input-devices part of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts).",
     "maxChars": 16
   },
+  "hardware.input.midi": "MIDI",
+  "@hardware.input.midi": {
+    "context": "Label of a row in the input-devices part of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): the machine's MIDI musical-instrument ports. MIDI is a standard's name, keep it.",
+    "maxChars": 16
+  },
   "hardware.keyboard.spectrum": "40-key Spectrum",
   "@hardware.keyboard.spectrum": {
     "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): the ZX Spectrum's 40-key keyboard."
@@ -341,6 +378,10 @@
   "hardware.keyboard.enterprise": "UK layout, built-in joystick",
   "@hardware.keyboard.enterprise": {
     "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Enterprise 64/128, a British home computer of 1985 with the NICK video chip and the DAVE sound chip: a British keyboard with a joystick built into it."
+  },
+  "hardware.keyboard.sam": "72 keys, with function keys",
+  "@hardware.keyboard.sam": {
+    "context": "Value of the Keyboard row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: a 72-key keyboard with a row of function keys."
   },
   "hardware.keyboard.next": "Next, with extended keys",
   "@hardware.keyboard.next": {
@@ -392,5 +433,13 @@
   "hardware.joystick.nextPorts": "2 ports",
   "@hardware.joystick.nextPorts": {
     "context": "Value of the Joysticks row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the ZX Spectrum Next: two joystick ports."
+  },
+  "hardware.joystick.sam": "2, on one socket",
+  "@hardware.joystick.sam": {
+    "context": "Value of the Joysticks row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: two joysticks connect through a single socket."
+  },
+  "hardware.midi.sam": "In and out",
+  "@hardware.midi.sam": {
+    "context": "Value of the MIDI row in the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the SAM Coupé: it has a MIDI input and a MIDI output port."
   }
 }

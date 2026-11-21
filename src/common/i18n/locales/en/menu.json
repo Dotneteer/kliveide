@@ -914,6 +914,36 @@
     "context": "Checkbox in the Enterprise 64/128's Machine menu: fits the EXDOS floppy disk interface card (with its EXDOS ROM), which adds two floppy drives; changing it restarts the machine. EXDOS is a product name and stays untranslated.",
     "maxChars": 40
   },
+  "menu.sam.drivesNone": "No Disk Drive",
+  "@menu.sam.drivesNone": {
+    "context": "Radio item in the SAM Coupé's Machine menu (disks): the machine has no internal floppy disk drive fitted; choosing it restarts the machine.",
+    "maxChars": 40
+  },
+  "menu.sam.drivesOne": "One Disk Drive",
+  "@menu.sam.drivesOne": {
+    "context": "Radio item in the SAM Coupé's Machine menu (disks): one internal floppy disk drive is fitted (the default); choosing it restarts the machine.",
+    "maxChars": 40
+  },
+  "menu.sam.drivesTwo": "Two Disk Drives",
+  "@menu.sam.drivesTwo": {
+    "context": "Radio item in the SAM Coupé's Machine menu (disks): two internal floppy disk drives are fitted; choosing it restarts the machine.",
+    "maxChars": 40
+  },
+  "menu.sam.mouse": "SAM Mouse",
+  "@menu.sam.mouse": {
+    "context": "Checkbox in the SAM Coupé's Machine menu: fits the SAM Mouse interface, through which the emulated machine reads the host's mouse; changing it restarts the machine. SAM Mouse is a product name.",
+    "maxChars": 40
+  },
+  "menu.sam.rom30": "ROM 3.0",
+  "@menu.sam.rom30": {
+    "context": "Radio item in the SAM Coupé's Machine menu: runs version 3.0 of the machine's ROM (the default); choosing it restarts the machine. Keep the version number.",
+    "maxChars": 40
+  },
+  "menu.sam.rom31": "ROM 3.1",
+  "@menu.sam.rom31": {
+    "context": "Radio item in the SAM Coupé's Machine menu: runs version 3.1 of the machine's ROM; choosing it restarts the machine. Keep the version number.",
+    "maxChars": 40
+  },
   "menu.if1.connect": "Interface 1",
   "@menu.if1.connect": {
     "context": "Checkbox, the first item of Machine › Microdrives on the ZX Spectrum 48K and 128K: connects the ZX Interface 1 (Sinclair's add-on that drives Microdrives), which restarts the machine. A product name; usually left untranslated.",

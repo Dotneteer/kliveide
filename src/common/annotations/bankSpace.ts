@@ -7,6 +7,8 @@ import {
   MC_TVC_MODEL,
   MI_ENTERPRISE,
   MC_EP_MODEL,
+  MI_SAM_COUPE,
+  MC_SAM_MODEL,
   MC_Z88_INTRAM,
   MI_Z88,
   MI_SCORPION,
@@ -54,6 +56,10 @@ import {
  *   §11): any 16K page can show any segment, so every segment is a bank, its number the partition. The
  *   ROM segments (EXOS 00h-01h, the cartridge 04h, the FILE: ROM 10h, EXDOS 20h-21h) are ROM pages under
  *   their own segment numbers; the 64's missing F8h-FBh are not RAM.
+ * - `sam`: the SAM Coupé's 16K pages (`dev/plans/SAM_COUPE_PLAN.md` §11), numbered as the machine numbers
+ *   its partitions (`samMachineInfo.ts`): internal pages 0-31 by their number, external pages from 80h,
+ *   each a bank; ROM0 (40h, at $0000) and ROM1 (41h, at $C000) are ROM pages. The 256K's pages 16-31
+ *   are not RAM.
  * - `z88`: the Cambridge Z88's 256 banks, by their own number, any of them in any segment the Blink
  *   pages (`dev/plans/Z88_OZ47_ROM_ANNOTATIONS_PLAN.md`, Phase 1). Segments 1-3 show a whole bank;
  *   segment 0 is two 8K halves: $0000-$1FFF is bank $00 (or RAM bank $20 with COM.RAMS) and
@@ -74,6 +80,7 @@ export type AnnotationMachine =
   | "ht1080z"
   | "tvc"
   | "ep"
+  | "sam"
   | "z88"
   | "rom";
 
@@ -530,6 +537,51 @@ export function epBankSpace(is128: boolean): BankSpace {
 }
 
 // ------------------------------------------------------------------------------------------------
+// The SAM Coupé: 16K pages, internal 0-31, ROM0/ROM1 40h/41h, external from 80h
+
+/** The SAM's ROM partitions (`samMachineInfo.ts`): ROM0 at $0000, ROM1 at $C000 */
+export const SAM_ROM0_PARTITION = 0x40;
+export const SAM_ROM1_PARTITION = 0x41;
+/** The SAM's first external page partition and the last partition a sidecar may name */
+const SAM_EXT_PARTITION = 0x80;
+const SAM_MAX_PARTITION = SAM_EXT_PARTITION + 63;
+
+const isSamRom = (partition: number) => partition === SAM_ROM0_PARTITION || partition === SAM_ROM1_PARTITION;
+
+/** The SAM bank space: the 512K's RAM is pages 0-31, the 256K's 0-15 */
+export function samBankSpace(ramPages: 16 | 32): BankSpace {
+  return {
+    id: "sam",
+    bankSize: BANK_SIZE,
+    maxBank: SAM_MAX_PARTITION,
+    ramBanks: Array.from({ length: ramPages }, (_, i) => i),
+    extendedSet: false,
+    bankBreakpoints: true,
+    siteAt(address, slots) {
+      const partition = slotPartition(slots, address);
+      if (partition === undefined || partition < 0) return undefined;
+      const offset = address & 0x3fff;
+      if (isSamRom(partition)) return { kind: "rom", partition, offset };
+      return { kind: "bank", bank: partition, offset };
+    },
+    addressesOf(site, slots) {
+      const result: number[] = [];
+      for (let section = 0; section < 4; section++) {
+        if (slots?.[section * 2] === site.bank) result.push(section * 0x4000 + site.offset);
+      }
+      return result;
+    },
+    partitionOf: (site) => site.bank,
+    candidateAddresses: (site) => [0, 1, 2, 3].map((section) => section * 0x4000 + site.offset),
+    // --- Where a program runs them (`common/samcoupe/codePlacement.ts`): page 0 at $4000, page 1 at
+    // --- $8000, page 2 at $C000; any other page at $8000, where HMPR pages it
+    defaultOffsetIndex: (bank) => (bank === 0 ? 1 : bank === 2 ? 3 : 2),
+    romBase: (partition) => (partition === SAM_ROM1_PARTITION ? 0xc000 : partition === SAM_ROM0_PARTITION ? 0x0000 : undefined),
+    isRomPartition: isSamRom
+  };
+}
+
+// ------------------------------------------------------------------------------------------------
 // The Cambridge Z88: 256 banks, any of them in any segment
 
 /** The banks of slot 0, which holds the ROM (OZ): $00-$1F. */
@@ -663,6 +715,8 @@ export function bankSpaceFor(
       return tvcBankSpace(config?.[MC_TVC_MODEL] === "64p");
     case MI_ENTERPRISE:
       return epBankSpace(config?.[MC_EP_MODEL] !== "64");
+    case MI_SAM_COUPE:
+      return samBankSpace(config?.[MC_SAM_MODEL] === "256" ? 16 : 32);
     case MI_Z88:
       return z88BankSpace(z88InternalRamBytes(config?.[MC_Z88_INTRAM]));
     default:
@@ -695,6 +749,8 @@ export function bankSpaceForAnnotationMachine(machine: AnnotationMachine): BankS
       return tvcBankSpace(true);
     case "ep":
       return epBankSpace(true);
+    case "sam":
+      return samBankSpace(32);
     case "z88":
       return z88BankSpace(z88InternalRamBytes(undefined));
     default:

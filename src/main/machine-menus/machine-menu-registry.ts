@@ -12,7 +12,8 @@ import {
   MI_SCORPION,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, ulaHardwareRenderer } from "./zx-specrum-menus";
@@ -21,6 +22,7 @@ import { ht1080zHardwareRenderer, ht1080zTapeMenuRenderer } from "./ht1080z-menu
 import { tvcDiskMenuRenderer, tvcTapeMenuRenderer } from "./tvc-menus";
 import { epDiskMenuRenderer, epHardwareRenderer } from "./ep-menus";
 import { epTapeMenuRenderer } from "./ep-tape-menus";
+import { samDiskMenuRenderer, samHardwareRenderer, samTapeMenuRenderer } from "./sam-menus";
 import {
   hotkeyMenuRenderer,
   soundOutputMenuRenderer,
@@ -66,6 +68,12 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     // --- device and its folder, the palette (`ep-menus.ts`)
     devices: { tape: epTapeMenuRenderer, disks: epDiskMenuRenderer },
     hardwareItems: epHardwareRenderer,
+    viewItems: spectrumIdeRenderer
+  },
+  [MI_SAM_COUPE]: {
+    // --- The tape, the internal drives and their disks, the mouse and the ROM version (`sam-menus.ts`)
+    devices: { tape: samTapeMenuRenderer, disks: samDiskMenuRenderer },
+    hardwareItems: samHardwareRenderer,
     viewItems: spectrumIdeRenderer
   },
   [MI_HT1080Z]: {

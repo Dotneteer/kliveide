@@ -340,6 +340,29 @@ merely uncoloured, which no route diff can see.
   in its 1770 variant (`WD1793_VARIANT == 1770`): a change there rebuilds the Beta 128's and the TVC's
   cores, which must stay byte-identical.
 
+## SAM Coupé
+
+- One C/WASM core runs the SAM Coupé 512K and 256K (machine `sam`, models `sam512`, `sam256`):
+  `src/emu/machines/samcoupe/wasm/` - read its `README.md` (one clock and the frame from the frame
+  interrupt, the cell stepper, contention, the picture, the SAA, the drives, the boot loader, tape) before
+  changing it. Decisions, rules and what is open: `dev/ai/sam-coupe.md`; the plan
+  `dev/plans/SAM_COUPE_PLAN.md`; the research pack `dev/research/sam-coupe/`.
+- Provenance (plan D1): Klive's own code from the research pack. SimCoupé, MAME's GPL SAM driver, ZEsarUX,
+  the FPGA cores and pyz80 are not read for design (ZX-Uno's core not at all); SimCoupé is only run as an
+  oracle. The ROMs (3.0 default, 3.1) are bundled under Andy Wright's 2008 grant
+  (`src/public/roms/sam-roms-readme.txt`); `SamRoms.ts` is the one place that names them. The SAM ROM is not
+  annotated.
+- Test with the harness in `test/harness/samcoupe/` (real ROM, `bootToCopyright`, `bootToBasic`, typing,
+  pages, ports, a bare machine in `test/sam-hw/bare.ts`); hardware tests go in `test/sam-hw/`. Contention is
+  pinned to Simon Owen's measured timings; pictures are pinned by hashes only after they were checked by
+  eye (`SAM_SHOTS_PNG=<dir>`). ROM landmarks (the copyright key wait) come from running the ROM.
+- Run boots the program from a disk: Klive's own boot loader (`src/public/sam/sam-klive-boot.asm`, at most
+  501 bytes, image pinned by a test) loads it through the emulated VL1772 after a key leaves the copyright
+  screen (that key is consumed) and F9 is pressed. The placement rules (page 1 at 8000h, Run's HMPR = 1)
+  are one module, `src/common/samcoupe/codePlacement.ts`, shared with the `.mgt` export.
+- The drives are two WD1772s on the shared `wd1793.c` (`WD1793_VARIANT 1772`, the file included twice): a
+  change there rebuilds the Beta 128's, TVC's and Enterprise's cores, which must stay byte-identical.
+
 ## ROM Annotations (reverse engineering the ROMs)
 
 - The shipped ROM sidecars (`src/public/roms/*.rom.dis`) are written from scratch: **read

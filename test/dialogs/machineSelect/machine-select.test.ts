@@ -67,6 +67,9 @@ describe("Select Machine dialog", () => {
     expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["scorpion"]);
     const ep = sections.find((s) => s.id === "ep")!;
     expect(ep.kind === "machine" && ep.rows.map((r) => r.name)).toEqual(["Enterprise 128", "Enterprise 64"]);
+    // --- The SAM Coupé has two models, the 512K and the 256K (`dev/plans/SAM_COUPE_PLAN.md` D2)
+    const sam = sections.find((s) => s.id === "sam")!;
+    expect(sam.kind === "machine" && sam.rows.map((r) => r.name)).toEqual(["SAM Coupé 512K", "SAM Coupé 256K"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });

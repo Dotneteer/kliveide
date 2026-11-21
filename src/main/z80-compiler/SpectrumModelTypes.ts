@@ -8,7 +8,8 @@ import {
   MI_ZXNEXT,
   MI_HT1080Z,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 } from "@common/machines/constants";
 
 
@@ -22,7 +23,8 @@ export const enum SpectrumModelType {
   ZX81 = 6,
   HT1080Z = 7,
   TVC = 8,
-  Enterprise = 9
+  Enterprise = 9,
+  SamCoupe = 10
 }
 
 /**
@@ -37,7 +39,8 @@ export const SpectrumModelTypes: Record<number, string> = {
   6: "ZX81",
   7: "HT1080Z",
   8: "TVC",
-  9: "Enterprise"
+  9: "Enterprise",
+  10: "SamCoupe"
 }
 
 /**
@@ -65,6 +68,11 @@ export function isTvcModelType(modelType: number | undefined): boolean {
 /** Whether a model type is the Enterprise 64/128's, both models (`dev/plans/ENTERPRISE_PLAN.md` §12) */
 export function isEnterpriseModelType(modelType: number | undefined): boolean {
   return modelType === SpectrumModelType.Enterprise;
+}
+
+/** Whether a model type is the SAM Coupé's, both models (`dev/plans/SAM_COUPE_PLAN.md` §12) */
+export function isSamCoupeModelType(modelType: number | undefined): boolean {
+  return modelType === SpectrumModelType.SamCoupe;
 }
 
 /**
@@ -106,6 +114,8 @@ export function defaultModelTypeForMachine(
       return SpectrumModelType.TVC;
     case MI_ENTERPRISE:
       return SpectrumModelType.Enterprise;
+    case MI_SAM_COUPE:
+      return SpectrumModelType.SamCoupe;
     default:
       return undefined;
   }

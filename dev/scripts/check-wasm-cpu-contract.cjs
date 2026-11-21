@@ -222,6 +222,19 @@ const wasmCpuContract = [
     // --- No Spectrum device: NICK and DAVE are the Enterprise's own (`dev/plans/ENTERPRISE_PLAN.md` §4.1)
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     requiredExports: ["epGetCpuAf", "epGetCpuBc", "epGetCpuDe", "epGetCpuHl", "epGetCpuPc", "epGetCpuSp"]
+  },
+  {
+    id: "sam",
+    label: "SAM Coupé",
+    mode: "z80",
+    buildScript: resolve(root, "dev/scripts/build-sam-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/samcoupe/wasm/sam/sam.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/samcoupe/wasm/sam/sam.c"),
+    artifact: resolve(root, "src/emu/machines/samcoupe/wasm/dist/sam.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- No Spectrum device: the ASIC and the SAA are the SAM's own (`dev/plans/SAM_COUPE_PLAN.md` §4.1)
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    requiredExports: ["samGetCpuAf", "samGetCpuBc", "samGetCpuDe", "samGetCpuHl", "samGetCpuPc", "samGetCpuSp"]
   }
 ];
 

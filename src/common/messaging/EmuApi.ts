@@ -25,6 +25,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { EpDaveDebugState, EpNickDebugState } from "@emu/machines/enterprise/EpDebugState";
+import type { SamAsicDebugState, SamSaaDebugState } from "@emu/machines/samcoupe/SamDebugState";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type {
   ProfileEdges,
@@ -466,6 +467,20 @@ class EmuApiImpl {
    * Gets the Enterprise 64/128's DAVE state (paging, interrupts, BFh, sound).
    */
   async getEpDaveState(): Promise<EpDaveDebugState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the SAM Coupé's ASIC state (paging, video mode, CLUT, border, interrupts, the beam).
+   */
+  async getSamAsicState(): Promise<SamAsicDebugState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the SAM Coupé's SAA 1099 state (its registers, decoded per channel).
+   */
+  async getSamSaaState(): Promise<SamSaaDebugState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

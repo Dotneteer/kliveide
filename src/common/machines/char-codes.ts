@@ -725,3 +725,17 @@ function buildEpChars(): Record<number, CharDescriptor> {
 }
 
 export const EpChars: Record<number, CharDescriptor> = buildEpChars();
+
+/*
+ * The SAM Coupé's character set for the memory panel (`dev/plans/SAM_COUPE_PLAN.md` §11): plain ASCII at
+ * 20h-7Eh. The ROM's own font (where it differs from ASCII) is not read yet, so no other code has a
+ * glyph here.
+ */
+function buildSamChars(): Record<number, CharDescriptor> {
+  const chars: Record<number, CharDescriptor> = {};
+  chars[0x20] = { v: "\xa0", t: "(space)" };
+  for (let code = 0x21; code < 0x7f; code++) chars[code] = { v: String.fromCharCode(code) };
+  return chars;
+}
+
+export const SamChars: Record<number, CharDescriptor> = buildSamChars();

@@ -105,6 +105,8 @@ import { UlaPanel } from "./appIde/SideBarPanels/UlaPanel";
 import { TvcVideoPanel } from "./appIde/SideBarPanels/TvcVideoPanel";
 import { EpNickPanel } from "./appIde/SideBarPanels/EpNickPanel";
 import { EpDavePanel } from "./appIde/SideBarPanels/EpDavePanel";
+import { SamAsicPanel } from "./appIde/SideBarPanels/SamAsicPanel";
+import { SamSaaPanel } from "./appIde/SideBarPanels/SamSaaPanel";
 import {
   CommandPanel,
   CommandPanelHeader
@@ -132,6 +134,7 @@ import {
   MF_VIC,
   MF_Z80,
   MI_ENTERPRISE,
+  MI_SAM_COUPE,
   MI_TVC,
   MI_ZXNEXT
 } from "@common/machines/constants";
@@ -340,6 +343,22 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     restrictTo: [MI_ENTERPRISE]
   }, { title: "panels.side.epDave.title" }),
+  withTexts({
+    // --- The SAM Coupé's ASIC: paging, screen, CLUT, interrupts, beam (`dev/plans/SAM_COUPE_PLAN.md` §11)
+    id: "samAsicPanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: SamAsicPanel,
+    initialSize: 500,
+    restrictTo: [MI_SAM_COUPE]
+  }, { title: "panels.side.samAsic.title" }),
+  withTexts({
+    // --- The SAM Coupé's SAA 1099: channels, noise, envelopes (`dev/plans/SAM_COUPE_PLAN.md` §11)
+    id: "samSaaPanel",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: SamSaaPanel,
+    initialSize: 500,
+    restrictTo: [MI_SAM_COUPE]
+  }, { title: "panels.side.samSaa.title" }),
   {
     id: "vicPanel",
     title: "VIC",

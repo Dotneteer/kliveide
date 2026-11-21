@@ -33,7 +33,8 @@ export const CORE_EXPORT_PREFIXES: Record<string, readonly string[]> = {
   zx8081: ["zx8081"],
   ht1080z: ["ht1080z"],
   tvc: ["tvc"],
-  ep: ["ep"]
+  ep: ["ep"],
+  sam: ["sam"]
 };
 
 /** Exports shared by every Z80 core, by exact name prefix */
@@ -186,6 +187,10 @@ const CORE_OVERRIDES: Record<string, Record<string, ExportClass>> = {
     HostFsGetRequest: "pure",
     HostFsTake: "journaled",
     HostFsDone: "journaled"
+  },
+  sam: {
+    // --- A byte of an internal page, without a bus cycle (FFh for a page not fitted)
+    ReadPage: "pure"
   }
 };
 

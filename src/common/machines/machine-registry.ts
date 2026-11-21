@@ -41,10 +41,11 @@ import {
   MI_HT1080Z,
   MC_HT_MODEL,
   MI_TVC,
-  MI_ENTERPRISE
+  MI_ENTERPRISE,
+  MI_SAM_COUPE
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_MICRODRIVE_1, MEDIA_MICRODRIVE_2, MEDIA_TAPE } from "@common/structs/project-const";
-import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, EpChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Ht1080zChars, type Ht1080zCharSetId, ht1080zCharsFor, TvcChars, EpChars, SamChars, Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
@@ -77,10 +78,12 @@ import {
 import { HT1080Z_MODELS } from "@emu/machines/ht1080z/ht1080zMachineInfo";
 import { TVC_MODELS } from "@emu/machines/tvc/tvcMachineInfo";
 import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
+import { SAM_MODELS } from "@emu/machines/samcoupe/samMachineInfo";
 import {
   EpBasicCustomDisassembler,
   EpCustomDisassembler
 } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
+import { SamCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/sam-disassembler";
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
@@ -784,6 +787,46 @@ export const machineRegistry: MachineInfo[] = [
               : false
           )
         ]),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    // --- `dev/plans/SAM_COUPE_PLAN.md`: the 512K and the 256K as models (D2), one WASM core
+    machineId: MI_SAM_COUPE,
+    displayName: "SAM Coupé",
+    // --- Plain ASCII (`char-codes.ts`): the ROM's own font is not read yet
+    charSet: SamChars,
+    features: {
+      [MF_Z80]: true,
+      // --- Run and Debug boot the program from a disk through Klive's loader (`samBootDisk.ts`, D7)
+      [MF_INJECT_SUPPORT]: true,
+      // --- Tapes through EAR/MIC (plan §9.4)
+      [MF_TAPE_SUPPORT]: true,
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The 32 internal pages: the memory panel's page matrix (labels and groups from the machine)
+      [MF_BANK]: 32,
+      // --- The shared execution-history recorder and the access profile
+      [MF_EXEC_HISTORY]: true,
+      [MF_AUDIO_MIXER]: true,
+      [MF_PROFILE]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
+    },
+    models: SAM_MODELS,
+    // --- Two internal drives (`MC_SAM_DRIVES`) and the tape
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      // --- RST 8's code byte: an error or a DOS hook (`sam-disassembler.ts`), everywhere
+      [CT_CUSTOM_DISASSEMBLER]: () => new SamCustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

@@ -15,5 +15,6 @@ export default {
   "zx80-zx81": "ZX80 and ZX81",
   "ht1080z": "HT-1080Z",
   "videoton-tvc": "Videoton TVC",
-  "enterprise": "Enterprise 64/128"
+  "enterprise": "Enterprise 64/128",
+  "sam-coupe": "SAM Coupé"
 };

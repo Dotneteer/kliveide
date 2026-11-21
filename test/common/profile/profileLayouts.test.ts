@@ -6,7 +6,7 @@ import { isProfileRom, profileLocationOf, profileOffsetOf } from "@common/profil
 
 describe("the profile layouts", () => {
   it("cover every profiling machine id", () => {
-    for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "zxnext", "z88", "zx80", "zx81"]) {
+    for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "zxnext", "z88", "zx80", "zx81", "sam"]) {
       expect(profileLayoutOf(id), id).toBeDefined();
     }
     expect(profileLayoutOf("c64")).toBeUndefined();
@@ -14,7 +14,7 @@ describe("the profile layouts", () => {
   });
 
   it("round-trip every region's first and last byte", () => {
-    for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "zxnext", "z88", "zx81"]) {
+    for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "zxnext", "z88", "zx81", "sam"]) {
       const layout = profileLayoutOf(id)!;
       for (const region of layout.regions) {
         const size = region.size ?? layout.partitionSize;

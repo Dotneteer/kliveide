@@ -29,6 +29,7 @@ import { createZx81Session } from "../harness/zx81";
 import { createHtSession } from "../harness/ht1080z";
 import { createTvcSession } from "../harness/tvc";
 import { createEpSession } from "../harness/enterprise";
+import { createSamSession } from "../harness/samcoupe";
 import { createCore, createSession as createNextSession } from "../harness/zxnext";
 
 /*
@@ -77,6 +78,7 @@ const MACHINES: { name: string; coreId: string; create(): Promise<AnyWasmMachine
   { name: "HT-1080Z", coreId: "ht1080z", create: async () => (await createHtSession()).bootToPrompt().machine as never },
   { name: "Videoton TVC 64K+", coreId: "tvc", create: async () => (await createTvcSession({ model: "tvc64p" })).bootToBasic().machine as never },
   { name: "Enterprise 128", coreId: "ep", create: async () => (await createEpSession()).bootToBasic().machine as never },
+  { name: "SAM Coupé 512K", coreId: "sam", create: async () => (await createSamSession()).bootToBasic().machine as never },
   { name: "ZX Spectrum Next", coreId: "zxnext", create: async () => (await createCore({ hardReset: true })) as never }
 ];
 

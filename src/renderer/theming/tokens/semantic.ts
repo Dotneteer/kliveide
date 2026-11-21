@@ -277,6 +277,13 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--device-strip-rule-ep": DEVICE.epStripRule,
     "--device-legend-ep-strip-ink": DEVICE.legendEpStripInk,
     "--device-knob-ep": DEVICE.epKnob,
+    "--device-key-sam": DEVICE.keySam,
+    "--device-key-edge-sam": DEVICE.keySamEdge,
+    "--device-key-ctl-sam": DEVICE.keySamCtl,
+    "--device-key-ctl-edge-sam": DEVICE.keySamCtlEdge,
+    "--device-legend-sam-ink": DEVICE.legendSamInk,
+    "--device-body-sam": DEVICE.samCase,
+    "--device-well-sam": DEVICE.samWell,
     /*
      * The accent on a device surface, whatever the app's tone: device surfaces have no light mode
      * (§8.2.1), so a highlight on them cannot follow `--accent-solid`'s tone. Each accent's two tone
@@ -295,6 +302,8 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--accent-device-pressed-ep-fn": mix(accent.solid.dark, DEVICE.keyEpFn, 45),
     "--accent-device-pressed-ep-f": mix(accent.solid.dark, DEVICE.keyEpF, 45),
     "--accent-device-pressed-ep-stop": mix(accent.solid.dark, DEVICE.keyEpStop, 45),
+    "--accent-device-pressed-sam": mix(accent.solid.dark, DEVICE.keySam, 45),
+    "--accent-device-pressed-sam-ctl": mix(accent.solid.dark, DEVICE.keySamCtl, 45),
     ...Object.fromEntries(
       Object.entries(DEVICE_INK).map(([k, v]) => [`--device-ink-${k.toLowerCase()}`, v])
     )

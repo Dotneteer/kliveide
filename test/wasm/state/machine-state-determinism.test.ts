@@ -26,6 +26,7 @@ import { createZx81Session } from "../../harness/zx81";
 import { createHtSession } from "../../harness/ht1080z";
 import { createTvcSession } from "../../harness/tvc";
 import { createEpSession } from "../../harness/enterprise";
+import { createSamSession } from "../../harness/samcoupe";
 import { createSession as createNextSession } from "../../harness/zxnext";
 import { BANK, buildSzx, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { expectSameBytes } from "../../expectBytes";
@@ -190,6 +191,16 @@ describe("machine state: save, load into another machine, run = keep running", (
     const b = await createEpSession();
     a.bootToBasic();
     // --- A program that prints (NICK's stretched video RAM writes), scrolls and sounds DAVE
+    a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
+    a.runFrames(7).step(333);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);
+  });
+
+  it("SAM Coupé 512K", async () => {
+    const a = await createSamSession();
+    const b = await createSamSession();
+    a.bootToBasic();
+    // --- A program that prints (the ASIC's contended screen writes) and scrolls
     a.typeKeys("10 FOR I=1 TO 99:PRINT I;:NEXT:GOTO 10\nRUN\n");
     a.runFrames(7).step(333);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 30);

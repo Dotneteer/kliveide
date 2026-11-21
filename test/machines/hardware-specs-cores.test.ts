@@ -22,6 +22,10 @@ import { EpWasmV2Machine } from "@emu/machines/enterprise/EpWasmV2Machine";
 import { EP_MODELS } from "@emu/machines/enterprise/epMachineInfo";
 import { MI_ENTERPRISE } from "@common/machines/constants";
 import { buildEpWasm, productionOutput as epWasm } from "../../dev/scripts/build-ep-wasm.cjs";
+import { SamWasmV2Machine } from "@emu/machines/samcoupe/SamWasmV2Machine";
+import { SAM_MODELS } from "@emu/machines/samcoupe/samMachineInfo";
+import { MI_SAM_COUPE } from "@common/machines/constants";
+import { buildSamWasm, productionOutput as samWasm } from "../../dev/scripts/build-sam-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their
@@ -149,5 +153,16 @@ describe("hardware specs against the cores", () => {
       }
     })(MI_ENTERPRISE, model, model.config, undefined, { readArtifact: async () => readFileSync(epWasm) });
     await expectMatches(machine, MI_ENTERPRISE, modelId);
+  });
+
+  it.each(SAM_MODELS.map((m) => m.modelId!))("SAM Coupé %s", async (modelId) => {
+    buildSamWasm();
+    const model = SAM_MODELS.find((m) => m.modelId === modelId)!;
+    const machine = new (class extends SamWasmV2Machine {
+      protected override async loadRomFromResource(romName: string): Promise<Uint8Array> {
+        return new Uint8Array(readFileSync(`src/public/roms/${romName}.rom`));
+      }
+    })(MI_SAM_COUPE, model, model.config, undefined, { readArtifact: async () => readFileSync(samWasm) });
+    await expectMatches(machine, MI_SAM_COUPE, modelId);
   });
 });
