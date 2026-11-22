@@ -2,6 +2,21 @@
 
 ## 0.70.0 (2026-11-22)
 
+### Highlights
+
+- **The SAM Coupé 512K and 256K (experimental)**, with ROM 3.0 or 3.1, the SAA 1099's stereo
+  sound, disk drives, Run and Debug from a bootable disk, and the full debugger.
+- **ZX Spectrum Next DMA debugging:** a DMA panel, a port log, a bus timeline, a transfer list, DMA
+  breakpoints and byte-by-byte stepping, and assembler warnings for `.dma` setups that will not work.
+- **ZX Spectrum Next interrupt and palette debugging:** an Interrupts panel and timeline, stops on
+  interrupts and on palette writes, and a Palettes document.
+- **Memory and Disassembly views, redesigned**, with a memory map, a bank map, Go to, Find, flow
+  arrows and an inspector; and a **Next Registers document** that decodes every register field by
+  field.
+- **Quieter, more useful errors in the code editor**, with a Quick Fix for mistyped labels.
+- **Unraveling the ZX Spectrum Next**, István Novák's 341-page book on the Next's hardware, is free
+  on kliveide.net with its 27 example demos.
+
 ### Features
 
 - **Next Registers document:** a pop-out button on the Debug sidebar's Next Registers panel (also
@@ -116,15 +131,16 @@
   pair, priority, transparency) and sets breakpoints on it; **Follow changes** jumps to the written
   entry at every stop. The Next Palettes panel now refreshes as soon as a palette changes and marks
   devices that were written or that a palette breakpoint watches.
-- **SAM Coupé.** Klive emulates the SAM Coupé 512K and 256K on a new WASM core, with ROM 3.0 or 3.1
-  (bundled by permission of their author, Andy Wright): the ASIC's four screen modes, palette, line
-  interrupts and memory contention (matching Simon Owen's real-hardware timings), the SAA 1099's
-  stereo sound and the beeper, the keyboard (with an on-screen keyboard drawn from a photo of the
-  machine), mouse and joysticks, two disk drives (.mgt, .dsk, .sad, .sbt images; F9 boots them), and
-  tapes. Run and Debug boot your program from a disk through Klive's own boot loader, so no DOS is
-  needed, and Export writes the same disk as a bootable .mgt. The debugger has ASIC and SAA 1099
-  panels, execution history, step back and code coverage; the File Manager reads and writes SAM
-  files on MGT disks.
+- **SAM Coupé (experimental).** Klive emulates the SAM Coupé 512K and 256K on a new WASM core, with
+  ROM 3.0 or 3.1 (bundled by permission of their author, Andy Wright): the ASIC's four screen modes,
+  palette, line interrupts and memory contention (matching Simon Owen's real-hardware timings), the
+  SAA 1099's stereo sound and the beeper, the keyboard (with an on-screen keyboard drawn from a photo
+  of the machine), mouse and joysticks, two disk drives (.mgt, .dsk, .sad, .sbt images; F9 boots
+  them), and tapes. Run and Debug boot your program from a disk through Klive's own boot loader, so
+  no DOS is needed, and Export writes the same disk as a bootable .mgt. The debugger has ASIC and
+  SAA 1099 panels, execution history, step back and code coverage; the File Manager reads and writes
+  SAM files on MGT disks. The SAM Coupé support is experimental: expect rough edges, and please
+  report what does not work.
 - **Unraveling the ZX Spectrum Next, free on kliveide.net:** István Novák's 341-page book on the
   Next's hardware, as a programmer sees it, can be downloaded as a PDF together with its examples, a
   Klive IDE project of 27 demos built into one `.nex` program. Every landing page promotes it in its
