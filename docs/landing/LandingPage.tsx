@@ -68,7 +68,8 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
       ["Cambridge Z88", "", "0.1.0"],
       ["HT-1080Z", "", "0.65.0"],
       ["Videoton TVC", "64K, 64K+", "0.66.0"],
-      ["Enterprise", "64, 128", "0.67.0"]
+      ["Enterprise", "64, 128", "0.67.0"],
+      ["SAM Coupé", "256K, 512K", "0.70.0"]
     ] as [string, string, string][]
   )
     .filter(([, , since]) => versionAtMost(since, site.latestRelease))
