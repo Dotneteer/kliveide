@@ -1,0 +1,26 @@
+# Builds and checks the website, without deploying it, for a pull request that changes
+# "Unraveling the ZX Spectrum Next" (docs/books/unraveling-next/README.md). Such pull requests come
+# from the book's repository (zx-next-book's "Publish to Klive IDE" workflow); this shows before the
+# merge that the new edition builds and passes `doc:check`. The merge itself deploys the site
+# through deploy-doc.yml's push trigger.
+
+name: Book PR check
+
+on:
+  pull_request:
+    paths:
+      - docs/books/**
+      - docs/public/books/**
+      - docs/public/images/books/**
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    uses: ./.github/workflows/deploy-doc.yml
+    # deploy-doc.yml asks for contents: write (for its deploy); with deploy: false it writes nothing
+    permissions:
+      contents: write
+    with:
+      deploy: false
