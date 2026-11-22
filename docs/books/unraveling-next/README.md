@@ -15,7 +15,24 @@ repository (`zx-next-book`); nothing here is edited by hand.
 
 ## A new edition
 
-Build the book there (`make pdf`), then here:
+The usual way is the book repository's **Publish to Klive IDE** workflow
+(`zx-next-book/.github/workflows/publish-to-klive.yml`), started by hand from its Actions tab on
+the branch to publish:
+
+1. It builds `build/book.pdf` on that branch (macOS, the Homebrew tools and fonts of a local build),
+   runs the sync script below into a kliveide checkout, and opens a pull request here from
+   `book/unraveling-next-sync`. A later run updates the same pull request; a run that changes
+   nothing opens none.
+2. `book-pr-check.yml` builds the website from the pull request and runs `doc:check`, deploying
+   nothing.
+3. Merging it puts the files in place, and `deploy-doc.yml` rebuilds and deploys the website on
+   that push to master, the examples zip included.
+
+The workflow needs the `KLIVEIDE_PR_TOKEN` secret in the book repository: a fine-grained token for
+`Dotneteer/kliveide` with *Contents* and *Pull requests* read and write. The pull request changes only
+`docs/`, so it needs no changeset.
+
+By hand: build the book there (`make pdf`), then here:
 
 ```bash
 node dev/scripts/sync-unraveling-book.cjs ../zx-next-book
