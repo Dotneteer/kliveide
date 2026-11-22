@@ -1,5 +1,162 @@
 # Klive IDE Changelog
 
+## 0.70.0 (2026-11-22)
+
+### Features
+
+- **Next Registers document:** a pop-out button on the Debug sidebar's Next Registers panel (also
+  View › Machine Views › Next Registers and `show-nextregs`) opens the ZX Spectrum Next's registers
+  as a document. Group them by index or by the book's categories, show values in hex, decimal or
+  binary, filter by number or text, keep only the registers that changed since the previous stop or
+  that the program wrote, and see each register's bits tinted field by field. An inspector column
+  decodes the selected register: both values, a bit diagram, every field with its named values, its
+  categories and the `nextreg` instruction that writes it.
+- **Memory and Disassembly views, redesigned:** both views share a memory map of the current paging,
+  a partition row with a **Bank map** of every partition (the Z88's card slots and their mirrors,
+  the Next's pages with the screens, Layer 2 and the tilemap marked live), a register strip and an
+  inspector column. **Go to** takes an address, a register, a label or `PART:offset`, as do
+  `show-memory` and `show-disass`. The Memory view shows 8, 16 or 32 bytes a row, tags the registers
+  pointing into each row, marks the bytes changed since the previous stop, and lets you type over a
+  byte, select a range, and find byte patterns or text in the view or across every partition. The
+  Disassembly view draws flow arrows between jumps and their targets, counts each label's
+  references, finds text in the listing, folds an empty Z88 card slot into one row, and inspects the
+  selected instruction: its verdict, what its operands point at, its annotation and its breakpoint.
+  The binary file viewer and popped-out banks share the same toolbar, Find and inspector. The
+  viewers of state files, debug recordings, snapshots and RZX recordings show their facts in
+  aligned, collapsible sections, with the screen framed beside the summary. The Graphics Finder, a
+  NEX bank's sprites and a tape block's List at take the same Go to box, which marks text it cannot
+  read; the Graphics Finder scrolls with the app's overlay scrollbar, and the µPD765 log colours its
+  port and byte as the other state panels do. The NEX, `TBBLUE.FW` and `TBBLUE.TBU` viewers and the
+  palette editor's help use the same sections as the other file viewers, and the byte previews of
+  the Disk Explorer, the Hard Disk Explorer and the File Manager draw their rows, cursor and
+  selection as the other hex dumps do.
+- **Z88 card images choose their card.** In the Insert Z88 Card dialog, select the card image first
+  and Klive selects a card type that fits its size: a 32K, 128K or 256K UV EPROM up to that size,
+  then a 512K or 1M AMD Flash. You can still pick another type. An image smaller than its card, such
+  as a 16K application, now goes at the top of a larger card instead of being refused (#1655).
+- **Interrupt debugging for the ZX Spectrum Next**: an Interrupts panel in the Machine info activity
+  shows the daisy chain at a pause (which source is requesting, in service or held, each one's
+  vector and handler) with diagnostics for the usual traps, such as a handler that ended with RETN
+  or returned without EI; the Interrupt Timeline document draws the interrupt events of the last
+  frames as swimlanes with each interrupt's latency; and interrupt stops (`bp-set int:ack:line`, or
+  the Interrupt event type in the breakpoint dialog) pause the machine when an interrupt is taken,
+  lost or kept waiting, when a handler's return releases nothing, or when an NMI is taken.
+- **A tidier Debug activity**: the ZX Spectrum Next's Next Registers side-bar panel is gone (the
+  Next Registers document, View › Machine Views › Next Registers, shows the same registers with more
+  detail), Next Memory Mapping and Copper moved to the Machine info activity beside the Next's other
+  panels, and the Watch panel starts collapsed, its badge still counting the expressions.
+- **Breakpoint dialog in pages:** the Add/Edit breakpoint dialog is laid out like the Settings
+  dialog, with Trigger, Condition and Action pages and one fixed height that no longer grows past a
+  small window. A summary under each page name shows what is set there, a page with a mistake is
+  marked with a red dot, and Add opens it.
+- **ZX Spectrum Next DMA panel.** A new **DMA** panel in the Machine info activity shows the Next's
+  DMA when the machine is paused: whether it is idle, waiting for its prescaler, holding the bus,
+  deaf or locked; its dialect and mode; both ports' start and working addresses side by side; how
+  many bytes the block has moved; the prescaler's exact byte period at the current CPU speed; the
+  status byte and what the next read of the port returns; and, on core 3.03 models, the zxnDDMA
+  settings. Warnings name the usual setup mistakes with their evidence, such as an enable without
+  `$CF`, a register group still waiting for bytes, or auto restart that never gives the bus back.
+  The `dma` command prints the same as text.
+- **`.dma` program warnings and summaries.** The Klive assembler now reads each `.dma` program the
+  way the ZX Spectrum Next's DMA reads it and warns, without failing the build, about setups that
+  compile but do not do what they say: a `wr0` or `wr4` whose omitted value has no `.dw` after it
+  (Z0388), an enable without `.dma load` after new start addresses (Z0389), auto restart that never
+  gives the bus back (Z0390), a prescaler in continuous mode (Z0391), and settings the Next ignores
+  (Z0392). In the editor, a line above each program summarises where its bytes go, how many, the
+  mode and the prescaler's rate, and hovering a `.dma` line decodes its register group.
+- **ZX Spectrum Next DMA Port Log.** A new **DMA Port Log** document (Debug › DMA Port Log, the DMA
+  panel's **Open the port log** link, or `show-dma-log`) records every write to and read from the
+  DMA's ports `$6B` and `$0B` while it is open: the frame, the T-state, the PC of the instruction,
+  and what the DMA did with each byte. Writes are grouped into setups that end with the enable, each
+  byte is shown as the DMA took it (so a byte swallowed as a follow byte shows as one), clicking a
+  PC opens the disassembly, and **Copy as .dma** turns a setup into `.dma` lines. A **Problems**
+  filter shows the bytes the DMA ignored, the write that left it deaf, an enable without a load, and
+  zxnDDMA commands sent to `$0B`.
+- **ZX Spectrum Next DMA stops and stepping.** Breakpoints can now stop on what the DMA does rather
+  than at an address: `bp-set dma:enable`, `dma:load`, `dma:end` (a block's end), `dma:count:<n>`
+  (after n bytes), `dma:write:<address>[-<address>]` (the DMA writes memory there), `dma:held:<T>`
+  (it holds the bus longer than T T-states) and `dma:problem` (a setup mistake), or the **DMA
+  event** type in the breakpoint dialog. Events inside a transfer stop there, before the CPU's next
+  instruction, and continuing carries on with the next byte. While paused, the DMA panel's **Step
+  byte**, **To end of block** and **Until the CPU has the bus** buttons (`step-dma`,
+  `step-dma-block`, `step-dma-release`) run the DMA one step at a time.
+- **ZX Spectrum Next DMA Bus Timeline.** A new **DMA Bus Timeline** document (Debug › DMA Bus
+  Timeline, the DMA panel's **Open the bus timeline** link, or `show-dma-timeline`) records when the
+  DMA holds the bus while it is open: an overview of the DMA's share of each frame, with a mark on
+  frames whose pulse-mode interrupt was lost while the DMA held the bus; the selected frame to scale
+  in T-states, the DMA's holds against the CPU's time, with zoom; and its figures, including the
+  measured byte period of a paced transfer.
+- **ZX Spectrum Next DMA Transfers.** A new **DMA Transfers** document (Debug › DMA Transfers, the
+  DMA panel's **Open the transfers** link, or `show-dma-transfers`) lists every DMA transfer while
+  it is open, from its enable to its end: the instruction that enabled it, its mode, what it read
+  and wrote, the bytes moved, how long it held the bus and how it ended, with warnings for a lost
+  frame interrupt and for an enable without a load. Selecting a transfer tints its bytes in the
+  Memory panel: those it read, those it wrote and, while it runs, the next byte.
+- **Quieter, more useful errors in the code editor:** background compilation no longer marks a line
+  with a solid red pill. A line with an error or warning is tinted, its line number takes the error
+  colour, and the message follows the code with its error code. The hover lists every message on the
+  line, a mistyped label in Klive Z80 assembly gets a **Quick Fix...** with the label you probably
+  meant, a counter in the editor's top-right corner shows the file's errors and warnings and steps
+  through them, and the file's tab shows its error count.
+- **Screen file viewer:** `.scr`, `.sl2` and `.nxi` pictures open in one new viewer, and so do LoRes
+  (`.slr`), Timex hi-colour (`.shc`) and Timex hi-res (`.shr`) files, which only said "not
+  implemented" before. It fits the picture to the window, lists the file's facts and its PLUS3DOS
+  header, describes the pixel under the mouse with its bytes and addresses, highlights the pixels of
+  a colour or the cells that FLASH, blinks FLASH cells as the machine does, and saves the picture as
+  PNG or copies it.
+- **ZX Spectrum Next palette debugging.** Breakpoints can now stop when the program writes a palette
+  entry or flips a device's live palette bank: `bp-set pal:spr1:$03`, `pal:l2:$00-$0f`, `pal:any` or
+  `pal:tm:live`, by the CPU, the DMA or (with `-c`) the Copper, through NextReg `$41`, `$44` or the
+  ULA+ port; `-changed` skips writes of the colour already there, and conditions can read `palNew`,
+  `palOld`, `palSlot` and `palIndex`. The breakpoint dialog has a **Palette write** type, and the
+  stop names the entry, its old and new colour and the writing instruction. A new **Palettes**
+  document (View › Machine Views › Palettes, `show-palettes`, or the pop-out button of the Next
+  Palettes panel) shows a device's two banks side by side, marks the entries written since the last
+  stop with the colour each replaced, decodes the selected entry (RGB333, the `$41` byte and `$44`
+  pair, priority, transparency) and sets breakpoints on it; **Follow changes** jumps to the written
+  entry at every stop. The Next Palettes panel now refreshes as soon as a palette changes and marks
+  devices that were written or that a palette breakpoint watches.
+- **SAM Coupé.** Klive emulates the SAM Coupé 512K and 256K on a new WASM core, with ROM 3.0 or 3.1
+  (bundled by permission of their author, Andy Wright): the ASIC's four screen modes, palette, line
+  interrupts and memory contention (matching Simon Owen's real-hardware timings), the SAA 1099's
+  stereo sound and the beeper, the keyboard (with an on-screen keyboard drawn from a photo of the
+  machine), mouse and joysticks, two disk drives (.mgt, .dsk, .sad, .sbt images; F9 boots them), and
+  tapes. Run and Debug boot your program from a disk through Klive's own boot loader, so no DOS is
+  needed, and Export writes the same disk as a bootable .mgt. The debugger has ASIC and SAA 1099
+  panels, execution history, step back and code coverage; the File Manager reads and writes SAM
+  files on MGT disks.
+- **Unraveling the ZX Spectrum Next, free on kliveide.net:** István Novák's 341-page book on the
+  Next's hardware, as a programmer sees it, can be downloaded as a PDF together with its examples, a
+  Klive IDE project of 27 demos built into one `.nex` program. Every landing page promotes it in its
+  first screen, and the book's own page, kliveide.net/unraveling-book, available in every language
+  of the website, lists its parts, chapters and demos and shows how to run the examples in Klive or
+  on a real Next.
+
+### Fixes
+
+- Document toolbars broke apart in a narrow pane: the Execution History's, the Profiler's, the
+  Copper List's, the BASIC and tape block listings', the script output's and the command result's
+  controls spilled above the panel and over its content. They now wrap into clean lines. In a narrow
+  pane the Execution History also moves its detail pane under the list, so the pane no longer
+  squeezes the instruction column.
+- Emulator: stepping back while debugging could crash the emulator window with an "IndexSizeError"
+  when the redraw came before the screen size was known; the redraw now waits for the screen.
+- Panels and dialogs: several scroll areas used the system's scrollbar instead of the IDE's own
+  overlay scrollbars - the Execution History's detail pane, the Variables panel, the Profiler's
+  callers list, the File Manager's viewer, drive menu and copy and delete dialogs, the graphics
+  candidates list, the Sprite Editor's tool rail and inspector, the Sprite Inspector's narrow
+  details, the lists and previews of the `.nex` label, region and reference dialogs, the bank
+  comment popover and strip, the navigation history and sound popovers, and the lists in the Detect,
+  Make Project, sjasmplus and z88dk dialogs.
+- Clicking a document tab that was partly scrolled out of the tab strip did not scroll it into view
+  when it was already the active tab; any clicked tab is now shown in full.
+- ZX Spectrum Next: the Layer 2 picture viewer (`.sl2`, `.nxi`) and the `.scr` viewer refused files
+  that start with a 128-byte +3DOS header, the form +3 BASIC and NextBASIC save; they now skip the
+  header and show the picture.
+- IDE: files with an upper-case extension, such as `SCREEN.SCR`, `TITLE.NXI` or `GAME.NEX`, opened
+  as raw bytes instead of in their viewer. Screen, palette, sprite, NEX, Z88 snapshot, ROM, binary
+  and image files now match their extension in any case.
+
 ## 0.69.0 (2026-11-17)
 
 ### Highlights
