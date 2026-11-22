@@ -10,31 +10,17 @@
  */
 import Link from "next/link";
 import { findLocalizedImage } from "../page-components/images";
-import { DEFAULT_LOCALE, LOCALE_NAMES, LOCALES } from "../i18n/locales.mjs";
+import { DEFAULT_LOCALE, LOCALES } from "../i18n/locales.mjs";
 import DownloadButton from "./DownloadButton";
 import ImageViewer from "./ImageViewer";
-import LanguageSelect from "./LanguageSelect";
-import ThemeToggle from "./ThemeToggle";
 import { FEATURES, HERO_SLIDES, SHOWN_FEATURES, type Feature } from "./features";
 import HeroCarousel from "./HeroCarousel";
 import { docsHref, landingHref, landingTranslator } from "./i18n";
 import { readSiteInfo, versionAtMost } from "./site-info";
-import { GITHUB_ICON, GITHUB_URL as GITHUB } from "../page-components/SiteIcons";
-import SiteMenu, { SITE_NAV } from "../page-components/SiteMenu";
+import BookCard from "./BookCard";
+import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-
-const LOGO = (
-  <svg viewBox="0 0 200 200" aria-hidden="true">
-    <rect width="200" height="200" fill="#000" />
-    <path d="M200 149v-20l-70 70h20" fill="#0ff" />
-    <path d="M200 129v-20l-90 90h20" fill="#0f0" />
-    <path d="M200 109V89L90 199h20" fill="#ff0" />
-    <path d="M200 89V69L70 199h20" fill="#f00" />
-    <path d="M0 0h200v8H0zM0 192h200v8H0zM0 0h8v200H0zM192 0h8v200h-8z" fill="#00B4CC" />
-    <path d="M40 40h20v120H40zM60 80h40v20H60zM100 100h20v20h-20zM120 120h20v20h-20zM140 140h20v20h-20zM100 60h20v20h-20zM120 40h20v20h-20z" fill="#00B4CC" />
-  </svg>
-);
 
 /** The corner mark on a picture that opens full size */
 const EXPAND = (
@@ -72,11 +58,6 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
     width: s.width,
     height: s.height
   }));
-  const languages: [string, string, string][] = LOCALES.map((id: string) => [
-    id,
-    (LOCALE_NAMES as Record<string, string>)[id] ?? id,
-    `${basePath}${landingHref(id)}`
-  ]);
   // --- A machine appears once the latest release has it, as the features do (R6)
   const machines: [string, string][] = (
     [
@@ -95,34 +76,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
 
   return (
     <div className="lp">
-      <a className="lp-skip" href="#main">
-        {t("nav.skip")}
-      </a>
-      <div className="site-rule" aria-hidden="true" />
-      <header className="lp-header">
-        <div className="lp-header-in">
-          <Link className="lp-brand" href={landingHref(lang)}>
-            {LOGO}
-            <span>Klive IDE</span>
-          </Link>
-          <nav className="lp-nav" aria-label="Klive">
-            {SITE_NAV.map(([key, area]) => (
-              <Link key={area} href={docsHref(lang, area)}>
-                {t(key)}
-              </Link>
-            ))}
-          </nav>
-          <div className="lp-tools">
-            <LanguageSelect current={lang} label={t("nav.language")} languages={languages} />
-            <ThemeToggle label={t("nav.theme")} />
-            {/* --- Below 900px the links and GitHub move into this menu (landing.css) */}
-            <SiteMenu lang={lang} />
-            <a className="site-icon-button lp-github" href={GITHUB} aria-label={t("nav.github")} title={t("nav.github")}>
-              {GITHUB_ICON}
-            </a>
-          </div>
-        </div>
-      </header>
+      <SiteHeader lang={lang} />
 
       <main id="main" className="lp-main">
         <section className="lp-top">
@@ -143,6 +97,8 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
             <p className="lp-fine">
               <a href={site.releasesPage}>{t("hero.otherPlatforms")}</a>
             </p>
+            {/* --- The book, promoted like the download; its bottom is the carousel's (landing.css) */}
+            <BookCard lang={lang} />
           </div>
           <div className="lp-top-media">
             <HeroCarousel
@@ -290,17 +246,7 @@ export default function LandingPage({ lang }: Readonly<{ lang: string }>) {
         </section>
       </main>
 
-      <footer className="lp-footer">
-        <div className="lp-footer-in">
-          <span>{t("footer.license")}</span>
-          <nav aria-label={t("footer.docs")}>
-            <Link href={docsHref(lang, "get-started")}>{t("footer.docs")}</Link>
-            <Link href={docsHref(lang, "reference", "whats-new/")}>{t("footer.changelog")}</Link>
-            <a href={`${GITHUB}/issues`}>{t("footer.issues")}</a>
-            <a href={`${GITHUB}/blob/master/src/common/i18n/locales/README.md`}>{t("footer.translate")}</a>
-          </nav>
-        </div>
-      </footer>
+      <SiteFooter lang={lang} />
 
       <ImageViewer label={t("viewer.label")} closeLabel={t("viewer.close")} countLabel={t("viewer.count")} />
     </div>

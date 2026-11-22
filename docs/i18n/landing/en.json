@@ -415,6 +415,26 @@
   "@cta.text": {
     "context": "Paragraph of the last section, under 'Install Klive'. 'Z80' and 'BASIC' are never translated."
   },
+  "book.title": "Free book: {title}",
+  "@book.title": {
+    "context": "Heading of the card in the first screen that promotes the author's book. {title} is the book's English title, 'Unraveling the ZX Spectrum Next', which is never translated. The book itself is in English."
+  },
+  "book.text": "{pages} pages on the Next's hardware, with {demos} demos to run in Klive.",
+  "@book.text": {
+    "context": "One sentence on the book's card. {pages} is its page count, {demos} the number of demo programs that come with it. 'Next' is the ZX Spectrum Next; 'Klive' is never translated."
+  },
+  "book.about": "About the book",
+  "@book.about": {
+    "context": "Link from the book's card to the book's own page (in English). Also the accessible name of the cover picture, which links there too."
+  },
+  "book.pdf": "Book (PDF)",
+  "@book.pdf": {
+    "context": "Button that downloads the book as a PDF file. Keep it short: it sits beside 'Examples (ZIP)' in a narrow card. 'PDF' is never translated."
+  },
+  "book.examples": "Examples (ZIP)",
+  "@book.examples": {
+    "context": "Button that downloads the book's example programs as a ZIP file (a Klive IDE project). Keep it short. 'ZIP' is never translated."
+  },
   "footer.license": "Klive IDE is free and open source, under the MIT license.",
   "@footer.license": {
     "context": "Footer line. 'Klive IDE' and 'MIT' are never translated."

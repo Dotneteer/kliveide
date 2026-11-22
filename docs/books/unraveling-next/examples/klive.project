@@ -1,0 +1,47 @@
+{
+  "kliveVersion": "0.69.0",
+  "machineType": "zxnext",
+  "modelId": "ks3-30303",
+  "config": {},
+  "clockMultiplier": 1,
+  "soundLevel": 1,
+  "soundMuted": false,
+  "savedSoundLevel": 1,
+  "media": {
+    "divMmcSdCard": "/Users/dotneteer/Klive/ks2-30204.cim",
+    "sdCard": "/Users/dotneteer/Klive/ks3-30303.cim"
+  },
+  "ide": {
+    "excludedProjectItems": []
+  },
+  "viewOptions": {
+    "theme": "dark"
+  },
+  "debugger": {
+    "schemaVersion": 1,
+    "breakpoints": [],
+    "watchExpressions": [],
+    "sourceWatches": []
+  },
+  "builder": {
+    "roots": [
+      "code/main.kz80.asm"
+    ]
+  },
+  "workspaceSettings": {
+    "docsWorkspace": {
+      "version": 2,
+      "layout": {
+        "type": "leaf",
+        "areaId": "document-area-1"
+      },
+      "activeAreaId": "document-area-1",
+      "areas": [
+        {
+          "areaId": "document-area-1",
+          "documents": []
+        }
+      ]
+    }
+  }
+}

@@ -217,12 +217,16 @@ div.lp-body {
 
 /* --- The first screen holds the whole pitch: the headline and its actions on the left, the carousel
    --- on the right, both fully visible without scrolling. The carousel is as wide as its column or as
-   --- the screen's height allows (see .lp-top-media .lp-carousel), whichever is smaller. */
+   --- the screen's height allows (see .lp-top-media .lp-carousel), whichever is smaller.
+   --- The two columns share one bottom edge: the book's card ends where the carousel ends. Both
+   --- columns stretch to the row; the card takes the space left in the copy column, and the carousel
+   --- sits at the bottom of its own, so whichever column is taller sets the row and the other one
+   --- lines up with it. Where the copy is the shorter (most desktop windows), the tops line up too. */
 .lp-top {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 3rem;
-  align-items: center;
+  align-items: stretch;
   padding: 2rem 0;
 }
 
@@ -257,7 +261,79 @@ div.lp-body {
 }
 
 .lp-top-copy {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+}
+
+/* --- The least room between the download's line and the book's card */
+.lp-top-copy .lp-fine {
+  margin-bottom: 1.5rem;
+}
+
+/* --- The book's card (BookCard.tsx): promoted like the download, so it is the one accent-tinted
+   --- panel on the page, with the book's download filled like Klive's own */
+.lp-book-card {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  gap: 1.125rem;
+  align-items: center;
+  max-width: 34rem;
+  margin-top: auto;
+  padding: 0.875rem 1.125rem;
+  border: 1px solid var(--site-accent);
+  border-radius: 8px;
+  background: var(--site-accent-soft);
+}
+
+.lp-book-card b {
+  display: block;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+}
+
+.lp-book-card p {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.lp-book-card p a {
+  color: var(--site-accent);
+}
+
+.lp-book-card .lp-actions {
+  gap: 0.5rem;
+}
+
+.lp-book-card .lp-button {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9375rem;
+}
+
+/* --- The cover is a picture of a printed book: a lifted shadow, the same in both themes */
+.lp-book-cover {
+  display: block;
+  line-height: 0;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 8px 20px -6px rgb(0 0 0 / 0.45);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.lp-book-cover img {
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+}
+
+.lp-book-cover:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-book-cover {
+    transition: none;
+  }
 }
 
 /* --- "At a glance" (option C of the author's mockups): two groups of facts, each a bold heading over
@@ -311,6 +387,9 @@ div.lp-body {
    --- times the height left over (the rule, the header, the hero's padding, the bar and its gap).
    --- In a narrow column, or on a phone, the column's width is the smaller of the two. */
 .lp-top-media {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   min-width: 0;
 }
 
@@ -788,6 +867,11 @@ div.lp-body {
 
   .lp-top-media .lp-carousel {
     margin: 0 auto;
+  }
+
+  /* --- Stacked, the card follows the download's line */
+  .lp-book-card {
+    margin-top: 0;
   }
 
   .lp-header-in {

@@ -50,6 +50,7 @@ the checks cite by number.
 | D6 | **The book** (*Inside the ZX Spectrum Next*) is reachable at its URLs and linked nowhere; `dev/scripts/build-doc-search-scope.cjs` keeps it out of Pagefind. |
 | D7 | "Try Klive in the browser" is not part of this work; it needs its own plan. |
 | D8 | **Visual design:** the app's tokens and type everywhere, a hero stripe band and Spectrum-colour feature blocks on the landing page only, numbered figure markers on screenshots. The later redesign is in `docs/design.md`. |
+| D9 | **The Unraveling book** (*Unraveling the ZX Spectrum Next*, the author's PDF, not D6's book) is promoted on every landing page by a card in the first screen and has its own English page at `/unraveling-book/`, the address the book prints. Its files are synced from the book's repository (`docs/books/unraveling-next/README.md`); its examples zip is built on every docs build with a cleaned `klive.project`. |
 
 ## The Guides (`docs/content/en/guides/`)
 

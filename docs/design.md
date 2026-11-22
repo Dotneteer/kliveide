@@ -59,6 +59,17 @@ dark one the way the app derives it; never tune one by hand. The roles:
   own menu (the sidebar) takes over. On the landing page: below 900px its links and GitHub move into a `<details>`
   menu, and below 420px the language button keeps only its globe: every language fits 320px.
 
+## The book
+- The author's book, *Unraveling the ZX Spectrum Next*, is promoted like the download: a card in the
+  first screen under the Download button (`landing/BookCard.tsx`), the page's one panel tinted with
+  `--site-accent-soft` and edged with the accent, its PDF button filled like Download. The cover links
+  to the book's page.
+- The card's bottom is the carousel's bottom at every width above the stack (960px): both hero
+  columns stretch, the card takes `margin-top: auto`, the carousel sits at the end of its column.
+- The book's page, `/unraveling-book/` (the address the book prints), is English only and uses the
+  landing page's header, footer, column, buttons and bands. Cover first, downloads with their sizes,
+  the book in numbers, its parts, the examples, and the download again at the end.
+
 ## At a glance
 - Two groups of facts under the sheet's 2px rule, no panel: "Get it" (version, platforms, licence)
   and "Write in" (languages, tools), each a bold heading over one or two sentences. They use the

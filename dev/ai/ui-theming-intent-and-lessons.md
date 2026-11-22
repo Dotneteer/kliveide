@@ -3654,8 +3654,8 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   dashes in landing texts, and a see-through blurred header.
 - **The Spectrum colours stay small:** a 6px four-colour rule above the header on every page (the
   docs get it through Nextra's `banner` slot, so it sits above the sticky navbar and scrolls away like
-  the landing page's) and a square before each landing feature's heading. Never a band, a block or a
-  colour behind running text.
+  the landing page's) and a square before each landing feature's heading (and before each part's
+  heading on the book's page). Never a band, a block or a colour behind running text.
 - **The landing page and the docs have one header** (the author: "I want to see the same header").
   Nextra's navbar is restyled to the landing header rather than replaced, so search, the active-area
   mark and the phone sidebar keep working: `align="left"` puts the links beside the brand, the
@@ -3755,6 +3755,21 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   moves on, paused by the pause button, and left on its poster under reduced motion and without
   script. It is not a viewer link. Record it near 16:10 (an 800 x 820 IDE beside a 520 x 440
   emulator): a 2.4:1 recording sat in the 16:10 frame as a thin strip under a dark band.
+- **The book is promoted like the download, inside the first screen** (`docs/landing/BookCard.tsx`):
+  a card under Klive's Download, the one accent-tinted panel on the page (`--site-accent-soft`, a 1px
+  accent edge), with the book's download filled like Klive's own. The author picked it over a section
+  of its own under the first screen. **The card and the carousel share one bottom edge**: both hero
+  columns stretch to the row, the card takes the space left in its column (`margin-top: auto`) and the
+  carousel sits at the bottom of its own, so whichever column is taller sets the row and the other
+  lines up with it. Centring the two columns separately (the old `align-items: center`) left the
+  edges 9px apart by chance, which the author saw at once. Where the copy is the shorter column (1280 x
+  800 and up) the headline's top meets the carousel frame's top as well. Measure both edges in the
+  built page after changing the hero's text or the card.
+- **The book's page wears the landing page's sheet** (`/unraveling-book/`, `BookPage.tsx`,
+  `landing/book.css`): the same header and footer (`SiteChrome.tsx`, shared with the landing page so
+  they cannot drift), the cover beside the title and the downloads, the bands and the closing
+  download. A cover is a picture of a printed object, so it alone gets a lifted shadow; screenshots
+  never do.
 - **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem
   "What Klive does" was smaller than the headings under it.
 - **A docs article has one measure, 70ch, for everything in it** (`article > main` in
