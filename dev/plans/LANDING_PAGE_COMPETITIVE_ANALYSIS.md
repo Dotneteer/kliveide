@@ -8,7 +8,7 @@ them. The Klive column is kept current under `AGENTS.md`'s standing rule: when a
 `dev/plans/CLOSING_THE_GAPS_PLAN.md` is implemented, update §2 (the Klive column) and §4 (the gaps) in
 the same change.
 
-Klive features are released unless marked **(after v0.69.0)**, meaning they wait in `dev/changes/` for
+Klive features are released unless marked **(after v0.70.0)**, meaning they wait in `dev/changes/` for
 the next release.
 
 ---
@@ -46,7 +46,7 @@ developers use it.
 | Win / Mac / Linux | ✅ | ✅ | ◐ (Mono) | ✅ | ✅ | ✅ |
 | 48K / 128K / +2A / +3 / +2E / +3E | ✅ incl. the Amstrad +2A/+3 ROMs; ULA timing checked against the real-machine timing suites (snow, late timing), results published beside real-machine photos | ✅ | ✗ | ✅ (reference) | ◐ (48/128) | ◐ |
 | ZX Spectrum Next | ✅ C/WASM core citing the FPGA VHDL, a hardware test suite of about 30 areas; four models (KS2 and KS3 boards, cores 3.02.01 to 3.03.03) | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
-| Other machines | Z88, Pentagon 128 with Beta 128/TR-DOS, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, ZX80/ZX81 (with machine code run and debugged as a `1 REM` program), HT-1080Z, Videoton TVC 64K/64K+, Enterprise 64/128, SAM Coupé 256K/512K, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
+| Other machines | Z88, Pentagon 128 with Beta 128/TR-DOS, Timex TC2048/TC2068/TS2068, Scorpion ZS-256, ZX80/ZX81 (with machine code run and debugged as a `1 REM` program), HT-1080Z, Videoton TVC 64K/64K+, Enterprise 64/128, SAM Coupé 256K/512K (experimental), C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
 | Editor with language intelligence | ✅ asm: compiler-driven completion, hover (macro expansion), rename, references, inlay hints, colour pickers. ◐ BASIC: keyword help, completion, signature help and folding while Boriel builds BASIC | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
 | Built-in assembler | ✅ Klive Z80/Z80N: macros, structs, modules, `.savenex`, `.dma` and `.copper` DSLs | ✗ | ✗ | ✗ | ✗ | ✗ |
 | External toolchains | ✅ sjasmplus (SLD), Boriel BASIC 2.x (bundled, installed on first run), z88dk C (line-level debugging), PASTA/80; SkoolKit import/export | ✅ sjasmplus, z80asm, z88dk | map files | ✗ | SkoolKit | Boriel |
@@ -55,17 +55,17 @@ developers use it.
 | Asm source-level debugging | ✅ Klive asm; sjasmplus with bank-aware SLD on the 128K, +3 and Next (not yet checked in the IDE, G10.3) | ✅ | labels only | ✗ | ✗ | ✗ |
 | **C source-level debugging** | ✅ z88dk (sccz80): C-line breakpoints, stepping, call stack, typed parameters, locals and globals | ◐ (line level) | ✗ | ✗ | ✗ | ✗ |
 | Exec / memory / I/O breakpoints | ✅ bank-relative and partition-scoped; every data access of an instruction watched | ✅ | ◐ | ✅ | ✅ | via CSpect |
-| Next-specific breakpoints | ✅ **(apparently unique)** NextReg writes (value/mask, old→new), Copper (`cu:`, Step Copper), sprite attributes (`sp:`, by CPU, DMA or Copper), palette entry writes and bank flips (`pal:`, old→new colour, `-changed`; after v0.69.0) | ? | ? | — | — | ✗ |
+| Next-specific breakpoints | ✅ **(apparently unique)** NextReg writes (value/mask, old→new), Copper (`cu:`, Step Copper), sprite attributes (`sp:`, by CPU, DMA or Copper), palette entry writes and bank flips (`pal:`, old→new colour, `-changed`) | ? | ? | — | — | ✗ |
 | **Conditional / hit-count breakpoints, logpoints** | ✅ conditions on registers, memory in any bank, values, paging, NextRegs and labels on every kind; logpoints; DeZog `LOGPOINT`/`ASSERTION`/`WPMEM` comments; one-shots; range watchpoints | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
 | **Reverse debugging / execution history** | ✅ every Z80 machine: the whole machine in the past (keyframes and a self-checking input journal), every breakpoint kind in reverse, Take over here; history viewer; trace export for diffing; debug recordings (`.klr`) that reopen with their past | ✅ | ? | ✗ | frame trace | ✗ |
 | **Unit tests / coverage / profiler** | ✅ per-bank coverage and heat map, SMC detection, LCOV; flat and call-graph profiler with interrupts as roots, speedscope/callgrind exports; DeZog-compatible unit tests with both assemblers, deterministic, T-states per test; `klive test` in CI (JUnit, LCOV) | ✅ (DeZog; VS Code only, no CI) | ✗ | profiler | memory diff | ✗ |
 | Call stack, watches | ✅ (+ BASIC and C call stacks) | ✅ | ? | ✗ | ✅ | ◐ |
-| Disassembly insight | ✅ branch verdicts with T-state cost, flow arrows between jumps and targets, label reference counts and an inspector per instruction, find in the listing (after v0.69.0), system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
+| Disassembly insight | ✅ branch verdicts with T-state cost, flow arrows between jumps and targets, label reference counts and an inspector per instruction, find in the listing, system-variable operands, T-state measuring | ✅ | ◐ | ◐ | ✅ | ✗ |
 | NEX reverse engineering | ✅ debug any `.nex` with no project, bank breakpoints and watchpoints, entry stop, live bank vs. file diff, `.nex.dis` annotations with Copper/DMA regions | ◐ (DeZog Analyze) | ✗ | ✗ | ✗ (no Next) | ✗ |
 | General reverse engineering | ✅ annotations on every machine; every shipped ROM annotated to level 2 (48K, 128K, +2A/+3/+3E, ZX80/ZX81, every Next ROM set, HT-1080Z, TVC, the Enterprise's except IS-BASIC 2.0, and the Cambridge Z88's OZ 4.7 from OZ's own source with its author's permission; the SAM Coupé's ROM 3.0/3.1 is not annotated yet); code/data detection from coverage, graphics finder, SkoolKit, source export verified by reassembly | ◐ | ✗ | ✗ | ✅ | ✗ |
-| **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique), a Palette document marking the entries written since the last stop with the colours they replaced (after v0.69.0) | ✅ (ZEsarUX) | ? | — | — | ✗ |
-| **Next interrupt debugging** | ✅ the daisy chain at a pause (in service, requesting, held, the vector table's handler words) with diagnostics for the usual traps; an interrupt timeline over 1-4 frames with latencies; interrupt stops (taken, lost, RETN in a handler, a long wait, NMI) (after v0.69.0) | ? | ? | — | — | ✗ |
-| **Next DMA debugging** | ✅ the DMA at a pause: dialect, mode, start and working addresses side by side, progress, the prescaler's exact period at the CPU speed, the status byte and read sequence, the zxnDDMA settings, with warnings for the usual setup traps (enable without a load, deaf, locked bus); a `dma` command; `.dma` summaries, hovers and warnings in the editor; a port write log decoded as the DMA took it; DMA stops and stepping; a bus timeline with lost interrupts; a transfers list with source and destination tinted in the Memory panel (after v0.69.0) | ? | ? | — | — | ✗ |
+| **Live Next inspectors** | ✅ Copper (with a raster ruler and list checks), Sprite, Tilemap and Layer 2 Inspectors, layer composition with a pixel probe naming the mixer rule (apparently unique), a Palette document marking the entries written since the last stop with the colours they replaced | ✅ (ZEsarUX) | ? | — | — | ✗ |
+| **Next interrupt debugging** | ✅ the daisy chain at a pause (in service, requesting, held, the vector table's handler words) with diagnostics for the usual traps; an interrupt timeline over 1-4 frames with latencies; interrupt stops (taken, lost, RETN in a handler, a long wait, NMI) | ? | ? | — | — | ✗ |
+| **Next DMA debugging** | ✅ the DMA at a pause: dialect, mode, start and working addresses side by side, progress, the prescaler's exact period at the CPU speed, the status byte and read sequence, the zxnDDMA settings, with warnings for the usual setup traps (enable without a load, deaf, locked bus); a `dma` command; `.dma` summaries, hovers and warnings in the editor; a port write log decoded as the DMA took it; DMA stops and stepping; a bus timeline with lost interrupts; a transfers list with source and destination tinted in the Memory panel | ? | ? | — | — | ✗ |
 | Beam position on the paused screen | ✅ on the Next and every Spectrum model, the picture drawn up to the beam | ✅ (ZEsarUX) | ? | ? | ? | ✗ |
 | Next asset editors | ✅ sprites (8-bit and 4-bit), palettes, Layer 2 pictures, images | ✗ | ✗ | — | — | ✗ |
 | NextZXOS boot, SD image | ✅ cached boot, a FAT32 driver; each model's SD card checked against its hashes, older models' cards downloaded on demand; tapes on the Next | ✅ | ✅ | — | — | via CSpect |
@@ -108,7 +108,7 @@ profiler (G5), W4 live Next inspectors (G3), W5 snapshots, state files and RZX (
 engineering depth (G7), W9 machine breadth (G9). Their detail is in §2.
 
 **Release status note** (update it to each release; the release PR's checklist asks for it):
-everything above shipped by **v0.69.0** except what §2 marks **(after v0.69.0)**. The landing page
+everything above shipped by **v0.70.0** except what §2 marks **(after v0.70.0)**. The landing page
 gates each feature and machine on the latest release tag (`docs/landing/features.ts` `since`), so it
 never claims ahead of a release.
 
