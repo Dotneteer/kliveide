@@ -1,5 +1,0 @@
----
-type: feature
----
-
-**ZX Spectrum Next palette debugging.** Breakpoints can now stop when the program writes a palette entry or flips a device's live palette bank: `bp-set pal:spr1:$03`, `pal:l2:$00-$0f`, `pal:any` or `pal:tm:live`, by the CPU, the DMA or (with `-c`) the Copper, through NextReg `$41`, `$44` or the ULA+ port; `-changed` skips writes of the colour already there, and conditions can read `palNew`, `palOld`, `palSlot` and `palIndex`. The breakpoint dialog has a **Palette write** type, and the stop names the entry, its old and new colour and the writing instruction. A new **Palettes** document (View › Machine Views › Palettes, `show-palettes`, or the pop-out button of the Next Palettes panel) shows a device's two banks side by side, marks the entries written since the last stop with the colour each replaced, decodes the selected entry (RGB333, the `$41` byte and `$44` pair, priority, transparency) and sets breakpoints on it; **Follow changes** jumps to the written entry at every stop. The Next Palettes panel now refreshes as soon as a palette changes and marks devices that were written or that a palette breakpoint watches.
