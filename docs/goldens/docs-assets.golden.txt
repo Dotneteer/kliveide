@@ -1,3 +1,5 @@
+/books/unraveling-the-zx-spectrum-next-examples.zip
+/books/unraveling-the-zx-spectrum-next.pdf
 /images/512x512.png
 /images/book/03-memory/allram-demo.png
 /images/book/03-memory/dffd-banks-demo.png
@@ -15,6 +17,9 @@
 /images/book/08-ula-screen/ula-standard.png
 /images/book/flying-start/intro-message.png
 /images/book/flying-start/print-values.png
+/images/books/unraveling-next/cover-1500.webp
+/images/books/unraveling-next/cover-240.webp
+/images/books/unraveling-next/cover-720.webp
 /images/de/get-started/basic-debug.webp
 /images/de/get-started/basic-debug.webp.json
 /images/de/get-started/basic-running.webp

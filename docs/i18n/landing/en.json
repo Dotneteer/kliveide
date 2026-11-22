@@ -415,6 +415,130 @@
   "@cta.text": {
     "context": "Paragraph of the last section, under 'Install Klive'. 'Z80' and 'BASIC' are never translated."
   },
+  "book.author": "István Novák",
+  "@book.author": {
+    "context": "The author's name, as this language writes a person's name: 'István Novák' in English, family name first where the language does that (Hungarian: 'Novák István'). It is used in the book page's byline, description and 'Why this book' text."
+  },
+  "book.text": "A free {pages}-page book on the Next's hardware, with {demos} demos.",
+  "@book.text": {
+    "context": "The sentence on the book's card in the landing page's first screen, under the book's English title and above an 'About the book' link. It says the book is free. {pages} is its page count, {demos} the number of demo programs that come with it. 'Next' is the ZX Spectrum Next. Keep it to about 60 characters: it must fit two lines of a narrow card."
+  },
+  "book.about": "About the book",
+  "@book.about": {
+    "context": "Link on the book's card, on its own line under the sentence, to the book's own page. Also the accessible name of the cover picture, which links there too."
+  },
+  "book.pdf": "Book (PDF)",
+  "@book.pdf": {
+    "context": "Button that downloads the book as a PDF file. Keep it short: it sits beside 'Examples (ZIP)' in a narrow card. 'PDF' is never translated."
+  },
+  "book.examples": "Examples (ZIP)",
+  "@book.examples": {
+    "context": "Button that downloads the book's example programs as a ZIP file (a Klive IDE project). Keep it short. 'ZIP' is never translated."
+  },
+  "bookPage.meta.description": "A free {pages}-page book by {author} on the ZX Spectrum Next's hardware, as a programmer sees it, with a Klive IDE project of demos.",
+  "@bookPage.meta.description": {
+    "context": "The book page's description for search engines and link previews. {pages} is the page count, {author} the author's name. 'ZX Spectrum Next' and 'Klive IDE' are never translated. At most about 160 characters."
+  },
+  "bookPage.by": "by {author}, the author of Klive IDE",
+  "@bookPage.by": {
+    "context": "Line under the book's title and subtitle on the book's page. {author} is the author's name. 'Klive IDE' is never translated. Lowercase start, like a byline."
+  },
+  "bookPage.lead": "How the ZX Spectrum Next works inside, and how to program it: the Z80N, memory and NextRegs, the display layers, the sound chips and the mixer, and the ports that reach the world. Written while building Klive's Next emulator, from the documentation, the real machine and the FPGA source.",
+  "@bookPage.lead": {
+    "context": "The book page's introduction, beside the cover. 'ZX Spectrum Next', 'Next', 'Z80N', 'NextRegs', 'FPGA' and 'Klive' are never translated."
+  },
+  "bookPage.downloadBook": "Download the book",
+  "@bookPage.downloadBook": {
+    "context": "Main button on the book's page: downloads the book as a PDF. The page adds 'PDF, 6.6 MB' after it. Keep it short: it never wraps."
+  },
+  "bookPage.downloadExamples": "Download the examples",
+  "@bookPage.downloadExamples": {
+    "context": "Second button on the book's page: downloads the book's example programs as a ZIP file. The page adds 'ZIP, 75 KB' after it. Keep it short: it never wraps."
+  },
+  "bookPage.inEnglish": "The book and its examples are in English.",
+  "@bookPage.inEnglish": {
+    "context": "Shown under the download buttons on the translated book pages only, before 'bookPage.free'."
+  },
+  "bookPage.free": "Free to download. The examples are a Klive IDE project: unzip it, open the {folder} folder and choose {run}.",
+  "@bookPage.free": {
+    "context": "Small print under the download buttons. {folder} is the folder name 'examples' and {run} is the IDE's 'Run' command, both shown as they are (never translated). 'Klive IDE' is never translated."
+  },
+  "bookPage.facts.label": "The book in numbers",
+  "@bookPage.facts.label": {
+    "context": "Accessible name (for screen readers) of the row of four facts about the book."
+  },
+  "bookPage.facts.pages": "pages, in colour",
+  "@bookPage.facts.pages": {
+    "context": "Small line under the book's page count (a large number such as 341). Lowercase start: it continues the number."
+  },
+  "bookPage.facts.parts": "{count} parts",
+  "@bookPage.facts.parts": {
+    "context": "Large fact on the book's page. {count} is the number of parts of the book (always more than one, today 4)."
+  },
+  "bookPage.facts.chapters": "{count} chapters",
+  "@bookPage.facts.chapters": {
+    "context": "Small line under the number of parts. {count} is the number of chapters (always more than one, today 31)."
+  },
+  "bookPage.facts.demos": "{count} demos",
+  "@bookPage.facts.demos": {
+    "context": "Large fact on the book's page, and the heading of the list of demos. {count} is the number of demo programs that come with the book (always more than one, today 27)."
+  },
+  "bookPage.facts.program": "in one {nex} program",
+  "@bookPage.facts.program": {
+    "context": "Small line under the number of demos. {nex} is the file type '.nex', shown as it is. Lowercase start: it continues the fact above it."
+  },
+  "bookPage.facts.project": "project, ready to run",
+  "@bookPage.facts.project": {
+    "context": "Small line under the large 'Klive IDE' (never translated): the examples are a Klive IDE project. Lowercase start: it continues 'Klive IDE'."
+  },
+  "bookPage.inside.title": "What is inside",
+  "@bookPage.inside.title": {
+    "context": "Section heading on the book's page, over the book's four parts and their chapters (whose titles stay English)."
+  },
+  "bookPage.inside.part": "Part {n}, {count} chapters",
+  "@bookPage.inside.part": {
+    "context": "Small line under each part's English title. {n} is the part's number, {count} its number of chapters (always more than one)."
+  },
+  "bookPage.examples.title": "The examples",
+  "@bookPage.examples.title": {
+    "context": "Section heading on the book's page: the demo programs that come with the book."
+  },
+  "bookPage.examples.text": "Every chapter that has something to show has a demo. They are built into one program, {file}: a menu by part, then the part's demos in book order. Each demo puts back what it changed and returns to the menu.",
+  "@bookPage.examples.text": {
+    "context": "Paragraph under 'The examples'. {file} is the program's file name, 'book-demos.nex', shown as it is."
+  },
+  "bookPage.examples.step1": "Download the examples and unzip them.",
+  "@bookPage.examples.step1": {
+    "context": "First of three numbered steps for running the examples."
+  },
+  "bookPage.examples.step2": "In Klive IDE, open the {folder} folder as a project.",
+  "@bookPage.examples.step2": {
+    "context": "Second step. {folder} is the folder name 'examples', shown as it is. The IDE's command for this is File > Open Folder; 'Klive IDE' is never translated."
+  },
+  "bookPage.examples.step3": "Choose {run}: Klive builds the program, boots NextZXOS and loads it.",
+  "@bookPage.examples.step3": {
+    "context": "Third step. {run} is the IDE's 'Run' command, shown in English because the IDE's Build menu shows it in English. 'Klive' and 'NextZXOS' are never translated."
+  },
+  "bookPage.examples.realNext": "On a real Next, copy {file} to the SD card and open it from the NextZXOS Browser. The demos never write to the SD card, the cores' flash, the Wi-Fi module or the clock.",
+  "@bookPage.examples.realNext": {
+    "context": "Paragraph after the steps: running the demos on real ZX Spectrum Next hardware. {file} is 'book-demos.nex', shown as it is. 'Next', 'NextZXOS' and 'Browser' (the NextZXOS file browser's name) are never translated; 'cores' are the Next's FPGA cores."
+  },
+  "bookPage.why.title": "Why this book",
+  "@bookPage.why.title": {
+    "context": "Section heading on the book's page: why the author wrote the book."
+  },
+  "bookPage.why.text": "The official documentation of the Next says what each register does and leaves the reader to work out how the pieces fit. {author} worked it out while emulating the machine in Klive IDE: from the documents, from experiments on the real hardware and from the public FPGA source. The book shows how and why things work, not only what they are, starting with the machine and going on to the picture, the sound and the way the Next talks to the world.",
+  "@bookPage.why.text": {
+    "context": "Paragraph under 'Why this book'. {author} is the author's name. 'Next', 'Klive IDE' and 'FPGA' are never translated."
+  },
+  "bookPage.end.title": "Get the book",
+  "@bookPage.end.title": {
+    "context": "Heading of the book page's last section, beside the two download buttons."
+  },
+  "bookPage.end.text": "The PDF and the examples, free.",
+  "@bookPage.end.text": {
+    "context": "One line under 'Get the book'. 'PDF' is never translated."
+  },
   "footer.license": "Klive IDE is free and open source, under the MIT license.",
   "@footer.license": {
     "context": "Footer line. 'Klive IDE' and 'MIT' are never translated."

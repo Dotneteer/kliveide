@@ -33,7 +33,7 @@ const SNAPSHOTS = [
     name: "assets",
     golden: join(repoRoot, "docs", "goldens", "docs-assets.golden.txt"),
     collect: () =>
-      walk(outDir).filter((p) => p.startsWith("/images/") || p === "/next-examples.zip")
+      walk(outDir).filter((p) => p.startsWith("/images/") || p.startsWith("/books/") || p === "/next-examples.zip")
   }
 ];
 

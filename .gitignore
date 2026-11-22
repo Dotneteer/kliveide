@@ -78,3 +78,6 @@ docs/content/en/reference/whats-new.mdx
 # browser driver, run logs and reports stay local, never committed.
 .hallmark/
 .claude/skills/hallmark/
+
+# Built by dev/scripts/build-doc-assets.cjs from docs/books/unraveling-next/examples
+docs/public/books/*.zip

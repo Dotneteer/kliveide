@@ -49,6 +49,7 @@
 /de/get-started/save-and-share/index.html
 /de/get-started/where-next/index.html
 /de/index.html
+/de/unraveling-book/index.html
 /emulator-internals/zx81-display/index.html
 /emulator-internals/zx81-tape/index.html
 /en/book/01-z80n/index.html
@@ -879,6 +880,7 @@
 /en/under-the-hood/emulator-internals/zx81-display/index.html
 /en/under-the-hood/emulator-internals/zx81-tape/index.html
 /en/under-the-hood/index.html
+/en/unraveling-book/index.html
 /en/z88-user-guide/appendix-a-replacing-batteries/index.html
 /en/z88-user-guide/appendix-b-serial-port-and-transfer-protocols/index.html
 /en/z88-user-guide/appendix-c-error-messages/index.html
@@ -973,6 +975,7 @@
 /es/get-started/save-and-share/index.html
 /es/get-started/where-next/index.html
 /es/index.html
+/es/unraveling-book/index.html
 /getting-started/creating-project/index.html
 /getting-started/first-run/index.html
 /getting-started/installation/index.html
@@ -1011,6 +1014,7 @@
 /hu/get-started/save-and-share/index.html
 /hu/get-started/where-next/index.html
 /hu/index.html
+/hu/unraveling-book/index.html
 /index.html
 /introduction/index.html
 /machine-types/index.html
@@ -1028,6 +1032,7 @@
 /pt-BR/get-started/save-and-share/index.html
 /pt-BR/get-started/where-next/index.html
 /pt-BR/index.html
+/pt-BR/unraveling-book/index.html
 /pt-PT/get-started/debug-your-program/index.html
 /pt-PT/get-started/first-assembly-program/index.html
 /pt-PT/get-started/first-basic-program/index.html
@@ -1041,8 +1046,10 @@
 /pt-PT/get-started/save-and-share/index.html
 /pt-PT/get-started/where-next/index.html
 /pt-PT/index.html
+/pt-PT/unraveling-book/index.html
 /scripting/overview/index.html
 /scripting/syntax/index.html
+/unraveling-book/index.html
 /working-with-ide/automation/index.html
 /working-with-ide/basic/index.html
 /working-with-ide/beam-position/index.html

@@ -1,0 +1,96 @@
+{
+  "title": "Unraveling the ZX Spectrum Next",
+  "subtitle": "Volume 1: The Hardware, as a Programmer Sees It",
+  "author": "István Novák",
+  "year": 2026,
+  "pages": 341,
+  "pdfBytes": 6958152,
+  "parts": [
+    {
+      "title": "The Machine",
+      "chapters": [
+        "The FPGA and Its Cores: How a Blank Chip Becomes a Next",
+        "The Z80N: A Familiar Heart and Twenty-Nine New Tricks",
+        "Memory, Ports and NextRegs: How the Z80N Reaches the Machine",
+        "Interrupts: Fourteen Voices, Two Wires",
+        "DMA: One Bus, Two Masters",
+        "CTC: Four Timers in a Ring",
+        "Input: One Matrix, Many Hands"
+      ],
+      "demos": [
+        "Core Version",
+        "Four Speeds",
+        "Pattern Fill",
+        "Bank Window",
+        "Fourteen Voices",
+        "DMA Versus LDIR",
+        "Stopwatch",
+        "Input Monitor"
+      ]
+    },
+    {
+      "title": "The Picture",
+      "chapters": [
+        "How a Television Draws a Picture",
+        "The Big Picture: Five Producers, Four Layers, One Dot",
+        "The Frame and the Beam: Two Counters, Four Timings",
+        "Colours and Palettes: From an 8-Bit Index to a 9-Bit Colour",
+        "The ULA Layer: The Spectrum's Screen, Extended",
+        "LoRes and Radastan: Big Pixels in the ULA's Place",
+        "Layer 2: A Byte for Every Dot",
+        "The Tilemap: A Screen of 8 × 8 Tiles",
+        "Sprites: 128 Pictures and Two Line Buffers",
+        "Putting It Together: Four Layers, One Colour",
+        "Raster Effects: Changing the Picture Mid-Frame"
+      ],
+      "demos": [
+        "Beam Clock",
+        "Palette Cycle",
+        "ULA Modes",
+        "Big Pixels",
+        "Layer 2 Resolutions",
+        "Tile Scroller",
+        "Sprite Swarm",
+        "Layer Order",
+        "Copper Sky"
+      ]
+    },
+    {
+      "title": "The Sound",
+      "chapters": [
+        "How a Computer Makes Sound",
+        "The Big Picture: Four Sources, One Mixer",
+        "The Beeper: EAR, MIC and the Tape",
+        "One AY Chip: Tones, Noise and Envelopes",
+        "TurboSound: Three AY Chips Behind Two Ports",
+        "The 8-Bit DACs: Four Channels, Six Sound Cards",
+        "Audio from the Raspberry Pi: Samples on Four Wires",
+        "The Mixer: One Sum, Three Outputs",
+        "After the Sum: From the Mixer to Your Ears"
+      ],
+      "demos": [
+        "Two Voices",
+        "Envelope Shapes",
+        "Nine Channels",
+        "Drum Hit",
+        "Pi Audio",
+        "Jack Wrap"
+      ]
+    },
+    {
+      "title": "Talking to the World",
+      "chapters": [
+        "Storage: an SD Card on a Serial Bus",
+        "UARTs: Two Serial Ports Behind One Door",
+        "Wi-Fi: A Telegraph Clerk on a Serial Line",
+        "Real-Time Clock: A Watchman on Two Wires"
+      ],
+      "demos": [
+        "SD Sector",
+        "Serial Echo",
+        "AT Probe",
+        "Clock"
+      ]
+    }
+  ]
+}

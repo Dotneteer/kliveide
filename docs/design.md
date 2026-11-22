@@ -59,6 +59,24 @@ dark one the way the app derives it; never tune one by hand. The roles:
   own menu (the sidebar) takes over. On the landing page: below 900px its links and GitHub move into a `<details>`
   menu, and below 420px the language button keeps only its globe: every language fits 320px.
 
+## The book
+- The author's book, *Unraveling the ZX Spectrum Next*, is promoted like the download: a card in the
+  first screen under the Download button (`landing/BookCard.tsx`), the page's one panel tinted with
+  `--site-accent-soft` and edged with the accent, its PDF button filled like Download. The cover links
+  to the book's page. Its heading is the book's English title alone, so it is one line in every
+  language at the same widths; "free" is in the translated sentence under it (a translated "Free
+  book:" before the title wrapped in four of the five languages). The heading and an "About the
+  book" link on its own line under the sentence both lead to the book's page (the author wants a
+  visible link, not only an underlined heading), and the sentence keeps to two
+  lines in every language from 360px up: about 60 characters, a 4rem thumbnail under 1100px and a
+  3.25rem one with smaller text under 480px. Only 320px takes three.
+- The card's bottom is the carousel's bottom at every width above the stack (960px): both hero
+  columns stretch, the card takes `margin-top: auto`, the carousel sits at the end of its column.
+- The book's page, `/unraveling-book/` (the address the book prints) and `/<lang>/unraveling-book/`,
+  is translated like the landing page and uses its header, footer, column, buttons and bands; the
+  language menu stays on the book's page. The book's own words stay English. Cover first, downloads with their sizes,
+  the book in numbers, its parts, the examples, and the download again at the end.
+
 ## At a glance
 - Two groups of facts under the sheet's 2px rule, no panel: "Get it" (version, platforms, licence)
   and "Write in" (languages, tools), each a bold heading over one or two sentences. They use the
