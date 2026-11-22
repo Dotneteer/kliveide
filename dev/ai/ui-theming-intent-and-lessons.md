@@ -3762,12 +3762,28 @@ drift. Change a neutral or the default accent in the app, and the site changes w
   columns stretch to the row, the card takes the space left in its column (`margin-top: auto`) and the
   carousel sits at the bottom of its own, so whichever column is taller sets the row and the other
   lines up with it. Centring the two columns separately (the old `align-items: center`) left the
-  edges 9px apart by chance, which the author saw at once. Where the copy is the shorter column (1280 x
-  800 and up) the headline's top meets the carousel frame's top as well. Measure both edges in the
+  edges 9px apart by chance, which the author saw at once. Where the copy is the shorter column (English
+  at 1280 x 800 and up) the headline's top meets the carousel frame's top as well; the translated
+  headlines are longer, so there the copy sets the row and the carousel sits lower (Hungarian, the
+  tallest, ends at 759px on a 1280 x 800 screen, still on the first screen). Measure both edges in the
   built page after changing the hero's text or the card.
-- **The book's page wears the landing page's sheet** (`/unraveling-book/`, `BookPage.tsx`,
+- **A heading that sits in a narrow card is the untranslated name alone**: the book card's heading
+  was "Free book: <title>", which fit one line in English and wrapped in German, Spanish, Portuguese
+  and Hungarian. Now it is the book's title only and "free" moves into the translated sentence, so
+  every language wraps at the same width. Translations run 20-40% longer: measure a card's text in
+  every language, not in English. Its sentence must keep to two lines (the author's rule):  a
+  translated "About the book" link at its end made it three, so the link moved to a line of its own
+  under the sentence. Making the heading the only link was not enough: the author read that as the
+  link being removed, so a promoted card keeps a plainly labelled link. The sentence keeps to about
+  60 characters (say so in
+  the translator context), and the card gives the sentence more room where the column narrows
+  (thumbnail 4rem under 1100px, 3.25rem and 0.875rem text under 480px). Measure the line count at
+  every width from 1920px to 320px in all languages; only 320px may take three.
+- **People's names follow the language's order**: a name inside a translated text is its own catalog
+  entry (`book.author`), because Hungarian puts the family name first (Novák István).
+- **The book's page wears the landing page's sheet** (`/unraveling-book/` and `/<lang>/unraveling-book/`, `BookPage.tsx`,
   `landing/book.css`): the same header and footer (`SiteChrome.tsx`, shared with the landing page so
-  they cannot drift), the cover beside the title and the downloads, the bands and the closing
+  they cannot drift; its `pageHref` keeps the language menu on the page it is shown on), the cover beside the title and the downloads, the bands and the closing
   download. A cover is a picture of a printed object, so it alone gets a lifted shadow; screenshots
   never do.
 - **Landing section headings are 2rem**, above the 1.75rem feature headings they contain. At 1.5rem

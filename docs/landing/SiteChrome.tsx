@@ -25,14 +25,19 @@ const LOGO = (
   </svg>
 );
 
-/** The skip link, the four-colour rule and the sticky header row */
-export function SiteHeader({ lang }: Readonly<{ lang: string }>) {
+/**
+ * The skip link, the four-colour rule and the sticky header row. `pageHref` gives this page's address
+ * in another language, so the language menu stays on the same page (the landing page's by default).
+ */
+export function SiteHeader({
+  lang,
+  pageHref = landingHref
+}: Readonly<{ lang: string; pageHref?: (lang: string) => string }>) {
   const t = landingTranslator(lang);
-  // --- Each language links to its own landing page
   const languages: [string, string, string][] = LOCALES.map((id: string) => [
     id,
     (LOCALE_NAMES as Record<string, string>)[id] ?? id,
-    `${basePath}${landingHref(id)}`
+    `${basePath}${pageHref(id)}`
   ]);
   return (
     <>

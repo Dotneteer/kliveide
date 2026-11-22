@@ -298,7 +298,25 @@ div.lp-body {
   line-height: 1.45;
 }
 
-.lp-book-card p a {
+/* --- The heading is the link to the book's page, underlined like a feature heading's link */
+.lp-book-card b a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  text-decoration-color: var(--site-line-strong);
+}
+
+.lp-book-card b a:hover {
+  color: var(--site-accent);
+  text-decoration-color: currentColor;
+}
+
+/* --- "About the book": the sentence's own line is followed by this one, then the buttons */
+.lp-book-card p:has(+ .lp-book-about) {
+  margin-bottom: 0.125rem;
+}
+
+.lp-book-card .lp-book-about a {
   color: var(--site-accent);
 }
 
@@ -328,6 +346,28 @@ div.lp-body {
 
 .lp-book-cover:hover {
   transform: translateY(-2px);
+}
+
+/* --- Where the hero's copy column is narrow (two columns, under 1100px) and on phones, a smaller
+   --- thumbnail and padding leave the sentence the width of two lines in every language */
+@media (max-width: 1100px) {
+  .lp-book-card {
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: 0.875rem;
+    padding: 0.75rem 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-book-card {
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .lp-book-card p {
+    font-size: 0.875rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

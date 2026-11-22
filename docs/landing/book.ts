@@ -21,8 +21,13 @@ export type Book = {
   parts: BookPart[];
 };
 
-/** The book's page; the book itself prints this address (without the slash) */
+/** The book's English page; the book itself prints this address (without the slash) */
 export const BOOK_PAGE = "/unraveling-book/";
+
+/** The book's page in a language: English's is BOOK_PAGE, the others are under /<lang>/ */
+export function bookHref(lang: string): string {
+  return lang === "en" ? BOOK_PAGE : `/${lang}${BOOK_PAGE}`;
+}
 
 export const BOOK_PDF = `${basePath}/books/unraveling-the-zx-spectrum-next.pdf`;
 export const BOOK_EXAMPLES = `${basePath}/books/unraveling-the-zx-spectrum-next-examples.zip`;

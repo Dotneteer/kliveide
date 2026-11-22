@@ -1,6 +1,6 @@
 "use client";
 /**
- * The header's language selector. Each language links to its own landing page; the list shows
+ * The header's language selector. Each language links to the same page in that language; the list shows
  * every language in its own name (never translated). Hidden while the site has one language.
  */
 import { useEffect, useRef, useState } from "react";

@@ -1,22 +1,32 @@
 /**
- * /unraveling-book/: the page of "Unraveling the ZX Spectrum Next", the book the landing page's card
- * promotes. It wears the landing page's header and footer (SiteChrome.tsx) and its sheet layout:
- * the cover and the downloads first, then the book in numbers, its parts and chapters, the examples
- * and why it was written. The book is English, and so is this page (like the Library's manuals);
- * its facts come from docs/books/unraveling-next/book.json.
+ * The page of "Unraveling the ZX Spectrum Next", the book the landing page's card promotes, in every
+ * language of the site: /unraveling-book/ in English (the address the book prints) and
+ * /<lang>/unraveling-book/ in the others. It wears the landing page's header and footer
+ * (SiteChrome.tsx, whose language menu stays on this page) and its sheet layout: the cover and the
+ * downloads first, then the book in numbers, its parts and chapters, the examples and why it was
+ * written.
+ *
+ * The page's texts are the landing catalog's `bookPage.*` (docs/i18n/landing/). The book itself is
+ * English, so its title, subtitle, part and chapter titles and demo names stay English everywhere;
+ * they come from docs/books/unraveling-next/book.json. The author's name is the catalog's
+ * `book.author`, because languages order names differently (Hungarian: family name first).
  */
-import { BOOK_EXAMPLES, BOOK_PDF, COVER_RATIO, bookCover, demoCount, examplesBytes, readBook } from "./book";
+import type { ReactNode } from "react";
+import { LOCALES } from "../i18n/locales.mjs";
+import { BOOK_EXAMPLES, BOOK_PDF, COVER_RATIO, bookCover, bookHref, demoCount, examplesBytes, readBook } from "./book";
 import { DOWNLOAD_ICON, FOLDER_ICON } from "./BookCard";
 import ImageViewer from "./ImageViewer";
 import { SiteFooter, SiteHeader } from "./SiteChrome";
-import { landingTranslator } from "./i18n";
+import { landingTranslator, type Translate } from "./i18n";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-/** "6.6 MB", "75 KB" */
-function size(bytes: number | undefined): string {
+/** "6.6 MB", "75 KB", with the language's decimal mark */
+function size(bytes: number | undefined, lang: string): string {
   if (bytes === undefined) return "";
-  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
+  const mb = bytes >= 1024 * 1024;
+  const value = mb ? bytes / 1024 / 1024 : Math.round(bytes / 1024);
+  return `${new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(value)} ${mb ? "MB" : "KB"}`;
 }
 
 /** A chapter's short title: its heading before the colon */
@@ -24,31 +34,40 @@ function shortTitle(chapter: string): string {
   return chapter.split(": ")[0];
 }
 
-function Downloads({ pdf, zip }: Readonly<{ pdf: string; zip: string }>) {
+/** A catalog text with some placeholders replaced by elements (a file name in the mono face, ...) */
+function rich(text: string, parts: Record<string, ReactNode>): ReactNode[] {
+  return text.split(/(\{\w+\})/).map((piece, i) => {
+    const name = /^\{(\w+)\}$/.exec(piece)?.[1];
+    return name && name in parts ? <span key={i}>{parts[name]}</span> : piece;
+  });
+}
+
+function Downloads({ t, pdf, zip }: Readonly<{ t: Translate; pdf: string; zip: string }>) {
   return (
     <div className="lp-actions">
       <a className="lp-button lp-button-primary" href={BOOK_PDF} download>
         {DOWNLOAD_ICON}
-        Download the book <span className="bk-size">PDF, {pdf}</span>
+        {t("bookPage.downloadBook")} <span className="bk-size">PDF, {pdf}</span>
       </a>
       <a className="lp-button" href={BOOK_EXAMPLES} download>
         {FOLDER_ICON}
-        Download the examples <span className="bk-size">ZIP, {zip}</span>
+        {t("bookPage.downloadExamples")} <span className="bk-size">ZIP, {zip}</span>
       </a>
     </div>
   );
 }
 
-export default function BookPage() {
-  const t = landingTranslator("en");
+export default function BookPage({ lang }: Readonly<{ lang: string }>) {
+  const t = landingTranslator(lang);
   const book = readBook();
-  const pdf = size(book.pdfBytes);
-  const zip = size(examplesBytes());
+  const pdf = size(book.pdfBytes, lang);
+  const zip = size(examplesBytes(), lang);
   const chapters = book.parts.reduce((n, p) => n + p.chapters.length, 0);
   const demos = demoCount(book);
+  const mono = (text: string) => <span className="lp-mono">{text}</span>;
   return (
     <div className="lp">
-      <SiteHeader lang="en" />
+      <SiteHeader lang={lang} pageHref={bookHref} />
 
       <main id="main" className="lp-main">
         <section className="bk-hero">
@@ -62,56 +81,52 @@ export default function BookPage() {
             <img src={bookCover(720)} alt="" width={COVER_RATIO.width * 360} height={COVER_RATIO.height * 360} decoding="async" />
           </a>
           <div>
-            <h1>{book.title}</h1>
-            <p className="bk-subtitle">{book.subtitle}</p>
-            <p className="bk-by">by {book.author}, the author of Klive IDE</p>
-            <p className="lp-lead">
-              How the ZX Spectrum Next works inside, and how to program it: the Z80N, memory and NextRegs, the
-              display layers, the sound chips and the mixer, and the ports that reach the world. Written while
-              building Klive&apos;s Next emulator, from the documentation, the real machine and the FPGA source.
+            <h1 lang="en">{book.title}</h1>
+            <p className="bk-subtitle" lang="en">
+              {book.subtitle}
             </p>
-            <Downloads pdf={pdf} zip={zip} />
+            <p className="bk-by">{t("bookPage.by", { author: t("book.author") })}</p>
+            <p className="lp-lead">{t("bookPage.lead")}</p>
+            <Downloads t={t} pdf={pdf} zip={zip} />
             <p className="lp-fine">
-              Free to download. The examples are a Klive IDE project: unzip it, open the <span className="lp-mono">examples</span>{" "}
-              folder and choose Run.
+              {lang !== "en" && <>{t("bookPage.inEnglish")} </>}
+              {rich(t("bookPage.free"), { folder: mono("examples"), run: <b>Run</b> })}
             </p>
           </div>
         </section>
 
-        <section className="bk-facts" aria-label="The book in numbers">
+        <section className="bk-facts" aria-label={t("bookPage.facts.label")}>
           <div>
             <b>{book.pages}</b>
-            <span>pages, in colour</span>
+            <span>{t("bookPage.facts.pages")}</span>
           </div>
           <div>
-            <b>{book.parts.length} parts</b>
-            <span>{chapters} chapters</span>
+            <b>{t("bookPage.facts.parts", { count: String(book.parts.length) })}</b>
+            <span>{t("bookPage.facts.chapters", { count: String(chapters) })}</span>
           </div>
           <div>
-            <b>{demos} demos</b>
-            <span>
-              in one <span className="lp-mono">.nex</span> program
-            </span>
+            <b>{t("bookPage.facts.demos", { count: String(demos) })}</b>
+            <span>{rich(t("bookPage.facts.program"), { nex: mono(".nex") })}</span>
           </div>
           <div>
             <b>Klive IDE</b>
-            <span>project, ready to run</span>
+            <span>{t("bookPage.facts.project")}</span>
           </div>
         </section>
 
         <section className="lp-sec lp-band" aria-labelledby="bk-inside">
-          <h2 id="bk-inside">What is inside</h2>
+          <h2 id="bk-inside">{t("bookPage.inside.title")}</h2>
           <div className="bk-parts">
             {book.parts.map((part, i) => (
               <div key={part.title}>
-                <h3>
+                <h3 lang="en">
                   <span className={`lp-square lp-square-${i + 1}`} aria-hidden="true" />
                   {part.title}
                 </h3>
                 <p className="bk-part-count">
-                  Part {i + 1}, {part.chapters.length} chapters
+                  {t("bookPage.inside.part", { n: String(i + 1), count: String(part.chapters.length) })}
                 </p>
-                <ol>
+                <ol lang="en">
                   {part.chapters.map((c) => (
                     <li key={c} title={c}>
                       {shortTitle(c)}
@@ -125,31 +140,19 @@ export default function BookPage() {
 
         <section className="lp-sec bk-two">
           <div>
-            <h2>The examples</h2>
-            <p>
-              Every chapter that has something to show has a demo. They are built into one program,{" "}
-              <span className="lp-mono">book-demos.nex</span>: a menu by part, then the part&apos;s demos in book
-              order. Each demo puts back what it changed and returns to the menu.
-            </p>
+            <h2>{t("bookPage.examples.title")}</h2>
+            <p>{rich(t("bookPage.examples.text"), { file: mono("book-demos.nex") })}</p>
             <ol className="bk-steps">
-              <li>Download the examples and unzip them.</li>
-              <li>
-                In Klive IDE, open the <span className="lp-mono">examples</span> folder as a project.
-              </li>
-              <li>
-                Choose <b>Run</b>: Klive builds the program, boots NextZXOS and loads it.
-              </li>
+              <li>{t("bookPage.examples.step1")}</li>
+              <li>{rich(t("bookPage.examples.step2"), { folder: mono("examples") })}</li>
+              <li>{rich(t("bookPage.examples.step3"), { run: <b>Run</b> })}</li>
             </ol>
-            <p>
-              On a real Next, copy <span className="lp-mono">book-demos.nex</span> to the SD card and open it from the
-              NextZXOS Browser. The demos never write to the SD card, the cores&apos; flash, the Wi-Fi module or the
-              clock.
-            </p>
-            <Downloads pdf={pdf} zip={zip} />
+            <p>{rich(t("bookPage.examples.realNext"), { file: mono("book-demos.nex") })}</p>
+            <Downloads t={t} pdf={pdf} zip={zip} />
           </div>
           <div>
-            <h2>{demos} demos</h2>
-            <ul className="bk-demos">
+            <h2>{t("bookPage.facts.demos", { count: String(demos) })}</h2>
+            <ul className="bk-demos" lang="en">
               {book.parts.map((part) => (
                 <li key={part.title}>
                   <b>{part.title}</b>
@@ -161,40 +164,40 @@ export default function BookPage() {
         </section>
 
         <section className="lp-sec lp-band">
-          <h2>Why this book</h2>
-          <p className="bk-why">
-            The official documentation of the Next says what each register does and leaves the reader to work out
-            how the pieces fit. {book.author} worked it out while emulating the machine in Klive IDE: from the
-            documents, from experiments on the real hardware and from the public FPGA source. The book shows how
-            and why things work, not only what they are, starting with the machine and going on to the picture,
-            the sound and the way the Next talks to the world.
-          </p>
+          <h2>{t("bookPage.why.title")}</h2>
+          <p className="bk-why">{t("bookPage.why.text", { author: t("book.author") })}</p>
         </section>
 
         <section className="lp-end">
           <div>
-            <h2>Get the book</h2>
-            <p>The PDF and the examples, free.</p>
+            <h2>{t("bookPage.end.title")}</h2>
+            <p>{t("bookPage.end.text")}</p>
           </div>
-          <Downloads pdf={pdf} zip={zip} />
+          <Downloads t={t} pdf={pdf} zip={zip} />
         </section>
       </main>
 
-      <SiteFooter lang="en" />
+      <SiteFooter lang={lang} />
 
       <ImageViewer label={t("viewer.label")} closeLabel={t("viewer.close")} countLabel={t("viewer.count")} />
     </div>
   );
 }
 
-export function bookMetadata() {
+/** The book page's metadata in a language, with the other languages as alternates */
+export function bookMetadata(lang: string) {
+  const t = landingTranslator(lang);
   const book = readBook();
-  const description = `${book.subtitle}. A free ${book.pages}-page book by ${book.author}, with a Klive IDE project of demos.`;
+  const description = t("bookPage.meta.description", { pages: String(book.pages), author: t("book.author") });
+  const languages = Object.fromEntries(LOCALES.map((id: string) => [id, `${basePath}${bookHref(id)}`]));
   return {
     title: `${book.title} | Klive IDE`,
     description,
-    alternates: { canonical: `${basePath}/unraveling-book/` },
-    openGraph: { title: book.title, description, images: [bookCover(720)] },
+    alternates: {
+      canonical: `${basePath}${bookHref(lang)}`,
+      languages: { ...languages, "x-default": `${basePath}${bookHref("en")}` }
+    },
+    openGraph: { title: book.title, description, images: [bookCover(720)], locale: lang },
     icons: { icon: `${basePath}/images/klive-logo.svg` }
   };
 }
