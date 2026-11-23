@@ -208,7 +208,7 @@
     "classnames": "^2.5.1",
     "electron-updater": "^6.8.11",
     "fflate": "^0.8.3",
-    "intl-messageformat": "^12.1.5",
+    "intl-messageformat": "^12.2.0",
     "overlayscrollbars-react": "^0.5.7",
     "react-popper": "^2.3.0",
     "react-switch": "^7.1.0",
