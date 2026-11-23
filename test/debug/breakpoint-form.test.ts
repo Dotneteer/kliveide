@@ -1037,12 +1037,6 @@ describe("conditions and hit counts", () => {
     expect(validateBreakpointForm(write, env128())).toEqual({});
   });
 
-  it("rejects any condition on a non-Z80 machine", () => {
-    expect(
-      validateBreakpointForm(form({ condition: "A == 1" }), anEnv({ machineId: "c64" })).condition
-    ).toContain("Z80 machines only");
-  });
-
   it("warns about an unknown label without rejecting the form", () => {
     const f = form({ condition: "w[score] > lives" });
     const env = env128({ conditionSymbols: { lives: 3 } });

@@ -651,7 +651,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
    *   so the listing must render exactly as it always has - no gutter, no reserved width, no shifted
    *   columns. `Running` counts as well as `Paused`: the sample is up to 750ms old, which is
    *   accepted, and the panel already refreshes on that same cadence.
-   * - **The CPU must be a Z80 or Z80N.** The branch tables are Z80 opcode tables; a 6510 listing
+   * - **The CPU must be a Z80 or Z80N.** The branch tables are Z80 opcode tables; another CPU's listing
    *   would be read against the wrong instruction set entirely. The same `MF_Z80` feature flag the
    *   sidebar uses to decide whether to show the Z80 CPU panel.
    */

@@ -33,7 +33,7 @@ import {
 } from "../services/ide-commands";
 import { t } from "@common/i18n/i18n";
 
-/** The machines whose state Klive can save: every WASM machine (not the experimental C64) */
+/** The machines whose state Klive can save: every WASM machine */
 export const STATE_MACHINES = [
   MI_SPECTRUM_48,
   MI_SPECTRUM_128,

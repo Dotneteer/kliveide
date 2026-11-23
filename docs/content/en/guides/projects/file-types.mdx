@@ -20,15 +20,12 @@ make Klive treat your own extensions, such as `.asm` or `.z80`, as one of them.
 | C (`c`) | `.c`, `.h` | [z88dk](/en/guides/languages/z88dk/), installed separately | `.c` only | Yes (with z88dk's sccz80 compiler) |
 | PASTA/80 Pascal (`pasta80`) | `.pas` | [PASTA/80](/en/guides/languages/pasta80/), installed separately | Yes | No breakpoints in the editor |
 | ZXB assembler (`zxbasm`) | `.zxb.asm` | – | – | No |
-| 6510 assembler (`6510-asm`) | `.6510.asm` | – | – | – |
 | Klive script (`ksx`) | `.ksx` | Runs as a [Klive script](/en/reference/klive-script/) | No | No |
 
 - A `.bas` file that holds a tokenised HT-1080Z program, not BASIC source, opens in the
   [HT-1080Z tape viewer](/en/guides/machines/ht1080z/) instead, and cannot be a build root.
 - `.zxb.asm` files get colouring only: they are the assembly dialect of Boriel's tools, and Klive has
   no build for them on their own. `ASM` blocks inside a BASIC program are compiled with the program.
-- The 6510 assembler files belong to the experimental Commodore 64 machine; Klive gives them editor
-  colouring.
 - `build.ksx` in the project root is the project's [build script](/en/guides/projects/build-system/);
   other `.ksx` files are scripts you run yourself.
 - `klive.project` opens read-only.

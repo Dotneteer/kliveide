@@ -135,9 +135,8 @@ const OP_ADDR_WIDTH = "8ch"; // 52px / 6.4 = 8.125
 /**
  * The NextReg write the machine last stopped on, or `undefined`.
  *
- * `CpuState` is a union and only its Z80 member carries this - a C64 has no Next Registers, so
- * widening the 6510 shape to keep the compiler quiet would be stating something false. The `in`
- * test narrows the union honestly, in the one place that needs it.
+ * Only a Next's CPU state carries this; the `in` test keeps the one place that needs it honest
+ * when `CpuState` gains members for other CPUs.
  */
 const nextRegWriteOf = (state?: CpuState) =>
   state && "lastNextRegWrite" in state ? state.lastNextRegWrite : undefined;

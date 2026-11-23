@@ -688,7 +688,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     editor: "switch",
     source: setting(SETTING_EMU_SHOW_BEAM_POSITION),
     replaces: "View › Show the Beam Position",
-    // --- Only machines with a raster beam: not the Z88's LCD, the ZX80/81 or the C64
+    // --- Only machines with a raster beam: not the Z88's LCD or the ZX80/81
     when: { kind: "machine", machineIds: BEAM_POSITION_MACHINE_IDS }
   },
   {

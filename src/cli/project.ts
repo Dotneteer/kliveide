@@ -100,7 +100,6 @@ export function languageOf(file: string, settings: Record<string, any>): string 
   // --- The order of the IDE's registry (`src/renderer/registry.ts`): longer extensions first
   const builtIn: [string, string][] = [
     [".kz80.asm", "kz80-asm"],
-    [".6510.asm", "6510-asm"],
     [".zxb.asm", "zxbasm"],
     [".sjasm", "sjasmp"],
     [".asm", "kz80-asm"],

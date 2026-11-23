@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { MI_SPECTRUM_48, MI_SPECTRUM_128, MI_Z88, MI_ZX81, MI_ZXNEXT, MI_C64 } from "@common/machines/constants";
+import { MI_SPECTRUM_48, MI_SPECTRUM_128, MI_Z88, MI_ZX81, MI_ZXNEXT } from "@common/machines/constants";
 import {
   isMachineStatePath,
   machineStateProjectGuard,
@@ -98,12 +98,12 @@ describe("state-save", () => {
     expect([c.id, c.aliases, c.usage]).toEqual(["state-save", ["ssave"], "state-save <state-file> [-f]"]);
   });
 
-  it("accepts .kls on every state machine, and refuses other extensions and the C64", async () => {
+  it("accepts .kls on every state machine, and refuses other extensions and an unknown machine", async () => {
     for (const machineId of [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_ZXNEXT, MI_Z88, MI_ZX81]) {
       const { context } = contextFor({ machineId });
       expect(errors(await new StateSaveCommand().validateCommandArgs(context, { file: "/p/a.KLS" }))).toEqual([]);
     }
-    const { context } = contextFor({ machineId: MI_C64 });
+    const { context } = contextFor({ machineId: "unknown" });
     expect(errors(await new StateSaveCommand().validateCommandArgs(context, { file: "/p/a.szx" }))).toEqual([
       "The state file must have the .kls extension.",
       "This machine cannot save its state."

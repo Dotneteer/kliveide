@@ -174,7 +174,7 @@
   },
   "hardware.rom.characterSet": "character set",
   "@hardware.rom.characterSet": {
-    "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts) for the Commodore 64: the ROM holding the character shapes. Lowercase."
+    "context": "Role of a ROM image in the ROM row of the hardware sheet of the Select Machine dialog (a two-column table of a machine model's facts): the ROM holding the character shapes. Lowercase."
   },
   "hardware.rom.htBasic": "Level II BASIC",
   "@hardware.rom.htBasic": {

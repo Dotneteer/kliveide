@@ -124,7 +124,7 @@ describe("the reverse controls", () => {
   });
 
   it("are absent on a machine without history", async () => {
-    const store = pausedStore("c64");
+    const store = pausedStore("unknown");
     await act(async () => {
       renderWithProviders(<ExecutionControls ide={true} kliveProjectLoaded={true} />, { store });
     });

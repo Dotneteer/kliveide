@@ -21,7 +21,7 @@ describe("history contexts of every core", () => {
     for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "z88", "zx80", "zx81"]) {
       expect(historyContextDecoder(id), id).toMatchObject({ frameTactUnit: "T-states", frameTactsPerBaseT: 1 });
     }
-    expect(historyContextDecoder("c64")).toBeUndefined();
+    expect(historyContextDecoder("unknown")).toBeUndefined();
   });
 
   it("decodes the Timex chunk sources and names their partitions", () => {

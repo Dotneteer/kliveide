@@ -149,7 +149,6 @@ describe("project settings and machines", () => {
     expect(artifactNameOf("zxnext")).toBe("zx-spectrum-next.wasm");
     expect(artifactNameOf("zxnext", "ks2-30204")).toBe(NEXT_PROFILES["ks2-30204"].wasmArtifact);
     expect(unsupportedMachineMessage("sp48")).toBeUndefined();
-    expect(unsupportedMachineMessage("c64")).toMatch(/Z80/);
     expect(unsupportedMachineMessage("z88")).toMatch(/Cambridge Z88/);
   });
 

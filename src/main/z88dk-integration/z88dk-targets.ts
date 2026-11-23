@@ -1,6 +1,5 @@
 import {
   MC_ZX80_ROM8K,
-  MI_C64,
   MI_SCORPION,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -123,8 +122,6 @@ export function z88dkTargetFor(
         : { args: ["+zx80"], model: SpectrumModelType.ZX80, run: "program", appExtension: ".O", name: "+zx80", needsNdos: false };
     case MI_Z88:
       return { args: ["+z88", `-subtype=${subtype || "app"}`], run: "card", appExtension: ".epr", name: "+z88", needsNdos: false };
-    case MI_C64:
-      return { refused: "z88dk builds Z80 programs; the Commodore 64 has a 6510. Use a Spectrum, ZX80/ZX81, Next or Z88 machine." };
     default:
       return { refused: `z88dk does not build programs for this machine (${machineId}).` };
   }

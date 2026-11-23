@@ -116,13 +116,6 @@ describe("conditions", () => {
     expect(at(ds, 0x8000)).toBe(true);
   });
 
-  it("rejects every condition on a non-Z80 machine, failing safe", () => {
-    const { ds } = setup({ machineId: "c64" });
-    ds.addBreakpoint({ address: 0x8000, exec: true, condition: "A == 1" });
-    expect(ds.listBreakpointsWithState()[0].conditionError).toContain("Z80 machines only");
-    expect(at(ds, 0x8000)).toBe(true);
-  });
-
   it("does not let a disabled breakpoint stop or count", () => {
     const { ds } = setup();
     ds.addBreakpoint({ address: 0x8000, exec: true, condition: "1", disabled: true });

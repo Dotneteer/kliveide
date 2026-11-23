@@ -17,7 +17,6 @@ number bases.
 | **Debug** | **Z80 CPU** | every Z80 machine |
 | **Debug** | **ULA & I/O** | the ZX Spectrum family |
 | **Debug** | **BLINK** | Cambridge Z88 |
-| **Debug** | **6510 CPU**, **VIC** | Commodore 64 (experimental) |
 | **Machine info** | **System Variables** | ZX Spectrum 48K, 128K, +2A/+3, Next; ZX81; ZX80 |
 | **Machine info** | **PSG (AY-3-8912)** | ZX Spectrum 128K, +2A/+3, Timex, Scorpion, HT-1080Z |
 | **Machine info** | **NEC UPD 765 Log** | models with floppy disk drives |
@@ -132,8 +131,6 @@ The same names appear in the [Disassembly view](/en/guides/debugging/disassembly
 - **BLINK**: the Cambridge Z88's gate array: its control registers (`COM`, `INT`, `STA`, `TMK`,
   `TSTA`), the timers, the screen base registers, and the segment registers `SR0`-`SR3` that page
   memory. See [Cambridge Z88](/en/guides/machines/cambridge-z88/).
-- **6510 CPU** and **VIC**: the Commodore 64's processor and video chip, for the experimental C64
-  machine.
 
 <Callout type="info">
 While you are in the execution history with reverse debugging off, the ULA and System Variables

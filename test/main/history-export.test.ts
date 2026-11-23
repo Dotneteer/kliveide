@@ -55,7 +55,7 @@ describe("Debug › Export Execution History...", () => {
   it("is enabled for a history machine that is not running", () => {
     expect(canExportHistory(env.state)).toBe(true);
     expect(canExportHistory({ emulatorState: { machineId: "sp48", machineState: MachineControllerState.Running } } as any)).toBe(false);
-    expect(canExportHistory({ emulatorState: { machineId: "c64", machineState: MachineControllerState.Paused } } as any)).toBe(false);
+    expect(canExportHistory({ emulatorState: { machineId: "unknown", machineState: MachineControllerState.Paused } } as any)).toBe(false);
   });
 
   it("suggests the project's name", () => {

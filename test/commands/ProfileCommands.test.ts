@@ -136,7 +136,7 @@ describe("profile commands", () => {
     let result = await new ProfileCommand().execute(makeContext({ advanced: false }), { action: "start" });
     expect(result.success).toBe(false);
     expect(result.finalMessage).toContain("advanced debugging");
-    result = await new ProfileCommand().execute(makeContext({ machineId: "c64" }), { action: "status" });
+    result = await new ProfileCommand().execute(makeContext({ machineId: "unknown" }), { action: "status" });
     expect(result.finalMessage).toContain("does not keep a profile");
   });
 

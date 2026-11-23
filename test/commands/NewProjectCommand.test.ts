@@ -420,14 +420,14 @@ describe("NewProjectCommand", () => {
       // Arrange
       const mockMainApi = context.mainApi as any;
       mockMainApi.createKliveProject.mockResolvedValue("/new/project");
-      const args: NewProjectCommandArgs = { machineId: "c64", projectName: "MyProject" };
+      const args: NewProjectCommandArgs = { machineId: "unknown", projectName: "MyProject" };
 
       // Act
       await command.execute(context, args);
 
       // Assert
       const callArgs = (mockMainApi.createKliveProject as any).mock.calls[0];
-      expect(callArgs[0]).toBe("c64");
+      expect(callArgs[0]).toBe("unknown");
       expect(callArgs[3]).toBeUndefined();
     });
 

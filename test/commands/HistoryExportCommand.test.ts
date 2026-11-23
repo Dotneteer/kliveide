@@ -238,7 +238,7 @@ describe("history-export", () => {
   });
 
   it("refuses a machine that does not record history", async () => {
-    f = fake({ machineId: "c64" });
+    f = fake({ machineId: "unknown" });
     expect((await exportWith(f, "hexp r.txt")).finalMessage).toBe("This machine does not record execution history");
   });
 

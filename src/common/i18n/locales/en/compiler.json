@@ -913,69 +913,6 @@
       "0": "A name, token, number or file name from the source code or the build, shown verbatim"
     }
   },
-  "compiler.asm.M1001": "Unexpected error when emitting code for mnemonic ''{0}'.",
-  "@compiler.asm.M1001": {
-    "context": "6510 assembler message M1001, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1002": "The {0} instruction does not support immediate addressing.",
-  "@compiler.asm.M1002": {
-    "context": "6510 assembler message M1002, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1003": "The {0} instruction does not support indexing with register X.",
-  "@compiler.asm.M1003": {
-    "context": "6510 assembler message M1003, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1004": "The {0} instruction does not support indirect addressing",
-  "@compiler.asm.M1004": {
-    "context": "6510 assembler message M1004, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1005": "The {0} instruction cannot use A as its operand.",
-  "@compiler.asm.M1005": {
-    "context": "6510 assembler message M1005, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1006": "The {0} instruction does not support indexing with register Y.",
-  "@compiler.asm.M1006": {
-    "context": "6510 assembler message M1006, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1007": "The {0} instruction does not support indirect indexing without register X or Y.",
-  "@compiler.asm.M1007": {
-    "context": "6510 assembler message M1007, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1008": "The {0} instruction does not support zero page or absolute addressing.",
-  "@compiler.asm.M1008": {
-    "context": "6510 assembler message M1008, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
-  "compiler.asm.M1009": "Invalid operand for the {0} instruction.",
-  "@compiler.asm.M1009": {
-    "context": "6510 assembler message M1009, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
-    "placeholders": {
-      "0": "A name, token, number or file name from the source code or the build, shown verbatim"
-    }
-  },
   "compiler.ksx.K001": "An expression expected",
   "@compiler.ksx.K001": {
     "context": "Klive script (KSX) parser message K001, shown when a script fails to parse, after its code. Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."

@@ -684,7 +684,7 @@ export function zx8081MemoryModelOf(
 }
 
 /**
- * The bank space of a machine, or `undefined` for one whose memory cannot be annotated (the C64).
+ * The bank space of a machine, or `undefined` for one whose memory cannot be annotated.
  * **The only place a machine id is checked** for annotation arithmetic.
  *
  * @param config the machine's model configuration; only the ZX80/ZX81 need it

@@ -182,7 +182,7 @@ describe("MakeProjectModel — readiness and the request", () => {
 
 describe("MakeProjectModel — machine types (Q7)", () => {
   it("moves off a machine without templates to the first one that has some", () => {
-    const state = reduce(aState({ machineId: "c64", modelId: undefined }), {
+    const state = reduce(aState({ machineId: "unknown", modelId: undefined }), {
       type: "machineTypesSettled",
       available: ["sp48", "ht1080z"]
     });

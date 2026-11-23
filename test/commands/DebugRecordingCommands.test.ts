@@ -166,7 +166,7 @@ describe("debug-recording-save", () => {
   it("checks the file, -from and the machine; does not replace a file without -f", async () => {
     expect((await run(f, new DebugRecordingSaveCommand(), "drsave bug.kls")).finalMessage).toMatch(/\.klr extension/);
     expect((await run(f, new DebugRecordingSaveCommand(), "drsave bug.klr -from abc")).finalMessage).toMatch(/-from: use a step back/);
-    expect((await run(fake("c64"), new DebugRecordingSaveCommand(), "drsave bug.klr")).finalMessage).toMatch(/no reverse debugging/);
+    expect((await run(fake("unknown"), new DebugRecordingSaveCommand(), "drsave bug.klr")).finalMessage).toMatch(/no reverse debugging/);
     f.files.set("bug.klr", new Uint8Array(1));
     expect((await run(f, new DebugRecordingSaveCommand(), "drsave bug.klr")).finalMessage).toBe("bug.klr already exists; use -f to replace it.");
   });

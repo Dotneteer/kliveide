@@ -120,7 +120,7 @@ describe("LabelCommand", () => {
       expect(await validate({ name: "X" }, { machineId: "sp128" })).toEqual([]);
       expect(await validate({ name: "X" }, { machineId: "sp48" })).toEqual([]);
       expect(await validate({ name: "X" }, { machineId: "z88" })).toEqual([]);
-      const errors = await validate({ name: "X" }, { machineId: "c64" });
+      const errors = await validate({ name: "X" }, { machineId: "unknown" });
       expect(errors[0].message).toContain("cannot be annotated");
     });
 

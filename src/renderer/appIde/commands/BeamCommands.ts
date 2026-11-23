@@ -42,7 +42,7 @@ export class BeamCommand extends IdeCommandBase<{ state?: string }> {
   }
 
   async execute(context: IdeCommandContext, args: { state?: string }): Promise<IdeCommandResult> {
-    // --- No raster beam to show: the Z88's LCD, the ZX80/81, the C64
+    // --- No raster beam to show: the Z88's LCD, the ZX80/81
     const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
     if (!BEAM_POSITION_MACHINE_IDS.includes(machineId)) {
       return commandError(t("commands.beam.noBeam"));

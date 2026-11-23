@@ -151,7 +151,7 @@
   },
   "panels.side.cpu.flag.zero": "Zero",
   "@panels.side.cpu.flag.zero": {
-    "context": "Tooltip of the CPU panel's Z flag (Z80 and 6510): the zero flag. The letter itself stays."
+    "context": "Tooltip of the CPU panel's Z flag (Z80): the zero flag. The letter itself stays."
   },
   "panels.side.cpu.flag.bit5": "Bit 5",
   "@panels.side.cpu.flag.bit5": {
@@ -175,42 +175,18 @@
   },
   "panels.side.cpu.flag.carry": "Carry",
   "@panels.side.cpu.flag.carry": {
-    "context": "Tooltip of the CPU panel's C flag (Z80 and 6510): the carry flag."
-  },
-  "panels.side.cpu.flag.negative": "Negative",
-  "@panels.side.cpu.flag.negative": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's N flag: the negative flag."
-  },
-  "panels.side.cpu.flag.overflow": "Overflow",
-  "@panels.side.cpu.flag.overflow": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's V flag: the overflow flag."
-  },
-  "panels.side.cpu.flag.unusedSet": "Unused (always set)",
-  "@panels.side.cpu.flag.unusedSet": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's '-' flag: bit 5 of the status register, unused and always 1."
-  },
-  "panels.side.cpu.flag.break": "Break",
-  "@panels.side.cpu.flag.break": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's B flag: the break flag (set by the BRK instruction)."
-  },
-  "panels.side.cpu.flag.decimal": "Decimal mode",
-  "@panels.side.cpu.flag.decimal": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's D flag: binary-coded decimal arithmetic mode."
-  },
-  "panels.side.cpu.flag.interruptMask": "Interrupt mask",
-  "@panels.side.cpu.flag.interruptMask": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's I flag: interrupts are disabled while it is set."
+    "context": "Tooltip of the CPU panel's C flag (Z80): the carry flag."
   },
   "panels.side.cpu.lastMemoryRead": "Last value read from memory:\n{value}",
   "@panels.side.cpu.lastMemoryRead": {
-    "context": "Tooltip of the CPU panel's LMR value (Z80 and 6510). Keep the line break before the placeholder.",
+    "context": "Tooltip of the CPU panel's LMR value (Z80). Keep the line break before the placeholder.",
     "placeholders": {
       "value": "The byte, shown as decimal and binary, e.g. '42, 00101010'"
     }
   },
   "panels.side.cpu.lastMemoryWrite": "Last value written to memory:\n{value}",
   "@panels.side.cpu.lastMemoryWrite": {
-    "context": "Tooltip of the CPU panel's LMW value (Z80 and 6510). Keep the line break before the placeholder.",
+    "context": "Tooltip of the CPU panel's LMW value (Z80). Keep the line break before the placeholder.",
     "placeholders": {
       "value": "The byte, shown as decimal and binary, e.g. '42, 00101010'"
     }
@@ -259,22 +235,6 @@
   "panels.side.cpu.halted": "Halted",
   "@panels.side.cpu.halted": {
     "context": "Tooltip of the Z80 CPU panel's HLT flag: whether the CPU executes a HALT instruction."
-  },
-  "panels.side.cpu.irqRequested": "IRQ requested",
-  "@panels.side.cpu.irqRequested": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's IRQ flag. 'IRQ' is a hardware term (interrupt request), keep it."
-  },
-  "panels.side.cpu.nmiRequested": "NMI requested",
-  "@panels.side.cpu.nmiRequested": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's NMI flag. 'NMI' is a hardware term (non-maskable interrupt), keep it."
-  },
-  "panels.side.cpu.stalled": "CPU stalled",
-  "@panels.side.cpu.stalled": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's STL flag: the CPU is held up by the video chip."
-  },
-  "panels.side.cpu.jammed": "CPU jammed",
-  "@panels.side.cpu.jammed": {
-    "context": "Tooltip of the 6510 (C64) CPU panel's JAM flag: the CPU locked up on a JAM (KIL) opcode."
   },
   "panels.side.cpu.clock": "Current CPU clock",
   "@panels.side.cpu.clock": {
@@ -635,278 +595,6 @@
   "panels.side.blink.bit.tmk2": "MIN - If set (1), enable minute interrupts",
   "@panels.side.blink.bit.tmk2": {
     "context": "Z88 Blink panel: tooltip of bit 2 of the TMK register. Keep the bit name before the dash (e.g. 'LCDON') and the signal names in English; translate the description."
-  },
-  "panels.side.vic.color.black": "Black",
-  "@panels.side.vic.color.black": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 0, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.white": "White",
-  "@panels.side.vic.color.white": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 1, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.red": "Red",
-  "@panels.side.vic.color.red": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 2, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.cyan": "Cyan",
-  "@panels.side.vic.color.cyan": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 3, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.purple": "Purple",
-  "@panels.side.vic.color.purple": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 4, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.green": "Green",
-  "@panels.side.vic.color.green": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 5, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.blue": "Blue",
-  "@panels.side.vic.color.blue": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 6, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.yellow": "Yellow",
-  "@panels.side.vic.color.yellow": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 7, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.orange": "Orange",
-  "@panels.side.vic.color.orange": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 8, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.brown": "Brown",
-  "@panels.side.vic.color.brown": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 9, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.lightRed": "Light Red",
-  "@panels.side.vic.color.lightRed": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 10, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.darkGrey": "Dark Grey",
-  "@panels.side.vic.color.darkGrey": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 11, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.grey": "Grey",
-  "@panels.side.vic.color.grey": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 12, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.lightGreen": "Light Green",
-  "@panels.side.vic.color.lightGreen": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 13, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.lightBlue": "Light Blue",
-  "@panels.side.vic.color.lightBlue": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 14, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.color.lightGrey": "Light Grey",
-  "@panels.side.vic.color.lightGrey": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of C64 palette colour 15, shown in brackets in a colour register's tooltip."
-  },
-  "panels.side.vic.borderColor": "Border Color ({color})",
-  "@panels.side.vic.borderColor": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.backgroundColor0": "Background Color 0 ({color})",
-  "@panels.side.vic.backgroundColor0": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.backgroundColor1": "Background Color 1 ({color})",
-  "@panels.side.vic.backgroundColor1": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.backgroundColor2": "Background Color 2 ({color})",
-  "@panels.side.vic.backgroundColor2": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.backgroundColor3": "Background Color 3 ({color})",
-  "@panels.side.vic.backgroundColor3": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.spriteMultiColor0": "Sprite Multi-Color 0 ({color})",
-  "@panels.side.vic.spriteMultiColor0": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.spriteMultiColor1": "Sprite Multi-Color 1 ({color})",
-  "@panels.side.vic.spriteMultiColor1": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a colour register; the bracket names the colour it holds.",
-    "placeholders": {
-      "color": "The translated C64 colour name, e.g. 'Light Blue'"
-    }
-  },
-  "panels.side.vic.spriteXCoordinate": "Sprite {sprite} X Coordinate",
-  "@panels.side.vic.spriteXCoordinate": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteYCoordinate": "Sprite {sprite} Y Coordinate",
-  "@panels.side.vic.spriteYCoordinate": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteForegroundPriority": "Sprite {sprite} Foreground Priority",
-  "@panels.side.vic.spriteForegroundPriority": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteEnabled": "Sprite {sprite} Enabled",
-  "@panels.side.vic.spriteEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteMulticolor": "Sprite {sprite} Multicolor",
-  "@panels.side.vic.spriteMulticolor": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteXExpansion": "Sprite {sprite} X Expansion",
-  "@panels.side.vic.spriteXExpansion": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteYExpansion": "Sprite {sprite} Y Expansion",
-  "@panels.side.vic.spriteYExpansion": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one of the eight hardware sprites' fields.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.enhancedColorMode": "Enhanced Color Mode",
-  "@panels.side.vic.enhancedColorMode": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.bitmapMode": "Bitmap Mode",
-  "@panels.side.vic.bitmapMode": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.displayEnable": "Display Enable",
-  "@panels.side.vic.displayEnable": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.multicolorMode": "Multicolor Mode",
-  "@panels.side.vic.multicolorMode": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.columnSelect": "Column Select",
-  "@panels.side.vic.columnSelect": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.yScroll": "Y Scroll",
-  "@panels.side.vic.yScroll": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.irqStatus": "IRQ status",
-  "@panels.side.vic.irqStatus": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.lightPenInterruptStatusEnabled": "Light Pen Interrupt status/enabled",
-  "@panels.side.vic.lightPenInterruptStatusEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.lightPenInterruptStatus": "Light Pen Interrupt status",
-  "@panels.side.vic.lightPenInterruptStatus": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.lightPenInterruptEnabled": "Light Pen Interrupt enabled",
-  "@panels.side.vic.lightPenInterruptEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.rasterInterruptStatusEnabled": "Raster Interrupt status/enabled",
-  "@panels.side.vic.rasterInterruptStatusEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.rasterInterruptStatus": "Raster Interrupt status",
-  "@panels.side.vic.rasterInterruptStatus": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.rasterInterruptEnabled": "Raster Interrupt enabled",
-  "@panels.side.vic.rasterInterruptEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.multiSpriteCollisionInterruptStatusEnabled": "Multi-Sprite Collision Interrupt status/enabled",
-  "@panels.side.vic.multiSpriteCollisionInterruptStatusEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.multiSpriteCollisionInterruptStatus": "Multi-Sprite Collision Interrupt status",
-  "@panels.side.vic.multiSpriteCollisionInterruptStatus": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.multiSpriteCollisionInterruptEnabled": "Multi-Sprite Collision Interrupt enabled",
-  "@panels.side.vic.multiSpriteCollisionInterruptEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.spriteDataInterruptStatusEnabled": "Sprite-Data Interrupt status/enabled",
-  "@panels.side.vic.spriteDataInterruptStatusEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.spriteDataInterruptStatus": "Sprite-Data Interrupt status",
-  "@panels.side.vic.spriteDataInterruptStatus": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.spriteDataInterruptEnabled": "Sprite-Data Interrupt enabled",
-  "@panels.side.vic.spriteDataInterruptEnabled": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.spriteSpriteCollisionFlags": "Sprite-Sprite Collision Flags",
-  "@panels.side.vic.spriteSpriteCollisionFlags": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.spriteDataCollisionFlags": "Sprite-Data Collision Flags",
-  "@panels.side.vic.spriteDataCollisionFlags": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of a register field. Hardware abbreviations (IRQ) stay."
-  },
-  "panels.side.vic.vicBaseAddress": "VIC Base Address",
-  "@panels.side.vic.vicBaseAddress": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of a 16-bit address value, shown in its tooltip before the value."
-  },
-  "panels.side.vic.screenMemoryOffset": "Screen Memory Offset",
-  "@panels.side.vic.screenMemoryOffset": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of a 16-bit address value, shown in its tooltip before the value."
-  },
-  "panels.side.vic.colorRamOffset": "Color RAM Offset",
-  "@panels.side.vic.colorRamOffset": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): name of a 16-bit address value, shown in its tooltip before the value."
-  },
-  "panels.side.vic.spriteCollisionSprite": "Sprite {sprite} collision with other sprite",
-  "@panels.side.vic.spriteCollisionSprite": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one bit of a sprite collision register.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
-  },
-  "panels.side.vic.spriteCollisionData": "Sprite {sprite} collision with data",
-  "@panels.side.vic.spriteCollisionData": {
-    "context": "C64 VIC panel (the Commodore 64's VIC-II video chip): tooltip of one bit of a sprite collision register.",
-    "placeholders": {
-      "sprite": "The sprite number, 0 to 7"
-    }
   },
   "panels.side.sysVars.kindWord": "{where} · word",
   "@panels.side.sysVars.kindWord": {

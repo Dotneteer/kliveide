@@ -115,7 +115,7 @@ describe("coverage commands", () => {
   });
 
   it("are refused on a machine whose core does not profile", async () => {
-    ctx = makeContext({ machineId: "c64" });
+    ctx = makeContext({ machineId: "unknown" });
     const result = await new CoverageCommand().execute(ctx, { action: "status" });
     expect(result.success).toBe(false);
     expect(result.finalMessage).toContain("does not keep code coverage");
