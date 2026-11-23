@@ -164,7 +164,7 @@
     "electron": "^45.3.1",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "execa": "^10.2.1",
     "expect": "^30.5.2",
