@@ -2104,7 +2104,7 @@ function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMes
 function getTemplateDirs(machineId: string): string[] {
   // --- Check if we have a template folder for the machine at all
   const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId);
-  // --- A machine with no template folder (the C64) has no templates: an empty list, not an error
+  // --- A machine with no template folder has no templates: an empty list, not an error
   if (!fs.existsSync(templateFolder) || !fs.statSync(templateFolder).isDirectory()) {
     return [];
   }

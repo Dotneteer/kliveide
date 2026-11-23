@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
   MF_INJECT_SUPPORT,
-  MI_C64,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
@@ -40,7 +39,6 @@ describe("MF_INJECT_SUPPORT", () => {
     ["ZX Spectrum 48K", MI_SPECTRUM_48],
     ["ZX Spectrum 128K", MI_SPECTRUM_128],
     ["ZX Spectrum +3E", MI_SPECTRUM_3E],
-    ["Commodore 64", MI_C64],
     // --- A 1 REM program and RUN (`dev/ai/zx8081.md`, "Machine code decisions", D4)
     ["Sinclair ZX81", MI_ZX81],
     ["Sinclair ZX80", MI_ZX80],

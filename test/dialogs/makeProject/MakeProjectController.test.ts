@@ -69,22 +69,22 @@ describe("MakeProjectController — choosing", () => {
   it("offers only the machine types that have templates", async () => {
     const h = await openMakeProjectDialog({
       service: {
-        getTemplateDirectories: async (machineId) => (machineId === "c64" ? [] : ["default", "zx-basic"])
+        getTemplateDirectories: async (machineId) => (machineId === "unknown" ? [] : ["default", "zx-basic"])
       }
     });
 
     const ids = h.vm.machineType.options.map((o) => o.value);
     expect(ids).toContain("sp48");
-    expect(ids).not.toContain("c64");
+    expect(ids).not.toContain("unknown");
   });
 
   it("moves off a running machine without templates and loads the new one's templates", async () => {
     const h = await openMakeProjectDialog({
-      context: { running: { machineId: "c64" }, favorites: [] },
-      service: { getTemplateDirectories: async (machineId) => (machineId === "c64" ? [] : ["default"]) }
+      context: { running: { machineId: "unknown" }, favorites: [] },
+      service: { getTemplateDirectories: async (machineId) => (machineId === "unknown" ? [] : ["default"]) }
     });
 
-    expect(h.state.machineId).not.toBe("c64");
+    expect(h.state.machineId).not.toBe("unknown");
     expect(h.ports.service.getTemplateDirectories).toHaveBeenCalledWith(h.state.machineId);
     expect(h.state.templateId).toBe("default");
     expect(h.vm.submitEnabled).toBe(true);

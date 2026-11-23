@@ -2148,8 +2148,8 @@ before trusting any assertion about it.
   handle is `--os-size - 2 x --os-padding-perpendicular` — 12px/2px = an 8px handle, 10px/2px = 6px
   for the `thinScrollBar` variant. Fully rounded (`--os-handle-border-radius: 999px`).
 - **`theming/tokens/componentAliases.ts`** — also `--color-panel-separator`, the rule between
-  sections of a register/state panel (`controls/layout/Separator`, used by the Z80, M6510, VIC,
-  Blink and ULA panels). Distinct from `--color-toolbar-separator`; see the trap below.
+  sections of a register/state panel (`controls/layout/Separator`, used by the Z80, Blink and
+  ULA panels). Distinct from `--color-toolbar-separator`; see the trap below.
 - **`theming/tokens/componentAliases.ts`** — `--color-memory-*`/`--bgcolor-memory-*`,
   `--color-disassembly-*`/`--bgcolor-disassembly-*` and `--color-state-value`, the memory dump's,
   disassembly's and the Z80 CPU panel's own scoped colour tokens (see § "View-Scoped Colour" above).

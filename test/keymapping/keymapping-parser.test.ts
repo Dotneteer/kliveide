@@ -19,8 +19,8 @@ describe("Key mappings", () => {
 
   /*
    * A mapping is one key, or a modifier plus a key, and never more. Every machine types a character
-   * as `primaryCode` + an optional `secondaryCode` (ZxSpectrumBase, Z88WasmHost,
-   * C64Machine), and the Next's membrane holds its extra keys as exactly two matrix keys
+   * as `primaryCode` + an optional `secondaryCode` (ZxSpectrumBase and
+   * Z88WasmHost), and the Next's membrane holds its extra keys as exactly two matrix keys
    * (`EXTRA_KEY_COMBOS`); extended mode is a latch entered by a prior keystroke, not a third key
    * held down. `KeySet` is typed to match, so these tests are what stops the runtime drifting
    * from it.

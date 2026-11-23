@@ -77,7 +77,7 @@ describe("the Settings dialog — pages", () => {
   });
 
   it("says so when the running machine has no options of its own", () => {
-    const h = open("machine", { emulatorState: { machineId: "c64" } });
+    const h = open("machine", { emulatorState: { machineId: "unknown" } });
     expect(rowIds(h)).toEqual([]);
     expect(h.vm.emptyMessage).toMatch(/has no options of its own/);
   });

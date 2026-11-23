@@ -195,10 +195,9 @@ type PanelFilterProps = {
  * A one-row filter box at the top of a data panel.
  *
  * Here rather than in the panel that first needed it, because "this list is too long to scroll"
- * is not a System Variables problem: the C64 defines 244 system variables, the Next 141 hardware
- * registers, and the pattern that solves one solves the others. The primitive set is the place a
- * second panel can find it — the alternative is the 16-hand-rolled-data-rows situation slice 6.0
- * cleaned up, one generation later.
+ * is not a System Variables problem: the Next has 141 hardware registers, and the pattern that
+ * solves one solves the others. The primitive set is the place a second panel can find it — the
+ * alternative is the 16-hand-rolled-data-rows situation slice 6.0 cleaned up, one generation later.
  *
  * **Not a `PanelHeader`.** A sidebar panel already has a header — the gradient band Phase 11 gave
  * it — and stacking a second strip of chrome under the first reads as two titles. This is content:

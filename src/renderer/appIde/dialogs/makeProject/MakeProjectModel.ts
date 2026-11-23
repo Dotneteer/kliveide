@@ -210,7 +210,7 @@ export const reduce: UiReducer<MakeProjectState, MakeProjectEvent> = (state, eve
 
     case "machineTypesSettled": {
       const next = { ...state, availableMachineIds: event.available };
-      // --- Opened over a machine with no templates (the C64): move to the first type that has some
+      // --- Opened over a machine with no templates: move to the first type that has some
       if (event.available.length === 0 || event.available.includes(state.machineId)) return next;
       const first = machineTypeOptionsOf(next)[0]?.value;
       return first ? { ...next, machineId: first, modelId: defaultModelOf(first, state.context) } : next;

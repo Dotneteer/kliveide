@@ -4,7 +4,6 @@ export const MI_SPECTRUM_128 = "sp128";
 export const MI_SPECTRUM_3E = "spp3e";
 export const MI_Z88 = "z88";
 export const MI_ZXNEXT = "zxnext";
-export const MI_C64 = "c64";
 export const MI_ZX80 = "zx80";
 export const MI_ZX81 = "zx81";
 /** The Timex Computer 2048 (`dev/plans/TIMEX_SCORPION_PLAN.md`; the TC2068/TS2068 join as models) */
@@ -39,7 +38,7 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
  * The machines with a raster beam the emulator can show on its paused screen
  * (`dev/plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family, the Next, the HT-1080Z, the TVC and the
  * Enterprise. Not
- * the Z88 (an LCD, no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
+ * the Z88 (an LCD, no beam) or the ZX80/81 (a CPU-generated display). The toolbar button and the View menu
  * item appear only for these.
  */
 export const BEAM_POSITION_MACHINE_IDS: string[] = [
@@ -146,11 +145,9 @@ export const MF_JOYSTICK_SUPPORT = "joystickSupport";
 export const MF_ROM = "rom";
 export const MF_BANK = "bank";
 export const MF_ULA = "ula";
-export const MF_VIC = "vic";
 export const MF_PSG = "psg";
 export const MF_BLINK = "blink";
 export const MF_Z80 = "z80Cpu";
-export const MF_M6510 = "m6510Cpu";
 export const MF_ALLOW_CLOCK_MULTIPLIER = "allowClockMultiplier";
 export const MF_ALLOW_SCAN_LINES = "allowScanLines";
 /**
@@ -194,7 +191,7 @@ export const MF_PROFILE = "profile";
 /**
  * Whether the machine has sound and its core reports its sources one by one for the audio mixer
  * (`dev/plans/AUDIO_MIXER_PLAN.md`): View > Machine Views > Audio Mixer, the `show-audio-mixer` command
- * and the emulator's sound popover gate on this. The ZX80, the ZX81 and the C64 have no sound.
+ * and the emulator's sound popover gate on this. The ZX80 and the ZX81 have no sound.
  */
 export const MF_AUDIO_MIXER = "audioMixer";
 

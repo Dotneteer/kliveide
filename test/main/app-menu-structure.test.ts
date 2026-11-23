@@ -271,16 +271,16 @@ describe("the application menu", () => {
     expect(labels(machine)).not.toContain("Layers");
     expect(labels(menu(template, "Debug"))).toContain("Step Copper");
     // --- Every machine with MF_EXEC_HISTORY (EXECUTION_HISTORY_VIEWER_PLAN §4.5): every Z80 machine
-    // --- (EXECUTION_HISTORY_ALL_CORES_PLAN), not the C64
+    // --- (EXECUTION_HISTORY_ALL_CORES_PLAN), not an unknown machine
     expect(labels(menu(template, "Debug"))).toContain("Execution History");
     expect(labels(menu(buildMenu("sp48"), "Debug"))).toContain("Execution History");
     expect(labels(menu(buildMenu("zx81"), "Debug"))).toContain("Execution History");
-    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Execution History");
+    expect(labels(menu(buildMenu("unknown"), "Debug"))).not.toContain("Execution History");
     // --- Export Execution History... (TRACE_EXPORT_PLAN D13): with the history, not while running (D10)
     const exportItem = (template: MenuItemConstructorOptions[]) =>
       menu(template, "Debug").find((i) => i.id === "export_execution_history");
     expect(exportItem(buildMenu("sp48"))).toMatchObject({ label: "Export Execution History...", enabled: true });
-    expect(exportItem(buildMenu("c64"))).toBeUndefined();
+    expect(exportItem(buildMenu("unknown"))).toBeUndefined();
     const running = buildMenu("sp48");
     env.state.emulatorState.machineState = MachineControllerState.Running;
     expect(exportItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(false);
@@ -289,9 +289,9 @@ describe("the application menu", () => {
     const debugLabels = labels(menu(buildMenu("sp48"), "Debug"));
     expect(debugLabels).toContain("Save Debug Recording...");
     expect(debugLabels).toContain("Open Debug Recording...");
-    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Open Debug Recording...");
+    expect(labels(menu(buildMenu("unknown"), "Debug"))).not.toContain("Open Debug Recording...");
     // --- ROM Annotations: every machine, whatever runs
-    expect(labels(menu(buildMenu("c64"), "Debug"))).toContain("ROM Annotations");
+    expect(labels(menu(buildMenu("unknown"), "Debug"))).toContain("ROM Annotations");
     expect(labels(menu(buildMenu("zxnext", undefined, "emu", false), "Debug"))).toContain("ROM Annotations");
     const saveItem = (template: MenuItemConstructorOptions[]) => menu(template, "Debug").find((i) => i.id === "save_debug_recording");
     expect(saveItem(buildMenu("sp48"))?.enabled).toBe(false);
@@ -334,7 +334,7 @@ describe("the application menu", () => {
     for (const machineId of ["sp48", "sp128", "zxnext", "z88", "tvc", "ep", "sam"]) {
       expect(views(machineId), machineId).toContain("Audio Mixer");
     }
-    for (const machineId of ["zx81", "zx80", "c64"]) {
+    for (const machineId of ["zx81", "zx80", "unknown"]) {
       expect(views(machineId), machineId).not.toContain("Audio Mixer");
     }
   });
@@ -347,7 +347,7 @@ describe("the application menu", () => {
     }
     // --- Not an advanced-debugging feature: it stays with the switch off
     expect(exportSource("sp48", false)).toBeDefined();
-    expect(exportSource("c64")).toBeUndefined();
+    expect(exportSource("unknown")).toBeUndefined();
   });
 
   it("gives the Z88 its hardware actions and help links, and no setup items", () => {

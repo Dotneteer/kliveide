@@ -40,9 +40,9 @@ describe("z88dkTargetFor (§5.2)", () => {
     expect(target("z88")).toMatchObject({ args: ["+z88", "-subtype=app"], run: "card", appExtension: ".epr" });
   });
 
-  it("refuses the 16K Spectrum and the Commodore 64 with a reason", () => {
+  it("refuses the 16K Spectrum and a machine without a target with a reason", () => {
     expect(z88dkTargetFor("sp48", "pal-16k")).toEqual({ refused: expect.stringMatching(/16K Spectrum/) });
-    expect(z88dkTargetFor("c64")).toEqual({ refused: expect.stringMatching(/6510/) });
+    expect(z88dkTargetFor("tvc")).toEqual({ refused: expect.stringMatching(/does not build programs/) });
   });
 
   it("takes the project's subtype", () => {
@@ -247,10 +247,10 @@ describe("Z88dkCompiler (fixtures)", () => {
   it("refuses an unsupported machine before running zcc", async () => {
     const runner = replay("zx-hello");
     const compiler = new Z88dkCompiler(runner);
-    const { state, main } = project("zx-hello", "c64");
+    const { state, main } = project("zx-hello", "tvc");
     compiler.setAppState(state);
     const out: any = await compiler.compileFile(main, undefined, "build");
-    expect(out.errors[0].message).toMatch(/6510/);
+    expect(out.errors[0].message).toMatch(/does not build programs/);
     expect(runner.calls).toHaveLength(0);
   });
 

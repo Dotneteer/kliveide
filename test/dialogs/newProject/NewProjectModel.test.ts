@@ -5,7 +5,6 @@ import {
   INITIAL_MODEL_ID,
   INITIAL_TEMPLATE_ID,
   MACHINE_TYPES,
-  OTHER_FAMILY,
   defaultModelOf,
   folderErrorOf,
   initialState,
@@ -29,10 +28,9 @@ import { aState, anEnv, rejectingValidation } from "./fakes";
 describe("NewProjectModel — machine types and models", () => {
   it("offers each machine type once, grouped by family in family order", () => {
     expect(MACHINE_TYPES.map((t) => t.machineId)).toEqual([
-      "sp48", "sp128", "spp3e", "zxnext", "timex", "scorpion", "zx81", "zx80", "z88", "ht1080z", "tvc", "ep", "sam", "c64"
+      "sp48", "sp128", "spp3e", "zxnext", "timex", "scorpion", "zx81", "zx80", "z88", "ht1080z", "tvc", "ep", "sam"
     ]);
     expect(machineTypeOptionsOf(aState())[0]).toEqual({ value: "sp48", label: "ZX Spectrum 48K", group: "zxSpectrum" });
-    expect(MACHINE_TYPES.find((t) => t.machineId === "c64")?.family).toBe(OTHER_FAMILY);
   });
 
   it("keeps every model of the registry under its type", () => {

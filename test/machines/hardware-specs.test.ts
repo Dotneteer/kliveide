@@ -5,7 +5,6 @@ import { getHardwareSpec } from "@common/machines/hardware-specs";
 import { setLanguage } from "@common/i18n/i18n";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
-import { C64Machine } from "@emu/machines/c64/C64Machine";
 
 /*
  * The Select Machine dialog's hardware sheet reads `hardware-specs.ts`. These tests keep that table
@@ -88,24 +87,11 @@ describe("hardware specs", () => {
     // --- The sheet lists the ROM files the machine loads
     expect(spec.rom.map((r) => r.id)).toEqual([0, 1, 2, 3].map((page) => `${machine.romId}-${page}`));
   });
-
-  it.each(["pal", "ntsc"])("C64 %s matches the machine", (modelId) => {
-    const info = machineRegistry.find((m) => m.machineId === "c64")!;
-    const model = info.models!.find((m) => m.modelId === modelId)!;
-    const machine = new C64Machine(model);
-    const spec = getHardwareSpec(info, modelId)!;
-    expect(spec.clockHz).toBe(machine.baseClockFrequency);
-    expect(spec.timing.perFrame).toBe(machine.tactsInFrame);
-    expect([spec.display.rasterWidth, spec.display.rasterHeight]).toEqual([
-      machine.screenWidthInPixels,
-      machine.screenHeightInPixels
-    ]);
-  });
 });
 
 describe("hardware specs in another language", () => {
   // --- Technical values the table keeps verbatim: chip, product and ROM names, sizes
-  const VERBATIM = new Set(["4 MB", "16", "AY-3-8912 PSG", "TurboSound (3 × AY)", "SID", "DivMMC", "Multiface", "BASIC", "KERNAL", "OZ", "Kempston", "C64", "SAM Mouse"]);
+  const VERBATIM = new Set(["4 MB", "16", "AY-3-8912 PSG", "TurboSound (3 × AY)", "DivMMC", "Multiface", "OZ", "Kempston", "SAM Mouse"]);
   const isPseudo = (text: string) => /^\[.*~+\]$/s.test(text);
 
   it("names each medium's chip without matching its text", () => {

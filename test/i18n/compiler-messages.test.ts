@@ -31,7 +31,7 @@ describe("assembler messages", () => {
     expect(assemblerMessage("Z0201", ["lib.asm"])).toMatch(/^\[Çåññôţ .*'lib\.asm'~+\]$/);
   });
 
-  it("cover every code in the catalog, Z80, 6510 and KSX alike", () => {
+  it("cover every code in the catalog, Z80 and KSX alike", () => {
     const codes = Object.keys(SOURCE_CATALOG).filter((k) => /^compiler\.(asm|ksx)\.[A-Z]\d{3,4}$/.test(k));
     expect(codes.length).toBeGreaterThan(190);
   });

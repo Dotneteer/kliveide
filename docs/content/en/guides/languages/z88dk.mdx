@@ -76,7 +76,7 @@ Klive builds for the machine the emulator runs; you do not choose a z88dk target
 | ZX80 | `+zx80` | loads the `.O` program | `.O` |
 | Cambridge Z88 | `+z88 -subtype=app` | inserts the application card and starts it | `.epr` card |
 
-The 16K Spectrum and the Commodore 64 are refused with a reason: z88dk programs load at `$8000`, and the C64 has no Z80. A Scorpion running its own ROM (rather than the 128K ROMs it uses without one) refuses Run and Debug, because Klive cannot start a program from that ROM's editor; export the program and load it there by hand.
+The 16K Spectrum is refused with a reason: z88dk programs load at `$8000`. A Scorpion running its own ROM (rather than the 128K ROMs it uses without one) refuses Run and Debug, because Klive cannot start a program from that ROM's editor; export the program and load it there by hand.
 
 **Export** copies the file z88dk itself wrote (`.tap`, `.dsk`, `.P`, `.O`, `.epr`), so what you export is exactly what z88dk built; the tape loader options of the Export dialog do not apply to it. Intel HEX (`-f hex`) still comes from Klive.
 

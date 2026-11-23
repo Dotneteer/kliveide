@@ -1,6 +1,5 @@
 import { nextProfileOf } from "@emu/machines/zxNext/nextProfiles";
 import {
-  MI_C64,
   MI_HT1080Z,
   MI_TVC,
   MI_ENTERPRISE,
@@ -44,8 +43,7 @@ export const HEADLESS_MACHINE_NAMES: Record<string, string> = {
   ht1080z: "the HT-1080Z",
   tvc: "the Videoton TVC",
   ep: "the Enterprise 64/128",
-  sam: "the SAM Coupé",
-  c64: "the Commodore 64"
+  sam: "the SAM Coupé"
 };
 
 /** The machines `HeadlessMachineFactory` creates (protocol 1's list: the Spectrums, ZX80/81, Next; the HT-1080Z, the TVC, the Enterprise, the SAM Coupé) */
@@ -85,8 +83,6 @@ export function artifactNameOf(machineId: string, modelId?: string): string {
     case MI_SAM_COUPE:
       return SAM_WASM_V2_ARTIFACT_NAME;
     default:
-      throw new Error(
-        machineId === MI_C64 ? "The Commodore 64 has no headless core." : headlessUnsupportedMessage(machineId)
-      );
+      throw new Error(headlessUnsupportedMessage(machineId));
   }
 }

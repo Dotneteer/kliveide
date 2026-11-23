@@ -18,7 +18,6 @@ import {
   MI_SPECTRUM_3E,
   MI_Z88,
   MI_ZXNEXT,
-  MI_C64,
   MI_ZX80,
   MI_ZX81,
   MI_TIMEX,
@@ -28,7 +27,6 @@ import {
   MI_ENTERPRISE,
   MI_SAM_COUPE
 } from "./constants";
-import { C64Machine } from "@emu/machines/c64/C64Machine";
 
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
@@ -82,9 +80,5 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_SAM_COUPE,
     factory: (_, model, config, messenger) => createSamMachine(model, config, messenger)
-  },
-  {
-    machineId: MI_C64,
-    factory: (_, model) => new C64Machine(model)
-  },
+  }
 ];

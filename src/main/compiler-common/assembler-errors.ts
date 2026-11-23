@@ -219,18 +219,7 @@ export type ErrorCodes =
   | "Z1014"
 
   // --- Others
-  | "Z2000"
-
-  // --- M6510 Compiler Error Codes
-  | "M1001"
-  | "M1002"
-  | "M1003"
-  | "M1004"
-  | "M1005"
-  | "M1006"
-  | "M1007"
-  | "M1008"
-  | "M1009";
+  | "Z2000";
 
 /**
  * The text of an assembler error or warning, in the display language

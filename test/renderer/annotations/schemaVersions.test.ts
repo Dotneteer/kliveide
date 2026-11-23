@@ -122,7 +122,7 @@ describe("schema versions", () => {
 
   it("rejects version 3 with an unknown machine", () => {
     const parsed = parseAnnotations(
-      JSON.stringify({ schemaVersion: 3, machine: "c64", banks: {} })
+      JSON.stringify({ schemaVersion: 3, machine: "unknown", banks: {} })
     );
     expect(parsed.annotations).toBeUndefined();
     expect(parsed.diagnostics.map((item) => item.path)).toContain("$.machine");

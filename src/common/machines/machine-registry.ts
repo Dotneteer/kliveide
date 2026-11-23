@@ -28,11 +28,8 @@ import {
   MC_Z88_SLOT0,
   MI_ZXNEXT,
   MF_ALLOW_CLOCK_MULTIPLIER,
-  MI_C64,
   MF_Z80,
-  MF_M6510,
   CT_DISASSEMBLER,
-  MF_VIC,
   MF_ALLOW_SCAN_LINES,
   MI_ZX80,
   MI_ZX81,
@@ -87,7 +84,6 @@ import { SamCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disass
 import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
-import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
  * The Cambridge Z88 models. Their ids never change (saved projects refer to them) and they select no
@@ -831,43 +827,6 @@ export const machineRegistry: MachineInfo[] = [
         showRamOption: false,
         showScreenOption: false
       }
-    }
-  },
-  {
-    machineId: MI_C64,
-    displayName: "Commodore 64 (experimental)",
-    charSet: ZxSpectrumChars,
-    features: {
-      [MF_M6510]: true,
-      [MF_VIC]: true,
-      [MF_TAPE_SUPPORT]: true,
-      [MF_INJECT_SUPPORT]: true
-    },
-    models: [
-      {
-        modelId: "pal",
-        displayName: "Commodore 64 (experimental)",
-        config: {
-          [MC_SCREEN_FREQ]: "pal"
-        }
-      },
-      {
-        modelId: "ntsc",
-        displayName: "Commodore 64 (experimental, NTSC)",
-        config: {
-          [MC_SCREEN_FREQ]: "ntsc"
-        }
-      }
-    ],
-    mediaIds: [MEDIA_TAPE],
-    toolInfo: {
-      [CT_DISASSEMBLER]: (
-        memorySections: MemorySection[],
-        memoryContents: Uint8Array,
-        _?: string[],
-        options?: DisassemblyOptions
-      ) => new M6510Disassembler(memorySections, memoryContents, options),
-      [CT_CUSTOM_DISASSEMBLER]: spectrum48CustomDisassembler
     }
   }
 ];

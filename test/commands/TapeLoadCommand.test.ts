@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  MI_C64,
   MI_HT1080Z,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -88,7 +87,6 @@ describe("tape-load command", () => {
     [MI_SPECTRUM_3E, true],
     [MI_ZXNEXT, false],
     [MI_Z88, false],
-    [MI_C64, false],
     [undefined, false]
   ])("allows %s: %s", (machineId, allowed) => {
     expect(!tapeLoadGuard({ emulatorState: { machineId } })).toBe(allowed);

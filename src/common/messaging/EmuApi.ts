@@ -1268,13 +1268,6 @@ class EmuApiImpl {
   }
 
   /**
-   * Gets the current VIC state.
-   */
-  async getVicState(): Promise<VicState> {
-    return Promise.reject(new Error(NO_PROXY_ERROR));
-  }
-
-  /**
    * Gets a disassembly section of the machine with the specified options.
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
@@ -1426,7 +1419,7 @@ export type CopperHitEvent = {
 
 /**
  * The ZX Spectrum Next sprites, as the Sprite Inspector reads them in one call
- * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D2). Not `SpriteInfo`: that name is the C64 VIC type.
+ * (`dev/plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D2).
  */
 export type NextSpriteState = {
   /** 128 slots x 5 attribute bytes, a copy */
@@ -1678,32 +1671,7 @@ export type NextRegWriteEvent = {
 };
 
 // --- The response with the CPU state information
-export type M6510CpuState = {
-  a: number;
-  x: number;
-  y: number;
-  p: number;
-  pc: number;
-  sp: number;
-  tacts: number;
-  tactsAtLastStart: number;
-  stalled: boolean;
-  jammed: boolean;
-  nmiRequested: boolean;
-  irqRequested: boolean;
-  opStartAddress: number;
-  lastMemoryReads: number[];
-  lastMemoryReadValue: number;
-  lastMemoryWrites: number[];
-  lastMemoryWriteValue: number;
-  lastIoReadPort: number;
-  lastIoReadValue: number;
-  lastIoWritePort: number;
-  lastIoWriteValue: number;
-};
-
-// --- The response with the CPU state information
-export type CpuState = Z80CpuState | M6510CpuState;
+export type CpuState = Z80CpuState;
 
 /**
  * Border colour names, indexed by the 3-bit ULA border value.
@@ -1814,55 +1782,6 @@ export type BlinkState = {
   SBF: number;
   SCW: number;
   SCH: number;
-};
-
-export type SpriteInfo = {
-  x: number;
-  y: number;
-  enabled: boolean;
-  multicolor: boolean;
-  color: number;
-  xExpansion: boolean;
-  yExpansion: boolean;
-  foregroundPriority: boolean;
-};
-
-export type VicState = {
-  vicBaseAddress: number;
-  spriteInfo: SpriteInfo[];
-  rst8: boolean;
-  ecm: boolean;
-  bmm: boolean;
-  den: boolean;
-  rsel: boolean;
-  xScroll: number;
-  yScroll: number;
-  raster: number;
-  lpx: number;
-  lpy: number;
-  res: boolean;
-  mcm: boolean;
-  csel: boolean;
-  scrMemOffset: number;
-  colMemOffset: number;
-  irqStatus: boolean;
-  ilpStatus: boolean;
-  ilpEnabled: boolean;
-  immcStatus: boolean;
-  immcEnabled: boolean;
-  imbcStatus: boolean;
-  imbcEnabled: boolean;
-  irstStatus: boolean;
-  irstEnabled: boolean;
-  borderColor: number;
-  bgColor0: number;
-  bgColor1: number;
-  bgColor2: number;
-  bgColor3: number;
-  spriteMcolor0: number;
-  spriteMcolor1: number;
-  spriteSpriteCollision: number;
-  spriteDataCollision: number;
 };
 
 // --- The response with the breakpoints set in the emulator

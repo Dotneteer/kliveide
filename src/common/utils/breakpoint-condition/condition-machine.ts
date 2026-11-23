@@ -10,7 +10,6 @@ import type { ConditionEnvironment } from "./condition-types";
 
 /** The machine ids this needs; the values of `MI_*` in `@common/machines/constants`. */
 const MACHINE_ZXNEXT = "zxnext";
-const MACHINE_C64 = "c64";
 
 /** Everything in a `ConditionEnvironment` except the breakpoint's own kind and the symbols. */
 export type ConditionMachineFacts = Omit<ConditionEnvironment, "accessKind" | "symbols">;
@@ -30,8 +29,8 @@ export function conditionMachineFacts(
   for (const index of indexes) byLabel.set(labels[index].toUpperCase(), index);
 
   return {
-    // --- The only non-Z80 machine (C18)
-    isZ80: machineId !== MACHINE_C64,
+    // --- Every machine has a Z80 today (C18); a non-Z80 CPU sets this false
+    isZ80: true,
     hasPartitions: indexes.length > 0,
     isNext,
     // --- Annotation labels are bank-local on every machine with a bank space (the plan's §4.6)

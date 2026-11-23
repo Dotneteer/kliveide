@@ -122,7 +122,7 @@
 
 
 /*
- * The rule between sections of a register/state panel (Z80, M6510, VIC, Blink, ULA).
+ * The rule between sections of a register/state panel (Z80, Blink, ULA).
  *
  * It is *not* the toolbar separator, which is why it no longer reads `--color-toolbar-separator`.
  * That token resolves `--border-default`, and a border token is only as visible as the surface

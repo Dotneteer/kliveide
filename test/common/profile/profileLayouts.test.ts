@@ -9,7 +9,7 @@ describe("the profile layouts", () => {
     for (const id of ["sp48", "timex", "sp128", "scorpion", "spp3e", "zxnext", "z88", "zx80", "zx81", "sam"]) {
       expect(profileLayoutOf(id), id).toBeDefined();
     }
-    expect(profileLayoutOf("c64")).toBeUndefined();
+    expect(profileLayoutOf("unknown")).toBeUndefined();
     expect(profileLayoutOf(undefined)).toBeUndefined();
   });
 

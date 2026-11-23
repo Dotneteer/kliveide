@@ -128,10 +128,8 @@ import { createHardDiskExplorerPanel } from "./appIde/DocumentPanels/DiskExplore
 import {
   MC_DISK_SUPPORT,
   MF_BLINK,
-  MF_M6510,
   MF_PSG,
   MF_ULA,
-  MF_VIC,
   MF_Z80,
   MI_ENTERPRISE,
   MI_SAM_COUPE,
@@ -229,9 +227,6 @@ import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
 import { PalettePanel, PalettePanelActions } from "./appIde/SideBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
-import { M6510CpuPanel } from "./appIde/SideBarPanels/M6510CpuPanel";
-import { asm6510LanguageProvider } from "./appIde/project/asm6510LanguageProvider";
-import { VicPanel } from "./appIde/SideBarPanels/VicPanel";
 import { WatchPanel } from "./appIde/SideBarPanels/WatchPanel";
 import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
 import { cLanguageProvider } from "./appIde/project/cLanguageProvider";
@@ -296,14 +291,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     expandedOnInit: true,
     requireFeature: [MF_Z80]
   },
-  {
-    id: "m6510CpuPanel",
-    title: "6510 CPU",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: M6510CpuPanel,
-    expandedOnInit: true,
-    requireFeature: [MF_M6510]
-  },
   withTexts({
     id: "callStackPanel",
     hostActivity: ACTIVITY_DEBUG_ID,
@@ -359,14 +346,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     restrictTo: [MI_SAM_COUPE]
   }, { title: "panels.side.samSaa.title" }),
-  {
-    id: "vicPanel",
-    title: "VIC",
-    hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: VicPanel,
-    initialSize: 500,
-    requireFeature: [MF_VIC]
-  },
   {
     id: "blinkPanel",
     title: "BLINK",
@@ -886,13 +865,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "kz80-asm",
     icon: "file-kz80-asm"
-  },
-  {
-    matchType: "ends",
-    pattern: ".6510.asm",
-    editor: CODE_EDITOR,
-    subType: "6510-asm",
-    icon: "@file-6510-asm"
   },
   {
     matchType: "ends",
@@ -1539,7 +1511,6 @@ export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   zxBasLanguageProvider,
   ksxLanguageProvider,
   sjasmZ80LanguageProvider,
-  asm6510LanguageProvider,
   turboPascalLanguageProvider,
   cLanguageProvider,
 ];

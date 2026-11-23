@@ -33,7 +33,6 @@ import {
   MC_ZX80_ROM8K,
   MF_ALLOW_CLOCK_MULTIPLIER,
   MF_BANK,
-  MI_C64,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
@@ -668,44 +667,6 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       rom: [{ id: ZX80_ROM, kb: 4 }],
       media: [{ text: tx("hardware.media.zx80Tape"), chip: TAPE_CHIP }],
       display: { ...ZX8081_BASE.display, text: tx("hardware.text.zx80") }
-    }
-  },
-  [MI_C64]: {
-    // --- C64Machine.ts, vic/vic-models.ts, C64VicDevice.ts
-    base: {
-      cpu: "MOS 6510",
-      clockHz: 985_248,
-      rom: [
-        { id: "c64-basic", kb: 8, role: "BASIC" },
-        { id: "c64-kernal-pal", kb: 8, role: "KERNAL" },
-        { id: "c64-chargen", kb: 4, role: tx("hardware.rom.characterSet") }
-      ],
-      ramKb: 64,
-      display: {
-        kind: "crt",
-        width: 320,
-        height: 200,
-        rasterWidth: 384,
-        rasterHeight: 272,
-        colours: "16",
-        videoChip: "VIC-II MOS 6569R3"
-      },
-      timing: { unit: "cycles", perLine: 63, linesPerFrame: 312, perFrame: 19_656 },
-      sound: ["SID"],
-      media: [{ text: TAPE_CHIP, chip: TAPE_CHIP }],
-      input: [{ label: KEYBOARD, value: "C64" }]
-    },
-    models: {
-      ntsc: {
-        clockHz: 1_022_727,
-        rom: [
-          { id: "c64-basic", kb: 8, role: "BASIC" },
-          { id: "c64-kernal-ntsc", kb: 8, role: "KERNAL" },
-          { id: "c64-chargen", kb: 4, role: tx("hardware.rom.characterSet") }
-        ],
-        display: { rasterHeight: 247, videoChip: "VIC-II MOS 8562" },
-        timing: { perLine: 65, linesPerFrame: 263, perFrame: 17_095 }
-      }
     }
   }
 };

@@ -201,7 +201,7 @@ export const componentAliases: Record<string, string> = {
   "--color-panel-border": "var(--border-subtle)",
   /*
    * The rule between sections of a register/state panel -- the `<Separator/>` after the Z80 flag
-   * strip, after WZ, after IWV, and its equivalents in the M6510, VIC, Blink and ULA panels.
+   * strip, after WZ, after IWV, and its equivalents in the Blink and ULA panels.
    *
    * `--border-strong`, not the `--border-default` these rules used to borrow from
    * `--color-toolbar-separator`. A border token is only as visible as the surface behind it, and

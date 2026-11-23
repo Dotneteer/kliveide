@@ -2,7 +2,7 @@
 
 You are translating the user interface of **Klive IDE**: an integrated development environment and
 emulator for the ZX Spectrum family and related retro computers (ZX Spectrum 48K/128K/+3, ZX
-Spectrum Next, ZX80/ZX81, Cambridge Z88, Timex, Commodore 64). Its users are retro-computing
+Spectrum Next, ZX80/ZX81, Cambridge Z88, Timex). Its users are retro-computing
 hobbyists and programmers who write Z80 assembly and BASIC. The tone is technical but friendly:
 short, plain and precise, like a well-made developer tool.
 

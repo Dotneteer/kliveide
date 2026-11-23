@@ -18,10 +18,7 @@ import type {
  * listing share one implementation instead of growing two that drift apart.
  *
  * Z80 and Z80N only, for now. `DisassemblyOperandLabelResolver` is the hook the Z80 disassembler
- * offers; `m6510-disassembler.ts` renders its absolute operands (`^A`, `^U`, `^V`, `^P`) directly
- * and calls nothing, so the Commodore 64's table — 80 of whose 244 variables are 16-bit addresses,
- * the rest zero page — reaches no listing yet. Giving the 6510 the same hook is what would change
- * that; nothing here needs to.
+ * offers; a disassembler for another CPU gets its system variables here by calling the same hook.
  */
 
 /**

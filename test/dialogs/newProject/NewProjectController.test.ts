@@ -139,10 +139,10 @@ describe("NewProjectController — machine types and models", () => {
 
   it("drops the types without templates from the list", async () => {
     const h = await openNewProjectDialog({
-      service: { getTemplateDirectories: async (id: string) => (id === "c64" ? [] : ["default"]) }
+      service: { getTemplateDirectories: async (id: string) => (id === "unknown" ? [] : ["default"]) }
     });
 
-    expect(h.vm.machineType.options.map((o) => o.value)).not.toContain("c64");
+    expect(h.vm.machineType.options.map((o) => o.value)).not.toContain("unknown");
     expect(h.vm.machineType.options.map((o) => o.value)).toContain("zx81");
   });
 
@@ -161,8 +161,8 @@ describe("NewProjectController — machine types and models", () => {
 
   it("moves to a type with templates when it opened over one without", async () => {
     const h = await openNewProjectDialog({
-      context: { running: { machineId: "c64" }, favorites: [] },
-      service: { getTemplateDirectories: async (id: string) => (id === "c64" ? [] : ["default"]) }
+      context: { running: { machineId: "unknown" }, favorites: [] },
+      service: { getTemplateDirectories: async (id: string) => (id === "unknown" ? [] : ["default"]) }
     });
 
     expect(h.state.machineId).toBe("sp48");

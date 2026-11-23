@@ -48,8 +48,8 @@ const NAME_WIDTH = 9;
 /**
  * How much of an array variable a collapsed row shows: one `HexByteGrid` row.
  *
- * An array longer than this collapses. The tables contain `TSTACK` at 115 bytes (ZX 128) and
- * `TBUFFER` at 192 (C64) — 15 and 24 grid rows dropped into a list of 22px ones, which is what made
+ * An array longer than this collapses. The tables contain `TSTACK` at 115 bytes (ZX 128) — 15
+ * grid rows dropped into a list of 22px ones, which is what made
  * this panel unscrollable in practice. At or below one grid row there is nothing to collapse, and a
  * chevron on a row that is already one line tall is pure friction.
  */

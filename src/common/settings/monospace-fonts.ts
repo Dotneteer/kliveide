@@ -4,7 +4,7 @@
  * Two independent settings pick from this one list, so the two menus can never drift apart:
  *   - `editorOptions.fontFamily`  -> View | Editor Options | Font Family, applied to Monaco.
  *   - `panelOptions.fontFamily`   -> View | Panel Font, applied to the `--monospace-font` CSS
- *     variable and thus to every monitoring view that reads it (memory, disassembly, Z80/M6510
+ *     variable and thus to every monitoring view that reads it (memory, disassembly, Z80
  *     CPU, ULA, watch, breakpoints, call stack, NextReg, PSG, the file viewers) plus the
  *     address/text inputs, the IDE status bar and the output/console panes.
  *

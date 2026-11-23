@@ -164,7 +164,7 @@ describe("ann-* commands", () => {
   it("ann-new takes the bank space from -m and refuses an unknown one", async () => {
     const { context, fs } = contextFor(MI_SPECTRUM_128);
     const command = new AnnotationNewCommand();
-    expect(await command.validateCommandArgs(context, { file: "x.dis", "-m": "c64" })).toHaveLength(1);
+    expect(await command.validateCommandArgs(context, { file: "x.dis", "-m": "unknown" })).toHaveLength(1);
     await command.execute(context, { file: "x.dis", "-m": "sp48" });
     expect(JSON.parse(fs.saved["/proj/x.dis"]).machine).toBe("sp48");
   });
