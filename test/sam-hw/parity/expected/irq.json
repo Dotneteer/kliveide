@@ -1,0 +1,26 @@
+{
+ "probe": "irq",
+ "note": "interrupt pulses and the frame-to-line-0 distance, in STATUS polls",
+ "records": {
+  "PULSEF": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PULSEL": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PULSEL0": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "F2L0": {
+   "value": 650,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

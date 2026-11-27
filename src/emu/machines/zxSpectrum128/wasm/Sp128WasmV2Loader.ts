@@ -199,6 +199,7 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   sp128TapeClear: Sp128WasmV2ExportFunction;
   sp128TapeBeginUpload: Sp128WasmV2ExportFunction;
   sp128TapeSetBlock: Sp128WasmV2ExportFunction;
+  sp128TapeSetBlockPulses: Sp128WasmV2ExportFunction;
   sp128TapeWriteData: Sp128WasmV2ExportFunction;
   sp128TapeFinishUpload: Sp128WasmV2ExportFunction;
   sp128TapeRewind: Sp128WasmV2ExportFunction;
@@ -420,6 +421,7 @@ const requiredV2Exports = [
   "sp128TapeClear",
   "sp128TapeBeginUpload",
   "sp128TapeSetBlock",
+  "sp128TapeSetBlockPulses",
   "sp128TapeWriteData",
   "sp128TapeFinishUpload",
   "sp128TapeRewind",

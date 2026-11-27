@@ -1,0 +1,56 @@
+{
+ "probe": "cnt-rom",
+ "note": "loop counts with an opcode fetch or data from ROM0",
+ "records": {
+  "CALLROMB": {
+   "value": 460,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CALLROMS": {
+   "value": 949,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAROM B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAROM S": {
+   "value": 1360,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHLROMB": {
+   "value": 585,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHLROMS": {
+   "value": 1234,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIROM B": {
+   "value": 322,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIROM S": {
+   "value": 664,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIRAM B": {
+   "value": 322,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIRAM S": {
+   "value": 640,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

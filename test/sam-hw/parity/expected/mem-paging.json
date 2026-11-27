@@ -1,0 +1,176 @@
+{
+ "probe": "mem-paging",
+ "note": "LMPR/HMPR over every page, ROM bits, write protection, wrap, registers read back (512K)",
+ "records": {
+  "LMPR  00": {
+   "value": 2812585125,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  02": {
+   "value": 2712053415,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  04": {
+   "value": 2745213089,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  06": {
+   "value": 2913116835,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  08": {
+   "value": 2947329197,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0A": {
+   "value": 2846797487,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0C": {
+   "value": 2879957161,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0E": {
+   "value": 3047860907,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  10": {
+   "value": 3082073269,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  12": {
+   "value": 2981541559,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  14": {
+   "value": 3014701233,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  16": {
+   "value": 3182604979,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  18": {
+   "value": 3216817341,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1A": {
+   "value": 3116285631,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1C": {
+   "value": 3149445305,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1E": {
+   "value": 2780478139,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  00": {
+   "value": 2812585125,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  02": {
+   "value": 2712053415,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  04": {
+   "value": 2745213089,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  06": {
+   "value": 2913116835,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  08": {
+   "value": 2947329197,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0A": {
+   "value": 2846797487,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0C": {
+   "value": 2879957161,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0E": {
+   "value": 3047860907,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  10": {
+   "value": 3082073269,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  12": {
+   "value": 2981541559,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  14": {
+   "value": 3014701233,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  16": {
+   "value": 3182604979,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  18": {
+   "value": 3216817341,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1A": {
+   "value": 3116285631,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1C": {
+   "value": 3149445305,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1E": {
+   "value": 2780478139,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ROMBITS": {
+   "value": 2007367923,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "REGREAD": {
+   "value": 4294926755,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

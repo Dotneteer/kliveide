@@ -22,15 +22,9 @@ export class TzxPureToneBlock extends TzxBlockBase {
   }
 
   getDataBlock(): TapeDataBlock {
+    // --- Pulses: a block with an empty data part plays only its pause in the Spectrum-family player
     const block = new TapeDataBlock();
-    block.data = new Uint8Array(0);
-    block.pilotPulseLength = this.pulseLength;
-    block.pilotPulseCount = this.pulseCount;
-    block.sync1PulseLength = 0;
-    block.sync2PulseLength = 0;
-    block.zeroBitPulseLength = 0;
-    block.oneBitPulseLength = 0;
-    block.endSyncPulseLength = 0;
+    block.pulses = [{ length: this.pulseLength, count: this.pulseCount }];
     block.pauseAfter = 0;
     return block;
   }

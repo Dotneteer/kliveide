@@ -1,0 +1,15 @@
+{
+ "probe": "pic-q15",
+ "note": "mid-line mode switches over random bytes (plan Q15; DRAWN only; the picture by its hash; dev/scripts/sam-parity/q15.cjs compares it)",
+ "records": {
+  "DRAWN": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ },
+ "picture": {
+  "sha256": "649c374cd5e36fb09383436988f7c92c9f73656d1e5daa859cfa3633d255f72b",
+  "note": "every artefact cell matches SimCoupé 1.2.17 (95 cells); FLASH cells differ only by the frame the picture was taken at"
+ }
+}

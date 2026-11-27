@@ -104,6 +104,8 @@ typedef struct Sp48TapeBlock {
   uint32_t endSyncPulseLength;
   uint8_t lastByteUsedBits;
   uint32_t pilotPulseCount;
+  /* The data is explicit pulses (zx-spectrum-tape.c) */
+  uint8_t pulses;
 } Sp48TapeBlock;
 
 typedef struct Sp48SavedTapeBlock {

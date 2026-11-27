@@ -20,9 +20,14 @@
 /* Where the ASIC samples a cycle, in T from the cycle's start (T1 = 0) */
 #define SAM_MEM_SAMPLE_T 1u
 #define SAM_IO_SAMPLE_T 2u
-/* The free slot of the memory and I/O grids, as a frame-tact phase (mod 4 or 8) */
-#define SAM_MEM_FREE_PHASE 1u
-#define SAM_IO_FREE_PHASE 3u
+/*
+ * The free slot of the memory and I/O grids, as a frame-tact phase (mod 4 or 8). Owen's table leaves many
+ * pairs open; 5/5 (4/4 too, which no program can tell apart) is the one that also reproduces every
+ * SimCoupé 1.2.17 result of the parity probes (test/sam-hw/parity/, 2026-11-26). The earlier 1/3 passed
+ * Owen's table but made an ASIC I/O cycle after a 4-T instruction 8 T slower in the border.
+ */
+#define SAM_MEM_FREE_PHASE 5u
+#define SAM_IO_FREE_PHASE 5u
 /* The screen's contention starts this many T before its fetch window (SimCoupé's measured offset) */
 #define SAM_SCREEN_CONTENTION_LEAD 4u
 /* The mode-1 stripes: a 64-T stripe is contended where bit 6 of (hc + this) is 0 (plan Q2) */

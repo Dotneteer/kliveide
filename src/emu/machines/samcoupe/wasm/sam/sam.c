@@ -159,7 +159,6 @@ static void samFrameEnds(void) {
   samFrames++;
   samFlashCounter = (uint8_t)((samFlashCounter + 1u) & 0x1fu);
   samFrameCompleted = 1u;
-  samLineKilled = 0u;
   (void)samMidiTransmitting();
   samTapeFrameEnds();
 }
@@ -296,7 +295,6 @@ void samSetTacts(uint32_t value) {
   samFrameStart += delta;
   samNextCellTact += delta;
   samMidiEndsAt += delta;
-  samLineKilledAt += delta;
   samMouseLastRead += delta;
 }
 uint32_t samGetClockMultiplier(void) { return 1u; }

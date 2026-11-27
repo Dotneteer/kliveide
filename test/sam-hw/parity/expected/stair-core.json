@@ -1,0 +1,206 @@
+{
+ "probe": "stair-core",
+ "note": "LPEN staircases, four bytes a record (k, k+1, k+2, k+3 from the low byte)",
+ "records": {
+  "EMPTY 00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 08": {
+   "value": 67108864,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 0C": {
+   "value": 605819916,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 10": {
+   "value": 1144796204,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 14": {
+   "value": 1683772492,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 18": {
+   "value": 2222748780,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY 1C": {
+   "value": 2761725068,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 08": {
+   "value": 471075844,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 0C": {
+   "value": 875308060,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 10": {
+   "value": 1414284348,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 14": {
+   "value": 1953260636,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 18": {
+   "value": 2492236924,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHL 1C": {
+   "value": 3031213212,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP04": {
+   "value": 471075844,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP08": {
+   "value": 1010052132,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP0C": {
+   "value": 1414284356,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP10": {
+   "value": 1953260636,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP14": {
+   "value": 2492236924,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP18": {
+   "value": 3031213212,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPP1C": {
+   "value": 3570189500,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  08": {
+   "value": 471075844,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  0C": {
+   "value": 1010052132,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  10": {
+   "value": 1549028420,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  14": {
+   "value": 2088004708,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  18": {
+   "value": 2626980996,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDHL  1C": {
+   "value": 3165957284,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 04": {
+   "value": 336331776,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 08": {
+   "value": 875308060,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 0C": {
+   "value": 1414284348,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 10": {
+   "value": 1953260636,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 14": {
+   "value": 2492236924,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 18": {
+   "value": 3031213212,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL 1C": {
+   "value": 3570189500,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

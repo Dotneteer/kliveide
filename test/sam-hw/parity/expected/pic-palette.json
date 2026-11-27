@@ -1,0 +1,15 @@
+{
+ "probe": "pic-palette",
+ "note": "the 128 colours (DRAWN only; the picture is pinned by its hash)",
+ "records": {
+  "DRAWN": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ },
+ "picture": {
+  "sha256": "d67f9a22333d6e78cda40d0e630598298150841fbc2ca3eb342523f942668a91",
+  "note": "identical to SimCoupé 1.2.17, pixel for pixel"
+ }
+}

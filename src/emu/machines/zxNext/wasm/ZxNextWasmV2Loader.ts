@@ -199,6 +199,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextTapeGetMaxBlocks: ZxNextWasmV2ExportFunction;
   zxnextTapeBeginUpload: ZxNextWasmV2ExportFunction;
   zxnextTapeSetBlock: ZxNextWasmV2ExportFunction;
+  zxnextTapeSetBlockPulses: ZxNextWasmV2ExportFunction;
   zxnextTapeFinishUpload: ZxNextWasmV2ExportFunction;
   zxnextTapeClear: ZxNextWasmV2ExportFunction;
   zxnextTapeRewind: ZxNextWasmV2ExportFunction;
@@ -737,6 +738,7 @@ const requiredV2Exports = [
   "zxnextTapeGetMaxBlocks",
   "zxnextTapeBeginUpload",
   "zxnextTapeSetBlock",
+  "zxnextTapeSetBlockPulses",
   "zxnextTapeFinishUpload",
   "zxnextTapeClear",
   "zxnextTapeRewind",

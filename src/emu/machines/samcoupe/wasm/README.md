@@ -8,9 +8,9 @@ no TypeScript SAM machine and no second CPU: the core includes the shared Z80 (`
 through its `Z80_*` hooks. It needed no new hook.
 
 The hardware facts come from the research pack `dev/research/sam-coupe/` (`ASIC_VIDEO_MEMORY_TIMING.md`,
-`SOUND_INPUT_IO.md`, `STORAGE_FIRMWARE_SOFTWARE.md`). The code is Klive's own (plan D1): no emulator's code
-was read for design or ported. The SAA 1099 is written from the pack's record of SAASound's behaviour, not
-ported from SAASound's sources (see "Sound").
+`SOUND_INPUT_IO.md`, `STORAGE_FIRMWARE_SOFTWARE.md`). The code is Klive's own (plan D1), except the SAA 1099,
+which is ported from SAASound (BSD-3, as D1 allows; see "Sound"). No other emulator's code was read for
+design or ported.
 
 ## Layout
 
@@ -41,8 +41,10 @@ ported from SAASound's sources (see "Sound").
 One clock: `cpu.tacts` counts whole T-states (6 MHz). A line is 384 T (48 cells of 8 T), a frame 312 lines
 (119 808 T, 50.08 Hz). **The machine frame starts at the frame interrupt** (vc 244, hc 0), so screen line 0
 is frame line 68, and an instruction that ends past the frame carries its overshoot into the next. The
-ASIC steps eagerly, one cell at a time, as the clock passes a cell's start (`samAdvanceTacts`): the cell is
-drawn with the registers as they are at its start, so a CLUT or border write lands from the next cell on.
+ASIC steps eagerly, one cell at a time, as the clock passes a cell's start (`samAdvanceTacts`); a cell is
+drawn when the clock leaves it, with the registers as they are at its end, so a CLUT, border or mode write
+shows from the start of the cell it happens in (SimCoupé's behaviour, parity probe `pic-clut`; Klive drew
+a cell at its start before, one cell late).
 
 ## Contention (plan §3.2, §6, D5)
 
@@ -51,53 +53,85 @@ TW of an I/O cycle, `mask` is 3 (1 in 4) or 7 (1 in 8), and `free` the grid's ph
 in the border and 1 in 8 on lines 0-191 from hc 124 (4 T before the fetch); mode 1 adds 64-T stripes where
 bit 6 of (hc + 4) is clear, border included; SOFF makes the frame border; ROM, external RAM and missing pages
 are never held. ASIC ports (low byte F8h-FFh) are 1 in 8 always; others never (plan Q13). The constants
-(`SAM_MEM_SAMPLE_T` 1, `SAM_MEM_FREE_PHASE` 1, `SAM_IO_SAMPLE_T` 2, `SAM_IO_FREE_PHASE` 3) are one table.
+(`SAM_MEM_SAMPLE_T` 1, `SAM_MEM_FREE_PHASE` 5, `SAM_IO_SAMPLE_T` 2, `SAM_IO_FREE_PHASE` 5) are one table.
 
 **Measured against Simon Owen's published instruction timings** (`test/sam-hw/timing.test.ts`): NOP, LD r,n,
 LD (HL),n, PUSH, EX (SP),HL, OUT (n),A and IN r,(C) with code and data in internal or external memory, in
-the border and on the screen, all match his real-hardware values with these constants. The I/O phase is
-pinned by the IN/OUT cases: with the memory grid's free slot at T2 = 1 (mod 8), the I/O grid's at TW = 3
-(mod 8) is the one value that gives Owen's 16 T (border) and 24 T (screen) for both.
+the border and on the screen, all match his real-hardware values with these constants. His table measures
+each instruction repeated on its own, which leaves many phase pairs open (36 of the 64 pass it).
 
-Refresh cycles and the interrupt acknowledge are not held (plan Q20). Not yet compared with SimCoupé (an
-oracle run, plan §13).
+**Fitted to SimCoupé 1.2.17** (the parity probes, `test/sam-hw/parity/`, 2026-11-26): loop counts of about
+100 instruction forms (core, prefixed, undocumented, block, I/O; mode 4 and mode 1; border and screen),
+LPEN staircases across both contention boundaries, and interrupt distances. Of the pairs Owen's table
+allows, 5/5 and 4/4 reproduce every SimCoupé result; they differ only by a 1-T shift that no program can
+read, and 5/5 keeps the border's memory grid as it was. The earlier 1/3 made an ASIC I/O cycle after a
+4-T instruction 8 T slower in the border, and shifted the screen grid by 4 T.
+
+Refresh cycles and the interrupt acknowledge are not held (plan Q20).
 
 ## Interrupts (plan §7.4)
 
 STATUS shows live pulses, computed from the frame tact: frame for the first 128 T of the frame (plan Q5),
-line N at frame line N + 68 for 128 T (192-255: never), MIDI OUT 96 T at the end of a 1920-T byte (Q7:
-the manual's wording). A LINE write during the line pulse ends it (SimCoupé's behaviour, one constant).
-/INT is the AND of the active bits, level-triggered: a pulse missed with DI is lost. IM 2 reads FFh (Q12).
+line N at frame line N + 68 for 128 T (192-255: never). The line pulse is a live comparison: active while
+LINE equals the line and hc < 128, so writing another value ends it, the same value keeps it, and the
+current line written inside the window starts it. MIDI OUT: the pulse is the last 96 T of the 1920-T byte,
+and TXFMST stays high 96 T past the byte (Q7). /INT is the AND of the active bits, level-triggered: a pulse
+missed with DI is lost. IM 2 reads FFh (Q12). All of this matches SimCoupé 1.2.17 (parity probes `status`,
+`status-sweep`, 2026-11-26); the LINE and MIDI rules were Klive's guesses before.
 
 ## The picture (plan §3.3, §7, D6)
 
 12 MHz pixels (16 a cell), so mode 3's 512 pixels need no special path. The TV window is 640 x 288: hc 96-383
 of a line and hc 0-31 of the next (the right border after it), 48 lines above and below the screen (Q3).
-Screen bytes are fetched one cell before they are shown (hc 120-375). Modes 1/2: BRIGHT is CLUT 8-15,
+A cell's bytes are fetched at its start, in the mode then (hc 128-383), and the cell is drawn in the mode at
+its end. Modes 1/2: BRIGHT is CLUT 8-15,
 FLASH swaps ink and paper on bit 4 of a 5-bit frame counter. Mode 3: pixel 01 is CLUT 2 and 10 is CLUT 1
 (the swap), HMPR bits 6-5 the high index bits. Mode 4: the high nibble left. SOFF (modes 3/4) shows black,
-fetches nothing, freezes LPEN/HPEN (Q6). ATTR reads the last attribute fetched, also in the border (Q15,
+fetches nothing, freezes LPEN/HPEN at the beam's position when it takes effect (Q6; SimCoupé's rule). HPEN
+reads 192 on screen line 0 until hc 128; lines 1-191 read their number from hc 0 (SimCoupé's). ATTR reads
+the last attribute fetched, also in the border (Q15,
 Owen's measurement); unmapped ports read the last fetch byte in the screen area, FFh elsewhere (Q14).
-Palette: three 3-bit guns, linear (Q11). No mode-change artefact cell (Q15 of the plan). The CLUT powers on
+Palette: three 3-bit guns, linear (Q11; SimCoupé's too). **The mode-change artefact cell (Q15):** a VMPR
+write that moves between modes 1/2 and 3/4 inside a cell draws that cell in the new mode from the bytes
+fetched in the old one (the rules are in `samCellIndexes`, fitted to SimCoupé 1.2.17 from 96 cells of
+random bytes, parity probe `pic-q15`; mode 3 is inferred from mode 4); the next cell is the new mode. LPEN
+bit 0 is the CLUT bit of the pixel under the beam (SimCoupé reads one from two lines above: not followed).
+The CLUT powers on
 from a fixed seed (random on a real machine) and survives the reset button.
 
 **Observed:** ROM 3.0 sets mode 4 on pages 30-31 (14-15 on 256K) and draws the copyright screen's colour
-bars with the line interrupt; the palette change lands about 24 T into the right border, so the bars step
-there (as on the hardware, where the interrupt comes at the start of the right border).
+bars with the line interrupt. LMPR 5Fh also pages ROM1 into section D, so the main loop (D600h) and the
+handler's second half (D42Dh-D50Fh) are ROM1 code. The interrupt comes at hc 0 one line early; the handler
+reads FEh and, **with SPEN (bit 5) low, waits on the pen position** (`IN A,(C)` on F8h until it passes
+the table's value) before writing the CLUT, so the change lands in the blanking and the bars are clean.
+SPEN idles low (no light pen). With it high (MAME's reading, Klive before 2026-11-24) the handler writes at
+once, 16-24 T into the right border, and the bars step there. Confirmed against SimCoupé 1.2.17
+(`dev/ai/sam-coupe.md`, "Oracle runs").
 
 ## Sound (plan §8, D8)
 
-`sam-saa.c` is Klive's own model written from the pack's record of the chip and of SAASound's behaviour
-(SOUND §1): six tones (half period `(511 - N) << (8 - octave)` master clocks), buffered octave/offset writes
-(octave-first defers the offset one more half cycle), the 18-bit Galois noise LFSR (taps 20400h, seed all
-ones) at 31.25/15.6/7.8 kHz or clocked by tone 0/3, the two envelopes on channels 2 and 5 only (8 shapes,
-4/3-bit, internal or external clock, buffered control bytes, mirror), the mixer (tone+noise: half when both
-high), sync and sound enable. **Not modelled:** SAASound's pulse-density table for enveloped amplitudes
-(not in the pack: Klive uses `(amp & 0Eh) * env / 16`). Porting SAASound (BSD-3) would bring it; plan D1
-allows that as a follow-up. The SAA runs in catch-up (24 MHz units, events in time order) every cell and
-before each write; the beeper (FEh bit 4) goes into both sides; the tape's EAR level is echoed while it
-plays. Levels: one SAA side full scale 0.5, the beeper 0.25, the tape 0.05 (SOUND OQ4: unmeasured). A DC
-high-pass follows. Only the heard mix (with the audio mixer's gains) is computed; its integrator is
+`sam-saa.c` is **ported from SAASound** (Dave Hooper and Simon Owen, BSD-3; commit 3d92322 pinned in
+`dev/research/sam-coupe/saasound/`; the notice is in the file and in `THIRD_PARTY_NOTICES.md`). SAASound is
+the best-tested SAA 1099 model available: its fixes came from real SAMs (Defender, the Fred 59 demo) and its
+noise from a recorded chip, though no per-feature hardware measurement is published. Ported unchanged: the
+tone generators (half period `(511 - N) << (8 - octave)` master clocks; buffered octave/offset, with
+SAASound's rule that an offset written with no octave change pending acts one half cycle later; sync), the
+18-bit Galois noise LFSR (taps 20400h, seed all ones) at 31.25/15.6/7.8 kHz or clocked by tone 0/3, the two
+envelopes on channels 2 and 5 only (SAASound's level tables, buffering at points (3) and (4), the 3/4-bit
+switch mid-shape, internal clock from tone 1/4, external clock from an address write of 18h/19h), the mixer
+(`tone * (2 - noise)`), and the amplitude stage with its **pulse-density table** for enveloped channels.
+Levels are SAASound's units: 0-480 a channel, 0-2880 a side (424 at most with an envelope).
+
+**What is Klive's:** time. SAASound steps once per output sample (oversampled) with 12-bit fractional
+periods; Klive keeps each generator's next edge as an exact time (24 MHz units, events in time order) and
+runs in catch-up every cell and before each write. A noise source change keeps the fraction of the period
+already run, as SAASound's counter does. The audio integrator averages the level over each host sample in
+place of SAASound's oversampling. The beeper (FEh bit 4) goes into both sides; the tape's EAR level is
+echoed while it plays. Levels: one SAA side full scale 0.5, the beeper 0.1875, the tape 0.05. The beeper's
+is SimCoupé 1.2.17's ratio (a swing 2.25 times one SAA channel's at amplitude 15, parity probe `snd-mix`); no
+hardware measurement exists (SOUND OQ4). A DC high-pass (1.4 Hz, every Klive core's) follows; SimCoupé's
+cuts off near 14 Hz (a held level fades in about 30 ms), not followed. Pitch and the SAA's amplitude law
+agree with SimCoupé's. Only the heard mix (with the audio mixer's gains) is computed; its integrator is
 volatile.
 
 ## Keyboard, joysticks, mouse (plan §9.1-§9.2)
@@ -105,7 +139,9 @@ volatile.
 Rows 0-7 by A8-A15 (several AND together), bits 0-4 on FEh, 5-7 on F9h; row 8 at FFFEh, with the mouse's
 nibble ANDed into bits 0-3. Stick 1 is keys 6-0, stick 2 keys 1-5 (the host presses them). The mouse:
 strobe, dummy, buttons, Y and X as 12-bit deltas, latched at the buttons read, on at the dummy after the
-last, reset after 228 T (38 us, Q18) without a read.
+last, reset after 228 T (38 us, Q18) without a read, the time restarting on each read. **Compared with SimCoupé
+1.2.17** (parity probes `mouse`, `keys`, 2026-11-27): the sequence and the timeout match to the 4 T a probe
+resolves; a BASIC line typed with every symbol is stored the same.
 
 **Observed** (`test/sam-hw/keyboard.test.ts`): ROM 3.0's legends, read back from stored BASIC lines: SHIFT
 gives the digit row's ! @ # $ % & ' ( ) ~ and - + = give / * _; SYMBOL gives < > (comma, period), | (9),
@@ -116,6 +152,13 @@ gives the digit row's ! @ # $ % & ' ( ) ~ and - + = give / * _; SYMBOL gives < >
 Two WD1772s on the shared controller (`sam-fdc.c` includes `wd1793.c` twice), E0h-E7h and F0h-F7h, A2 the
 side. They run on the CPU's T-states; the reset button does not reach them. Disks are 80 (up to 82)
 cylinders, two sides, ten 512-byte sectors - the MGT image's own layout.
+
+**Compared with SimCoupé 1.2.17** (parity probes `fdc-*`, `img-*`, 2026-11-27): status bits, ID fields,
+sector data, record not found, write protection, both drives and sides, and SAD/EDSK images (the
+written-back disks too) match. SimCoupé's controller is not timed (seeks finish at once, data waits on
+every status read, the disk turns about 17 times too fast), so Klive keeps the WD1772 data sheet's
+timing; also its Force Interrupt status and READ TRACK's bit 4, where the data sheet says otherwise. A
+missing drive's ports read FFh (SimCoupé: 00h).
 
 **Observed:** the key that leaves the copyright screen is consumed; **F9 then boots from the editor**
 (F9 still held when the editor starts boots too). The ROM loads track 4 sector 1 into the page below the
@@ -136,7 +179,14 @@ The host gives edges in 3.5 MHz T-states (TZX/TAP through the shared reader); th
 6 MHz (n x 12/7 T). The SAM has no motor control, so the deck starts itself when a frame reads FEh 1000
 times or more (a loader polling EAR) and stops after 50 quieter frames. The SAVE recording keeps MIC's
 half-periods. **Observed** at the ROM's default speed (112): pilot 3688 T, sync about 1000 T, bits 1496 T
-and 2984 T; a SAVE ... CODE round-trips through `SamTapeFile.ts` (`test/sam-hw/tape.test.ts`).
+and 2984 T; a SAVE ... CODE round-trips through `SamTapeFile.ts` (`test/sam-hw/tape.test.ts`). TZX pure tones,
+pulse sequences and direct recordings play as their pulses, one edge each.
+
+**Compared with SimCoupé 1.2.17** (parity probes `tape-*`, 2026-11-27): ROM 3.0's `LOAD` of standard, faster,
+slower and paused tapes loads the same bytes (the ROM loads 0.25 to 1.18 times the standard pulse lengths
+here). The edge timing of short pulses differs: SimCoupé places pulses of 800 T and less tens of T off the TZX
+timing (its tape stepping); Klive plays each pulse to the T-state. SimCoupé starts its tape only while ROM
+code reads it; Klive's deck starts for any program that polls EAR.
 
 ## Testing
 

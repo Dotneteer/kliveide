@@ -1,0 +1,15 @@
+{
+ "probe": "pic-modes",
+ "note": "the four modes in one picture (DRAWN only; the picture is pinned by its hash)",
+ "records": {
+  "DRAWN": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ },
+ "picture": {
+  "sha256": "f0d259a0342ef9e06ce18019431f527ef3ded135a1020c812392385d427558ae",
+  "note": "identical to SimCoupé 1.2.17, pixel for pixel"
+ }
+}

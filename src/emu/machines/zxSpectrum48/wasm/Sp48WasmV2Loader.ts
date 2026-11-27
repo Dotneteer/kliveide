@@ -156,6 +156,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80
   sp48TapeSetFileNameByte: Sp48WasmV2ExportFunction;
   sp48TapeBeginUpload: Sp48WasmV2ExportFunction;
   sp48TapeSetBlock: Sp48WasmV2ExportFunction;
+  sp48TapeSetBlockPulses: Sp48WasmV2ExportFunction;
   sp48TapeFinishUpload: Sp48WasmV2ExportFunction;
   sp48TapeRewind: Sp48WasmV2ExportFunction;
   sp48TapeSetMode: Sp48WasmV2ExportFunction;
@@ -362,6 +363,7 @@ const requiredV2Exports = [
   "sp48TapeSetFileNameByte",
   "sp48TapeBeginUpload",
   "sp48TapeSetBlock",
+  "sp48TapeSetBlockPulses",
   "sp48TapeFinishUpload",
   "sp48TapeRewind",
   "sp48TapeSetMode",

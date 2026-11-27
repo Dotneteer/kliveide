@@ -9,7 +9,7 @@ import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { Sp128WasmV2LoaderOptions, Sp128WasmV2Runtime } from "./wasm/Sp128WasmV2Loader";
-import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { type TapeDataBlock, tapeBlockUploadBytes } from "@common/structs/TapeDataBlock";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import {
@@ -1095,7 +1095,9 @@ export class ZxSpectrum128WasmV2Machine
   }
 
   private uploadTapeToWasmV2(runtime: Sp128WasmV2Runtime, blocks: TapeDataBlock[]): void {
-    const totalDataLength = blocks.reduce((sum, block) => sum + block.data.length, 0);
+    // --- A block of pulses uploads its entries in place of data (`tapeBlockUploadBytes`)
+    const uploads = blocks.map(tapeBlockUploadBytes);
+    const totalDataLength = uploads.reduce((sum, bytes) => sum + bytes.length, 0);
     const wasm = runtime.exports;
     if (totalDataLength > runtime.tapeData.length) {
       throw new Error(
@@ -1110,12 +1112,12 @@ export class ZxSpectrum128WasmV2Machine
     let offset = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      writeCoreBytes(runtime, runtime.tapeData, block.data, offset);
+      writeCoreBytes(runtime, runtime.tapeData, uploads[i], offset);
       if (
         wasm.sp128TapeSetBlock(
           i,
           offset,
-          block.data.length,
+          uploads[i].length,
           block.pauseAfter,
           block.pilotPulseLength,
           block.sync1PulseLength,
@@ -1129,7 +1131,10 @@ export class ZxSpectrum128WasmV2Machine
       ) {
         throw new Error(`ZX Spectrum 128K WASM v2 rejected tape block ${i}.`);
       }
-      offset += block.data.length;
+      if (block.pulses && wasm.sp128TapeSetBlockPulses(i, 1) === 0) {
+        throw new Error(`The core rejected tape block ${i}'s pulses.`);
+      }
+      offset += uploads[i].length;
     }
 
     if (wasm.sp128TapeFinishUpload() === 0) {

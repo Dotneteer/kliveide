@@ -175,6 +175,7 @@ const productionExports = [
   "spp3eTapeClear",
   "spp3eTapeBeginUpload",
   "spp3eTapeSetBlock",
+  "spp3eTapeSetBlockPulses",
   "spp3eTapeWriteData",
   "spp3eTapeFinishUpload",
   "spp3eTapeRewind",

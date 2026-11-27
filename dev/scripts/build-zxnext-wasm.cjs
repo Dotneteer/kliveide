@@ -339,6 +339,7 @@ const productionExports = [
   "zxnextTapeGetMaxBlocks",
   "zxnextTapeBeginUpload",
   "zxnextTapeSetBlock",
+  "zxnextTapeSetBlockPulses",
   "zxnextTapeFinishUpload",
   "zxnextTapeClear",
   "zxnextTapeRewind",

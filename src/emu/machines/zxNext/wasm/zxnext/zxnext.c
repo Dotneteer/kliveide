@@ -739,6 +739,8 @@ uint32_t zxnextTapeSetBlock(uint32_t index, uint32_t offset, uint32_t length, ui
   return sp48TapeSetBlock(index, offset, length, pauseAfter, pilotPulseLength, sync1PulseLength, sync2PulseLength,
                           zeroBitPulseLength, oneBitPulseLength, endSyncPulseLength, lastByteUsedBits, pilotPulseCount);
 }
+/* Marks block `index` as explicit pulses (zx-spectrum-tape.c) */
+uint32_t zxnextTapeSetBlockPulses(uint32_t index, uint32_t pulses) { return sp48TapeSetBlockPulses(index, pulses); }
 uint32_t zxnextTapeFinishUpload(void) { return sp48TapeFinishUpload(); }
 void zxnextTapeClear(void) { sp48TapeClear(); }
 void zxnextTapeRewind(void) {

@@ -1,0 +1,86 @@
+{
+ "probe": "cnt-mode1",
+ "note": "loop counts with the screen in mode 1",
+ "records": {
+  "EMPTY  B": {
+   "value": 852,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY  S": {
+   "value": 2023,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    B": {
+   "value": 721,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    S": {
+   "value": 1707,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  B": {
+   "value": 630,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  S": {
+   "value": 1463,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL  B": {
+   "value": 551,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL  S": {
+   "value": 1280,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPB": {
+   "value": 401,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPS": {
+   "value": 921,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHLBCB": {
+   "value": 601,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADDHLBCS": {
+   "value": 1423,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT B": {
+   "value": 521,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT S": {
+   "value": 1252,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  B": {
+   "value": 481,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  S": {
+   "value": 1138,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

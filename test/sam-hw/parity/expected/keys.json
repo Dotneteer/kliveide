@@ -1,0 +1,108 @@
+{
+ "probe": "keys",
+ "note": "a BASIC line typed in; the matrix with several rows read at once",
+ "records": {
+  "LINELEN": {
+   "value": 46,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE00": {
+   "value": 1986620491,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE01": {
+   "value": 1629516133,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE02": {
+   "value": 811221370,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE03": {
+   "value": 1075912761,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE04": {
+   "value": 639968291,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE05": {
+   "value": 2116626471,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE06": {
+   "value": 1026239776,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE07": {
+   "value": 543107631,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE08": {
+   "value": 1044131372,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE09": {
+   "value": 2071738939,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE10": {
+   "value": 1566269053,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LINE11": {
+   "value": 24639,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27",
+   "note": "the line's last bytes; the bytes past its end are zeroed since the oracle run (they were the editor's next line)"
+  },
+  "KEYWAIT": {
+   "value": 1,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  },
+  "ROWS0-3": {
+   "value": 4294901759,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  },
+  "ROWS4-7": {
+   "value": 4294967295,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  },
+  "ROW8": {
+   "value": 255,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  },
+  "ANDFAIL": {
+   "value": 0,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  },
+  "TABSUM": {
+   "value": 65152,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé's -keyin does not reach the key matrix while a program runs (no key in 5 s), so the held-key scan cannot be compared; rows AND together (research pack, SOUND_INPUT_IO.md §3)"
+  }
+ }
+}

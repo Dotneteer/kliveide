@@ -1,0 +1,148 @@
+{
+ "probe": "fdc-cmds",
+ "note": "drive 1's VL1772 command by command (records described in the probe)",
+ "records": {
+  "REST0R": {
+   "value": 2214609021,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2214592512"
+  },
+  "SEEK0R": {
+   "value": 2147491793,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "REST1R": {
+   "value": 2214625272,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2214592512"
+  },
+  "SEEK1R": {
+   "value": 2147500130,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "REST2R": {
+   "value": 2214598084,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2214592512"
+  },
+  "SEEK2R": {
+   "value": 2147486184,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "REST3R": {
+   "value": 2214600616,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2214592512"
+  },
+  "SEEK3R": {
+   "value": 2147487827,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "STEPIN": {
+   "value": 2147484110,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "VERIFY": {
+   "value": 2147486242,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2147483648"
+  },
+  "RDADDR": {
+   "value": 393344,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "RDADDRB": {
+   "value": 34144326,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 33882182"
+  },
+  "RDSEC": {
+   "value": 33554560,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "RDSECD": {
+   "value": 33554432,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "RDRNF": {
+   "value": 144,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "WRSEC": {
+   "value": 33554560,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "WRBACK": {
+   "value": 33619712,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "FORCEI": {
+   "value": 2147483688,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: the data sheet leaves the other status bits unchanged when Force Interrupt ends a running command; SimCoupé shows a Type I status; SimCoupé: 2684354600"
+  },
+  "SIDE2": {
+   "value": 34079046,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 33620294"
+  },
+  "RDTRK": {
+   "value": 409600128,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: the data sheet does not use bit 4 for READ TRACK; SimCoupé sets it; SimCoupé: 409600144"
+  },
+  "IDSEQa": {
+   "value": 67305985,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "IDSEQb": {
+   "value": 1541,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "INDEX": {
+   "value": 17817,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 1022"
+  },
+  "MOTOROFF": {
+   "value": 137025,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 180381"
+  },
+  "SPINUP": {
+   "value": 2684428896,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 2684354560"
+  }
+ }
+}

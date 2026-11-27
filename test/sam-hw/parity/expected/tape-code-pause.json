@@ -1,0 +1,26 @@
+{
+ "probe": "tape-code-pause",
+ "note": "ROM 3.0's LOAD of the tape \"code-pause\" (the tape inserted by hand with F3)",
+ "records": {
+  "LOADSUM": {
+   "value": 12626,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LOADXOR": {
+   "value": 196,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LOAD0": {
+   "value": 740233733,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LOAD96": {
+   "value": 218100453,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

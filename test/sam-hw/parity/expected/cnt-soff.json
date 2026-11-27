@@ -1,0 +1,66 @@
+{
+ "probe": "cnt-soff",
+ "note": "loop counts with SOFF on",
+ "records": {
+  "EMPTY  B": {
+   "value": 1073,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY  S": {
+   "value": 3043,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    B": {
+   "value": 920,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    S": {
+   "value": 2608,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  S": {
+   "value": 2282,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPB": {
+   "value": 495,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPS": {
+   "value": 1404,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT S": {
+   "value": 1826,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INLPEN B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INLPEN S": {
+   "value": 1825,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "probe": "fdc-drive2",
+ "note": "drive 2 with a blank disk (drive2.inc.asm)",
+ "records": {
+  "D2REST": {
+   "value": 132,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "D2RDADDR": {
+   "value": 34078730,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: SimCoupé 1.2.17's disk controller is not timed (seeks finish at once, data is ready on every status read, the disk turns about 17 times too fast); Klive follows the WD1772 data sheet (step rates, 300 rpm, 32 us a byte); SimCoupé: 33619978"
+  },
+  "D2RDSEC": {
+   "value": 33554560,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "D2RDSUM": {
+   "value": 33592320,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "D2WRSEC": {
+   "value": 33554560,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "D2WRBACK": {
+   "value": 33619712,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "D2SIDE2": {
+   "value": 33596416,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

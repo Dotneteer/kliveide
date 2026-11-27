@@ -1,0 +1,15 @@
+{
+ "probe": "pic-raster",
+ "note": "mid-line border, SOFF, mode and page writes (DRAWN only; the picture by its hash)",
+ "records": {
+  "DRAWN": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ },
+ "picture": {
+  "sha256": "ebc9e8ce507fd6b0cd05fce6c394b49e96b2f3c32b6237e9dfa4d3703545c448",
+  "note": "identical to SimCoupé 1.2.17, pixel for pixel"
+ }
+}

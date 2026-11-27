@@ -178,6 +178,8 @@ typedef struct Spp3eTapeBlock {
   uint32_t endSyncPulseLength;
   uint8_t lastByteUsedBits;
   uint32_t pilotPulseCount;
+  /* The data is explicit pulses (zx-spectrum-tape.c) */
+  uint8_t pulses;
 } Spp3eTapeBlock;
 
 typedef struct Spp3eDiskDrive {
@@ -3042,20 +3044,27 @@ uint32_t spp3eTapeSetBlock(
   uint32_t lastByteUsedBits,
   uint32_t pilotPulseCount
 ) {
+  /* Zeros mean the ROM's timing, except in a block with its own bit timing: a TZX 14h pure data block has
+     no pilot, syncs or terminating pulse */
+  const uint32_t ownBits = zeroBitPulseLength != 0u && oneBitPulseLength != 0u;
   return spp3eCommonTapeSetBlock(
     index,
     offset,
     length,
     pauseAfter,
-    pilotPulseLength == 0u ? SPP3E_TAPE_PILOT_PULSE_LENGTH : pilotPulseLength,
-    sync1PulseLength == 0u ? SPP3E_TAPE_SYNC1_PULSE_LENGTH : sync1PulseLength,
-    sync2PulseLength == 0u ? SPP3E_TAPE_SYNC2_PULSE_LENGTH : sync2PulseLength,
+    pilotPulseLength == 0u && !ownBits ? SPP3E_TAPE_PILOT_PULSE_LENGTH : pilotPulseLength,
+    sync1PulseLength == 0u && !ownBits ? SPP3E_TAPE_SYNC1_PULSE_LENGTH : sync1PulseLength,
+    sync2PulseLength == 0u && !ownBits ? SPP3E_TAPE_SYNC2_PULSE_LENGTH : sync2PulseLength,
     zeroBitPulseLength == 0u ? SPP3E_TAPE_BIT0_PULSE_LENGTH : zeroBitPulseLength,
     oneBitPulseLength == 0u ? SPP3E_TAPE_BIT1_PULSE_LENGTH : oneBitPulseLength,
-    endSyncPulseLength == 0u ? SPP3E_TAPE_TERM_SYNC_PULSE_LENGTH : endSyncPulseLength,
+    endSyncPulseLength == 0u && !ownBits ? SPP3E_TAPE_TERM_SYNC_PULSE_LENGTH : endSyncPulseLength,
     lastByteUsedBits == 0u ? 8u : lastByteUsedBits,
     pilotPulseCount
   );
+}
+/* Marks block `index` as explicit pulses (zx-spectrum-tape.c) */
+uint32_t spp3eTapeSetBlockPulses(uint32_t index, uint32_t pulses) {
+  return sp48TapeSetBlockPulses(index, pulses);
 }
 uint32_t spp3eTapeWriteData(uint32_t offset, uint32_t value) {
   return spp3eCommonTapeWriteData(offset, value);

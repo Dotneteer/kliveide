@@ -140,6 +140,8 @@ typedef struct Sp128TapeBlock {
   uint32_t endSyncPulseLength;
   uint8_t lastByteUsedBits;
   uint32_t pilotPulseCount;
+  /* The data is explicit pulses (zx-spectrum-tape.c) */
+  uint8_t pulses;
 } Sp128TapeBlock;
 
 typedef struct Sp128ScreenConfig {
@@ -1891,7 +1893,13 @@ uint32_t sp128TapeSetBlock(
   sp128TapeBlocks[index].endSyncPulseLength = endSyncPulseLength;
   sp128TapeBlocks[index].lastByteUsedBits = (uint8_t)(lastByteUsedBits & 0xffu);
   sp128TapeBlocks[index].pilotPulseCount = pilotPulseCount;
+  sp128TapeBlocks[index].pulses = 0u;
   return 1u;
+}
+
+/* Marks block `index` as explicit pulses (zx-spectrum-tape.c) */
+uint32_t sp128TapeSetBlockPulses(uint32_t index, uint32_t pulses) {
+  return sp48TapeSetBlockPulses(index, pulses);
 }
 
 uint32_t sp128TapeWriteData(uint32_t offset, uint32_t value) {

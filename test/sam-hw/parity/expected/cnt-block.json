@@ -1,0 +1,106 @@
+{
+ "probe": "cnt-block",
+ "note": "loop counts of block instructions",
+ "records": {
+  "SETUP  B": {
+   "value": 429,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SETUP  S": {
+   "value": 838,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDI    B": {
+   "value": 322,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDI    S": {
+   "value": 640,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDD    B": {
+   "value": 322,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDD    S": {
+   "value": 640,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIR3  B": {
+   "value": 201,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIR3  S": {
+   "value": 406,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDDR3  B": {
+   "value": 201,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDDR3  S": {
+   "value": 406,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CPI    B": {
+   "value": 339,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CPI    S": {
+   "value": 674,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CPIR3  B": {
+   "value": 195,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CPIR3  S": {
+   "value": 407,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIR2  B": {
+   "value": 247,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIR2  S": {
+   "value": 510,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OTIR2  B": {
+   "value": 247,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OTIR2  S": {
+   "value": 525,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIRFE B": {
+   "value": 247,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIRFE S": {
+   "value": 506,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

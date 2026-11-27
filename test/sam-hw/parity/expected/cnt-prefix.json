@@ -1,0 +1,206 @@
+{
+ "probe": "cnt-prefix",
+ "note": "loop counts of prefixed instructions",
+ "records": {
+  "LDAIX  B": {
+   "value": 585,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAIX  S": {
+   "value": 1223,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXA  B": {
+   "value": 585,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXA  S": {
+   "value": 1223,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCIX  B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCIX  S": {
+   "value": 1112,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXN  B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXN  S": {
+   "value": 1115,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BITIX  B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BITIX  S": {
+   "value": 1115,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SETIX  B": {
+   "value": 495,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SETIX  S": {
+   "value": 1012,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLCIXA B": {
+   "value": 495,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLCIXA S": {
+   "value": 1012,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXHA B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIXHA S": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLCA_CBB": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLCA_CBS": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SLLA   B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SLLA   S": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BITHL  B": {
+   "value": 715,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BITHL  S": {
+   "value": 1424,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SETHL  B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SETHL  S": {
+   "value": 1281,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLD    B": {
+   "value": 585,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "RLD    S": {
+   "value": 1223,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NEG    B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NEG    S": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAI   B": {
+   "value": 715,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAI   S": {
+   "value": 1518,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADCHL  B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ADCHL  S": {
+   "value": 1367,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDNNBC B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDNNBC S": {
+   "value": 1057,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EDNOP  B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EDNOP  S": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCIXR B": {
+   "value": 715,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCIXR S": {
+   "value": 1518,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "DDNOP  B": {
+   "value": 805,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "DDNOP  S": {
+   "value": 1627,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

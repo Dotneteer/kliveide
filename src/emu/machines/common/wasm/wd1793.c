@@ -33,7 +33,8 @@
 //   - Type II/III command bit 1 is not the side-compare flag (C): the 1770 never compares the side.
 //   - its step rates at 8 MHz: 6, 12, 20 and 30 ms (the 1793's at 1 MHz are the same numbers).
 // The WD1772 variant (`WD1793_VARIANT 1772`, the SAM Coupé's VL1772-02s, `sam-fdc.c`) is the 1770 with
-// the 1772's step rates: 6, 12, 2 and 3 ms.
+// the 1772's step rates: 6, 12, 2 and 3 ms, and Type I status bit 5 set only once a spin-up sequence ran
+// (a command with h = 1 starts the motor without one; SimCoupé 1.2.17 agrees, parity probe `fdc-cmds`).
 //
 // The file may be included more than once in a translation unit with different prefixes (the SAM has a
 // controller per drive): the includer `#undef`s the WD1793_* configuration macros between inclusions.
@@ -150,6 +151,10 @@ static uint8_t WD(MotorOn);
 static uint32_t WD(SpinUpAt);
 /* 1 while the command waits for its spin-up's index pulses */
 static uint8_t WD(SpinUpWait);
+#endif
+#if WD1793_VARIANT == 1772
+/* 1 once a spin-up sequence ran since the motor started (the 1772's Type I status bit 5) */
+static uint8_t WD(SpunUp);
 #endif
 
 /* The running command */
@@ -702,10 +707,18 @@ static uint32_t WD(MotorStart)(uint32_t now, uint8_t command) {
   WD(MotorOn) = 1u;
   if ((command & 0x08u) != 0u) {
     WD(SpinUpAt) = now;
+#if WD1793_VARIANT == 1772
+    /* h = 1: no spin-up sequence, so bit 5 stays clear (the data sheet's "the spin-up sequence has
+       completed"; SimCoupé 1.2.17 agrees, parity probe `fdc-cmds`) */
+    WD(SpunUp) = 0u;
+#endif
     return now;
   }
   WD(SpinUpAt) = WD(NextPass)(now, 0u) + 5u * WD(RevolutionTacts)();
   WD(SpinUpWait) = 1u;
+#if WD1793_VARIANT == 1772
+  WD(SpunUp) = 1u;
+#endif
   return WD(SpinUpAt);
 }
 #endif
@@ -874,7 +887,13 @@ static uint8_t WD(ReadStatus)(void) {
     }
 #if WD1793_MOTOR_VARIANT
     /* Bit 5 is Spin-up: the motor is on and its spin-up has completed */
-    if (WD(MotorOn) != 0u && (int32_t)(WD1793_NOW() - WD(SpinUpAt)) >= 0) status |= WD1793_ST_HEAD_RECTYPE;
+    if (WD(MotorOn) != 0u && (int32_t)(WD1793_NOW() - WD(SpinUpAt)) >= 0
+#if WD1793_VARIANT == 1772
+        && WD(SpunUp) != 0u
+#endif
+    ) {
+      status |= WD1793_ST_HEAD_RECTYPE;
+    }
 #else
     if (WD(HeadLoad) != 0u && (WD1793_HLT()) != 0u) status |= WD1793_ST_HEAD_RECTYPE;
 #endif

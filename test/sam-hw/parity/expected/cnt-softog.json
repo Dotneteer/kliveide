@@ -1,0 +1,68 @@
+{
+ "probe": "cnt-softog",
+ "note": "loop counts of blocks that switch SOFF on and off again",
+ "records": {
+  "TOG0   B": {
+   "value": 402,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG0   S": {
+   "value": 887,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG1   B": {
+   "value": 357,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG1   S": {
+   "value": 840,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs (SOFF held for a few T changes the contention at a point no cell-step latency reproduces; dev/ai/sam-coupe.md, Open); SimCoupé: 806"
+  },
+  "TOG2   B": {
+   "value": 357,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG2   S": {
+   "value": 797,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs (SOFF held for a few T changes the contention at a point no cell-step latency reproduces; dev/ai/sam-coupe.md, Open); SimCoupé: 806"
+  },
+  "TOG4   B": {
+   "value": 322,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG4   S": {
+   "value": 759,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG8   B": {
+   "value": 268,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "TOG8   S": {
+   "value": 634,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BORD0  B": {
+   "value": 357,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "BORD0  S": {
+   "value": 717,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

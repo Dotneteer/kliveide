@@ -161,6 +161,7 @@ const productionExports = [
   "sp48TapeSetFileNameByte",
   "sp48TapeBeginUpload",
   "sp48TapeSetBlock",
+  "sp48TapeSetBlockPulses",
   "sp48TapeWriteData",
   "sp48TapeFinishUpload",
   "sp48TapeRewind",
