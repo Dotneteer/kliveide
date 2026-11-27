@@ -1,0 +1,82 @@
+{
+ "probe": "status",
+ "note": "interrupt edges and STATUS by polling (records described in the probe)",
+ "records": {
+  "FIRE000": {
+   "value": 2348810432,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FIRE001": {
+   "value": 2483093505,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FIRE100": {
+   "value": 2355363940,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FIRE191": {
+   "value": 2495545535,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FIRE192": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FIRE255": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FRAMEPUL": {
+   "value": 12582914,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LWSAME": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LWOTHER": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LWAFTER": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "MISSED": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "MIDIWAIT": {
+   "value": 131118,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "MIDITX": {
+   "value": 43,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "CTRLPEN": {
+   "value": 6842516,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "SOFFPEN": {
+   "value": 3697829940,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs (SOFF held for a few T changes the contention at a point no cell-step latency reproduces; dev/ai/sam-coupe.md, Open); SimCoupé: 3832047668"
+  }
+ }
+}

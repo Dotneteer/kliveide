@@ -1,0 +1,86 @@
+{
+ "probe": "im1",
+ "note": "LPEN staircases entered through IM 1",
+ "records": {
+  "IM1EMP00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP08": {
+   "value": 201588736,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP0C": {
+   "value": 740563988,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP10": {
+   "value": 1279540276,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP14": {
+   "value": 1818516564,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP18": {
+   "value": 2357492852,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1EMP1C": {
+   "value": 2896469140,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH00": {
+   "value": 67108864,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH04": {
+   "value": 605819916,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH08": {
+   "value": 1144796204,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH0C": {
+   "value": 1549028420,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH10": {
+   "value": 2088004708,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH14": {
+   "value": 2626980996,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH18": {
+   "value": 3165957284,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IM1PSH1C": {
+   "value": 3704933572,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

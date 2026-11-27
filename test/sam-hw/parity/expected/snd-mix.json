@@ -1,0 +1,16 @@
+{
+ "probe": "snd-mix",
+ "note": "the beeper and the SAA heard; the sound itself is compared by dev/scripts/sam-parity/sound.cjs (the beeper's level is pinned by test/sam-hw/sound.test.ts)",
+ "records": {
+  "DONE": {
+   "value": 1,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "BEEPLOOP": {
+   "value": 2000,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

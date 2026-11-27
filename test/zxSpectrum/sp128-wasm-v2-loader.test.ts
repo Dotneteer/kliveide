@@ -1047,6 +1047,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128TapeClear: () => 0,
       sp128TapeBeginUpload: () => 1,
       sp128TapeSetBlock: () => 1,
+      sp128TapeSetBlockPulses: () => 1,
       sp128TapeWriteData: () => 1,
       sp128TapeFinishUpload: () => 1,
       sp128TapeRewind: () => 0,

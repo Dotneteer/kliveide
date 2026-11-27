@@ -1,0 +1,211 @@
+{
+ "probe": "attr",
+ "note": "ATTR, the floating bus (port 37h) and LPEN along a line; four values a record",
+ "records": {
+  "ATTRA 00": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 04": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 08": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 0C": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 10": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 14": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 18": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRA 1C": {
+   "value": 3873801091,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 00": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 04": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 08": {
+   "value": 2206434179,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 0C": {
+   "value": 3873801091,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 10": {
+   "value": 3941198055,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 14": {
+   "value": 4008570091,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 18": {
+   "value": 4075942127,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "ATTRB 1C": {
+   "value": 4143314163,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 00": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 04": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 08": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 0C": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 10": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 14": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 18": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTA 1C": {
+   "value": 3873832959,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 00": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 04": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 08": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 0C": {
+   "value": 3873832959,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 10": {
+   "value": 3941198055,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 14": {
+   "value": 4008570091,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 18": {
+   "value": 4075942127,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "FLOTB 1C": {
+   "value": 4143314163,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POSB  00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POSB  04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POSB  08": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POSB  0C": {
+   "value": 83886080,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs in LPEN bit 0 only (its bit matches the pixel two lines above the beam, a SimCoupé artefact; Klive reads the pixel under the beam; dev/ai/sam-coupe.md, Open); SimCoupé: 67108864"
+  },
+  "POSB  10": {
+   "value": 622662924,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs in LPEN bit 0 only (its bit matches the pixel two lines above the beam, a SimCoupé artefact; Klive reads the pixel under the beam; dev/ai/sam-coupe.md, Open); SimCoupé: 622662668"
+  },
+  "POSB  14": {
+   "value": 1161573676,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs in LPEN bit 0 only (its bit matches the pixel two lines above the beam, a SimCoupé artefact; Klive reads the pixel under the beam; dev/ai/sam-coupe.md, Open); SimCoupé: 1161639213"
+  },
+  "POSB  18": {
+   "value": 1683772748,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs in LPEN bit 0 only (its bit matches the pixel two lines above the beam, a SimCoupé artefact; Klive reads the pixel under the beam; dev/ai/sam-coupe.md, Open); SimCoupé: 1683772749"
+  },
+  "POSB  1C": {
+   "value": 2222748780,
+   "source": "klive",
+   "date": "2026-11-26",
+   "note": "Klive's value: SimCoupé 1.2.17 differs in LPEN bit 0 only (its bit matches the pixel two lines above the beam, a SimCoupé artefact; Klive reads the pixel under the beam; dev/ai/sam-coupe.md, Open); SimCoupé: 2239526252"
+  }
+ }
+}

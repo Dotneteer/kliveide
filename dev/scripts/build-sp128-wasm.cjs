@@ -220,6 +220,7 @@ const productionExports = [
   "sp128TapeSetFileNameByte",
   "sp128TapeBeginUpload",
   "sp128TapeSetBlock",
+  "sp128TapeSetBlockPulses",
   "sp128TapeWriteData",
   "sp128TapeFinishUpload",
   "sp128TapeRewind",

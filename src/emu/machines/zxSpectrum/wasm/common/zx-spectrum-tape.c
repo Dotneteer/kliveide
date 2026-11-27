@@ -28,6 +28,26 @@
  */
 static uint8_t sp48TapePulsePolarity;
 
+/*
+ * A block of explicit pulses (TZX 12h pure tone, 13h pulse sequence, 15h direct recording; `TapeDataBlock.pulses`
+ * on the host): its data holds 8-byte entries, a pulse length and a repeat count (32-bit little-endian each),
+ * marked by sp48TapeSetBlockPulses. Every pulse ends with an edge; the first keeps the level before the block
+ * (high after a pause), as a standard block's pilot does, and a block that follows one with no pause starts at
+ * the level its last edge left. So a TZX 12h pilot, 13h syncs and 14h data line up with the data phase's
+ * levels (each bit low, then high) exactly like a standard block.
+ */
+#ifndef SP48_TAPE_PHASE_PULSES
+#define SP48_TAPE_PHASE_PULSES 7u
+#endif
+static uint32_t sp48TapePulseEntry;
+static uint32_t sp48TapePulseLeft;
+static uint32_t sp48TapePulseEndPos;
+static uint8_t sp48TapePulseLevel;
+
+static uint32_t tapePulseWord(const uint8_t *at) {
+  return (uint32_t)at[0] | ((uint32_t)at[1] << 8) | ((uint32_t)at[2] << 16) | ((uint32_t)at[3] << 24);
+}
+
 static void clearTapeFileName(void) {
   for (uint32_t i = 0u; i < SP48_TAPE_FILENAME_CAPACITY; i++) {
     sp48TapeFileName[i] = 0u;
@@ -47,6 +67,7 @@ static void clearTapeBlocks(void) {
     sp48TapeBlocks[i].endSyncPulseLength = 0u;
     sp48TapeBlocks[i].lastByteUsedBits = 0u;
     sp48TapeBlocks[i].pilotPulseCount = 0u;
+    sp48TapeBlocks[i].pulses = 0u;
   }
 }
 
@@ -334,6 +355,17 @@ uint32_t sp48TapeSetBlock(
   block->endSyncPulseLength = endSyncPulseLength;
   block->lastByteUsedBits = (uint8_t)(lastByteUsedBits & 0xffu);
   block->pilotPulseCount = pilotPulseCount;
+  block->pulses = 0u;
+  return 1u;
+}
+
+/* Marks block `index` (already set) as explicit pulses: its data is 8-byte entries */
+uint32_t sp48TapeSetBlockPulses(uint32_t index, uint32_t pulses) {
+  if (sp48TapeUploadActive == 0u || index >= sp48TapeUploadBlockCount) {
+    sp48DiagnosticFlags |= SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE;
+    return 0u;
+  }
+  sp48TapeBlocks[index].pulses = pulses != 0u ? 1u : 0u;
   return 1u;
 }
 
@@ -427,7 +459,14 @@ static void nextTapeBlock(void) {
   sp48TapeSync1EndPos = sp48TapePilotEndPos + block->sync1PulseLength;
   sp48TapeSync2EndPos = sp48TapeSync1EndPos + block->sync2PulseLength;
 
-  if (block->length == 0u) {
+  if (block->pulses != 0u && block->length >= 8u) {
+    sp48TapePlayPhase = SP48_TAPE_PHASE_PULSES;
+    sp48TapePulsePolarity = 0u;
+    sp48TapePulseEntry = 0u;
+    sp48TapePulseLeft = tapePulseWord(&sp48TapeData[block->offset + 4u]);
+    sp48TapePulseEndPos = 0u;
+    sp48TapePulseLevel = sp48TapeEarBit != 0u ? 1u : 0u;
+  } else if (block->length == 0u || block->pulses != 0u) {
     sp48TapePlayPhase = SP48_TAPE_PHASE_PAUSE;
     sp48TapePauseEndPos = tapeBlockPauseTacts(block);
   } else if (block->pilotPulseLength == 0u &&
@@ -462,7 +501,8 @@ static void fastLoadCurrentTapeBlock(void) {
   }
 
   Sp48TapeBlock *block = currentTapeBlock();
-  const uint32_t blockEnd = block->offset + block->length;
+  /* A block of pulses holds no bytes for LD-BYTES: it fails like an empty block */
+  const uint32_t blockEnd = block->offset + (block->pulses != 0u ? 0u : block->length);
   uint32_t dataIndex = block->offset;
 
   AF = AF_ALT;
@@ -590,6 +630,42 @@ static uint8_t sp48TapeGetEarBitInternal(void) {
 
   Sp48TapeBlock *block = currentTapeBlock();
   uint32_t pos = sp48Tacts - sp48TapeStartTact;
+
+  if (sp48TapePlayPhase == SP48_TAPE_PHASE_PULSES) {
+    const uint32_t entries = block->length / 8u;
+    for (;;) {
+      /* Skip entries with no pulses; then the current pulse ends at sp48TapePulseEndPos + its length */
+      while (sp48TapePulseEntry < entries && sp48TapePulseLeft == 0u) {
+        sp48TapePulseEntry++;
+        if (sp48TapePulseEntry < entries) {
+          sp48TapePulseLeft = tapePulseWord(&sp48TapeData[block->offset + sp48TapePulseEntry * 8u + 4u]);
+        }
+      }
+      if (sp48TapePulseEntry >= entries) {
+        if (block->pauseAfter == 0u && sp48TapeCurrentBlockIndex + 1u < sp48TapeBlockCount) {
+          /* No pause: the next block starts exactly where the last pulse ended, with no level forced */
+          const uint32_t endTact = sp48TapeStartTact + sp48TapePulseEndPos;
+          setTapeEarBit(sp48TapePulseLevel);
+          sp48TapeCurrentBlockIndex++;
+          nextTapeBlock();
+          sp48TapeStartTact = endTact;
+          return sp48TapeGetEarBitInternal();
+        }
+        sp48TapePlayPhase = SP48_TAPE_PHASE_PAUSE;
+        sp48TapePauseEndPos = sp48TapePulseEndPos + tapeBlockPauseTacts(block);
+        break;
+      }
+      const uint32_t length = tapePulseWord(&sp48TapeData[block->offset + sp48TapePulseEntry * 8u]);
+      if (pos < sp48TapePulseEndPos + length) {
+        setTapeEarBit(sp48TapePulseLevel);
+        return sp48TapePulseLevel;
+      }
+      /* The pulse ends with an edge */
+      sp48TapePulseEndPos += length;
+      sp48TapePulseLeft--;
+      sp48TapePulseLevel ^= 1u;
+    }
+  }
 
   if (sp48TapePlayPhase == SP48_TAPE_PHASE_PILOT ||
       sp48TapePlayPhase == SP48_TAPE_PHASE_SYNC) {

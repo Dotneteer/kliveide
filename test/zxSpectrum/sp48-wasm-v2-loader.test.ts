@@ -361,6 +361,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48TapeSetFileNameByte: () => 0,
       sp48TapeBeginUpload: () => 1,
       sp48TapeSetBlock: () => 1,
+      sp48TapeSetBlockPulses: () => 1,
       sp48TapeFinishUpload: () => 1,
       sp48TapeRewind: () => 0,
       sp48TapeSetMode: () => 0,

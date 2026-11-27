@@ -11,7 +11,7 @@ import { SAM_COPYRIGHT_KEY_WAIT } from "@emu/machines/samcoupe/SamWasmHost";
 import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
 import { readSamAsicDebugState, readSamSaaDebugState, type SamAsicDebugState, type SamSaaDebugState } from "@emu/machines/samcoupe/SamDebugState";
 import { SAM_PHYS_RAM } from "@emu/machines/samcoupe/samMachineInfo";
-import { DISK_A_CHANGES, DISK_A_WP, FAST_LOAD } from "@emu/machines/machine-props";
+import { DISK_A_CHANGES, DISK_A_WP, DISK_B_WP, FAST_LOAD } from "@emu/machines/machine-props";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { DSK_WHOLE_IMAGE_KEY } from "@emu/machines/disk/disk-changes";
 
@@ -265,7 +265,7 @@ export class SamTestSession {
   // Media
 
   insertDisk(drive: 0 | 1, image: Uint8Array | undefined, { writeProtected = false } = {}): this {
-    this.machine.setMachineProperty(DISK_A_WP, writeProtected);
+    this.machine.setMachineProperty(drive === 0 ? DISK_A_WP : DISK_B_WP, writeProtected);
     this.machine.setMachineProperty(drive === 0 ? MEDIA_DISK_A : MEDIA_DISK_B, image);
     return this;
   }

@@ -1,0 +1,126 @@
+{
+ "probe": "cnt-ext",
+ "note": "loop counts with the program in external RAM (1 MB pack)",
+ "records": {
+  "EMPTY  B": {
+   "value": 1290,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMPTY  S": {
+   "value": 3654,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    B": {
+   "value": 1075,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "NOP    S": {
+   "value": 3045,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  B": {
+   "value": 956,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAHL  S": {
+   "value": 2706,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAINT B": {
+   "value": 717,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDAINT S": {
+   "value": 1903,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDINTA B": {
+   "value": 717,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDINTA S": {
+   "value": 1903,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDINTN B": {
+   "value": 645,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDINTN S": {
+   "value": 1827,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL  B": {
+   "value": 832,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCHL  S": {
+   "value": 2357,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPB": {
+   "value": 629,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PUSHPOPS": {
+   "value": 1782,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EXSPHL B": {
+   "value": 661,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EXSPHL S": {
+   "value": 1873,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIRINTB": {
+   "value": 222,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LDIRINTS": {
+   "value": 570,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT B": {
+   "value": 806,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT S": {
+   "value": 2283,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  B": {
+   "value": 645,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  S": {
+   "value": 1827,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

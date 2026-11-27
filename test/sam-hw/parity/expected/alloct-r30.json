@@ -1,0 +1,56 @@
+{
+ "probe": "alloct-r30",
+ "note": "ROM 3.0's page allocation table on 512K, and Run's paging",
+ "records": {
+  "ALLOCT0": {
+   "value": 1077952576,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT1": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT2": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT3": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT4": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT5": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT6": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT7": {
+   "value": 3233808384,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ALLOCT8": {
+   "value": 255,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "PAGING": {
+   "value": 16646431,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

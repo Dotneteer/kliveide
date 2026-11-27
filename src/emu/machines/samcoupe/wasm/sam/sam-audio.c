@@ -3,8 +3,9 @@
  * and the tape's EAR level (echoed while a tape plays, as SimCoupé does). MIC is not audible (SOUND OQ5).
  *
  * The levels are integrated over each host sample (time in 24 MHz units from the frame's start, as the
- * SAA's), then a DC high-pass (about 5 Hz, set by the host) stands in for the board's coupling. The
- * relative levels of the beeper and the SAA are unmeasured (SOUND OQ4): one table below.
+ * SAA's), then a DC high-pass (1.4 Hz, set by the host as for every core) stands in for the board's
+ * coupling. The beeper's level against the SAA's is unmeasured on hardware (SOUND OQ4); it is SimCoupé
+ * 1.2.17's (parity probe `snd-mix`, 2026-11-27): a beeper swing 2.25 times one SAA channel's at amplitude 15.
  *
  * The audio mixer (`common/wasm/audio-channels.c`): sources 0 SAA left, 1 SAA right, 2 beeper, 3 tape.
  * Only the heard mix is computed: with every gain at 1000 it is the core's output. Its integrator and
@@ -13,9 +14,10 @@
  */
 
 #define SAM_AUDIO_SAMPLE_CAPACITY 2048u
-/* Full scale per source, as a fraction of the output: the SAA's side (90), the beeper, the tape */
-#define SAM_AUDIO_SAA_SCALE (0.5 / 90.0)
-#define SAM_AUDIO_BEEPER_LEVEL 0.25
+/* Full scale per source, as a fraction of the output: the SAA's side (2880, SAASound's units), the beeper
+   (2.25 x one channel at amplitude 15, 480 / 2880 x 0.5: SimCoupé's ratio; it was 0.25), the tape */
+#define SAM_AUDIO_SAA_SCALE (0.5 / 2880.0)
+#define SAM_AUDIO_BEEPER_LEVEL 0.1875
 #define SAM_AUDIO_TAPE_LEVEL 0.05
 
 static double samAudioHeardSamples[SAM_AUDIO_SAMPLE_CAPACITY * 2u];

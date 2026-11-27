@@ -1,0 +1,176 @@
+{
+ "probe": "mem-256",
+ "note": "the same on the 256K model (SimCoupé needs mainmem=256 in its config)",
+ "records": {
+  "LMPR  00": {
+   "value": 2812585125,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  02": {
+   "value": 2712053415,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  04": {
+   "value": 2745213089,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  06": {
+   "value": 2913116835,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  08": {
+   "value": 2947329197,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0A": {
+   "value": 2846797487,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0C": {
+   "value": 2879957161,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  0E": {
+   "value": 4289374891,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  10": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  12": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  14": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  16": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  18": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1A": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1C": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "LMPR  1E": {
+   "value": 2785017855,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  00": {
+   "value": 2812585125,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  02": {
+   "value": 2712053415,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  04": {
+   "value": 2745213089,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  06": {
+   "value": 2913116835,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  08": {
+   "value": 2947329197,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0A": {
+   "value": 2846797487,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0C": {
+   "value": 2879957161,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  0E": {
+   "value": 4289374891,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  10": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  12": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  14": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  16": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  18": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1A": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1C": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "HMPR  1E": {
+   "value": 2785017855,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "ROMBITS": {
+   "value": 2007367923,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "REGREAD": {
+   "value": 4294926755,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

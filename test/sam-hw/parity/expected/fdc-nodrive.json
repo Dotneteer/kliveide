@@ -1,0 +1,18 @@
+{
+ "probe": "fdc-nodrive",
+ "note": "drive 2's ports with no second drive",
+ "records": {
+  "NODRIVE": {
+   "value": 4294967295,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: a missing drive's ports read FFh, as unconnected ports do (SimCoupé's own rule since 1.0); SimCoupé 1.2.17 reads 00h with drive 2 set to none; SimCoupé: 0"
+  },
+  "NOCMD": {
+   "value": 255,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: as NODRIVE; SimCoupé: 0"
+  }
+ }
+}

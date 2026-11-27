@@ -1,0 +1,206 @@
+{
+ "probe": "stair-late",
+ "note": "LPEN staircases started later in the line",
+ "records": {
+  "EMP16 00": {
+   "value": 1953260636,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 04": {
+   "value": 2492236924,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 08": {
+   "value": 3031213212,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 0C": {
+   "value": 3570189500,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 10": {
+   "value": 4109165788,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 14": {
+   "value": 252,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP16 1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 00": {
+   "value": 2761725068,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 04": {
+   "value": 3300701356,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 08": {
+   "value": 3839677644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 0C": {
+   "value": 16577772,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH16 1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 00": {
+   "value": 2761725068,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 04": {
+   "value": 3300701356,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 08": {
+   "value": 3839677644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 0C": {
+   "value": 16577772,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC16 1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 00": {
+   "value": 16577772,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 08": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 0C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "EMP22 1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 08": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 0C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "PSH22 1C": {
+   "value": 471075844,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

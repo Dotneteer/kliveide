@@ -46,13 +46,18 @@ describe("SAM interrupts", () => {
     }
   });
 
-  it("a LINE write during the pulse ends it", async () => {
+  it("the line pulse is a live comparison: another LINE ends it, the same keeps it (SimCoupé 1.2.17)", async () => {
     const s = await createBareSam();
     s.out(STATUS, 50);
     s.wasm.samSetFrameTact((50 + 68) * 384 + 10);
     expect(s.in(STATUS) & LINE_BIT).toBe(0);
     s.out(STATUS, 50);
+    expect(s.in(STATUS) & LINE_BIT).toBe(0);
+    s.out(STATUS, 51);
     expect(s.in(STATUS) & LINE_BIT).toBe(LINE_BIT);
+    // --- Written back inside the window, the pulse is there again
+    s.out(STATUS, 50);
+    expect(s.in(STATUS) & LINE_BIT).toBe(0);
   });
 
   it("STATUS bits 5-7 are keyboard rows' extra keys; the line reads 1 with the high byte FFh", async () => {
@@ -90,19 +95,29 @@ describe("SAM interrupts", () => {
     expect(t.wasm.samGetCpuSp()).toBe(0x7ff0);
   });
 
-  it("MIDI OUT: TXFMST (LPEN bit 1) while the byte is sent, the MIDIOUT pulse at its end", async () => {
+  it("MIDI OUT: the MIDIOUT pulse is the byte's last 96 T, TXFMST lasts 96 T past it (SimCoupé 1.2.17)", async () => {
     const s = await createBareSam();
     s.wasm.samSetFrameTact(30_000);
     s.out(0x00fd, 0x90);
     expect(s.in(0x00f8) & 0x02).toBe(0x02);
     expect(s.in(STATUS) & MIDI_OUT_BIT).toBe(MIDI_OUT_BIT);
-    // --- 1920 T after the write (NOPs from page 4)
+    // --- Then step NOPs (page 4) to points after the write
     for (let i = 0; i < 0x1000; i++) s.poke(i, 0x00);
     s.wasm.samSetCpuPc(0);
     const t0 = s.wasm.samGetTacts();
-    while (((s.wasm.samGetTacts() - t0) >>> 0) < 1925) s.step(1);
-    expect((s.wasm.samGetTacts() - t0) >>> 0).toBeLessThan(2000);
+    const stepTo = (t: number) => {
+      while (((s.wasm.samGetTacts() - t0) >>> 0) < t) s.step(1);
+      expect((s.wasm.samGetTacts() - t0) >>> 0).toBeLessThan(t + 20);
+    };
+    // --- Inside the byte's last 96 T: the pulse, still transmitting
+    stepTo(1850);
     expect(s.in(STATUS) & MIDI_OUT_BIT).toBe(0);
+    expect(s.in(0x00f8) & 0x02).toBe(0x02);
+    // --- Past the byte: no pulse, TXFMST until 96 T after it
+    stepTo(1930);
+    expect(s.in(STATUS) & MIDI_OUT_BIT).toBe(MIDI_OUT_BIT);
+    expect(s.in(0x00f8) & 0x02).toBe(0x02);
+    stepTo(2030);
     expect(s.in(0x00f8) & 0x02).toBe(0);
   });
 });

@@ -120,7 +120,7 @@ import {
   TAPE_MODE
 } from "../machine-props";
 import { MEDIA_TAPE } from "@common/structs/project-const";
-import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { type TapeDataBlock, tapeBlockUploadBytes } from "@common/structs/TapeDataBlock";
 import { savedTapeTzx } from "../tape/savedTapeTzx";
 import { nextAudioOutputIndex } from "@common/settings/next-audio-output";
 import { importAccessLog } from "../wasmAccessLog";
@@ -2853,7 +2853,9 @@ export class ZxNextWasmV2Machine
   private uploadTapeToWasmV2(runtime: ZxNextWasmV2Runtime, blocks: TapeDataBlock[]): void {
     const wasm = runtime.exports;
     const capacity = wasm.zxnextTapeGetDataCapacity();
-    const totalDataLength = blocks.reduce((sum, block) => sum + block.data.length, 0);
+    // --- A block of pulses uploads its entries in place of data (`tapeBlockUploadBytes`)
+    const uploads = blocks.map(tapeBlockUploadBytes);
+    const totalDataLength = uploads.reduce((sum, bytes) => sum + bytes.length, 0);
     if (totalDataLength > capacity) {
       throw new Error(`ZX Spectrum Next tape is too large: ${totalDataLength} bytes. Capacity: ${capacity}.`);
     }
@@ -2865,12 +2867,12 @@ export class ZxNextWasmV2Machine
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
       // --- Journaled, so a reverse-debugging replay sees the upload where it happened
-      writeCoreBytes(runtime, tapeData, block.data, offset);
+      writeCoreBytes(runtime, tapeData, uploads[i], offset);
       if (
         wasm.zxnextTapeSetBlock(
           i,
           offset,
-          block.data.length,
+          uploads[i].length,
           block.pauseAfter,
           block.pilotPulseLength,
           block.sync1PulseLength,
@@ -2884,7 +2886,10 @@ export class ZxNextWasmV2Machine
       ) {
         throw new Error(`ZX Spectrum Next rejected tape block ${i}.`);
       }
-      offset += block.data.length;
+      if (block.pulses && wasm.zxnextTapeSetBlockPulses(i, 1) === 0) {
+        throw new Error(`The core rejected tape block ${i}'s pulses.`);
+      }
+      offset += uploads[i].length;
     }
     if (wasm.zxnextTapeFinishUpload() === 0) {
       throw new Error("ZX Spectrum Next could not finish the tape upload.");

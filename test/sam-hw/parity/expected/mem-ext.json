@@ -1,0 +1,146 @@
+{
+ "probe": "mem-ext",
+ "note": "the 1 MB external pack's pages through LEPR and HEPR, ROM1 against the pack, LEPR/HEPR read back",
+ "records": {
+  "EXTC  00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  08": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  0C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  20": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  24": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  28": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  2C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  30": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  34": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  38": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  3C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  40": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTC  44": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  00": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  04": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  08": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  0C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  10": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  14": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  18": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTD  1C": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTROM1": {
+   "value": 0,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "EXTREG": {
+   "value": 65535,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

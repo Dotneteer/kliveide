@@ -1,0 +1,136 @@
+{
+ "probe": "cnt-io",
+ "note": "loop counts of I/O instructions",
+ "records": {
+  "INSTAT B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INSTAT S": {
+   "value": 1367,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INFE   B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INFE   S": {
+   "value": 1139,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IN7F   B": {
+   "value": 715,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "IN7F   S": {
+   "value": 1518,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCFE  B": {
+   "value": 460,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INCFE  S": {
+   "value": 996,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC7F  B": {
+   "value": 536,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INC7F  S": {
+   "value": 1112,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTFE  S": {
+   "value": 1281,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUT7F  B": {
+   "value": 715,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUT7F  S": {
+   "value": 1518,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTCFE B": {
+   "value": 460,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTCFE S": {
+   "value": 949,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INLPEN B": {
+   "value": 644,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INLPEN S": {
+   "value": 1281,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POLL   B": {
+   "value": 402,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "POLL   S": {
+   "value": 835,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INI7F  B": {
+   "value": 378,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INI7F  S": {
+   "value": 759,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTI7F B": {
+   "value": 378,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "OUTI7F S": {
+   "value": 790,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIFE  B": {
+   "value": 357,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "INIFE  S": {
+   "value": 759,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

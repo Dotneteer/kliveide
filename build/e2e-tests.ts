@@ -70,6 +70,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/machines/hardware-specs-cores.test.ts",
   "test/tape/tape-load-flow.test.ts",
   "test/tape/turbo-block-playback.test.ts",
+  "test/tape/tzx-pulse-blocks.test.ts",
   "test/z88/memory-*.test.ts",
   "test/z88/rtc.test.ts",
   "test/z88/z88-ozvm-parity.test.ts",

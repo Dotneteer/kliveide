@@ -1,0 +1,119 @@
+{
+ "probe": "tape-ear",
+ "note": "EAR timed through ROM 3.0's edge routine (204Ch) over nine tones",
+ "records": {
+  "EDGESEEN": {
+   "value": 540,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "S2000": {
+   "value": 3751,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 3761"
+  },
+  "M2000": {
+   "value": 4325437,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 61-65"
+  },
+  "S1000": {
+   "value": 1615,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 1617"
+  },
+  "M1000": {
+   "value": 1835033,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 25-28"
+  },
+  "S800": {
+   "value": 1198,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 1175"
+  },
+  "M800": {
+   "value": 1376274,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 18-21"
+  },
+  "S600": {
+   "value": 719,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 752"
+  },
+  "M600": {
+   "value": 851979,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 11-14"
+  },
+  "S500": {
+   "value": 579,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 535"
+  },
+  "M500": {
+   "value": 655367,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 7-10"
+  },
+  "S450": {
+   "value": 396,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 464"
+  },
+  "M450": {
+   "value": 524293,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 7-9"
+  },
+  "S400": {
+   "value": 317,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 291"
+  },
+  "M400": {
+   "value": 458756,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 4-6"
+  },
+  "S350": {
+   "value": 265,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 235"
+  },
+  "M350": {
+   "value": 327683,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 2-5"
+  },
+  "S300": {
+   "value": 79,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 148"
+  },
+  "M300": {
+   "value": 131073,
+   "source": "klive",
+   "date": "2026-11-27",
+   "note": "Klive's value: Klive plays each TZX pulse to the T-state; SimCoupé 1.2.17 agrees at 2000 and 1000 T pulses but its shorter pulses land tens of T away, alternating in sign (an emulator's tape stepping, not hardware); SimCoupé: 1-3"
+  }
+ }
+}

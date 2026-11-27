@@ -11,7 +11,8 @@ import { DATA_PILOT_COUNT, HEADER_PILOT_COUNT } from "@common/structs/tape-const
  *
  * A block: its pilot (8063 pulses before a header - flag below 80h - or 3223 before data, unless the block
  * says), the two sync pulses, two pulses per bit (most significant bit first), then its pause as one long
- * half-period. A SAM header block (flag 01h, 82 bytes) is played the same way.
+ * half-period. A SAM header block (flag 01h, 82 bytes) is played the same way. A block of explicit pulses (TZX
+ * pure tone, pulse sequence, direct recording) plays them, then its pause.
  */
 
 /** The tape as the core takes it: edge lengths in Spectrum T-states */
@@ -28,6 +29,12 @@ const TACTS_PER_MS = 3500;
 export function samTapeFromBlocks(blocks: readonly TapeDataBlock[]): SamTape {
   const edges: number[] = [];
   for (const block of blocks) {
+    // --- Explicit pulses (TZX 12h, 13h, 15h): one edge each, then the pause
+    if (block.pulses) {
+      for (const p of block.pulses) for (let i = 0; i < p.count; i++) edges.push(p.length);
+      if (block.pauseAfter > 0) edges.push(block.pauseAfter * TACTS_PER_MS);
+      continue;
+    }
     const data = block.data;
     if (block.pilotPulseLength > 0) {
       const pilot = block.pilotPulseCount ?? (data.length > 0 && data[0] < 0x80 ? HEADER_PILOT_COUNT : DATA_PILOT_COUNT);

@@ -15,8 +15,13 @@
  * floating-bus rule, plan Q14); writes go nowhere.
  */
 
-/* FEh read bit 5 (SPEN, the light-pen strobe / serial input): idle high (MAME's reading) */
-#define SAM_SPEN_IDLE 0x20u
+/*
+ * FEh read bit 5 (SPEN, the light-pen strobe / serial input): idle low, with no light pen fitted (MIST and
+ * ZX-Uno read 0, MAME 1). ROM 3.0's copyright bars depend on it: with SPEN low the line-interrupt
+ * handler waits on the pen position (port F8h) and writes each colour in the blanking; with it high it
+ * writes at once, 16-24 T into the right border (SimCoupé oracle run, 2026-11-24, dev/ai/sam-coupe.md).
+ */
+#define SAM_SPEN_IDLE 0x00u
 
 /* Defined in sam-tape.c: FEh bit 6 */
 static uint8_t samTapeEarBit(void);
@@ -88,17 +93,23 @@ static void samCpuWritePort(uint16_t address, uint8_t value) {
       samHmpr = value;
       samRemap();
       break;
-    case 0xfcu:
+    case 0xfcu: {
+      const uint8_t wasOff = samScreenOff();
       samVmpr = value;
+      samPensBeforeSoffChange(wasOff);
       break;
+    }
     case 0xfdu:
       samWriteMidi(value);
       break;
-    case 0xfeu:
+    case 0xfeu: {
+      const uint8_t wasOff = samScreenOff();
       samBeeperWrite(value);
       samTapeMicChanged(value);
       samBorder = value;
+      samPensBeforeSoffChange(wasOff);
       break;
+    }
     case 0xffu:
       samAudioCatchUp();
       if (high & 0x01u) samSaaWriteAddress(value);

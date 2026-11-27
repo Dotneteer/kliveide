@@ -641,7 +641,7 @@ Each gets one constant or define, its default and its reason in the core README.
 | Q15 | Mode-change artefact cell | none | ASIC §3.7, OQ16 |
 | Q16 | SAA envelope scope, buffering, amplitude model | SAASound's | SOUND §1.5–§1.7, OQ1–OQ2 |
 | Q17 | SAA /DTACK waits; beeper/SAA levels | none; one table | SOUND OQ3–OQ4 |
-| Q18 | Mouse timeout | 38 µs | SOUND §4, OQ8 |
+| Q18 | Mouse timeout | 38 µs, restarting on each read (SimCoupé 1.2.17's too, parity probe `mouse`) | SOUND §4, OQ8 |
 | Q19 | FEh read bit 7 | SOFF | ASIC §6.2; SOUND OQ6 |
 | Q20 | Refresh and interrupt-acknowledge contention | none | ASIC §4.7 |
 

@@ -7,17 +7,19 @@
  *   - frame: from the frame's start (vc 244, hc 0, where the machine frame begins, D4) for
  *     SAM_INT_PULSE_T T (plan Q5: 128 T, SimCoupé's and ZX-Uno's; the manual says "about 20 us");
  *   - line: LINE 0-191 pulses at vc = LINE, hc 0 (the start of the right border after line LINE - 1),
- *     for the same length; 192-255 never. A LINE write while the pulse is active ends it (SimCoupé;
- *     one constant);
- *   - MIDI OUT: a write to FDh starts a 320 us byte (1920 T); TXFMST (LPEN bit 1) is high meanwhile, and
- *     the MIDIOUT pulse (SAM_MIDI_INT_T) comes at its end (plan Q7: the manual's wording). MIDI IN and
- *     the mouse interrupt never fire.
+ *     for the same length; 192-255 never. The pulse is a live comparison: active while LINE equals the
+ *     line and hc < 128, so writing another value ends it, writing the same value keeps it, and writing
+ *     the current line inside the window starts it (SimCoupé 1.2.17, parity probes `status` and
+ *     `status-sweep`, 2026-11-26; Klive ended it on any write before);
+ *   - MIDI OUT: a write to FDh starts a 320 us byte (SAM_MIDI_BYTE_T, 1920 T). The MIDIOUT pulse
+ *     (SAM_MIDI_INT_T, 96 T) is the byte's last 96 T, and TXFMST (LPEN bit 1) stays high until 96 T
+ *     after the byte (SimCoupé 1.2.17, `status-sweep`; Klive had the pulse after the byte and TXFMST
+ *     only during it; plan Q7). MIDI IN and the mouse interrupt never fire.
  *
  * /INT is the AND of the active-low bits, level-triggered. IM 2 reads FFh from the idle bus (Q12).
  */
 
 #define SAM_INT_PULSE_T 128u
-#define SAM_LINE_WRITE_ENDS_PULSE 1
 #define SAM_MIDI_BYTE_T 1920u
 #define SAM_MIDI_INT_T 96u
 
@@ -29,9 +31,6 @@
 
 /* The line-interrupt register (F9h write) */
 static uint8_t samLineReg = 0xffu;
-/* A LINE write ended the pulse that started at this absolute tact (with `samLineKilled` set) */
-static uint32_t samLineKilledAt;
-static uint8_t samLineKilled;
 /* MIDI OUT: transmitting, and when the byte ends (absolute tacts) */
 static uint8_t samMidiBusy;
 static uint32_t samMidiEndsAt;
@@ -51,14 +50,13 @@ static inline uint32_t samLinePulseStart(void) {
 static inline uint8_t samLinePulseActive(uint32_t ft) {
   const uint32_t start = samLinePulseStart();
   if (start == 0xffffffffu || ft < start || ft - start >= SAM_INT_PULSE_T) return 0u;
-  if (samLineKilled && samLineKilledAt == samFrameStart + start) return 0u;
   return 1u;
 }
 
 static inline uint8_t samMidiPulseActive(void) {
   if (!samMidiBusy) return 0u;
   const int32_t since = (int32_t)(cpu.tacts - samMidiEndsAt);
-  return since >= 0 && since < (int32_t)SAM_MIDI_INT_T ? 1u : 0u;
+  return since >= -(int32_t)SAM_MIDI_INT_T && since < 0 ? 1u : 0u;
 }
 
 /* STATUS bits 0-4 (active low) */
@@ -78,19 +76,10 @@ static inline uint8_t samIntLine(void) { return samStatusBits() != 0x1fu ? 1u : 
 static inline uint8_t samMidiTransmitting(void) {
   if (!samMidiBusy) return 0u;
   if ((int32_t)(cpu.tacts - samMidiEndsAt) >= (int32_t)SAM_MIDI_INT_T) samMidiBusy = 0u;
-  return samMidiBusy && (int32_t)(cpu.tacts - samMidiEndsAt) < 0 ? 1u : 0u;
+  return samMidiBusy;
 }
 
-static void samWriteLine(uint8_t value) {
-  if (SAM_LINE_WRITE_ENDS_PULSE) {
-    const uint32_t ft = samFrameTact();
-    if (samLinePulseActive(ft)) {
-      samLineKilled = 1u;
-      samLineKilledAt = samFrameStart + samLinePulseStart();
-    }
-  }
-  samLineReg = value;
-}
+static void samWriteLine(uint8_t value) { samLineReg = value; }
 
 static void samWriteMidi(uint8_t value) {
   samMidiData = value;
@@ -100,8 +89,6 @@ static void samWriteMidi(uint8_t value) {
 
 static void samAsicReset(void) {
   samLineReg = 0xffu;
-  samLineKilled = 0u;
-  samLineKilledAt = 0u;
   samMidiBusy = 0u;
   samMidiEndsAt = 0u;
 }

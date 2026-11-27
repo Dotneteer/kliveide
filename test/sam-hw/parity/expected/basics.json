@@ -1,0 +1,13 @@
+{
+  "probe": "basics",
+  "records": {
+    "FE_IDLE": { "value": 95, "source": "simcoupe-1.2.17", "date": "2026-11-26", "note": "5Fh: no key, SPEN (bit 5) low, EAR (bit 6) high, SOFF clear" },
+    "F9_STAT": { "value": 255, "source": "simcoupe-1.2.17", "date": "2026-11-26", "note": "no key rows, no interrupt pulse at the read" },
+    "FA_LMPR": { "value": 31, "source": "simcoupe-1.2.17", "date": "2026-11-26", "note": "Run's paging after Klive's boot loader: ROM0, page 0 in section B" },
+    "FB_HMPR": { "value": 1, "source": "simcoupe-1.2.17", "date": "2026-11-26" },
+    "FC_VMPR": { "value": 254, "source": "simcoupe-1.2.17", "date": "2026-11-26", "note": "mode 4 on page 30, bit 7 (MIDI IN) reads 1" },
+    "ALLOCT0": { "value": 1077952576, "source": "simcoupe-1.2.17", "date": "2026-11-26", "note": "ROM 3.0's page allocation table, first 4 bytes" },
+    "ALLOCT4": { "value": 0, "source": "simcoupe-1.2.17", "date": "2026-11-26" },
+    "ALLOCSUM": { "value": 895, "source": "simcoupe-1.2.17", "date": "2026-11-26" }
+  }
+}

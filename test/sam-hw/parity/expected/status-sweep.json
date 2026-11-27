@@ -1,0 +1,61 @@
+{
+ "probe": "status-sweep",
+ "note": "interrupt edges to 4 T by sweeps, 32 one-bit samples a record",
+ "records": {
+  "MIDIINT": {
+   "value": 15,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "MIDITX": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "L0TOL1": {
+   "value": 4294967280,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LWINTOa": {
+   "value": 4294965248,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "LWINTOb": {
+   "value": 8388607,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "HPEN0": {
+   "value": 2147483648,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "HPEN192": {
+   "value": 8191,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "XMI56": {
+   "value": 4290772992,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "XMI58": {
+   "value": 4294967040,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "XTX63": {
+   "value": 1048575,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  },
+  "XTX64": {
+   "value": 8191,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-26"
+  }
+ }
+}

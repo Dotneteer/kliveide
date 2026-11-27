@@ -125,6 +125,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   spp3eTapeClear: SpP3eWasmV2ExportFunction;
   spp3eTapeBeginUpload: SpP3eWasmV2ExportFunction;
   spp3eTapeSetBlock: SpP3eWasmV2ExportFunction;
+  spp3eTapeSetBlockPulses: SpP3eWasmV2ExportFunction;
   spp3eTapeWriteData: SpP3eWasmV2ExportFunction;
   spp3eTapeFinishUpload: SpP3eWasmV2ExportFunction;
   spp3eTapeRewind: SpP3eWasmV2ExportFunction;
@@ -417,6 +418,7 @@ const requiredV2Exports = [
   "spp3eTapeClear",
   "spp3eTapeBeginUpload",
   "spp3eTapeSetBlock",
+  "spp3eTapeSetBlockPulses",
   "spp3eTapeWriteData",
   "spp3eTapeFinishUpload",
   "spp3eTapeRewind",

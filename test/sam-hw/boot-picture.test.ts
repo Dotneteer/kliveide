@@ -15,8 +15,8 @@ import { SamKeyCode } from "@emu/machines/samcoupe/SamKeyCode";
  */
 
 const EXPECTED: Record<string, string> = {
-  "sam512-copyright": "77033815ed408858ea1b6f24f994e518e7e86d797b94156a31bd03a6fc14a9b8",
-  "sam256-copyright": "7bcbcc810a3ea875d529f4e0749858aa1f2cd70518b20b605ccdef6b500014bc",
+  "sam512-copyright": "03f3369b265a89ddd9d49170ecb476ae520c09a8467c6441adabd485a310568b",
+  "sam256-copyright": "639f1fcca4170161691030173d27985d9f52900515dd8a8917c3d6925d60b3f6",
   "sam512-basic": "c014a4682054d3094f285b298532ba55a084ce0277d6af45c3b90cbf3bc30b51"
 };
 

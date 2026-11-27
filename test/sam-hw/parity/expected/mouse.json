@@ -1,0 +1,41 @@
+{
+ "probe": "mouse",
+ "note": "the MGT mouse's sequence and read timeout (plan Q18), mouse still",
+ "records": {
+  "SEQ0-7": {
+   "value": 4095,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "SEQ8-15": {
+   "value": 4080,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "SEQRAW": {
+   "value": 1348427615,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "GAPA": {
+   "value": 4294901760,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "GAPB": {
+   "value": 4294967295,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "CHAIN": {
+   "value": 4095,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  },
+  "CHAINB": {
+   "value": 4080,
+   "source": "simcoupe-1.2.17",
+   "date": "2026-11-27"
+  }
+ }
+}

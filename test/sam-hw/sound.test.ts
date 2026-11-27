@@ -125,6 +125,95 @@ describe("SAM sound", () => {
     expect(s.wasm.samSaaGetLevel(0)).toBeGreaterThan(0);
   });
 
+  // --- SAASound's model (sam-saa.c is ported from it): levels in its units, 0-480 a channel
+
+  it("a tone channel at full amplitude is 480 while the tone is high", async () => {
+    const s = await soundMachine();
+    saa(s, 0x1c, 0x02);
+    saa(s, 0x00, 0x0f);
+    saa(s, 0x14, 0x01);
+    saa(s, 0x1c, 0x03);
+    expect(s.wasm.samSaaGetLevel(0)).toBe(0);
+    saa(s, 0x1c, 0x01);
+    expect(s.wasm.samSaaGetLevel(0)).toBe(480);
+    expect(s.wasm.samSaaGetLevel(1)).toBe(0);
+  });
+
+  it("enveloped amplitudes follow the pulse-density table (424 at full, 240 at amplitude 9)", async () => {
+    const s = await soundMachine();
+    // --- Channel 2, no tone or noise: the envelope's level alone; shape 1 holds 15
+    saa(s, 0x18, 0x80 | (1 << 1));
+    saa(s, 0x02, 0x0f);
+    saa(s, 0x1c, 0x01);
+    expect(s.wasm.samSaaGetLevel(0)).toBe(424);
+    saa(s, 0x02, 0x09);
+    expect(s.wasm.samSaaGetLevel(0)).toBe(240);
+  });
+
+  it("an envelope is gated by the inverse of the tone: silent while the tone is high", async () => {
+    const s = await soundMachine();
+    saa(s, 0x1c, 0x02);
+    saa(s, 0x18, 0x80 | (1 << 1));
+    saa(s, 0x02, 0x0f);
+    saa(s, 0x14, 0x04);
+    saa(s, 0x1c, 0x01);
+    expect(s.wasm.samSaaGetLevel(0)).toBe(0);
+  });
+
+  it("an offset written alone acts one half cycle later than an octave", async () => {
+    const s = await soundMachine();
+    // --- Octave 0, offset 0: a half cycle is 16.35 ms; released from sync, the first toggle is at 16.35 ms
+    saa(s, 0x1c, 0x02);
+    saa(s, 0x1c, 0x01);
+    saa(s, 0x08, 200);
+    s.runFrames(1);
+    expect(s.wasm.samSaaGetOffset(0)).toBe(0);
+    s.runFrames(1);
+    expect(s.wasm.samSaaGetOffset(0)).toBe(200);
+  });
+
+  it("an octave and an offset written together act at the next half cycle", async () => {
+    const s = await soundMachine();
+    saa(s, 0x1c, 0x02);
+    saa(s, 0x1c, 0x01);
+    saa(s, 0x10, 0x01);
+    saa(s, 0x08, 200);
+    s.runFrames(1);
+    expect(s.wasm.samSaaGetOctave(0)).toBe(1);
+    expect(s.wasm.samSaaGetOffset(0)).toBe(200);
+  });
+
+  it("switching an envelope to 3 bits mid-shape clears the position's LSB at once", async () => {
+    const s = await soundMachine();
+    const control = 0x80 | 0x20 | (7 << 1);
+    saa(s, 0x18, control);
+    const level = () => (s.wasm.samSaaGetEnvelope(0) >>> 24) & 0x0f;
+    for (let i = 0; i < 2; i++) s.out(0x01ff, 0x18);
+    expect(level()).toBe(2);
+    // --- The control write's own address write is a clock (position 3), then 3 bits clear the LSB
+    saa(s, 0x18, control | 0x10);
+    expect(level()).toBe(2);
+    s.out(0x01ff, 0x18);
+    expect(level()).toBe(4);
+  });
+
+  it("a new envelope shape written mid-shape waits for the end of the loop", async () => {
+    const s = await soundMachine();
+    saa(s, 0x18, 0x80 | 0x20 | (7 << 1));
+    const level = () => (s.wasm.samSaaGetEnvelope(0) >>> 24) & 0x0f;
+    for (let i = 0; i < 4; i++) s.out(0x01ff, 0x18);
+    // --- Shape 1 (hold 15), 4-bit, external clock: buffered until point (4); the address write clocks (5)
+    saa(s, 0x18, 0x80 | 0x20 | (1 << 1));
+    expect(level()).toBe(5);
+    expect((s.wasm.samSaaGetEnvelope(0) >>> 17) & 1).toBe(1);
+    for (let i = 5; i < 15; i++) s.out(0x01ff, 0x18);
+    expect(level()).toBe(15);
+    s.out(0x01ff, 0x18);
+    expect((s.wasm.samSaaGetEnvelope(0) >>> 17) & 1).toBe(0);
+    expect(((s.wasm.samSaaGetEnvelope(0) >>> 1) & 7)).toBe(1);
+    expect(level()).toBe(15);
+  });
+
   it("the beeper (FEh bit 4) sounds on both sides", async () => {
     const s = await soundMachine();
     // --- Toggle the beeper every 3000 T: 1 kHz
@@ -136,6 +225,31 @@ describe("SAM sound", () => {
     expect(Math.max(...left) - Math.min(...left)).toBeGreaterThan(0.1);
     expect(Math.max(...right) - Math.min(...right)).toBeGreaterThan(0.1);
     expect(frequencyOf(left)).toBeGreaterThan(500);
+  });
+
+  it("the beeper swings 2.25 times one SAA channel at amplitude 15 (SimCoupé 1.2.17's ratio, probe snd-mix)", async () => {
+    /** A square's swing: the 5th to the 95th percentile of the samples (the DC filter's droop and the edges left out) */
+    const swing = (values: number[]) => {
+      const sorted = [...values].sort((a, b) => a - b);
+      return sorted[Math.floor(sorted.length * 0.95)] - sorted[Math.floor(sorted.length * 0.05)];
+    };
+    const b = await soundMachine();
+    b.poke(0x0100, [0x3e, 0x10, 0xd3, 0xfe, 0x06, 0xc8, 0x10, 0xfe, 0xaf, 0xd3, 0xfe, 0x06, 0xc8, 0x10, 0xfe, 0x18, 0xef]);
+    b.wasm.samSetCpuPc(0x0100);
+    samples(b, 10);
+    const beeper = swing(samples(b, 20));
+    const s = await soundMachine();
+    saa(s, 0x1c, 0x02);
+    saa(s, 0x1c, 0x00);
+    saa(s, 0x00, 0x0f);
+    saa(s, 0x08, 11);
+    saa(s, 0x10, 0x05);
+    saa(s, 0x14, 0x01);
+    saa(s, 0x1c, 0x01);
+    samples(s, 10);
+    const tone = swing(samples(s, 20));
+    expect(beeper / tone).toBeGreaterThan(2.2);
+    expect(beeper / tone).toBeLessThan(2.3);
   });
 
   it("SAM BASIC's BEEP sounds through the beeper", async () => {
