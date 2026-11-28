@@ -78,7 +78,11 @@ export type RomPageKind =
   // --- The Cambridge Z88's OZ ROM banks: RST 20h is followed by the OZ call's one or two bytes, RST 18h
   // --- by the floating-point operation. Each run of code is listed in the segment it runs in
   // --- (`romDecoderFor`'s `segments`), $C000 when the sidecar does not say
-  | "z88-oz";
+  | "z88-oz"
+  // --- The SAM Coupé's 32K ROM: ROM0 (page 0) runs at $0000, ROM1 (page 1) at $C000 when LMPR bit 6 is
+  // --- set. Their inline data after restarts is decoded by `SamCustomDisassembler` (`romDecoder.ts`)
+  | "sam-rom0"
+  | "sam-rom1";
 
 /** A known ROM page: its file (relative to `src/public/roms`), what it holds, and its 16K page. */
 export type KnownRomPage = {
@@ -200,7 +204,13 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
   fe619c3e: { file: "z88v47.rom", kind: "z88-oz", page: 12 },
   "6979f058": { file: "z88v47.rom", kind: "z88-oz", page: 13 },
   "252d4bba": { file: "z88v47.rom", kind: "z88-oz", page: 16 },
-  "6c007aa0": { file: "z88v47.rom", kind: "z88-oz", page: 31 }
+  "6c007aa0": { file: "z88v47.rom", kind: "z88-oz", page: 31 },
+  // --- The SAM Coupé's ROM 3.0 and 3.1 (`SamRoms.ts`): 3.1 differs in four bytes, one in each page
+  // --- (the version byte at $000F, "PLC" at ROM1's $35F8), so all four pages are distinct
+  ebd6bfbb: { file: "sam-rom30.rom", kind: "sam-rom0", page: 0 },
+  "2cfb7a83": { file: "sam-rom30.rom", kind: "sam-rom1", page: 1 },
+  "9954cf1a": { file: "sam-rom31.rom", kind: "sam-rom0", page: 0 },
+  f031aed4: { file: "sam-rom31.rom", kind: "sam-rom1", page: 1 }
 };
 
 /**
@@ -216,6 +226,8 @@ export const KNOWN_ROM_PAGES: Readonly<Record<string, KnownRomPage>> = {
  *
  * A Z88 OZ bank holds code for different segments (bank $0A: EazyLink at $8000, the Filer at $E400);
  * this is its default, segment 3. A sidecar's `segments` say where each run really runs.
+ *
+ * The SAM Coupé's ROM0 runs at $0000 and its ROM1 at $C000 (`samBankSpace`'s `romBase`).
  */
 export function romKindOrigin(kind: RomPageKind | undefined): number {
   switch (kind) {
@@ -231,6 +243,7 @@ export function romKindOrigin(kind: RomPageKind | undefined): number {
     case "ep-basic":
     case "ep-ext":
     case "z88-oz":
+    case "sam-rom1":
       return 0xc000;
     default:
       return 0;
@@ -255,6 +268,11 @@ export function romKindHasBasicCalls(kind: RomPageKind | undefined): boolean {
 /** Whether a page of this kind is the Z88's, whose `RST 20h` is an OZ call followed by its code. */
 export function romKindIsZ88(kind: RomPageKind | undefined): boolean {
   return kind === "z88-oz";
+}
+
+/** Whether a page of this kind is the SAM Coupé's ROM0 or ROM1. */
+export function romKindIsSam(kind: RomPageKind | undefined): boolean {
+  return kind === "sam-rom0" || kind === "sam-rom1";
 }
 
 /** Whether a page of this kind is the Next's, whose code uses the Z80N's extra opcodes. */

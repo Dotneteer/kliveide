@@ -171,10 +171,27 @@ export const DEFAULT_INSTRUCTION_WIDTH_CH = 25;
  * the comment column still starts at one x.
  */
 export function deriveInstructionWidthCh(items: readonly DisassemblyItem[]): number {
-  return items.reduce(
-    (widest, item) => Math.max(widest, (item.instruction?.length ?? 0) + 1),
-    DEFAULT_INSTRUCTION_WIDTH_CH
+  return Math.min(
+    MAX_INSTRUCTION_WIDTH_CH,
+    items.reduce(
+      (widest, item) => Math.max(widest, (item.instruction?.length ?? 0) + 1),
+      DEFAULT_INSTRUCTION_WIDTH_CH
+    )
   );
+}
+
+/**
+ * The widest the instruction column grows. Every instruction and pragma row fits (the longest
+ * `.dma` row is 38 characters); what does not is data a ROM listing holds as one row, such as a
+ * message string. Sized to such a row, the column pushed every comment in the listing off the
+ * screen (a SAM ROM page: a 314-character row made it 315 wide). A longer row is cut with an
+ * ellipsis and shows its whole text in its tooltip (`instructionClipped`).
+ */
+export const MAX_INSTRUCTION_WIDTH_CH = 40;
+
+/** Whether a row's instruction is longer than the column, so its cell is cut and given a tooltip. */
+export function isInstructionClipped(instruction: string | undefined, instructionWidthCh: number): boolean {
+  return (instruction?.length ?? 0) + 1 > instructionWidthCh;
 }
 
 /**
@@ -799,9 +816,16 @@ export const DisassemblyRow = memo(function DisassemblyRow({
           <Value
             text={viewModel.instruction}
             width={`${instructionWidthCh}ch`}
-            className={
-              isDirective ? styles.annotationDirective : styles.disassemblyInstruction
+            tooltip={
+              isInstructionClipped(viewModel.instruction, instructionWidthCh)
+                ? viewModel.instruction
+                : undefined
             }
+            className={classnames(
+              isDirective ? styles.annotationDirective : styles.disassemblyInstruction,
+              isInstructionClipped(viewModel.instruction, instructionWidthCh) &&
+                styles.instructionClipped
+            )}
           >
             {/*
               * One wrapper around every part, rather than the parts as direct children.

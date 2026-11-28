@@ -23,7 +23,8 @@ that README before changing the core.
 - **D7** Klive's boot loader; Run boots a disk with F9 (direct injection only for debugging one unit test).
 - **D8** SAASound's behaviour where it and MAME disagree.
 - **D9** no DOS bundled.
-- **D10** the competitive analysis names the SAM as an exception to "every shipped ROM is annotated".
+- **D10** the competitive analysis names the SAM as an exception to "every shipped ROM is annotated" until
+  ROM 3.0 and 3.1 were annotated (2026-11-28); the exception is gone.
 
 ## Rules for later work
 
@@ -32,8 +33,9 @@ that README before changing the core.
   0FA2h on 3.0 and 3.1) is found by `test/sam-hw/boot.test.ts`; if a ROM changes, re-observe it.
 - **The copyright screen eats its key.** F9 boots from the editor. Anything that automates boot (Run,
   Load and Run, a disk inserted at start) presses a key first.
-- **The SAM ROM has no annotations** and must not be added under `dev/ai/rom-annotations/` without a plan
-  that respects rule D4 there (the published annotated disassembly is never read).
+- **The SAM ROM's annotations follow rule D4** (`dev/ai/rom-annotations/sam-authoring-guide.md`): the
+  published annotated disassembly and every symbol file for the ROM (SimCoupé's `samrom.map` included) are
+  never read. ROM 3.0 ships at level 2, ROM0 and ROM1 (`src/public/roms/sam-rom30.rom.dis`), and 3.1 by `inherits`.
 - **The boot loader must stay within 501 bytes** (one sector minus the header) with "BOOT" at file byte
   247; `test/machines/sam-klive-boot.test.ts` checks both.
 - **Contention constants are data**: a real-hardware measurement changes `sam-timing.c`'s table, and
@@ -215,5 +217,5 @@ that README before changing the core.
   external pack, Spectrum mode, the SAM Élite** - follow-ups.
 - **SAM BASIC listing** (plan §11.1): the token table was not recorded; `BasicPanel` does not list SAM
   programs.
-- **ROM annotations** for ROM 3.0 (a separate plan, rule D4).
+- **ROM annotations** are done for 3.0 and 3.1 (both shipped at level 2; `dev/ai/rom-annotations/sam-authoring-guide.md`).
 - The "Under the hood" article on the ASIC's contention (plan Phase 10) is not written.

@@ -119,7 +119,8 @@ The machine guides beside this file carry each ROM family's method, facts and st
 tools added for it), `zx81-authoring-guide.md` (the session method and its helper scripts),
 `ht1080z-authoring-guide.md` (the order of work, the probe recipe), `tvc-authoring-guide.md` (8K pages at
 $C000/$E000, the sources that are off limits) and `ep-authoring-guide.md` (16K segments listed at $C000,
-positive partition numbers, the probe template, the sources that are off limits).
+positive partition numbers, the probe template, the sources that are off limits) and `sam-authoring-guide.md`
+(ROM0 at $0000 and ROM1 at $C000, the restarts' inline data, the symbol file that is off limits).
 
 ```
 npm run rom:annotations                    # format every sidecar, regenerate the CRC index
@@ -219,4 +220,6 @@ then VT-DOS (`tvc-authoring-guide.md`). The Enterprise's are under way: EXOS 2.1
 cartridge and the 64's EXOS 2.0 (both segments) are done to level 2; then IS-BASIC 2.0, and EXDOS 1.3 last
 (`ep-authoring-guide.md`). The Cambridge Z88's OZ 4.7 (`z88v47.rom.dis`) is shipped at level 2, imported from
 OZ's own source under the exemption above (`z88-authoring-guide.md`); bank 9, BBC BASIC, is left out. The
-other OZ releases (`z88v50b`, `z88ukv40`) can be imported from their own tags the same way.
+other OZ releases (`z88v50b`, `z88ukv40`) can be imported from their own tags the same way. The SAM Coupé's
+ROM 3.0 ships at level 2, both pages, and 3.1 by
+`inherits` (`sam-authoring-guide.md`).

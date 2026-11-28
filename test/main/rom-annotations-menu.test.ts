@@ -48,8 +48,15 @@ describe("createRomAnnotationsMenu", () => {
       "Sinclair ZX80",
       "HT-1080Z",
       "Videoton TVC",
-      "Enterprise"
+      "Enterprise",
+      "SAM Coupé"
     ]);
+  });
+
+  it("lists the SAM Coupé's two ROMs, one item per 32K file", () => {
+    const menu = createRomAnnotationsMenu(machineRegistry, vi.fn());
+    const sam = submenu(submenu(menu).find((item) => item.label === "SAM Coupé")!);
+    expect(shape(sam)).toEqual(["sam-rom30.rom", "---", "sam-rom31.rom"]);
   });
 
   it("separates the ROM sets, and lists each file once, whatever its pages", () => {

@@ -2684,3 +2684,111 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
 - **Permission:** Gunther Strube's, worded by the developer (plan Q1) and recorded verbatim in
   `src/public/roms/z88-roms-readme.txt` and `THIRD_PARTY_NOTICES.md`: the D4 exemption of the plan's D-OZ1.
 - **Level:** 2, recorded and shipped.
+
+### 2026-11-28 — SAM Coupé: ROM 3.0 and 3.1 prepared for annotation
+
+- **What:** the four 16K pages of `sam-rom30.rom` and `sam-rom31.rom` became known ROM pages (kinds `sam-rom0`
+  at $0000, `sam-rom1` at $C000), listed in Debug › ROM Annotations; `tools/sam-dis.cjs` and
+  `sam-authoring-guide.md` added. No sidecar written.
+- **How:** page CRCs computed from the files; the 3.0/3.1 difference found by comparing them byte for byte
+  ($000F, $75F8-$75FA). The restart entries $0000-$0040, the `RST 08h` handler from $37CE and the `RST 28h`
+  entry at $00E6 listed with `sam-dis.cjs` and read: `RST 08h` takes one inline byte (observed).
+- **Sources:** the ROM bytes only.
+- **Level:** none yet.
+
+### 2026-11-28 — SAM Coupé: the restart decoder and ROM0 $0000-$0293
+
+- **What:** `SamCustomDisassembler` decodes `RST 28h`'s calculator stream, ROM0's `RST 30h` word and the words
+  after `CALL $0201`/`CALL $01FA` (it already decoded `RST 08h`'s byte), and the ROM pages use it. ROM 3.0's
+  page 0 gets 111 labels with synopses for $0000-$0293 (restarts, interrupt and NMI entries, the block
+  instruction stubs, the BASIC character fetch, the calculator entry, the jump table, the `RST 30h` and
+  inline-call family, the block print, JSVIN), and two data regions ($000F, $028B-$0293). Level 0 still
+  (1,140 targets left); it reassembles byte for byte.
+- **How:** `sam-dis.cjs` listings of both pages; the handlers read: $0008/$37CE, $0028/$00E6 and ROM1's
+  $C7B7-$C8B9 (the operation loop, the table at $C6FB, each operand-reading handler), $0030/$01CF-$0226,
+  $0227-$028A; the data at $028B traced to its readers in ROM1 ($ECB9, $D2B2), and ANYIV's value to $EC77.
+  Every calculator stream in both pages was checked to end, the open ones being data.
+- **Sources:** the ROM bytes; the SAM Coupé Technical Manual v3.0 (MGT 1990, the text at
+  sam.speccy.cz/systech/sam-coupe_tech-man_v3-0.txt) for the jump table's names, their entry and exit
+  conditions and the restarts' purposes, marked `manual`. The research pack's list was not used for names: it
+  draws on SimCoupé's `samrom.map`, which D4 rules out.
+- **Level:** 0 (page 0 started). Not shipped.
+
+### 2026-11-28 — SAM Coupé: ROM 3.0's ROM0 to level 2
+
+- **What:** page 0 of `sam-rom30.rom` from $0294 to $3FFF: 1,288 more labels (1,399 in all), each with a
+  synopsis, 4,550 end-of-line comments, 10 more data regions (the editor's key offsets at $0370, the
+  expression evaluator's operator, function-code and function-routine tables at $1681-$16D4, the variable
+  template at $39E3, two padding bytes in the PUT routines, three error codes after `CALL $0D47`). Level 2,
+  measured and recorded; it reassembles byte for byte. In the working copy, not shipped. The decoder learnt
+  `CALL $0D47` + error code.
+- **How:** eight helper agents, one per 2K range, with `helper-briefs/sam-draft-a-range.md` and a work folder
+  of the listing, the coverage run (`tools/sam-coverage-run.ts.txt`: 47 BASIC snippets, 10.4K of ROM0
+  executed), ROM1's listing and the facts. Helpers' probes (in `test/sam-hw/`, deleted) confirmed FLAGS bit 7
+  during syntax checks, CMDADDRT = $FD65, procedure binding and errors, CLEAR's RAMTOP arithmetic, the
+  graphics variables' names in RAM, and calculator operations $00 (multiply), $01 (add), $03 (subtract), $05
+  (divide). The merge renamed three clashing names from their code; STK_FETCH, STK_STORE and MAKE_ROOM were
+  checked to do the same jobs as `sp48.rom.dis`'s routines of those names. No executed byte of the coverage
+  run lies in a data region.
+- **Sources:** the ROM bytes and runs; the SAM Coupé Technical Manual v3.0 (the text at
+  sam.speccy.cz/systech/sam-coupe_tech-man_v3-0.txt) for the system variables' names, the variable and line
+  formats and the jump table's contracts, as printed (its OCR spellings kept), 141 entries marked `manual`.
+  No helper read `dev/research/`, the web or an emulator's source; Klive's `sam-ports.c` was read for the
+  light pen's ports.
+- **Found:** probably a ROM bug in JCIRCLE ($206B: the radius is taken from F, not A); not run.
+- **Level:** 2 for page 0. Not shipped.
+
+### 2026-11-28 — SAM Coupé: ROM 3.0's ROM0 shipped
+
+- **What:** the working copy copied unchanged to `src/public/roms/sam-rom30.rom.dis` (page 0, level 2);
+  `npm run rom:annotations` added page 0's CRC (`ebd6bfbb`) to the index and left the file as it was.
+- **Level:** 2 for page 0, shipped. Page 1 (ROM1) not started.
+
+### 2026-11-28 — SAM Coupé: ROM 3.0's ROM1 to level 2, shipped
+
+- **What:** page 1 of `sam-rom30.rom` (ROM1, $C000): 996 labels, each with a synopsis, 5,172 comments, 60
+  data regions (the calculator's operation table and constants, the message tables and their word list, the
+  keyword list, the start-up tables, the channel and command tables, the key maps, the packed font, and
+  calculator bytes that `$1E`/`$1F` jumps land on past a stream's end). Level 2 on both pages, recorded;
+  both reassemble byte for byte; shipped in `src/public/roms/sam-rom30.rom.dis` with page 1 in the index.
+- **How:** eight helper agents, one per 2K range, with `helper-briefs/sam-draft-a-range.md` (its new ROM1
+  section) and a work folder holding ROM1's listing with the coverage run, ROM0's annotated source, its label
+  names and the 59 ROM1 entries ROM0 reaches. Helpers' probes (deleted) checked number printing against PRINT,
+  BIN$, OPEN SCREEN's SCLIST and ALLOCT marks, GO TO ON, MEM$ lengths and PATOUT's start-up value; RND's
+  formula was simulated over all 65,536 seeds against the code. The merge had no clashes.
+- **Corrections to ROM0** found by reading ROM1: JMCHAR's carry on exit (the code is the reverse of the
+  manual's statement; both are said), $3AD4 reads four numbers (THREE_NUM renamed FOUR_NUM), STK_HL's exit
+  (DE = the new STKEND). The $FF function tokens start at PI = $3B, not $3C as the ROM0 facts said; no
+  shipped synopsis used the wrong count.
+- **Sources:** the ROM bytes and runs; the Technical Manual for system variables, formats and jump table
+  contracts (92 entries `manual`). No helper read `dev/research/`, the web or an emulator's source.
+- **Level:** 2 for both pages, shipped. ROM 3.1 not started.
+
+### 2026-11-28 — SAM Coupé: ROM 3.1 by inheritance, shipped
+
+- **What:** `src/public/roms/sam-rom31.rom.dis` inherits pages 0 and 1 of `sam-rom30.rom.dis`. ROM 3.1
+  differs from 3.0 in four bytes ($000F, the version, 30 -> 31; ROM1 $35F8-$35FA, "plc" -> "PLC"); the
+  file authors the two label spans they drop (RST08_ERROR $0008-$000F, UMSGS_TABLE $35DD-$3650: two
+  labels, eleven lines, copied as `derived`, two texts reworded for 3.1), all of 3.0's regions, and
+  $0D29's synopsis without "ROM 3.0". Level 2 on both pages, recorded; both reassemble byte for byte;
+  the merged pages carry 3.0's 1,399 and 996 labels exactly, and the export differs from 3.0's in the
+  four bytes and three texts only.
+- **Found and fixed:** an `inherits` entry was tried against every page of the file, and binding is by
+  byte position, so ROM0's MOVE_ROWS bound on ROM1 where MUL_SHIFT is (the same bytes there by chance)
+  and, listed first, replaced it. An entry now applies to the page of its own number only
+  (`inheritsForPage`, in the readiness check, the level measure, export and the IDE's layers); every
+  earlier inheriting sidecar already paired equal numbers. Pinned by `test/annotations/romInheritance.test.ts`.
+- **Sources:** the two ROM files compared byte for byte; 3.0's sidecar.
+- **Level:** 2 for both pages, shipped.
+
+### 2026-11-28 — SAM Coupé: system variable names checked against the manual
+
+- **What:** `SamSysVars.ts` compared with the Technical Manual v3.0's variables and vector lists (the text
+  at sam.speccy.cz, read verbatim for the disputed entries) and with ROM 3.0's code. $5C08 renamed
+  LAST_K -> RBHEAD and $5C3A ERR_NR -> ERRNR (the manual's names), in the table and in both SAM
+  sidecars' texts (43 places). Descriptions corrected: ERRNR holds the error number, not the number
+  minus one (observed: `LET a=1/0` -> 28 "Number too large", `PRINT zz` -> 2, `RETURN` -> 8, `NEXT q`
+  -> 5); BORDCR is the lower screen's attributes in modes 1-2 (BORDCOL, added, is the border);
+  COMSV is the comms interrupt, not MIDI IN; NMIV is called when not 0; DOSER is where the DOS jumps on
+  exit. ANYIV ($5B70) stays as Klive's name, marked as such: the manual lists the address as reserved.
+- **Level:** unchanged, 2 on all four pages.

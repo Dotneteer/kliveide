@@ -18,7 +18,7 @@ import { peekAnnotationSession } from "./annotationSession";
 import { annotationMachineOf, parseAnnotations, type ProgramAnnotations } from "./programAnnotations";
 import { bindRomPage, type RomBinding } from "./romBinding";
 import type { RomLayer } from "./romLayer";
-import { inheritsOf, type InheritedSidecarSource } from "./romInheritance";
+import { inheritsForPage, type InheritedSidecarSource } from "./romInheritance";
 
 /*
  * Finding a ROM page's sidecar (`dev/plans/ROM_ANNOTATION_EDITING_PLAN.md` §4.2, which amends §5.2-§5.3
@@ -347,7 +347,8 @@ export async function loadRomPartitions(deps: RomLoaderDeps): Promise<RomPartiti
     }
 
     // --- Its inherited sidecars, byte-bound after it; an unknown 48K BASIC page gets sp48 (Q7)
-    const inherited = primary ? inheritsOf(primary) : [];
+    // --- Only the base pages listed for this page (`inheritsForPage`): another page's would bind by chance
+    const inherited = primary ? inheritsForPage(primary, working.page) : [];
     const bound =
       inherited.length > 0
         ? inherited

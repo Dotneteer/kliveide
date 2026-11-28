@@ -350,8 +350,9 @@ merely uncoloured, which no route diff can see.
 - Provenance (plan D1): Klive's own code from the research pack. SimCoupé, MAME's GPL SAM driver, ZEsarUX,
   the FPGA cores and pyz80 are not read for design (ZX-Uno's core not at all); SimCoupé is only run as an
   oracle. The ROMs (3.0 default, 3.1) are bundled under Andy Wright's 2008 grant
-  (`src/public/roms/sam-roms-readme.txt`); `SamRoms.ts` is the one place that names them. The SAM ROM is not
-  annotated.
+  (`src/public/roms/sam-roms-readme.txt`); `SamRoms.ts` is the one place that names them. ROM 3.0 ships
+  annotated to level 2, both pages (`sam-rom30.rom.dis`), and ROM 3.1 by `inherits` (`sam-rom31.rom.dis`). Read
+  `dev/ai/rom-annotations/sam-authoring-guide.md` first: rule D4, the decoder's inline data, the helper method.
 - Test with the harness in `test/harness/samcoupe/` (real ROM, `bootToCopyright`, `bootToBasic`, typing,
   pages, ports, a bare machine in `test/sam-hw/bare.ts`); hardware tests go in `test/sam-hw/`. Contention is
   pinned to Simon Owen's measured timings; pictures are pinned by hashes only after they were checked by

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { formatRomSidecar } from "@common/roms/romAnnotationTools";
 import { parseAnnotations } from "@renderer/appIde/annotations/programAnnotations";
-import { inheritsOf, withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
+import { inheritsForPage, inheritsOf, withInheritedEntries } from "@renderer/appIde/annotations/romInheritance";
 import { checkRomSidecar } from "@renderer/appIde/annotations/romSidecarCheck";
 
 /*
@@ -74,5 +74,30 @@ describe("ROM sidecar inheritance", () => {
     expect(unread.problems).toEqual([expect.stringContaining("cannot read")]);
     const missing = await checkRomSidecar(ROM1_TEXT, () => SP128_1, async () => undefined);
     expect(missing.problems).toEqual([expect.stringContaining("sp48.rom.dis")]);
+  });
+});
+
+describe("a multi-page sidecar's inheritance", () => {
+  // --- The SAM's ROM 3.1 inherits both 16K pages of ROM 3.0, each for its own page
+  const page = (file: string, n: number) =>
+    new Uint8Array(readFileSync(join(ROMS, file))).subarray(n * 0x4000, (n + 1) * 0x4000);
+  const samSource = async (sidecar: string, n: number) => ({
+    annotations: parseAnnotations(readFileSync(join(ROMS, sidecar), "utf8")).annotations!,
+    bytes: page(sidecar.replace(/\.dis$/, ""), n)
+  });
+  const labelsOf = (bank: { localLabels?: { name: string; value: number }[] }) =>
+    new Map((bank.localLabels ?? []).map((label) => [label.value, label.name]));
+
+  it("binds each base page only to the page of the same number", async () => {
+    const own = parseAnnotations(readFileSync(join(ROMS, "sam-rom31.rom.dis"), "utf8")).annotations!;
+    expect(inheritsForPage(own, 1)).toEqual([{ sidecar: "sam-rom30.rom.dis", page: 1 }]);
+    const merged = (await withInheritedEntries(own, (n) => page("sam-rom31.rom", n), samSource)).annotations;
+    const base = (await samSource("sam-rom30.rom.dis", 0)).annotations;
+    // --- 3.1 differs from 3.0 in four bytes, and its own file gives back what they drop: the merged
+    // --- pages carry 3.0's labels exactly. Before the pairing, ROM0's MOVE_ROWS bound on ROM1 at
+    // --- MUL_SHIFT's offset (the same bytes there by chance) and, listed first, replaced it.
+    for (const n of ["0", "1"]) {
+      expect(labelsOf(merged.banks[n])).toEqual(labelsOf(base.banks[n]));
+    }
   });
 });

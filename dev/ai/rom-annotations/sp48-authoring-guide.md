@@ -91,6 +91,9 @@ and level, Export as source, `sp48-dis.cjs` (it picks the ROM from the sidecar's
 - Mid-routine targets that the new code jumps to need labels of their own (`OUT_UDG`,
   `PRINT_ENTRY_AT`, `OP_INKEY_CHAR` in ROM 1).
 - New code where the base ROM had filler gets regions, labels and comments as usual.
+- **A base page applies to the page of the same number only**: a file of several pages lists each
+  base page (`sam-rom31.rom.dis`: `[{sam-rom30, page 0}, {sam-rom30, page 1}]`), and each binds to its
+  own number (`inheritsForPage`).
 - **Inheritance is one level deep**: each tool reads only the sidecars a file lists, with their
   own entries. A ROM that is a variant of a variant lists the whole chain, nearest first (the first
   layer wins per label and per line field).

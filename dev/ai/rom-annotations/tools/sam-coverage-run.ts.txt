@@ -1,0 +1,110 @@
+// The SAM Coupé coverage run (sam-authoring-guide.md, "The tools"): runs SAM BASIC snippets, each in its own
+// session (a line BASIC rejects leaves text in the edit line), and ORs the ROM's access profiles into OUT:
+// 32K of flags, ROM0 then ROM1 (bit 0 opcode fetched, bit 1 executed, bit 2 read as data). The boot counts
+// for what it executes only. A rejected line is reported in OUT.txt with each snippet's ERR_NR and PPC.
+// Copy to test/sam-hw/zz-coverage-run.test.ts, run, delete:
+//   OUT=<scratchpad>/cov.bin npx vitest run --config build/vitest.config.ts --project e2e-cores test/sam-hw/zz-coverage-run.test.ts
+// Add snippets for the routines a page's listing shows as untouched (procedures ran only from this list's
+// second version on; DEFINE PROC needs the call before it in the program).
+import { it } from "vitest";
+import { writeFileSync } from "node:fs";
+import { createSamSession, type SamTestSession } from "../harness/samcoupe";
+
+const OUT = process.env.OUT!;
+
+const SNIPPETS: { lines?: string[]; direct?: string[] }[] = [
+  { lines: ["10 LET a=3.5: LET b=-2", "20 PRINT a+b,a-b,a*b,a/b,a^2,INT a,ABS b,SGN b,SQR a"] },
+  { lines: ["10 LET a=0.7", "20 PRINT SIN a,COS a,TAN a,ATN a,ASN a,ACS a,LN a,EXP a,PI"] },
+  { lines: ['10 LET c$="HELLO WORLD"', '20 PRINT c$(1 TO 5),LEN c$,CHR$ 65,CODE "A",VAL "12*3",STR$ 99'] },
+  { lines: ['10 PRINT INSTR(1,"HELLO","LL")'] },
+  { lines: ["10 PRINT BIN$ 5,HEX$ 255"] },
+  { lines: ["10 FOR i=1 TO 3 STEP 1: PRINT i;: NEXT i"] },
+  { lines: ['10 DIM x(5): LET x(2)=7: DIM y$(3,4): LET y$(1)="AB": PRINT x(2),y$(1)'] },
+  { lines: ["10 GO SUB 100: STOP", "100 PRINT 1: RETURN"] },
+  { lines: ["10 LET a=3", "20 DO: LET a=a-1: LOOP UNTIL a<0", "30 DO WHILE a<3: LET a=a+1: LOOP"] },
+  { lines: ["10 READ d,e$: PRINT d,e$", "20 RESTORE 30: READ d", '30 DATA 1,"YES"'] },
+  { lines: ['10 LET d=1: IF d=1 THEN PRINT "Y"', '20 IF d=2 THEN PRINT "N": ELSE PRINT "E"', "30 IF d=1", '40 PRINT "L"', "50 END IF"] },
+  { lines: ["10 DEF FN f(z)=z*2: PRINT FN f(4)"] },
+  { lines: ["10 test 5", "20 STOP", "30 DEFINE PROC test n", "40 PRINT n*2", "50 END PROC"] },
+  { lines: ["10 PRINT RND,INT (RND*10)", "20 RANDOMIZE 1: PRINT RND"] },
+  { lines: ['10 PRINT AT 2,3;"X";TAB 10;"Y"', "20 PRINT 1E10,1E-5,123456789,-0.000123,2/3,1/3*3"] },
+  { lines: ["10 PAPER 1: PEN 6: BORDER 2: INVERSE 1: PRINT 1: INVERSE 0: OVER 1: PRINT 2: OVER 0", "20 BRIGHT 1: FLASH 1: PRINT 3"] },
+  { lines: ["10 CLS: PLOT 10,10: DRAW 50,30: DRAW TO 100,100: CIRCLE 128,88,40"] },
+  { lines: ["10 CIRCLE 128,88,40: FILL 128,88"] },
+  { lines: ['10 MODE 3: PRINT "M3": CSIZE 6,9: PRINT "C"', '20 MODE 1: PRINT "M1": MODE 2: PRINT "M2"', '30 MODE 4: PRINT "M4"'] },
+  { lines: ["10 PALETTE 1,40: PALETTE", "20 BEEP 0.1,10"] },
+  { lines: ['10 WINDOW 0,20,0,10: CLS: PRINT "W": WINDOW'] },
+  { lines: ["10 SCROLL 1: ROLL 1,4: PRINT POINT(10,10),ATTR(0,0)"] },
+  { lines: ["10 PRINT SCREEN$(0,0): LET k$=INKEY$: PRINT k$"] },
+  { lines: ["10 PRINT PEEK 15,DPEEK 23552,FREE"] },
+  { lines: ['10 LET a$="ABC": LET b$=a$+"D": PRINT b$,b$="ABCD",a$<b$'] },
+  { lines: ["10 PRINT 3 AND 1,3 OR 0,NOT 0,1<2,2>=2"] },
+  { lines: ["10 LET a=1/0"] },
+  { lines: ["10 PRINT zz"] },
+  { lines: ["10 GO TO 9999"] },
+  { lines: ["10 PRINT 2^1000"] },
+  { lines: ["10 DIM a(3): PRINT a(5)"] },
+  { lines: ["10 RETURN"] },
+  { lines: ["10 NEXT q"] },
+  { lines: ["10 ON ERROR GO TO 100", "20 LET a=1/0", "30 STOP", '100 PRINT "E": STOP'] },
+  { lines: ["10 PRINT 1", "20 PRINT 2", "30 REM X"], direct: ["LIST", "LIST 20", "RENUM", "LIST", "DELETE 20 TO 30", "LIST"] },
+  { lines: ["10 PRINT 1", "20 STOP", "30 PRINT 3"], direct: ["CONTINUE"] },
+  { direct: ["CLEAR", "NEW", "PRINT 1+1", 'PRINT "A";"B"', "LET x=5: PRINT x", "CLS"] },
+  { direct: ['SAVE "X"'] },
+  { direct: ["PRINT PEEK 23552", "POKE 50000,1: PRINT PEEK 50000", "DPOKE 50000,300: PRINT DPEEK 50000"] },
+  { direct: ["RECORD TO a$: PRINT 1: RECORD STOP"] },
+  { direct: ['OPEN #4;"s": PRINT #4;1: CLOSE #4'] },
+  { direct: ['KEYIN "PRINT 7"'] },
+  { direct: ["DIR"] }
+];
+
+/** The program's line count, walking PROG's lines to the $FF end */
+function lines(s: SamTestSession): number {
+  let page = s.peek(0x5a9f) & 0x1f;
+  let off = s.sysVarWord(0x5aa0) - 0x8000;
+  let n = 0;
+  for (;;) {
+    if (off >= 0x4000) {
+      page++;
+      off -= 0x4000;
+    }
+    if (s.page(page, off) === 0xff || n > 500) return n;
+    off += 4 + (s.page(page, off + 2) | (s.page(page, off + 3) << 8));
+    n++;
+  }
+}
+
+it("records the ROM's access profile over BASIC", async () => {
+  const total = new Uint8Array(0x8000);
+  const info: string[] = [];
+  {
+    const s = await createSamSession();
+    s.machine.setProfiling(true, false);
+    s.bootToBasic();
+    const f = s.machine.readProfileFlags(0, 0x8000)!;
+    for (let i = 0; i < f.length; i++) total[i] |= f[i] & 0x03;
+  }
+  for (const [n, snippet] of SNIPPETS.entries()) {
+    const s = await createSamSession();
+    s.bootToBasic();
+    s.machine.setProfiling(true, false);
+    s.machine.resetProfile();
+    let ok = true;
+    for (const line of snippet.lines ?? []) {
+      const before = lines(s);
+      s.typeKeys(line + "\n", { settle: 20 });
+      if (lines(s) === before) {
+        info.push(`#${n} REJECTED: ${line}`);
+        ok = false;
+        break;
+      }
+    }
+    if (ok && snippet.lines) s.typeKeys("RUN\n", { settle: 250 });
+    if (ok) for (const cmd of snippet.direct ?? []) s.typeKeys(cmd + "\n", { settle: 150 });
+    info.push(`#${n} ERRNR=${s.peek(0x5c3a)} PPC=${s.sysVarWord(0x5c45)}`);
+    const f = s.machine.readProfileFlags(0, 0x8000)!;
+    for (let i = 0; i < f.length; i++) total[i] |= f[i];
+  }
+  writeFileSync(OUT + ".txt", info.join("\n"));
+  writeFileSync(OUT, Buffer.from(total));
+}, 600_000);

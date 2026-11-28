@@ -225,6 +225,20 @@
 }
 
 /*
+ * An instruction longer than the capped column (`MAX_INSTRUCTION_WIDTH_CH`): one line, cut with an
+ * ellipsis, the whole text in the cell's tooltip. A block rather than the cell's usual flex box,
+ * because `text-overflow` only applies to a block container's own line, and the runs inside stay
+ * one inline formatting context either way (see `.instructionRun`). Without `nowrap` the cell wraps
+ * into the row below and overprints it.
+ */
+.item .instructionClipped {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
  * The single flex item holding a split instruction — see the note at its call site in
  * `DisassemblyRow`. It carries no colour of its own: the mnemonic runs inherit the cell's, and the
  * operand spans override it. `display: inline` is the default and is stated anyway, because the

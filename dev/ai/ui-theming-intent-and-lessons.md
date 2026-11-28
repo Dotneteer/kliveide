@@ -3159,6 +3159,15 @@ are unchanged and every row's later columns still start at one x. **Every view t
 live panel's fixed default overprinted as soon as `.defw` rows showed label names. Unit tests of row
 text cannot see this; only the running app showed it.
 
+**The column has a ceiling as well as a floor** (`MAX_INSTRUCTION_WIDTH_CH`, 40ch: every instruction
+and pragma row fits). Sized to its longest row with no ceiling, one data row a ROM listing holds as a
+single line (a message string, a long run of bytes) widens the shared column for the whole listing and
+**pushes every comment off the screen**: a SAM ROM page had a 314-character row and its comments sat
+past column 315, so the page looked uncommented. A row longer than the ceiling is cut, not wrapped:
+`instructionClipped` makes the cell a one-line block with an ellipsis (`text-overflow` needs a block,
+not the cell's flex box) and puts the whole text in the cell's tooltip. A decoder that can list its
+data as several rows should still do so (the SAM decoder lists calculator bytes one number per row).
+
 ## An Explainer Links Bytes To Meanings With One Highlight
 
 The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`, drawn by the shared `ByteAnatomy`)

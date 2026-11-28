@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { romSysVarsFor } from "@renderer/appIde/annotations/romSysVars";
+import { samSysVars } from "@emu/machines/samcoupe/SamSysVars";
 import { zx81SysVars } from "@emu/machines/zx8081/Zx81SysVars";
 import { zx80SysVars } from "@emu/machines/zx8081/Zx80SysVars";
 import { zxSpectrum48SysVars } from "@emu/machines/zxSpectrum48/ZxSpectrum48SysVars";
@@ -22,6 +23,11 @@ describe("romSysVarsFor", () => {
     for (const kind of ["sp128-editor", "plus3-editor", "plus3-syntax", "plus3-dos"] as const) {
       expect(romSysVarsFor(kind)).toEqual([...zxSpectrum128SysVars, ...zxSpectrum48SysVars]);
     }
+  });
+
+  it("gives the SAM Coupé's ROM0 and ROM1 SAM BASIC's table", () => {
+    expect(romSysVarsFor("sam-rom0")).toBe(samSysVars);
+    expect(romSysVarsFor("sam-rom1")).toBe(samSysVars);
   });
 
   it("gives nothing for a ROM Klive does not know, so the selected machine's apply", () => {
