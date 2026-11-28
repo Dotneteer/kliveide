@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RECORDING_SURROUND, RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
+import { MAX_FRAMES_IN_FLIGHT, RECORDING_SURROUND, RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
 
 // ---------------------------------------------------------------------------
 // Minimal mock for MainApi — only the three recording methods are needed
@@ -223,6 +223,102 @@ describe("RecordingManager — submitFrame", () => {
 
     // 2 from first + 2 from second = 4 total
     expect(mainApi.appendRecordingFrame).toHaveBeenCalledTimes(4);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Frames in flight: the live frame loop does not wait for main's answers
+// ---------------------------------------------------------------------------
+
+/** A mock `appendRecordingFrame` whose answers arrive only when `answer()` is called */
+function withHeldAnswers(mainApi: ReturnType<typeof makeMainApi>) {
+  const pending: (() => void)[] = [];
+  mainApi.appendRecordingFrame.mockImplementation(
+    () => new Promise<void>((resolve) => pending.push(resolve))
+  );
+  return {
+    pending,
+    answer: () => pending.shift()?.()
+  };
+}
+
+/** True once the promise has settled, after letting pending callbacks run */
+async function settled(promise: Promise<unknown>): Promise<boolean> {
+  let done = false;
+  void promise.then(() => (done = true));
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  return done;
+}
+
+describe("RecordingManager — frames in flight", () => {
+  it("returns without waiting for main's answer while fewer than MAX_FRAMES_IN_FLIGHT are unanswered", async () => {
+    const { manager, mainApi } = makeManager();
+    withHeldAnswers(mainApi);
+    manager.arm("native");
+    await manager.onMachineRunning(W, H, FPS);
+
+    for (let i = 0; i < MAX_FRAMES_IN_FLIGHT - 1; i++) {
+      expect(await settled(manager.submitFrame(RGBA))).toBe(true);
+    }
+    expect(mainApi.appendRecordingFrame).toHaveBeenCalledTimes(MAX_FRAMES_IN_FLIGHT - 1);
+  });
+
+  it("waits for the oldest answer once MAX_FRAMES_IN_FLIGHT are unanswered", async () => {
+    const { manager, mainApi } = makeManager();
+    const held = withHeldAnswers(mainApi);
+    manager.arm("native");
+    await manager.onMachineRunning(W, H, FPS);
+
+    for (let i = 0; i < MAX_FRAMES_IN_FLIGHT - 1; i++) await manager.submitFrame(RGBA);
+    const last = manager.submitFrame(RGBA);
+    // --- Sent at once, but not finished until main answers the oldest frame
+    expect(mainApi.appendRecordingFrame).toHaveBeenCalledTimes(MAX_FRAMES_IN_FLIGHT);
+    expect(await settled(last)).toBe(false);
+    held.answer();
+    expect(await settled(last)).toBe(true);
+  });
+
+  it("waitForAnswer waits for this frame's answer (an unthrottled run)", async () => {
+    const { manager, mainApi } = makeManager();
+    const held = withHeldAnswers(mainApi);
+    manager.arm("native");
+    await manager.onMachineRunning(W, H, FPS);
+
+    const frame = manager.submitFrame(RGBA, true);
+    expect(await settled(frame)).toBe(false);
+    held.answer();
+    expect(await settled(frame)).toBe(true);
+  });
+
+  it("stopping waits for the frames in flight before closing the file", async () => {
+    const { manager, mainApi } = makeManager();
+    const held = withHeldAnswers(mainApi);
+    manager.arm("native");
+    await manager.onMachineRunning(W, H, FPS);
+    await manager.submitFrame(RGBA);
+    await manager.submitFrame(RGBA);
+
+    const stopped = manager.disarm();
+    expect(await settled(stopped)).toBe(false);
+    expect(mainApi.stopScreenRecording).not.toHaveBeenCalled();
+    held.answer();
+    held.answer();
+    await stopped;
+    expect(mainApi.stopScreenRecording).toHaveBeenCalledOnce();
+  });
+
+  it("a failed frame does not fail the frame loop", async () => {
+    const { manager, mainApi } = makeManager();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    mainApi.appendRecordingFrame.mockRejectedValue(new Error("gone"));
+    manager.arm("native");
+    await manager.onMachineRunning(W, H, FPS);
+
+    for (let i = 0; i < MAX_FRAMES_IN_FLIGHT + 2; i++) await manager.submitFrame(RGBA);
+    await manager.submitFrame(RGBA, true);
+    // --- Reported once, not per frame
+    expect(error).toHaveBeenCalledOnce();
+    error.mockRestore();
   });
 });
 

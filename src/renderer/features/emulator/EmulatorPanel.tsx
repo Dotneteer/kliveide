@@ -467,7 +467,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (!controller) return undefined;
     controller.beforeFrameDelay = async () => {
       if (imageBuffer8.current) {
-        await recordingManagerRef?.current?.submitFrame(imageBuffer8.current);
+        // --- Only an unthrottled run waits for main's answer; a live one must not, or the IPC
+        // --- round trips run the live sound dry (see MAX_FRAMES_IN_FLIGHT)
+        await recordingManagerRef?.current?.submitFrame(imageBuffer8.current, !!controller.unthrottled);
       }
     };
     return () => {
