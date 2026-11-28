@@ -465,6 +465,10 @@ export class NexFileWriter {
     }
     
     for (const segment of output.segments) {
+      // --- `.bank N noexport` code is assembled but left out of the NEX file
+      if (segment.nexExport === false) {
+        continue;
+      }
       if (segment.bank !== undefined && segment.bank !== null) {
         // Get or create bank data
         if (!bankData.has(segment.bank)) {

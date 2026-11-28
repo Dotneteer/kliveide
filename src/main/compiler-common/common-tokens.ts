@@ -80,8 +80,6 @@ export const CommonTokens = {
   InjectOptPragma: 68,
   OnSuccessPragma: 69,
   OnErrorPragma: 70,
-  SaveNexPragma: 71,
-  DmaPragma: 72,
 
   Macro: 73,
   Endm: 74,
@@ -113,7 +111,6 @@ export const CommonTokens = {
   TextOf: 99,
   LTextOf: 100,
   Def: 101,
-  IsIndexedAddr: 102,
   IsExpr: 103,
 
   True: 104,
@@ -142,9 +139,7 @@ export const CommonTokens = {
   CharLiteral: 125,
   StringLiteral: 126,
 
-  PagePragma: 127,
-  CopperPragma: 128,
-  DefzxPragma: 129
+  PagePragma: 127
 }
 
 export type CommonTokenType = typeof CommonTokens[keyof typeof CommonTokens];
@@ -228,11 +223,6 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".DN": CommonTokens.DefnPragma,
   dn: CommonTokens.DefnPragma,
   DN: CommonTokens.DefnPragma,
-
-  ".defzx": CommonTokens.DefzxPragma,
-  ".DEFZX": CommonTokens.DefzxPragma,
-  defzx: CommonTokens.DefzxPragma,
-  DEFZX: CommonTokens.DefzxPragma,
 
   ".defh": CommonTokens.DefhPragma,
   ".DEFH": CommonTokens.DefhPragma,
@@ -352,23 +342,6 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".ONSUCCESS": CommonTokens.OnSuccessPragma,
   onsuccess: CommonTokens.OnSuccessPragma,
   ONSUCCESS: CommonTokens.OnSuccessPragma,
-
-  ".savenex": CommonTokens.SaveNexPragma,
-  ".SAVENEX": CommonTokens.SaveNexPragma,
-  ".SaveNex": CommonTokens.SaveNexPragma,
-  savenex: CommonTokens.SaveNexPragma,
-  SAVENEX: CommonTokens.SaveNexPragma,
-  SaveNex: CommonTokens.SaveNexPragma,
-
-  ".dma": CommonTokens.DmaPragma,
-  ".DMA": CommonTokens.DmaPragma,
-  dma: CommonTokens.DmaPragma,
-  DMA: CommonTokens.DmaPragma,
-
-  // --- Only the dotted forms: a bare `copper` would turn `.savenex copper "file"` (whose sub-command
-  // --- is an identifier) and any label named `copper` into this pragma.
-  ".copper": CommonTokens.CopperPragma,
-  ".COPPER": CommonTokens.CopperPragma,
 
   ".macro": CommonTokens.Macro,
   ".MACRO": CommonTokens.Macro,
@@ -501,9 +474,6 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   def: CommonTokens.Def,
   DEF: CommonTokens.Def,
 
-  isindexedaddr: CommonTokens.IsIndexedAddr,
-  ISINDEXEDADDR: CommonTokens.IsIndexedAddr,
-
   isexpr: CommonTokens.IsExpr,
   ISEXPR: CommonTokens.IsExpr,
 
@@ -538,18 +508,14 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
 };
 
 /**
- * Contains traits of a particular token type
+ * Contains the CPU-neutral traits of a particular token type. A CPU extends this interface with its own
+ * traits (for example, the Z80's register classes in `Z80TokenTraits`); the core reads only these.
  */
 export interface TokenTraits {
   /**
-   * This token is an instruction
+   * This token is an instruction mnemonic of the CPU
    */
   instruction?: boolean;
-
-  /**
-   * This token is a Z80 Next instruction
-   */
-  next?: boolean;
 
   /**
    * Indicates if an instruction is simple (argumentless)
@@ -592,49 +558,14 @@ export interface TokenTraits {
   literal?: boolean;
 
   /**
-   * Represents a register?
+   * Represents a CPU register? (`textof`/`ltextof` accept it as their argument)
    */
   reg?: boolean;
 
   /**
-   * Represents a standard 8-bit register?
-   */
-  reg8?: boolean;
-
-  /**
-   * Represenst a special 8-bit register?
-   */
-  reg8Spec?: boolean;
-
-  /**
-   * Represents an 8-bit index register?
-   */
-  reg8Idx?: boolean;
-
-  /**
-   * Represents an 16-bit register?
-   */
-  reg16?: boolean;
-
-  /**
-   * Represents an 16-bit special register?
-   */
-  reg16Spec?: boolean;
-
-  /**
-   * Represents an 16-bit index register?
-   */
-  reg16Idx?: boolean;
-
-  /**
-   * Represents a condition value?
+   * Represents a CPU condition (flag) value? (`textof`/`ltextof` accept it as their argument)
    */
   condition?: boolean;
-
-  /**
-   * Represents a JR condition value?
-   */
-  relCondition?: boolean;
 }
 
 /**
@@ -668,7 +599,6 @@ commonTokenTraits.set(CommonTokens.CiNotEqual, {});
 commonTokenTraits.set(CommonTokens.Colon, {});
 commonTokenTraits.set(CommonTokens.Comma, {});
 commonTokenTraits.set(CommonTokens.CompareBinPragma, { pragma: true });
-commonTokenTraits.set(CommonTokens.CopperPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Continue, { statement: true });
 commonTokenTraits.set(CommonTokens.CurAddress, { expressionStart: true, literal: true });
 commonTokenTraits.set(CommonTokens.CurCnt, { expressionStart: true, literal: true });
@@ -693,9 +623,7 @@ commonTokenTraits.set(CommonTokens.DefmPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefnPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefsPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DefwPragma, { pragma: true });
-commonTokenTraits.set(CommonTokens.DefzxPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.DispPragma, { pragma: true });
-commonTokenTraits.set(CommonTokens.DmaPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Divide, {});
 commonTokenTraits.set(CommonTokens.Dot, { expressionStart: true, literal: true });
 commonTokenTraits.set(CommonTokens.DoubleColon, { expressionStart: true });
@@ -756,10 +684,6 @@ commonTokenTraits.set(CommonTokens.IncludeDir, { directive: true });
 commonTokenTraits.set(CommonTokens.InjectOptPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.InlineComment, {});
 commonTokenTraits.set(CommonTokens.IsExpr, {
-  expressionStart: true,
-  macroTimeFunction: true
-});
-commonTokenTraits.set(CommonTokens.IsIndexedAddr, {
   expressionStart: true,
   macroTimeFunction: true
 });
@@ -833,7 +757,6 @@ commonTokenTraits.set(CommonTokens.RSBrac, {});
 
 // ----------------------------------------------------------------------------
 // S
-commonTokenTraits.set(CommonTokens.SaveNexPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.SkipPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Step, {});
 commonTokenTraits.set(CommonTokens.StringLiteral, {

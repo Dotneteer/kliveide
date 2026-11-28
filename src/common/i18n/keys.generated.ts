@@ -1211,6 +1211,7 @@ export type MessageKey =
   | "compiler.asm.Z0412"
   | "compiler.asm.Z0413"
   | "compiler.asm.Z0414"
+  | "compiler.asm.Z0415"
   | "compiler.asm.Z0501"
   | "compiler.asm.Z0502"
   | "compiler.asm.Z0503"

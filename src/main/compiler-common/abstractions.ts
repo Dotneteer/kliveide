@@ -4,6 +4,7 @@ import {
   CompareBinPragma,
   Expression,
   IdentifierNode,
+  MacroTimeFunctionInvocation,
   NodePosition,
   Statement
 } from "./tree-nodes";
@@ -213,6 +214,15 @@ export interface IEvaluationContext<TNode extends TypedObject, TToken extends Co
   recordSymbolReference?(symbolName: string, node: NodePosition): void;
 
   /**
+   * Evaluates a macro-time function of the CPU (the core evaluates `def` and `isexpr`)
+   * @param funcExpr The function invocation
+   * @returns The function's value, or undefined when the CPU has no such function
+   */
+  evalCpuMacroTimeFunction?(
+    funcExpr: MacroTimeFunctionInvocation<TNode, TToken>
+  ): IExpressionValue | undefined;
+
+  /**
    * Evaluates the value if the specified expression node
    * @param expr Expression to evaluate
    * @param context: Evaluation context
@@ -297,7 +307,7 @@ export interface IBinarySegment {
   xorgValue?: number;
 
   /**
-   * Emitted Z80 binary code
+   * Emitted binary code
    */
   emittedCode: number[];
 
@@ -425,7 +435,9 @@ export enum FixupType {
   /** A `.copper wait` operand; `data` 0 patches the line, 1 the horizontal position */
   CopperWait,
   /** A `.copper move` operand; `data` 0 patches the register, 1 the value */
-  CopperMove
+  CopperMove,
+  /** A Z80 `(ix+d)` displacement; `data` is the sign (1 or -1) */
+  IndexDisplacement
 }
 
 /**

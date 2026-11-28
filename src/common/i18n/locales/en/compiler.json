@@ -634,6 +634,13 @@
   "@compiler.asm.Z0414": {
     "context": "Z80 assembler message Z0414, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are."
   },
+  "compiler.asm.Z0415": "The index register displacement should be between -128 and 127. {0} is invalid.",
+  "@compiler.asm.Z0415": {
+    "context": "Z80 assembler message Z0415, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",
+    "placeholders": {
+      "0": "The displacement value, a decimal number, shown verbatim"
+    }
+  },
   "compiler.asm.Z0501": "Label ''{0}' is already defined",
   "@compiler.asm.Z0501": {
     "context": "Z80 assembler message Z0501, shown in the Output pane and as an editor squiggle, after its code (the code stays visible in every language, so users can search for it). Keep mnemonics, register names, directive and pragma names (#ifdef, .model, .bank, ...), keywords, quoted identifiers and values exactly as they are.",

@@ -174,6 +174,16 @@ merely uncoloured, which no route diff can see.
   gap table (§4) in `dev/plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change**, and mark
   the feature as done in the roadmap. This is a standing instruction from the project author.
 
+## The Klive assembler: CPU-neutral core and the Z80
+
+- `src/main/compiler-common/` is the **CPU-neutral assembler core** (lexer, parser, expressions, symbols,
+  macros, structs, loops, fixups, segments); it imports no CPU and no machine
+  (`test/architecture/assembler-boundaries.test.ts`). `src/main/z80-compiler/` layers the target machines
+  (`Z80MachineAsmParser`, `Z80MachineAssembler`: models, banks, `.savenex`, `.dma`, `.copper`, `.defzx`) and
+  then the Z80 (`Z80AsmParser`, `Z80Assembler`). Read `dev/plans/ASSEMBLER_CPU_NEUTRAL_PLAN.md` (the hooks,
+  §3 and §6) before adding a CPU or moving code between the layers; `test/asm-core/toy-cpu.ts` is a minimal
+  CPU built on the core alone.
+
 ## Shared Z80 back end and source-level debugging
 
 - **Every language Klive compiles itself is a front end on one back end** (`src/main/z80-backend/`):

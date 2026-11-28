@@ -41,19 +41,23 @@ import type {
   ResInstruction,
   SetInstruction,
   Z80Node,
+  Z80Operand
 } from "./assembler-tree-nodes";
+import { OperandType } from "./assembler-tree-nodes";
 
 import { Z80TokenStream, Z80TokenType, Z80Tokens } from "./z80-token-stream";
 import { convertSpectrumString } from "./z80-utils";
-import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
-import { z80TokenTraits } from "./z80-token-traits";
-import { CommonAsmParser, ParsePoint } from "@main/compiler-common/common-asm-parser";
-import { Expression, Operand, OperandType, PartialAssemblyLine } from "@main/compiler-common/tree-nodes";
+import { CommonTokens, CommonTokenType } from "@main/compiler-common/common-tokens";
+import { Z80TokenTraits, z80TokenTraits } from "./z80-token-traits";
+import { ParsePoint } from "@main/compiler-common/common-asm-parser";
+import { Expression, PartialAssemblyLine } from "@main/compiler-common/tree-nodes";
+import { Z80MachineAsmParser } from "./z80-machine-parser";
 
 /**
- * This class implements the Z80 assembly parser
+ * This class implements the Z80 assembly parser: the Z80 (and Z80N) instructions and operands, on top
+ * of the CPU-neutral core and the target machines' pragmas (`Z80MachineAsmParser`)
  */
-export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
+export class Z80AsmParser extends Z80MachineAsmParser {
   /**
    * Initializes the parser with the specified token stream
    * @param tokens Token stream of the source code
@@ -67,7 +71,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
     super(tokens, fileIndex, macroEmitPhase);
   }
 
-  protected getTokenTraits(type: CommonTokenType): TokenTraits {
+  protected getTokenTraits(type: CommonTokenType): Z80TokenTraits {
     return z80TokenTraits.get(type) ?? {};
   }
 
@@ -77,6 +81,14 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
    */
   protected convertEscapedString(inp: string): string {
     return convertSpectrumString(inp);
+  }
+
+  /**
+   * `textof((hl))`: the indirect form takes a 16-bit register
+   * @param traits Traits of the token in the parentheses
+   */
+  protected isTextOfIndirectArgument(traits: Z80TokenTraits): boolean {
+    return !!traits.reg16;
   }
 
   /**
@@ -213,7 +225,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         return oneOrTwoOperands<CallInstruction>("CallInstruction");
 
       case Z80Tokens.Ret:
-        let retCondition: Operand<Z80Node, Z80TokenType> = this.parseOperand();
+        let retCondition: Z80Operand = this.parseOperand();
         return <RetInstruction>{
           type: "RetInstruction",
           condition: retCondition
@@ -344,7 +356,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
       instrType: Z80Node["type"]
     ): T | null {
       const operand1 = parser.getOperand();
-      let operand2: Operand<Z80Node, Z80TokenType> | undefined = undefined;
+      let operand2: Z80Operand | undefined = undefined;
       if (parser.skipToken(Z80Tokens.Comma)) {
         operand2 = parser.getOperand();
       }
@@ -361,7 +373,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
       const operand1 = parser.getOperand();
       parser.expectToken(Z80Tokens.Comma, "Z0003");
       const operand2 = parser.getOperand();
-      let operand3: Operand<Z80Node, Z80TokenType> | undefined = undefined;
+      let operand3: Z80Operand | undefined = undefined;
       if (parser.skipToken(Z80Tokens.Comma)) {
         operand3 = parser.getOperand();
       }
@@ -387,8 +399,10 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
   /**
    * Parses an operand
    */
-  protected parseOperand(): Operand<Z80Node, Z80TokenType> | null {
-    const { start, traits } = this.getParsePoint();
+  protected parseOperand(): Z80Operand | null {
+    const parsePoint = this.getParsePoint();
+    const start = parsePoint.start;
+    const traits = parsePoint.traits as Z80TokenTraits;
     const startToken = this.tokens.peek();
     // --- Check registers
     if (traits.reg) {
@@ -409,7 +423,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
       } else if (traits.reg16Spec) {
         operandType = OperandType.Reg16Spec;
       }
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType,
         register,
@@ -426,7 +440,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         // --- Handle macro parameters
         this.parseMacroParam();
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.NoneArg,
           startToken
@@ -453,7 +467,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
       }
       this.tokens.get();
       this.expectToken(CommonTokens.RPar, "Z0005");
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType,
         register,
@@ -470,7 +484,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         // --- Handle macro parameters
         this.parseMacroParam();
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.NoneArg,
           startToken
@@ -497,7 +511,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
       }
       this.tokens.get();
       this.expectToken(CommonTokens.RPar, "Z0005");
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType,
         register,
@@ -508,7 +522,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
     // --- Check NONEARG
     if (start.type === CommonTokens.NoneArg) {
       this.tokens.get();
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType: OperandType.NoneArg,
         startToken
@@ -524,7 +538,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         this.tokens.get();
         this.tokens.get();
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.CPort,
           startToken
@@ -535,7 +549,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         this.tokens.get();
         this.tokens.get();
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.RegIndirect,
           register: ahead.text.toLowerCase(),
@@ -559,7 +573,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
           sign = this.tokens.peek();
         }
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.IndexedIndirect,
           register,
@@ -573,7 +587,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
         this.tokens.get();
         const expr = this.getExpression();
         this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<Z80Node, Z80TokenType>>{
+        return <Z80Operand>{
           type: "Operand",
           operandType: OperandType.MemIndirect,
           expr,
@@ -585,7 +599,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
     // --- Check for a condition
     if (traits.condition) {
       this.tokens.get();
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType: OperandType.Condition,
         register: start.text,
@@ -596,7 +610,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
     // --- Check for an expression
     if (traits.expressionStart) {
       // Expression
-      return <Operand<Z80Node, Z80TokenType>>{
+      return <Z80Operand>{
         type: "Operand",
         operandType: OperandType.Expression,
         expr: this.getExpression(),
@@ -611,7 +625,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
   /**
    * Gets a mandatory operand
    */
-  private getOperand(): Operand<Z80Node, Z80TokenType> | null {
+  private getOperand(): Z80Operand | null {
     const operand = this.parseOperand();
     if (operand) {
       return operand;
