@@ -2780,3 +2780,15 @@ method — which harness runs, which coverage scenarios, which manual pages, whi
   earlier inheriting sidecar already paired equal numbers. Pinned by `test/annotations/romInheritance.test.ts`.
 - **Sources:** the two ROM files compared byte for byte; 3.0's sidecar.
 - **Level:** 2 for both pages, shipped.
+
+### 2026-11-28 — SAM Coupé: system variable names checked against the manual
+
+- **What:** `SamSysVars.ts` compared with the Technical Manual v3.0's variables and vector lists (the text
+  at sam.speccy.cz, read verbatim for the disputed entries) and with ROM 3.0's code. $5C08 renamed
+  LAST_K -> RBHEAD and $5C3A ERR_NR -> ERRNR (the manual's names), in the table and in both SAM
+  sidecars' texts (43 places). Descriptions corrected: ERRNR holds the error number, not the number
+  minus one (observed: `LET a=1/0` -> 28 "Number too large", `PRINT zz` -> 2, `RETURN` -> 8, `NEXT q`
+  -> 5); BORDCR is the lower screen's attributes in modes 1-2 (BORDCOL, added, is the border);
+  COMSV is the comms interrupt, not MIDI IN; NMIV is called when not 0; DOSER is where the DOS jumps on
+  exit. ANYIV ($5B70) stays as Klive's name, marked as such: the manual lists the address as reserved.
+- **Level:** unchanged, 2 on all four pages.

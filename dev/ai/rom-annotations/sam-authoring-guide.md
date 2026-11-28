@@ -92,6 +92,12 @@ the jump table and `RST 30h` reach labels when ROM1 is annotated.
 
 ## The manual's names
 
+**System variables** take their names from `src/emu/machines/samcoupe/SamSysVars.ts`, which was checked
+against the manual's text and ROM 3.0's code on 2026-11-28: $5C08 is RBHEAD (the manual's name; "LAST_K"
+was the Spectrum's), $5C3A is ERRNR and holds the error number itself (`LET a=1/0` leaves 28, message 28
+is "Number too large"), and $5B70 is reserved in the manual, so ANYIV is Klive's name for the interrupt
+vector ROM 3.0 keeps there. The manual's scan prints RST8V and RST28V as "RSTBV" and "RST26V".
+
 The jump table's names are the Technical Manual v3.0's (the text at sam.speccy.cz, read 2026-11-28), marked
 `manual`. Its OCR spellings are kept as printed (`JRBFLUSH`, `JREADREY`, `JWAITREY`, `JEXPTINUM`, `DROLL`;
 `JPA.LET` became `JPALET`). $017B and $0187 have Klive names: the manual prints JEDGE2's address as 0178H
