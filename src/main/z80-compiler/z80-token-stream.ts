@@ -192,7 +192,13 @@ export const Z80Tokens = {
   IsRegYh: 1172,
   IsRegYl: 1173,
   IsRegIy: 1174,
-  IsRegSp: 1175
+  IsRegSp: 1175,
+
+  // --- The ZX Spectrum machines' pragmas (the Next's `.savenex`, `.dma`, `.copper`; the ZX80/ZX81's `.defzx`)
+  SaveNexPragma: 1200,
+  DmaPragma: 1201,
+  CopperPragma: 1202,
+  DefzxPragma: 1203
 };
 
 export type Z80TokenType = (typeof Z80Tokens)[keyof typeof Z80Tokens];
@@ -205,6 +211,32 @@ export function isZ80Keyword(word: string): boolean {
 
 const resolverHash: Record<string, Z80TokenType> = {
   ...commonResolverHash,
+
+  ".defzx": Z80Tokens.DefzxPragma,
+  ".DEFZX": Z80Tokens.DefzxPragma,
+  defzx: Z80Tokens.DefzxPragma,
+  DEFZX: Z80Tokens.DefzxPragma,
+
+  ".savenex": Z80Tokens.SaveNexPragma,
+  ".SAVENEX": Z80Tokens.SaveNexPragma,
+  ".SaveNex": Z80Tokens.SaveNexPragma,
+  savenex: Z80Tokens.SaveNexPragma,
+  SAVENEX: Z80Tokens.SaveNexPragma,
+  SaveNex: Z80Tokens.SaveNexPragma,
+
+  ".dma": Z80Tokens.DmaPragma,
+  ".DMA": Z80Tokens.DmaPragma,
+  dma: Z80Tokens.DmaPragma,
+  DMA: Z80Tokens.DmaPragma,
+
+  // --- Only the dotted forms: a bare `copper` would turn `.savenex copper "file"` (whose sub-command
+  // --- is an identifier) and any label named `copper` into this pragma.
+  ".copper": Z80Tokens.CopperPragma,
+  ".COPPER": Z80Tokens.CopperPragma,
+
+  isindexedaddr: Z80Tokens.IsIndexedAddr,
+  ISINDEXEDADDR: Z80Tokens.IsIndexedAddr,
+
   a: Z80Tokens.A,
   A: Z80Tokens.A,
   b: Z80Tokens.B,

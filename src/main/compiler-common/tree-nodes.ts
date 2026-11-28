@@ -37,7 +37,6 @@ export type ByteEmittingPragma<TInstruction extends TypedObject, TToken extends 
   | DefCPragma<TInstruction, TToken>
   | DefMPragma<TInstruction, TToken>
   | DefNPragma<TInstruction, TToken>
-  | DefZxPragma<TInstruction, TToken>
   | DefHPragma<TInstruction, TToken>
   | DefSPragma<TInstruction, TToken>
   | FillbPragma<TInstruction, TToken>
@@ -66,10 +65,7 @@ export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenT
   | IncBinPragma<TInstruction, TToken>
   | CompareBinPragma<TInstruction, TToken>
   | InjectOptPragma<TInstruction>
-  | OnSuccessPragma<TInstruction>
-  | SaveNexPragma<TInstruction, TToken>
-  | DmaPragma<TInstruction, TToken>
-  | CopperPragma<TInstruction, TToken>;
+  | OnSuccessPragma<TInstruction>;
 
 export type IfLikeStatement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfStatement<TInstruction, TToken>
@@ -425,36 +421,25 @@ export interface FunctionInvocation<TNode extends TypedObject, TToken extends Co
 // Operand syntax node types
 
 /**
- * Classification of operands
+ * The operand kinds the CPU-neutral core knows: an expression and a missing (empty) macro argument.
+ * A CPU's own operand classification (for example, the Z80's `OperandType` in
+ * `z80-compiler/assembler-tree-nodes.ts`) reuses these two values and adds its own kinds.
  */
-export enum OperandType {
-  Reg8,
-  Reg8Spec,
-  Reg8Idx,
-  Reg16,
-  Reg16Spec,
-  Reg16Idx,
-  RegIndirect,
-  IndexedIndirect,
-  IndexedDirect,
-  MemIndirect,
-  CPort,
-  Expression,
-  Condition,
-  NoneArg,
-  Immediate,
+export enum CommonOperandType {
+  Expression = -1,
+  NoneArg = -2
 }
 
 /**
- * Represents an operand that may have many forms
+ * Represents an operand that may have many forms; `operandType` is a `CommonOperandType` or one of the
+ * CPU's own operand kinds
  */
 export interface Operand<TNode extends TypedObject, TToken extends CommonTokenType> {
   type: "Operand";
   startToken?: Token<TToken>;
-  operandType: OperandType;
+  operandType: number;
   register?: string;
   expr?: Expression<TNode, TToken>;
-  offsetSign?: string;
   macroParam?: MacroParameter<TNode>;
 }
 
@@ -462,7 +447,7 @@ export interface Operand<TNode extends TypedObject, TToken extends CommonTokenTy
 // Assembly line node types
 
 /**
- * Represents a Z80 assembly line that can be expanded with attributes
+ * Represents an assembly line that can be expanded with attributes
  */
 export interface PartialAssemblyLine<TNode extends TypedObject> extends BaseNode<TNode> {
   /**
@@ -523,7 +508,7 @@ export interface MacroParameterLine<TNode extends TypedObject> extends PartialAs
 // Fundamental syntax node types
 
 /*
- * Represents the root node of the entire Z80 program
+ * Represents the root node of the entire program
  */
 export interface Program<TNode extends TypedObject> extends BaseNode<TNode> {
   type: "Program";
@@ -795,20 +780,6 @@ export interface DefMPragma<TNode extends TypedObject, TToken extends CommonToke
   value: Expression<TNode, TToken>;
 }
 
-/**
- * `.defzx "TEXT"`: text in the ZX80's or ZX81's own character set (`.model ZX80`/`ZX81` only);
- * a lower-case letter gives the inverse-video capital
- */
-export interface DefZxPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DefZxPragma";
-
-  /**
-   * Pragma value
-   */
-  value: Expression<TNode, TToken>;
-}
-
 export interface DefHPragma<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "DefHPragma";
@@ -1007,212 +978,6 @@ export interface OnSuccessPragma<TNode extends TypedObject> extends PartialAssem
    */
   command: string;
 }
-
-/**
- * SaveNex pragma types for ZX Spectrum Next NEX file generation
- */
-export type SaveNexPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
-  | SaveNexFilePragma<TNode, TToken>
-  | SaveNexRamPragma<TNode, TToken>
-  | SaveNexBorderPragma<TNode, TToken>
-  | SaveNexCorePragma<TNode, TToken>
-  | SaveNexStackAddrPragma<TNode, TToken>
-  | SaveNexEntryAddrPragma<TNode, TToken>
-  | SaveNexEntryBankPragma<TNode, TToken>
-  | SaveNexFileHandlePragma<TNode, TToken>
-  | SaveNexPreservePragma<TNode, TToken>
-  | SaveNexScreenPragma<TNode, TToken>
-  | SaveNexPalettePragma<TNode, TToken>
-  | SaveNexCopperPragma<TNode, TToken>
-  | SaveNexBarPragma<TNode, TToken>;
-
-export interface SaveNexFilePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexFilePragma";
-  filename: Expression<TNode, TToken>;
-}
-
-export interface SaveNexRamPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexRamPragma";
-  size: Expression<TNode, TToken>;
-}
-
-export interface SaveNexBorderPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexBorderPragma";
-  color: Expression<TNode, TToken>;
-}
-
-export interface SaveNexCorePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexCorePragma";
-  major: Expression<TNode, TToken>;
-  minor?: Expression<TNode, TToken>;
-  subminor?: Expression<TNode, TToken>;
-}
-
-export interface SaveNexStackAddrPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexStackAddrPragma";
-  address: Expression<TNode, TToken>;
-}
-
-export interface SaveNexEntryAddrPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexEntryAddrPragma";
-  address: Expression<TNode, TToken>;
-}
-
-export interface SaveNexEntryBankPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexEntryBankPragma";
-  bankNo: Expression<TNode, TToken>;
-}
-
-export interface SaveNexFileHandlePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexFileHandlePragma";
-  mode: Expression<TNode, TToken>; // 0/"close", "bc", or address
-}
-
-export interface SaveNexPreservePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexPreservePragma";
-  value: Expression<TNode, TToken>; // "on"/"off" or 0/1
-}
-
-export interface SaveNexScreenPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexScreenPragma";
-  screenType: Expression<TNode, TToken>; // l2, ula, lores, hires, hicolor, l2_320, l2_640
-  filename: Expression<TNode, TToken>;
-  paletteFile?: Expression<TNode, TToken>;
-  paletteOffset?: Expression<TNode, TToken>;
-}
-
-export interface SaveNexPalettePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexPalettePragma";
-  filename: Expression<TNode, TToken>;
-}
-
-export interface SaveNexCopperPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexCopperPragma";
-  filename: Expression<TNode, TToken>;
-}
-
-export interface SaveNexBarPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "SaveNexBarPragma";
-  enabled: Expression<TNode, TToken>; // "on"/"off" or 0/1
-  color?: Expression<TNode, TToken>;
-  delay?: Expression<TNode, TToken>;
-  startDelay?: Expression<TNode, TToken>;
-}
-
-// ============================================================================
-// DMA pragma nodes
-
-/**
- * Union of all .dma sub-command pragma node types
- */
-export type DmaPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
-  | DmaResetPragma<TNode>
-  | DmaLoadPragma<TNode>
-  | DmaEnablePragma<TNode>
-  | DmaDisablePragma<TNode>
-  | DmaContinuePragma<TNode>
-  | DmaCmdPragma<TNode, TToken>
-  | DmaReadMaskPragma<TNode, TToken>
-  | DmaWr0Pragma<TNode, TToken>
-  | DmaWr1Pragma<TNode>
-  | DmaWr2Pragma<TNode, TToken>
-  | DmaWr3Pragma<TNode, TToken>
-  | DmaWr4Pragma<TNode, TToken>
-  | DmaWr5Pragma<TNode>;
-
-export interface DmaResetPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaResetPragma";
-}
-
-export interface DmaLoadPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaLoadPragma";
-}
-
-export interface DmaEnablePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaEnablePragma";
-}
-
-export interface DmaDisablePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaDisablePragma";
-}
-
-export interface DmaContinuePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaContinuePragma";
-}
-
-export interface DmaCmdPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaCmdPragma";
-  value: Expression<TNode, TToken>;
-}
-
-export interface DmaReadMaskPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaReadMaskPragma";
-  mask: Expression<TNode, TToken>;
-}
-
-export interface DmaWr0Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaWr0Pragma";
-  direction: "a_to_b" | "b_to_a";
-  transferType: "transfer" | "search" | "search_transfer";
-  portAAddr?: Expression<TNode, TToken>;
-  blockLength?: Expression<TNode, TToken>;
-}
-
-export interface DmaWr1Pragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaWr1Pragma";
-  portType: "memory" | "io";
-  addrMode: "increment" | "decrement" | "fixed";
-  cycleLength?: "2t" | "3t" | "4t";
-}
-
-export interface DmaWr2Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaWr2Pragma";
-  portType: "memory" | "io";
-  addrMode: "increment" | "decrement" | "fixed";
-  cycleLength?: "2t" | "3t" | "4t";
-  prescaler?: Expression<TNode, TToken>;
-}
-
-export interface DmaWr3Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaWr3Pragma";
-  dmaEnable?: boolean;
-  stopOnMatch?: boolean;
-  intEnable?: boolean;
-  mask?: Expression<TNode, TToken>;
-  match?: Expression<TNode, TToken>;
-}
-
-export interface DmaWr4Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "DmaWr4Pragma";
-  mode: "byte" | "continuous" | "burst";
-  portBAddr?: Expression<TNode, TToken>;
-}
-
-export interface DmaWr5Pragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "DmaWr5Pragma";
-  autoRestart?: boolean;
-}
-
-
 
 export interface StatementBase<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
   isBlock?: boolean;
@@ -1415,51 +1180,4 @@ export interface MacroOrStructInvocation<TNode extends TypedObject, TToken exten
   type: "MacroOrStructInvocation";
   identifier: IdentifierNode<TNode>;
   operands: Operand<TNode, TToken>[];
-}
-
-// ============================================================================
-// Copper pragma nodes
-
-/**
- * Union of all .copper sub-command pragma node types
- */
-export type CopperPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
-  | CopperWaitPragma<TNode, TToken>
-  | CopperMovePragma<TNode, TToken>
-  | CopperNopPragma<TNode>
-  | CopperHaltPragma<TNode>
-  | CopperWordPragma<TNode, TToken>;
-
-/** `.copper wait <line>, <hpos>` */
-export interface CopperWaitPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "CopperWaitPragma";
-  /** Not `line`: that is the node's source line (`NodePosition`) */
-  waitLine: Expression<TNode, TToken>;
-  waitHpos: Expression<TNode, TToken>;
-}
-
-/** `.copper move <reg>, <value>` */
-export interface CopperMovePragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "CopperMovePragma";
-  reg: Expression<TNode, TToken>;
-  value: Expression<TNode, TToken>;
-}
-
-/** `.copper nop` */
-export interface CopperNopPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "CopperNopPragma";
-}
-
-/** `.copper halt` */
-export interface CopperHaltPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
-  type: "CopperHaltPragma";
-}
-
-/** `.copper word <expr>` */
-export interface CopperWordPragma<TNode extends TypedObject, TToken extends CommonTokenType>
-  extends PartialAssemblyLine<TNode> {
-  type: "CopperWordPragma";
-  value: Expression<TNode, TToken>;
 }

@@ -1,4 +1,3 @@
-import type { ErrorCodes } from "../compiler-common/assembler-errors";
 import type {
   AdcInstruction,
   AddInstruction,
@@ -33,31 +32,26 @@ import type {
   Z80Node
 } from "./assembler-tree-nodes";
 
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { InputStream } from "../compiler-common/input-stream";
 import { Z80TokenStream, Z80TokenType } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
-import { FixupType } from "../compiler-common/abstractions";
-import {
-  Expression,
-  NodePosition,
-  Operand,
-  OperandType,
-  Token
-} from "@main/compiler-common/tree-nodes";
-import { SpectrumModelType, SpectrumModelTypes } from "./SpectrumModelTypes";
-import { CommonAssembler } from "@main/compiler-common/common-assembler";
+import { FixupType, IExpressionValue } from "../compiler-common/abstractions";
+import { Expression, MacroTimeFunctionInvocation, NodePosition, Token } from "@main/compiler-common/tree-nodes";
+import { OperandType, Z80Operand } from "./assembler-tree-nodes";
+import { SpectrumModelType } from "./SpectrumModelTypes";
 import { CommonTokenStream } from "@main/compiler-common/common-token-stream";
 import { CommonAsmParser } from "@main/compiler-common/common-asm-parser";
+import { ExpressionValue } from "@main/compiler-common/expressions";
+import { FixupEntry } from "@main/compiler-common/fixups";
+import { Z80MachineAssembler } from "./z80-machine-assembler";
+import { evalZ80MacroTimeFunction } from "./z80-macro-functions";
 
 /**
- * The valid Spectrum model values
+ * Klive's Z80 assembler: the Z80 (and Z80N) instruction set, on top of the target machines' layer
+ * (`Z80MachineAssembler`) and the CPU-neutral core (`CommonAssembler`)
  */
-const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT", "ZX80", "ZX81", "HT1080Z", "TVC", "ENTERPRISE", "SAMCOUPE"];
-
-/**
- * This class provides the functionality of the Z80 Assembler
- */
-export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
+export class Z80Assembler extends Z80MachineAssembler {
   /**
    * Creates a token stream from the input stream.
    * @param is Input stream to create the token stream from
@@ -80,35 +74,93 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
   }
 
   /**
-   * Checks if the specified model type is valid.
-   * @param modelType The model type to validate
+   * Evaluates the Z80 macro-time functions (`isreg8`, `isregix`, `isindexedaddr`, ...)
+   * @param funcExpr The function invocation
    */
-  protected validateModelType(modelType: string): boolean {
-    return VALID_MODELS.includes(modelType.toUpperCase());
+  evalCpuMacroTimeFunction(
+    funcExpr: MacroTimeFunctionInvocation<Z80Node, Z80TokenType>
+  ): IExpressionValue | undefined {
+    return evalZ80MacroTimeFunction(funcExpr);
   }
 
   /**
-   * Gets the model name by its ID.
-   * @param modelId The model ID to get the name for
+   * A Z80 operand as a macro argument: the register's name, `(hl)`, `(c)`, `(ix+3)`, `(#4000)`
+   * @param operand The operand
    */
-  protected getModelNameById(modelId: number): string {
-    return SpectrumModelTypes[modelId];
-  }
-
-  /**
-   * Checks if the specified model ID supports the .bank pragma.
-   * @param modelId The model ID to check
-   */
-  protected modelSupportsBankPragma(modelId: number): ErrorCodes | null {
-    // --- The 128K, +3 and Next page banks; the 48K, the ZX80/ZX81 and the HT-1080Z have none
-    if (
-      modelId === SpectrumModelType.Spectrum128 ||
-      modelId === SpectrumModelType.SpectrumP3 ||
-      modelId === SpectrumModelType.Next
-    ) {
-      return null;
+  protected operandToMacroArgument(operand: Z80Operand): IExpressionValue | null | undefined {
+    switch (operand.operandType) {
+      case OperandType.Reg8:
+      case OperandType.Reg8Idx:
+      case OperandType.Reg8Spec:
+      case OperandType.Reg16:
+      case OperandType.Reg16Idx:
+      case OperandType.Reg16Spec:
+      case OperandType.Condition:
+        return new ExpressionValue(operand.register);
+      case OperandType.RegIndirect:
+        return new ExpressionValue(`(${operand.register})`);
+      case OperandType.CPort:
+        return new ExpressionValue("(c)");
+      case OperandType.MemIndirect: {
+        const value = this.evaluateExprImmediate(operand.expr);
+        return value.isValid ? new ExpressionValue(`(${value.asString()})`) : null;
+      }
+      case OperandType.IndexedIndirect: {
+        if (!operand.expr) {
+          return new ExpressionValue(`(${operand.register})`);
+        }
+        const value = this.evaluateExprImmediate(operand.expr);
+        return value.isValid
+          ? new ExpressionValue(`(${operand.register}${operand.offsetSign}${value.asString()})`)
+          : null;
+      }
     }
-    return "Z0308"; // Other models do not support .bank pragma
+    return undefined;
+  }
+
+  /**
+   * Resolves the Z80's own fixups: the relative jump's distance and the bit index
+   * @param fixup The fixup
+   * @param value The evaluated value of its expression
+   */
+  protected resolveCpuFixup(fixup: FixupEntry<Z80Node, Z80TokenType>, value: IExpressionValue): boolean {
+    const segment = this._output.segments[fixup.segmentIndex];
+    const emittedCode = segment.emittedCode;
+    switch (fixup.type) {
+      case FixupType.IndexDisplacement: {
+        // --- `data` is the sign: 1 for `(ix+d)`, -1 for `(ix-d)`
+        const disp = (fixup.data ?? 1) * value.asLong();
+        if (disp < -128 || disp > 127) {
+          this.reportAssemblyError("Z0415", fixup.sourceLine, null, disp);
+          return false;
+        }
+        emittedCode[fixup.offset] = disp & 0xff;
+        return true;
+      }
+      case FixupType.BitIndex: {
+        const bitIndex = value.asLong();
+        if (bitIndex < 0 || bitIndex > 7) {
+          this.reportAssemblyError("Z0407", fixup.sourceLine, null, bitIndex);
+          return false;
+        }
+        emittedCode[fixup.offset] = (fixup.data ?? 0) + 8 * bitIndex;
+        return true;
+      }
+      case FixupType.Jr: {
+        // --- The address of the JR instruction, with the `.disp` displacement when it applies
+        const displacement =
+          segment.startAddress + fixup.offset >= segment.dispPragmaOffset ? segment.displacement ?? 0 : 0;
+        const instructionAddress = (segment.startAddress + displacement + fixup.offset) & 0xffff;
+        const dist = relativeJumpDistance(value.asWord(), instructionAddress);
+        if (dist < -128 || dist > 127) {
+          this.reportAssemblyError("Z0403", fixup.sourceLine, null, dist);
+          return false;
+        }
+        emittedCode[fixup.offset + 1] = dist & 0xff;
+        return true;
+      }
+    }
+    return super.resolveCpuFixup(fixup, value);
   }
 
   // ==========================================================================
@@ -133,7 +185,8 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
       }
       const opCodes = simpleInstructionCodes[mnemonic];
       if (opCodes === undefined) {
-        this.reportEvaluationError(this, "Z0401", opLine, null, mnemonic);
+        this.reportAssemblyError("Z0401", opLine, null, mnemonic);
+        return;
       }
 
       // --- Emit the opcode(s);
@@ -829,7 +882,9 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
             this.emitOpCode(opCodeBase + reg16Order[op.operand2.register] * 16);
             return;
           case OperandType.Reg8:
+            // --- `add hl|de|bc,a` (Z80N); there is no `adc`/`sbc` form
             if (
+              op.type !== "AddInstruction" ||
               this.invalidNextInst(op) ||
               op.operand1.register === "sp" ||
               op.operand2.register !== "a"
@@ -847,7 +902,8 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
               return;
             }
           case OperandType.Expression:
-            if (this.invalidNextInst(op) || op.operand1.register === "sp") {
+            // --- `add hl|de|bc,nn` (Z80N); there is no `adc`/`sbc` form
+            if (op.type !== "AddInstruction" || this.invalidNextInst(op) || op.operand1.register === "sp") {
               break;
             }
             {
@@ -1234,7 +1290,7 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
    */
   private emitJumpRelativeOp(
     instr: Z80Node,
-    target: Operand<Z80Node, Z80TokenType>,
+    target: Z80Operand,
     opCode: number
   ) {
     const opLine = instr as unknown as Z80AssemblyLine;
@@ -1246,8 +1302,11 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
     let dist = 0;
     if (value.isNonEvaluated) {
       this.recordFixup(opLine, FixupType.Jr, target.expr);
+    } else if (!value.isValid) {
+      // --- The evaluation error is already reported
+      return;
     } else {
-      dist = value.value - (this.getCurrentAssemblyAddress() + 2);
+      dist = relativeJumpDistance(value.value, this.getCurrentAssemblyAddress());
       if (dist < -128 || dist > 127) {
         this.reportAssemblyError("Z0403", opLine, null, dist);
         return;
@@ -1260,36 +1319,17 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
   /**
    * Emits an indexed operation with the specified operand and operation code
    * @param opLine Operation source line
-   * @param register Index register
-   * @param sign Displacement sign
-   * @param expr Displacement expression
+   * @param operand Operand with the indexed address
    * @param opCode Operation code
    */
   private emitIndexedOperation(
     opLine: Z80AssemblyLine,
-    operand: Operand<Z80Node, Z80TokenType>,
+    operand: Z80Operand,
     opCode: number
   ): void {
-    const idxByte = operand.register === "ix" ? 0xdd : 0xfd;
-    let dispValue = 0x00;
-    let evaluated = true;
-    if (operand.offsetSign) {
-      const value = this.evaluateExpr(operand.expr);
-      if (!value.isValid) {
-        evaluated = false;
-      } else {
-        dispValue = value.value;
-        if (operand.offsetSign === "-") {
-          dispValue = -dispValue;
-        }
-      }
-    }
-    this.emitByte(idxByte);
+    this.emitByte(operand.register === "ix" ? 0xdd : 0xfd);
     this.emitByte(opCode);
-    if (!evaluated) {
-      this.recordFixup(opLine, FixupType.Bit8, operand.expr);
-    }
-    this.emitByte(dispValue);
+    this.emitDisplacement(opLine, operand.offsetSign, operand.expr);
   }
 
   /**
@@ -1307,27 +1347,48 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
     expr: Expression<Z80Node, Z80TokenType>,
     opCode: number
   ): void {
-    const idxByte = register === "ix" ? 0xdd : 0xfd;
-    let dispValue = 0x00;
-    let evaluated = true;
-    if (sign) {
-      const value = this.evaluateExpr(expr);
-      if (!value.isValid) {
-        evaluated = false;
-      } else {
-        dispValue = value.value;
-        if (sign === "-") {
-          dispValue = -dispValue;
-        }
-      }
-    }
-    this.emitByte(idxByte);
+    this.emitByte(register === "ix" ? 0xdd : 0xfd);
     this.emitByte(0xcb);
-    if (!evaluated) {
-      this.recordFixup(opLine, FixupType.Bit8, expr);
-    }
-    this.emitByte(dispValue);
+    this.emitDisplacement(opLine, sign, expr);
     this.emitByte(opCode);
+  }
+
+  /**
+   * Emits the displacement byte of `(ix+d)`/`(iy-d)`: -128..127, the sign applied, a fixup when the
+   * expression cannot be evaluated yet (the fixup applies the sign and checks the range, too)
+   * @param opLine Operation source line
+   * @param sign Displacement sign ("+", "-", or none for `(ix)`)
+   * @param expr Displacement expression
+   */
+  private emitDisplacement(
+    opLine: Z80AssemblyLine,
+    sign: string | undefined,
+    expr: Expression<Z80Node, Z80TokenType> | undefined
+  ): void {
+    if (!sign || !expr) {
+      this.emitByte(0x00);
+      return;
+    }
+    const value = this.evaluateExpr(expr);
+    if (value.isNonEvaluated) {
+      this.recordFixup(opLine, FixupType.IndexDisplacement, expr, null, null, null, sign === "-" ? -1 : 1);
+      this.emitByte(0x00);
+      return;
+    }
+    if (!value.isValid) {
+      this.emitByte(0x00);
+      return;
+    }
+    if (value.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z0603", opLine);
+      this.emitByte(0x00);
+      return;
+    }
+    const disp = sign === "-" ? -value.asLong() : value.asLong();
+    if (disp < -128 || disp > 127) {
+      this.reportAssemblyError("Z0415", opLine, null, disp);
+    }
+    this.emitByte(disp & 0xff);
   }
 }
 
@@ -1565,3 +1626,12 @@ const reg16Order: { [key: string]: number } = {
   hl: 2,
   sp: 3
 };
+
+/**
+ * The signed distance of a relative jump (JR, DJNZ) from the instruction at `instructionAddress` to
+ * `target`, in the 64K address space (so a jump across $FFFF/$0000 works)
+ */
+export function relativeJumpDistance(target: number, instructionAddress: number): number {
+  const dist = (target - (instructionAddress + 2)) & 0xffff;
+  return dist >= 0x8000 ? dist - 0x10000 : dist;
+}

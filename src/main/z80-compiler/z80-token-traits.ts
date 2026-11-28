@@ -2,9 +2,65 @@ import { commonTokenTraits, TokenTraits } from "@main/compiler-common/common-tok
 import { Z80TokenType, Z80Tokens } from "./z80-token-stream";
 
 /**
+ * The traits of a Z80 token: the CPU-neutral ones and the Z80's own register and condition classes
+ */
+export interface Z80TokenTraits extends TokenTraits {
+  /**
+   * This token is a ZX Spectrum Next (Z80N) instruction
+   */
+  next?: boolean;
+
+  /**
+   * Represents a standard 8-bit register?
+   */
+  reg8?: boolean;
+
+  /**
+   * Represents a special 8-bit register?
+   */
+  reg8Spec?: boolean;
+
+  /**
+   * Represents an 8-bit index register?
+   */
+  reg8Idx?: boolean;
+
+  /**
+   * Represents a 16-bit register?
+   */
+  reg16?: boolean;
+
+  /**
+   * Represents a 16-bit special register?
+   */
+  reg16Spec?: boolean;
+
+  /**
+   * Represents a 16-bit index register?
+   */
+  reg16Idx?: boolean;
+
+  /**
+   * Represents a JR condition value?
+   */
+  relCondition?: boolean;
+}
+
+/**
  * This map contains the traits of token types
  */
-export const z80TokenTraits = new Map<Z80TokenType, TokenTraits>(commonTokenTraits);
+export const z80TokenTraits = new Map<Z80TokenType, Z80TokenTraits>(commonTokenTraits);
+
+// ----------------------------------------------------------------------------
+// The ZX Spectrum machines' pragmas and the indexed-address macro-time function
+z80TokenTraits.set(Z80Tokens.SaveNexPragma, { pragma: true });
+z80TokenTraits.set(Z80Tokens.DmaPragma, { pragma: true });
+z80TokenTraits.set(Z80Tokens.CopperPragma, { pragma: true });
+z80TokenTraits.set(Z80Tokens.DefzxPragma, { pragma: true });
+z80TokenTraits.set(Z80Tokens.IsIndexedAddr, {
+  expressionStart: true,
+  macroTimeFunction: true
+});
 
 
 // ----------------------------------------------------------------------------

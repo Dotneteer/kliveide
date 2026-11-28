@@ -10,7 +10,7 @@ import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 import type { DmaProgramRecord } from "@common/zxnext/dma/dmaProgram";
 
 /**
- * This class represents the output of the Z80 assembler
+ * This class represents the output of the assembler
  */
 export class AssemblerOutput<
   TInstruction extends TypedObject,
@@ -48,7 +48,7 @@ export class AssemblerOutput<
   }
 
   /**
-   * The type of Spectrum model to use
+   * The model (machine) the code targets, as the CPU assembler numbers its models
    */
   modelType?: number;
 
@@ -204,7 +204,7 @@ export class BinarySegment implements IBinarySegment {
   xorgValue?: number;
 
   /**
-   * Emitted Z80 binary code
+   * Emitted binary code
    */
   emittedCode: number[] = [];
 
@@ -338,7 +338,7 @@ export class AssemblerOptions {
   /**
    * The current ZX Spectrum model
    */
-  currentModel: number = 1; // Spectrum 48
+  currentModel: number = 1; // The Z80 assembler's Spectrum 48
 
   /**
    * The maximum number of errors to report within a loop

@@ -20,7 +20,6 @@ import {
   DefHPragma,
   DefineDirective,
   DefMPragma,
-  DefZxPragma,
   DefNPragma,
   DefSPragma,
   DefWPragma,
@@ -69,39 +68,8 @@ import {
   NextStatement,
   OnSuccessPragma,
   Operand,
-  OperandType,
+  CommonOperandType,
   OrgPragma,
-  SaveNexBarPragma,
-  SaveNexBorderPragma,
-  SaveNexCopperPragma,
-  SaveNexCorePragma,
-  SaveNexEntryAddrPragma,
-  SaveNexEntryBankPragma,
-  SaveNexFileHandlePragma,
-  SaveNexFilePragma,
-  SaveNexPalettePragma,
-  SaveNexPreservePragma,
-  SaveNexRamPragma,
-  SaveNexScreenPragma,
-  SaveNexStackAddrPragma,
-  DmaResetPragma,
-  DmaLoadPragma,
-  DmaEnablePragma,
-  DmaDisablePragma,
-  DmaContinuePragma,
-  DmaCmdPragma,
-  DmaReadMaskPragma,
-  DmaWr0Pragma,
-  DmaWr1Pragma,
-  DmaWr2Pragma,
-  DmaWr3Pragma,
-  DmaWr4Pragma,
-  DmaWr5Pragma,
-  CopperWaitPragma,
-  CopperMovePragma,
-  CopperNopPragma,
-  CopperHaltPragma,
-  CopperWordPragma,
   PartialAssemblyLine,
   ProcEndStatement,
   ProcStatement,
@@ -138,7 +106,8 @@ import { CommonTokenStream } from "./common-token-stream";
 const PARSER_BATCH_SIZE = 1000;
 
 /**
- * This class implements the Z80 assembly parser
+ * The CPU-neutral assembly parser: lines, labels, pragmas, directives, statements and expressions.
+ * A CPU subclass parses its instructions and operands (and any pragma of its own).
  */
 export abstract class CommonAsmParser<
   TInstruction extends TypedObject,
@@ -187,6 +156,34 @@ export abstract class CommonAsmParser<
    * @param inp String to convert
    */
   protected abstract convertEscapedString(inp: string): string;
+
+  /**
+   * Parses a pragma the CPU-neutral core does not know: one of the CPU or of its target machines. The
+   * pragma token (`parsePoint.start`) is already consumed. The default knows none.
+   * @param _parsePoint The pragma token and its traits
+   * @returns The pragma line, or null when the pragma is not recognized or has errors
+   */
+  protected parseCpuPragma(_parsePoint: ParsePoint): PartialAssemblyLine<TInstruction> | null {
+    return null;
+  }
+
+  /**
+   * Tells if a CPU (or machine) pragma token emits bytes, and so can follow `->` in a structure
+   * field assignment. The default knows none.
+   * @param _tokenType Pragma token type
+   */
+  protected isCpuByteEmittingPragma(_tokenType: CommonTokenType): boolean {
+    return false;
+  }
+
+  /**
+   * Tells if a register token can be the argument of `textof((reg))`/`ltextof((reg))`, the indirect
+   * form. The default accepts none.
+   * @param _traits Traits of the token in the parentheses
+   */
+  protected isTextOfIndirectArgument(_traits: TokenTraits): boolean {
+    return false;
+  }
 
   /**
    * The errors raised during the parse phase
@@ -636,11 +633,6 @@ export abstract class CommonAsmParser<
           type: "DefMPragma",
           value: defmExpr
         } as DefMPragma<TInstruction, TToken>;
-      case CommonTokens.DefzxPragma:
-        return {
-          type: "DefZxPragma",
-          value: this.getExpression()
-        } as DefZxPragma<TInstruction, TToken>;
       case CommonTokens.DefnPragma:
         const defnExpr = this.getExpression();
         return {
@@ -798,14 +790,9 @@ export abstract class CommonAsmParser<
         } as OnSuccessPragma<TInstruction>;
       }
 
-      case CommonTokens.SaveNexPragma:
-        return this.parseSaveNexPragma();
-
-      case CommonTokens.DmaPragma:
-        return this.parseDmaPragma();
-
-      case CommonTokens.CopperPragma:
-        return this.parseCopperPragma();
+      default:
+        // --- A pragma of the CPU or of its target machines
+        return this.parseCpuPragma(parsePoint);
     }
     return null;
   }
@@ -1227,7 +1214,7 @@ export abstract class CommonAsmParser<
       } else {
         operands.push(<Operand<TInstruction, TToken>>{
           type: "Operand",
-          operandType: OperandType.NoneArg
+          operandType: CommonOperandType.NoneArg
         });
       }
       while (this.skipToken(CommonTokens.Comma)) {
@@ -1237,7 +1224,7 @@ export abstract class CommonAsmParser<
         } else {
           operands.push(<Operand<TInstruction, TToken>>{
             type: "Operand",
-            operandType: OperandType.NoneArg
+            operandType: CommonOperandType.NoneArg
           });
         }
       }
@@ -1265,7 +1252,6 @@ export abstract class CommonAsmParser<
       case CommonTokens.DefcPragma:
       case CommonTokens.DefmPragma:
       case CommonTokens.DefnPragma:
-      case CommonTokens.DefzxPragma:
       case CommonTokens.DefhPragma:
       case CommonTokens.DefsPragma:
       case CommonTokens.FillbPragma:
@@ -1277,6 +1263,12 @@ export abstract class CommonAsmParser<
           assignment: this.parsePragma(parsePoint)
         };
       default:
+        if (this.isCpuByteEmittingPragma(start.type)) {
+          return <FieldAssignment<TInstruction, TToken>>{
+            type: "FieldAssignment",
+            assignment: this.parsePragma(parsePoint)
+          };
+        }
         this.reportError("Z0110");
         return null;
     }
@@ -1642,7 +1634,7 @@ export abstract class CommonAsmParser<
       if (
         !this.macroEmitPhase &&
         operand &&
-        (operand.operandType !== OperandType.Expression || operand.expr.type !== "MacroParameter")
+        (operand.operandType !== CommonOperandType.Expression || operand.expr.type !== "MacroParameter")
       ) {
         this.reportError("Z1009", start);
       }
@@ -1720,9 +1712,9 @@ export abstract class CommonAsmParser<
     }
     if (argToken.type === CommonTokens.LPar) {
       this.tokens.get();
-      const reg16 = this.tokens.peek();
-      const reg16Traits = this.getTokenTraits(reg16.type);
-      if (!reg16Traits.reg16) {
+      const regToken = this.tokens.peek();
+      const regTraits = this.getTokenTraits(regToken.type);
+      if (!this.isTextOfIndirectArgument(regTraits)) {
         this.reportError("Z0106");
         return null;
       }
@@ -1732,7 +1724,7 @@ export abstract class CommonAsmParser<
       return <StringLiteral<TInstruction>>{
         type: "StringLiteral",
         value: `(${
-          start.type === CommonTokens.LTextOf ? reg16.text.toLowerCase() : reg16.text.toUpperCase()
+          start.type === CommonTokens.LTextOf ? regToken.text.toLowerCase() : regToken.text.toUpperCase()
         })`
       };
     }
@@ -2279,486 +2271,6 @@ export abstract class CommonAsmParser<
       return null;
     }
     return expressions;
-  }
-
-  /**
-   * Parses a .savenex pragma by reading the subcommand and routing to the appropriate parser
-   */
-  private parseSaveNexPragma(): PartialAssemblyLine<TInstruction> | null {
-    const subcommand = this.tokens.peek();
-    if (subcommand.type !== CommonTokens.Identifier) {
-      this.reportError("Z0346"); // Unknown subcommand
-      return null;
-    }
-
-    const subcmdText = subcommand.text?.toLowerCase();
-    this.tokens.get(); // consume the subcommand identifier
-
-    switch (subcmdText) {
-      case "file":
-        return this.parseSaveNexFile();
-      case "ram":
-        return this.parseSaveNexRam();
-      case "border":
-        return this.parseSaveNexBorder();
-      case "core":
-        return this.parseSaveNexCore();
-      case "stackaddr":
-        return this.parseSaveNexStackAddr();
-      case "entryaddr":
-        return this.parseSaveNexEntryAddr();
-      case "entrybank":
-        return this.parseSaveNexEntryBank();
-      case "filehandle":
-        return this.parseSaveNexFileHandle();
-      case "preserve":
-        return this.parseSaveNexPreserve();
-      case "screen":
-        return this.parseSaveNexScreen();
-      case "palette":
-        return this.parseSaveNexPalette();
-      case "copper":
-        return this.parseSaveNexCopper();
-      case "bar":
-        return this.parseSaveNexBar();
-      default:
-        this.reportError("Z0346"); // Unknown subcommand
-        return null;
-    }
-  }
-
-  private parseSaveNexFile(): SaveNexFilePragma<TInstruction, TToken> {
-    const filename = this.getExpression();
-    return {
-      type: "SaveNexFilePragma",
-      filename
-    } as SaveNexFilePragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexRam(): SaveNexRamPragma<TInstruction, TToken> {
-    const size = this.getExpression();
-    return {
-      type: "SaveNexRamPragma",
-      size
-    } as SaveNexRamPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexBorder(): SaveNexBorderPragma<TInstruction, TToken> {
-    const color = this.getExpression();
-    return {
-      type: "SaveNexBorderPragma",
-      color
-    } as SaveNexBorderPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexCore(): SaveNexCorePragma<TInstruction, TToken> {
-    const major = this.getExpression();
-    const minor = this.getExpression(true, true);
-    const subminor = minor ? this.getExpression(true, true) : null;
-    return {
-      type: "SaveNexCorePragma",
-      major,
-      minor,
-      subminor
-    } as SaveNexCorePragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexStackAddr(): SaveNexStackAddrPragma<TInstruction, TToken> {
-    const address = this.getExpression();
-    return {
-      type: "SaveNexStackAddrPragma",
-      address
-    } as SaveNexStackAddrPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexEntryAddr(): SaveNexEntryAddrPragma<TInstruction, TToken> {
-    const address = this.getExpression();
-    return {
-      type: "SaveNexEntryAddrPragma",
-      address
-    } as SaveNexEntryAddrPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexEntryBank(): SaveNexEntryBankPragma<TInstruction, TToken> {
-    const bankNo = this.getExpression();
-    return {
-      type: "SaveNexEntryBankPragma",
-      bankNo
-    } as SaveNexEntryBankPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexFileHandle(): SaveNexFileHandlePragma<TInstruction, TToken> {
-    const mode = this.getExpression();
-    return {
-      type: "SaveNexFileHandlePragma",
-      mode
-    } as SaveNexFileHandlePragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexPreserve(): SaveNexPreservePragma<TInstruction, TToken> {
-    const value = this.getExpression();
-    return {
-      type: "SaveNexPreservePragma",
-      value
-    } as SaveNexPreservePragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexScreen(): SaveNexScreenPragma<TInstruction, TToken> {
-    const type = this.getExpression();
-    const filename = this.getExpression(true, true);
-    const paletteOffset = filename ? this.getExpression(true, true) : null;
-    return {
-      type: "SaveNexScreenPragma",
-      screenType: type,
-      filename,
-      paletteOffset
-    } as SaveNexScreenPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexPalette(): SaveNexPalettePragma<TInstruction, TToken> {
-    const filename = this.getExpression();
-    return {
-      type: "SaveNexPalettePragma",
-      filename
-    } as SaveNexPalettePragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexCopper(): SaveNexCopperPragma<TInstruction, TToken> {
-    const filename = this.getExpression();
-    return {
-      type: "SaveNexCopperPragma",
-      filename
-    } as SaveNexCopperPragma<TInstruction, TToken>;
-  }
-
-  private parseSaveNexBar(): SaveNexBarPragma<TInstruction, TToken> {
-    const enabled = this.getExpression();
-    const color = this.getExpression(true, true);
-    const delay = color ? this.getExpression(true, true) : null;
-    const startDelay = delay ? this.getExpression(true, true) : null;
-    return {
-      type: "SaveNexBarPragma",
-      enabled,
-      color,
-      delay,
-      startDelay
-    } as SaveNexBarPragma<TInstruction, TToken>;
-  }
-
-  // ---------------------------------------------------------------------------
-  // .dma pragma sub-parsers
-
-  private parseDmaPragma(): PartialAssemblyLine<TInstruction> | null {
-    const subcommand = this.tokens.peek();
-    if (subcommand.type !== CommonTokens.Identifier) {
-      this.reportError("Z0360");
-      return null;
-    }
-    const subcmdText = subcommand.text?.toLowerCase();
-    this.tokens.get(); // consume sub-command identifier
-
-    switch (subcmdText) {
-      case "reset":    return { type: "DmaResetPragma" } as DmaResetPragma<TInstruction>;
-      case "load":     return { type: "DmaLoadPragma" } as DmaLoadPragma<TInstruction>;
-      case "enable":   return { type: "DmaEnablePragma" } as DmaEnablePragma<TInstruction>;
-      case "disable":  return { type: "DmaDisablePragma" } as DmaDisablePragma<TInstruction>;
-      case "continue": return { type: "DmaContinuePragma" } as DmaContinuePragma<TInstruction>;
-      case "cmd":      return this.parseDmaCmd();
-      case "readmask": return this.parseDmaReadMask();
-      case "wr0":      return this.parseDmaWr0();
-      case "wr1":      return this.parseDmaWr1();
-      case "wr2":      return this.parseDmaWr2();
-      case "wr3":      return this.parseDmaWr3();
-      case "wr4":      return this.parseDmaWr4();
-      case "wr5":      return this.parseDmaWr5();
-      default:
-        this.reportError("Z0360");
-        return null;
-    }
-  }
-
-  private parseDmaCmd(): DmaCmdPragma<TInstruction, TToken> | null {
-    const value = this.getExpression();
-    if (!value) return null;
-    return { type: "DmaCmdPragma", value } as DmaCmdPragma<TInstruction, TToken>;
-  }
-
-  private parseDmaReadMask(): DmaReadMaskPragma<TInstruction, TToken> | null {
-    const mask = this.getExpression();
-    if (!mask) return null;
-    return { type: "DmaReadMaskPragma", mask } as DmaReadMaskPragma<TInstruction, TToken>;
-  }
-
-  private parseDmaWr0(): DmaWr0Pragma<TInstruction, TToken> | null {
-    // direction keyword (required)
-    const dirToken = this.tokens.peek();
-    const dirText = dirToken.text?.toLowerCase();
-    if (dirToken.type !== CommonTokens.Identifier || (dirText !== "a_to_b" && dirText !== "b_to_a")) {
-      this.reportError("Z0361");
-      return null;
-    }
-    this.tokens.get();
-    const direction = dirText as "a_to_b" | "b_to_a";
-
-    // comma (required)
-    if (!this.skipToken(CommonTokens.Comma)) {
-      this.reportError("Z0003");
-      return null;
-    }
-
-    // transfer type keyword (required)
-    const ttToken = this.tokens.peek();
-    const ttText = ttToken.text?.toLowerCase();
-    if (
-      ttToken.type !== CommonTokens.Identifier ||
-      (ttText !== "transfer" && ttText !== "search" && ttText !== "search_transfer")
-    ) {
-      this.reportError("Z0362");
-      return null;
-    }
-    this.tokens.get();
-    const transferType = ttText as "transfer" | "search" | "search_transfer";
-
-    // optional portAAddr (with leading comma)
-    let portAAddr: Expression<TInstruction, TToken> | undefined;
-    let blockLength: Expression<TInstruction, TToken> | undefined;
-    if (this.skipToken(CommonTokens.Comma)) {
-      portAAddr = this.getExpression() ?? undefined;
-      if (this.skipToken(CommonTokens.Comma)) {
-        blockLength = this.getExpression() ?? undefined;
-      }
-    }
-
-    return { type: "DmaWr0Pragma", direction, transferType, portAAddr, blockLength } as DmaWr0Pragma<TInstruction, TToken>;
-  }
-
-  private parseDmaWr1(): DmaWr1Pragma<TInstruction, TToken> | null {
-    // port type keyword (required)
-    const ptToken = this.tokens.peek();
-    const ptText = ptToken.text?.toLowerCase();
-    if (ptToken.type !== CommonTokens.Identifier || (ptText !== "memory" && ptText !== "io")) {
-      this.reportError("Z0363");
-      return null;
-    }
-    this.tokens.get();
-    const portType = ptText as "memory" | "io";
-
-    // comma + address mode (required)
-    if (!this.skipToken(CommonTokens.Comma)) {
-      this.reportError("Z0003");
-      return null;
-    }
-    const amToken = this.tokens.peek();
-    const amText = amToken.text?.toLowerCase();
-    if (
-      amToken.type !== CommonTokens.Identifier ||
-      (amText !== "increment" && amText !== "decrement" && amText !== "fixed")
-    ) {
-      this.reportError("Z0364");
-      return null;
-    }
-    this.tokens.get();
-    const addrMode = amText as "increment" | "decrement" | "fixed";
-
-    // optional cycle length (with leading comma)
-    let cycleLength: "2t" | "3t" | "4t" | undefined;
-    if (this.skipToken(CommonTokens.Comma)) {
-      cycleLength = this.parseDmaCycleLength();
-      if (!cycleLength) return null;
-    }
-
-    return { type: "DmaWr1Pragma", portType, addrMode, cycleLength } as DmaWr1Pragma<TInstruction, TToken>;
-  }
-
-  private parseDmaWr2(): DmaWr2Pragma<TInstruction, TToken> | null {
-    // port type keyword (required)
-    const ptToken = this.tokens.peek();
-    const ptText = ptToken.text?.toLowerCase();
-    if (ptToken.type !== CommonTokens.Identifier || (ptText !== "memory" && ptText !== "io")) {
-      this.reportError("Z0363");
-      return null;
-    }
-    this.tokens.get();
-    const portType = ptText as "memory" | "io";
-
-    // comma + address mode (required)
-    if (!this.skipToken(CommonTokens.Comma)) {
-      this.reportError("Z0003");
-      return null;
-    }
-    const amToken = this.tokens.peek();
-    const amText = amToken.text?.toLowerCase();
-    if (
-      amToken.type !== CommonTokens.Identifier ||
-      (amText !== "increment" && amText !== "decrement" && amText !== "fixed")
-    ) {
-      this.reportError("Z0364");
-      return null;
-    }
-    this.tokens.get();
-    const addrMode = amText as "increment" | "decrement" | "fixed";
-
-    // optional cycle length (with leading comma)
-    let cycleLength: "2t" | "3t" | "4t" | undefined;
-    let prescaler: Expression<TInstruction, TToken> | undefined;
-    if (this.skipToken(CommonTokens.Comma)) {
-      cycleLength = this.parseDmaCycleLength();
-      if (!cycleLength) return null;
-
-      // optional prescaler (with leading comma)
-      if (this.skipToken(CommonTokens.Comma)) {
-        prescaler = this.getExpression() ?? undefined;
-      }
-    }
-
-    return { type: "DmaWr2Pragma", portType, addrMode, cycleLength, prescaler } as DmaWr2Pragma<TInstruction, TToken>;
-  }
-
-  private parseDmaWr3(): DmaWr3Pragma<TInstruction, TToken> {
-    const node: DmaWr3Pragma<TInstruction, TToken> = { type: "DmaWr3Pragma" };
-
-    // Parse optional comma-separated flags and optional mask/match expressions
-    while (true) {
-      const t = this.tokens.peek();
-      if (t.type === CommonTokens.Identifier) {
-        const text = t.text?.toLowerCase();
-        if (text === "dma_enable") {
-          this.tokens.get();
-          node.dmaEnable = true;
-        } else if (text === "stop_on_match") {
-          this.tokens.get();
-          node.stopOnMatch = true;
-        } else if (text === "int_enable") {
-          this.tokens.get();
-          node.intEnable = true;
-        } else {
-          // Unknown identifier — treat as mask expression
-          node.mask = this.getExpression() ?? undefined;
-          if (this.skipToken(CommonTokens.Comma)) {
-            node.match = this.getExpression() ?? undefined;
-          }
-          break;
-        }
-      } else if (t.type > 0 && t.type !== CommonTokens.NewLine) {
-        // Non-identifier expression token (number, etc.) — treat as mask
-        node.mask = this.getExpression() ?? undefined;
-        if (this.skipToken(CommonTokens.Comma)) {
-          node.match = this.getExpression() ?? undefined;
-        }
-        break;
-      } else {
-        // End of line / EOF
-        break;
-      }
-
-      // Check for comma to continue flag list
-      if (!this.skipToken(CommonTokens.Comma)) {
-        break;
-      }
-    }
-
-    return node;
-  }
-
-  private parseDmaWr4(): DmaWr4Pragma<TInstruction, TToken> | null {
-    // operating mode keyword (required)
-    const modeToken = this.tokens.peek();
-    const modeText = modeToken.text?.toLowerCase();
-    if (
-      modeToken.type !== CommonTokens.Identifier ||
-      (modeText !== "byte" && modeText !== "continuous" && modeText !== "burst")
-    ) {
-      this.reportError("Z0366");
-      return null;
-    }
-    this.tokens.get();
-    const mode = modeText as "byte" | "continuous" | "burst";
-
-    // optional portBAddr (with leading comma)
-    let portBAddr: Expression<TInstruction, TToken> | undefined;
-    if (this.skipToken(CommonTokens.Comma)) {
-      portBAddr = this.getExpression() ?? undefined;
-    }
-
-    return { type: "DmaWr4Pragma", mode, portBAddr } as DmaWr4Pragma<TInstruction, TToken>;
-  }
-
-  /**
-   * Parses a DMA cycle length token: 2t, 3t, or 4t.
-   * These are tokenized as a DecimalLiteral (2/3/4) followed by Identifier 't'.
-   */
-  private parseDmaCycleLength(): "2t" | "3t" | "4t" | null {
-    const numToken = this.tokens.peek();
-    if (numToken.type !== CommonTokens.DecimalLiteral) {
-      this.reportError("Z0365");
-      return null;
-    }
-    const numText = numToken.text;
-    if (numText !== "2" && numText !== "3" && numText !== "4") {
-      this.reportError("Z0365");
-      return null;
-    }
-    this.tokens.get(); // consume digit
-    const tToken = this.tokens.peek();
-    if (tToken.type !== CommonTokens.Identifier || tToken.text?.toLowerCase() !== "t") {
-      this.reportError("Z0365");
-      return null;
-    }
-    this.tokens.get(); // consume 't'
-    return `${numText}t` as "2t" | "3t" | "4t";
-  }
-
-  private parseDmaWr5(): DmaWr5Pragma<TInstruction, TToken> {
-    let autoRestart: boolean | undefined;
-    const t = this.tokens.peek();
-    if (t.type === CommonTokens.Identifier && t.text?.toLowerCase() === "auto_restart") {
-      this.tokens.get();
-      autoRestart = true;
-    }
-    return { type: "DmaWr5Pragma", autoRestart } as DmaWr5Pragma<TInstruction, TToken>;
-  }
-
-  // ---------------------------------------------------------------------------
-  // .copper pragma sub-parsers
-
-  private parseCopperPragma(): PartialAssemblyLine<TInstruction> | null {
-    // --- `nop` and `halt` are Z80 keywords, not identifiers: take the sub-command by its text
-    const subcommand = this.tokens.peek();
-    const subcmdText = subcommand.text ?? "";
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(subcmdText)) {
-      this.reportError("Z0371", subcommand, [subcmdText]);
-      return null;
-    }
-    this.tokens.get(); // consume sub-command
-
-    switch (subcmdText.toLowerCase()) {
-      case "wait": {
-        const waitLine = this.getExpression();
-        if (!waitLine) return null;
-        const waitHpos = this.getExpression(false, true);
-        if (!waitHpos) return null;
-        return { type: "CopperWaitPragma", waitLine, waitHpos } as CopperWaitPragma<TInstruction, TToken>;
-      }
-      case "move": {
-        const reg = this.getExpression();
-        if (!reg) return null;
-        const value = this.getExpression(false, true);
-        if (!value) return null;
-        return { type: "CopperMovePragma", reg, value } as CopperMovePragma<TInstruction, TToken>;
-      }
-      case "nop":
-        return { type: "CopperNopPragma" } as CopperNopPragma<TInstruction>;
-      case "halt":
-        return { type: "CopperHaltPragma" } as CopperHaltPragma<TInstruction>;
-      case "word": {
-        const value = this.getExpression();
-        if (!value) return null;
-        return { type: "CopperWordPragma", value } as CopperWordPragma<TInstruction, TToken>;
-      }
-      default:
-        this.reportError("Z0371", subcommand, [subcmdText]);
-        return null;
-    }
   }
 }
 

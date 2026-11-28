@@ -8,7 +8,7 @@ import {
   TypedObject
 } from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "@main/compiler-common/common-tokens";
-import { AssemblyLine, BinaryExpression, ConditionalExpression, Expression, FunctionInvocation, IdentifierNode, MacroTimeFunctionInvocation, NodePosition, OperandType, Symbol, UnaryExpression } from "@main/compiler-common/tree-nodes";
+import { AssemblyLine, BinaryExpression, ConditionalExpression, Expression, FunctionInvocation, IdentifierNode, MacroTimeFunctionInvocation, NodePosition, CommonOperandType, Symbol, UnaryExpression } from "@main/compiler-common/tree-nodes";
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
 const DIV_BY_ZERO_ERROR = "Divide by zero error";
@@ -20,6 +20,12 @@ const COMPARE_STRING_ERROR = "String can be compared only to another string";
 /**
  * Represents the value of an evaluated expression
  */
+/**
+ * Thrown when a string value is used as a number and its text is not one (`.org "a"`). The assembler
+ * reports it as Z0601 on the line being assembled.
+ */
+export class ValueConversionError extends Error {}
+
 export class ExpressionValue implements IExpressionValue {
   private _type: ExpressionValueType;
   private _value: boolean | number | string | undefined;
@@ -32,7 +38,17 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Represents a non-evaluated value
    */
-  static NonEvaluated = new ExpressionValue(ExpressionValueType.NonEvaluated);
+  static NonEvaluated = ExpressionValue.createNonEvaluated();
+
+  /**
+   * Creates the non-evaluated sentinel: its type is `NonEvaluated` (passing the enum value to the
+   * constructor would make it the integer 5)
+   */
+  private static createNonEvaluated(): ExpressionValue {
+    const value = new ExpressionValue();
+    value._type = ExpressionValueType.NonEvaluated;
+    return value;
+  }
 
   /**
    * Initializes a value expression
@@ -92,6 +108,9 @@ export class ExpressionValue implements IExpressionValue {
    */
   asLong(): number {
     switch (this.type) {
+      case ExpressionValueType.NonEvaluated:
+        // --- A placeholder until the fixup resolves it
+        return 0;
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
       case ExpressionValueType.Integer:
@@ -101,7 +120,7 @@ export class ExpressionValue implements IExpressionValue {
       case ExpressionValueType.String:
         const parsedValue = parseInt(this._value as string);
         if (isNaN(parsedValue)) {
-          throw new Error("Cannot convert string to an integer value.");
+          throw new ValueConversionError("Cannot convert string to an integer value.");
         } else {
           return parsedValue;
         }
@@ -115,6 +134,9 @@ export class ExpressionValue implements IExpressionValue {
    */
   asReal(): number {
     switch (this.type) {
+      case ExpressionValueType.NonEvaluated:
+        // --- A placeholder until the fixup resolves it
+        return 0;
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
       case ExpressionValueType.Integer:
@@ -123,7 +145,7 @@ export class ExpressionValue implements IExpressionValue {
       case ExpressionValueType.String:
         const parsedValue = parseFloat(this._value as string);
         if (isNaN(parsedValue)) {
-          throw new Error("Cannot convert string to a real value.");
+          throw new ValueConversionError("Cannot convert string to a real value.");
         } else {
           return parsedValue;
         }
@@ -137,6 +159,9 @@ export class ExpressionValue implements IExpressionValue {
    */
   asString(): string {
     switch (this.type) {
+      case ExpressionValueType.NonEvaluated:
+        // --- A placeholder until the fixup resolves it
+        return "";
       case ExpressionValueType.Bool:
         return this._value ? "true" : "false";
       case ExpressionValueType.Integer:
@@ -154,6 +179,9 @@ export class ExpressionValue implements IExpressionValue {
    */
   asBool(): boolean {
     switch (this.type) {
+      case ExpressionValueType.NonEvaluated:
+        // --- A placeholder until the fixup resolves it
+        return false;
       case ExpressionValueType.Bool:
       case ExpressionValueType.Integer:
       case ExpressionValueType.Real:
@@ -1634,165 +1662,25 @@ export function evalMacroTimeFunctionInvocationValue<
   switch (funcExpr.functionName.toLowerCase()) {
     case "def":
       return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType !== OperandType.NoneArg)
-      );
-    case "isreg8":
-      return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          (funcExpr.operand.operandType === OperandType.Reg8 ||
-            funcExpr.operand.operandType === OperandType.Reg8Spec ||
-            funcExpr.operand.operandType === OperandType.Reg8Idx)
-        )
-      );
-    case "iscport":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.CPort)
-      );
-    case "iscondition":
-      return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          (funcExpr.operand.operandType === OperandType.Condition ||
-            funcExpr.operand?.register === "c")
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType !== CommonOperandType.NoneArg)
       );
     case "isexpr":
       return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Expression)
+        !!(funcExpr.operand && funcExpr.operand.operandType === CommonOperandType.Expression)
       );
-    case "isindexedaddr":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.IndexedIndirect)
-      );
-    case "isreg16":
-      return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          (funcExpr.operand.operandType === OperandType.Reg16 ||
-            funcExpr.operand.operandType === OperandType.Reg16Spec ||
-            funcExpr.operand.operandType === OperandType.Reg16Idx)
-        )
-      );
-    case "isreg16idx":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16Idx)
-      );
-    case "isreg16std":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16)
-      );
-    case "isreg8idx":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8Idx)
-      );
-    case "isreg8spec":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8Spec)
-      );
-    case "isreg8std":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8)
-      );
-    case "isregindirect":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.RegIndirect)
-      );
-    case "isrega":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "a"));
-    case "isregb":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "b"));
-    case "isregc":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "c"));
-    case "isregd":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "d"));
-    case "isrege":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "e"));
-    case "isregh":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "h"));
-    case "isregl":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "l"));
-    case "isregi":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "i"));
-    case "isregr":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "r"));
-    case "isregbc":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "bc"));
-    case "isregde":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "de"));
-    case "isreghl":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "hl"));
-    case "isregsp":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "sp"));
-    case "isregxh":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("xh") >= 0)
-      );
-    case "isregxl":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("xl") >= 0)
-      );
-    case "isregyh":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("yh") >= 0)
-      );
-    case "isregyl":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("yl") >= 0)
-      );
-    case "isregix":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "ix"));
-    case "isregiy":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "iy"));
-    case "isregaf":
-      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "af"));
-    case "hreg": {
-      let op: string | undefined;
-      switch (funcExpr.operand.register) {
-        case "af":
-          op = "a";
-        case "bc":
-          op = "b";
-        case "de":
-          op = "d";
-        case "hl":
-          op = "h";
-        case "ix":
-          op = "xh";
-        case "iy":
-          op = "yh";
-      }
-      if (op) {
-        return new ExpressionValue(op);
-      }
-      break;
-    }
-    case "lreg": {
-      let op: string | undefined;
-      switch (funcExpr.operand.register) {
-        case "bc":
-          op = "c";
-        case "de":
-          op = "e";
-        case "hl":
-          op = "l";
-        case "ix":
-          op = "xl";
-        case "iy":
-          op = "yl";
-      }
-      if (op) {
-        return new ExpressionValue(op);
-      }
-      break;
-    }
+  }
+
+  // --- The CPU's own macro-time functions (`isreg8`, `isregix`, ... on the Z80)
+  const cpuValue = context.evalCpuMacroTimeFunction?.(funcExpr);
+  if (cpuValue) {
+    return cpuValue;
   }
   context.reportEvaluationError(
     context,
     "Z0606",
     funcExpr,
     null,
-    `Cannot evaluate ${funcExpr.functionName}(${funcExpr.operand.register})`
+    `Cannot evaluate ${funcExpr.functionName}(${funcExpr.operand?.register ?? ""})`
   );
   return null;
 }

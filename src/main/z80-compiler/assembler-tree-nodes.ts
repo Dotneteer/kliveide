@@ -1,13 +1,47 @@
 import {
   AssemblyLine,
+  CommonOperandType,
   Expression,
   Operand,
   PartialAssemblyLine,
   Node
 } from "@main/compiler-common/tree-nodes";
 import { Z80TokenType } from "./z80-token-stream";
+import { Z80MachinePragma } from "./z80-machine-tree-nodes";
 
-export type Z80Node = Node<Z80Instruction, Z80TokenType>;
+/**
+ * Every Z80-specific syntax node: the instructions and the target machines' pragmas
+ */
+export type Z80Node = Node<Z80Instruction | Z80MachinePragma<Z80Instruction, Z80TokenType>, Z80TokenType>;
+
+/**
+ * Classification of Z80 operands. `Expression` and `NoneArg` are the CPU-neutral core's kinds.
+ */
+export enum OperandType {
+  Reg8 = 0,
+  Reg8Spec = 1,
+  Reg8Idx = 2,
+  Reg16 = 3,
+  Reg16Spec = 4,
+  Reg16Idx = 5,
+  RegIndirect = 6,
+  IndexedIndirect = 7,
+  IndexedDirect = 8,
+  MemIndirect = 9,
+  CPort = 10,
+  Condition = 11,
+  Immediate = 12,
+  Expression = CommonOperandType.Expression,
+  NoneArg = CommonOperandType.NoneArg
+}
+
+/**
+ * A Z80 operand: `(ix+3)` keeps the sign of its displacement
+ */
+export interface Z80Operand extends Operand<Z80Instruction, Z80TokenType> {
+  operandType: OperandType;
+  offsetSign?: string;
+}
 
 export type Z80Instruction =
   | SimpleZ80Instruction
@@ -111,7 +145,7 @@ export interface MulInstruction extends Z80InstructionBase {
  */
 export interface DjnzInstruction extends Z80InstructionBase {
   type: "DjnzInstruction";
-  target: Operand<Z80Instruction, Z80TokenType>;
+  target: Z80Operand;
 }
 
 /**
@@ -119,7 +153,7 @@ export interface DjnzInstruction extends Z80InstructionBase {
  */
 export interface RstInstruction extends Z80InstructionBase {
   type: "RstInstruction";
-  target: Operand<Z80Instruction, Z80TokenType>;
+  target: Z80Operand;
 }
 
 /**
@@ -127,7 +161,7 @@ export interface RstInstruction extends Z80InstructionBase {
  */
 export interface ImInstruction extends Z80InstructionBase {
   type: "ImInstruction";
-  mode: Operand<Z80Instruction, Z80TokenType>;
+  mode: Z80Operand;
 }
 
 /**
@@ -156,14 +190,14 @@ export interface CallInstruction extends Z80InstructionWithOneOrTwoOperands {
  */
 export interface RetInstruction extends Z80InstructionBase {
   type: "RetInstruction";
-  condition?: Operand<Z80Instruction, Z80TokenType>;
+  condition?: Z80Operand;
 }
 
 /**
  * Represents a Z80 instruction with a single mandatory operand
  */
 export interface Z80InstructionWithOneOperand extends Z80InstructionBase {
-  operand: Operand<Z80Instruction, Z80TokenType>;
+  operand: Z80Operand;
 }
 
 /**
@@ -198,8 +232,8 @@ export interface PopInstruction extends Z80InstructionWithOneOperand {
  * Represents a Z80 instruction with two mandatory operands
  */
 export interface Z80InstructionWithTwoOperands extends Z80InstructionBase {
-  operand1: Operand<Z80Instruction, Z80TokenType>;
-  operand2: Operand<Z80Instruction, Z80TokenType>;
+  operand1: Z80Operand;
+  operand2: Z80Operand;
 }
 
 /**
@@ -248,8 +282,8 @@ export interface BitInstruction extends Z80InstructionWithTwoOperands {
  * Represents a Z80 instruction with one mandatory and an optional operand
  */
 export interface Z80InstructionWithOneOrTwoOperands extends Z80InstructionBase {
-  operand1: Operand<Z80Instruction, Z80TokenType>;
-  operand2?: Operand<Z80Instruction, Z80TokenType>;
+  operand1: Z80Operand;
+  operand2?: Z80Operand;
 }
 
 /**
@@ -361,9 +395,9 @@ export interface SrlInstruction extends Z80InstructionWithOneOrTwoOperands {
  * Represents a Z80 instruction with two mandatory and an optional operand
  */
 export interface Z80InstructionWithTwoOrThreeOperands extends Z80InstructionBase {
-  operand1: Operand<Z80Instruction, Z80TokenType>;
-  operand2: Operand<Z80Instruction, Z80TokenType>;
-  operand3?: Operand<Z80Instruction, Z80TokenType>;
+  operand1: Z80Operand;
+  operand2: Z80Operand;
+  operand3?: Z80Operand;
 }
 
 /**

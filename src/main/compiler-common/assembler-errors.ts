@@ -158,6 +158,7 @@ export type ErrorCodes =
   | "Z0412"
   | "Z0413"
   | "Z0414"
+  | "Z0415"
 
   // --- Labels and symbols
   | "Z0501"

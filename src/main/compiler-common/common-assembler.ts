@@ -11,7 +11,6 @@ import {
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
-  NexFileHandleMode,
   SourceFileItem
 } from "../compiler-common/assembler-in-out";
 import { AssemblyModule } from "../compiler-common/assembly-module";
@@ -25,11 +24,10 @@ import {
 import {
   ExpressionEvaluator,
   ExpressionValue,
-  setRandomSeed
+  setRandomSeed,
+  ValueConversionError
 } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
-import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
-import { dmaProgramWarnings, groupDmaPrograms } from "@common/zxnext/dma/dmaProgram";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
@@ -63,7 +61,6 @@ import {
   DefGxPragma,
   DefHPragma,
   DefMPragma,
-  DefZxPragma,
   DefNPragma,
   DefSPragma,
   DefWPragma,
@@ -90,43 +87,13 @@ import {
   ModuleStatement,
   NodePosition,
   OnSuccessPragma,
-  OperandType,
+  CommonOperandType,
+  Operand,
   OrgPragma,
   PartialAssemblyLine,
   Pragma,
   RepeatStatement,
   RndSeedPragma,
-  SaveNexBarPragma,
-  SaveNexBorderPragma,
-  SaveNexCopperPragma,
-  SaveNexCorePragma,
-  SaveNexEntryAddrPragma,
-  SaveNexEntryBankPragma,
-  SaveNexFileHandlePragma,
-  SaveNexFilePragma,
-  SaveNexPalettePragma,
-  SaveNexPreservePragma,
-  SaveNexRamPragma,
-  SaveNexScreenPragma,
-  SaveNexStackAddrPragma,
-  DmaResetPragma,
-  DmaLoadPragma,
-  DmaEnablePragma,
-  DmaDisablePragma,
-  DmaContinuePragma,
-  DmaCmdPragma,
-  DmaReadMaskPragma,
-  DmaWr0Pragma,
-  DmaWr1Pragma,
-  DmaWr2Pragma,
-  DmaWr3Pragma,
-  DmaWr4Pragma,
-  DmaWr5Pragma,
-  CopperWaitPragma,
-  CopperMovePragma,
-  CopperNopPragma,
-  CopperHaltPragma,
-  CopperWordPragma,
   SkipPragma,
   Statement,
   StructStatement,
@@ -141,17 +108,6 @@ import { readTextFile } from "@main/compiler-common/utils";
 import { CommonTokenType } from "./common-tokens";
 import { CommonTokenStream } from "./common-token-stream";
 import { CommonAsmParser } from "./common-asm-parser";
-import {
-  findModelTypeByName,
-  isHt1080zModelType,
-  isTvcModelType,
-  isEnterpriseModelType,
-  isZx8081ModelType,
-  SpectrumModelType
-} from "@main/z80-compiler/SpectrumModelTypes";
-import { zx8081CharCode } from "@common/zx8081/charset";
-import { ZX80_REM_BODY, ZX81_REM_BODY } from "@common/zx8081/programImage";
-import { convertSpectrumString } from "@main/z80-compiler/z80-utils";
 
 /**
  * The file name of a direct text compilation
@@ -179,7 +135,10 @@ export type ParsedSourceUnit<TInstruction extends TypedObject> = {
 };
 
 /**
- * This class provides the functionality of the Z80 Assembler
+ * The CPU-neutral assembler: the preprocessor, symbols, modules, macros, structures, loops,
+ * conditionals, pragmas, fixups, segments, the list file and the source map. A CPU subclass supplies
+ * the tokens, the parser of its instructions and operands, the instruction encoder and the target
+ * machines' rules through the hooks below (`dev/plans/ASSEMBLER_CPU_NEUTRAL_PLAN.md`, §3).
  */
 export abstract class CommonAssembler<
   TInstruction extends TypedObject,
@@ -279,10 +238,127 @@ export abstract class CommonAssembler<
   protected abstract getModelNameById(modelId: number): string;
 
   /**
-   * Checks if the specified model ID supports the .bank pragma.
-   * @param modelId The model ID to check
+   * Tells if a model supports the `.bank` pragma: null if it does, else the error to report. The
+   * default: no model has memory banks.
+   * @param _modelId The model ID to check
    */
-  protected abstract modelSupportsBankPragma(modelId: number): ErrorCodes | null;
+  protected modelSupportsBankPragma(_modelId: number): ErrorCodes | null {
+    return "Z0308";
+  }
+
+  /**
+   * Gets the model ID of a `.model` name, or undefined when the CPU's machines have no such model
+   * @param modelName The name in the `.model` pragma
+   */
+  protected abstract getModelIdByName(modelName: string): number | undefined;
+
+  /**
+   * Where code with no `.org` goes on the current model (`.model` or the options' `currentModel`).
+   * `AssemblerOptions.defaultStartAddress`, when set, overrides it.
+   */
+  protected abstract getDefaultStartAddress(): number;
+
+  /**
+   * Converts the text of a string expression into the bytes `.defm`, `.defn`, `.defc`, `.defb` and
+   * `.tracehex` emit (one character code per byte). The default keeps the text as it is.
+   * @param text The string's text
+   */
+  protected convertStringToBytes(text: string): string {
+    return text;
+  }
+
+  /**
+   * Called when a compilation starts, so the CPU and machine layers can reset their own state
+   */
+  protected resetCpuCompilationState(): void {}
+
+  /**
+   * Called when a `.model` pragma selected a model
+   * @param _modelId The selected model's ID
+   */
+  protected onModelSelected(_modelId: number): void {}
+
+  /**
+   * Called when a new code segment starts (no `.org`, `.org` or a new segment for `.org`)
+   * @param _segment The segment
+   */
+  protected onSegmentStarted(_segment: BinarySegment): void {}
+
+  /**
+   * Called before every byte the assembler emits, so a machine can warn about the address
+   * (for example, code where it cannot run). The current segment exists.
+   */
+  protected checkEmitAddress(): void {}
+
+  /**
+   * Processes a pragma the CPU-neutral core does not know (one parsed by the CPU parser's
+   * `parseCpuPragma`). The default reports nothing: the parser already refused unknown pragmas.
+   * @param _pragma The pragma line
+   * @param _label The line's label, if any
+   * @param _emitAction When set, the pragma emits its bytes through it (structure fields)
+   */
+  protected applyCpuPragma(
+    _pragma: AssemblyLine<TInstruction>,
+    _label: string | null,
+    _emitAction?: (b: number) => void
+  ): void {}
+
+  /**
+   * Tells if a CPU (or machine) pragma line emits bytes, and so can be a structure field
+   * @param _asmLine The pragma line
+   */
+  protected isCpuByteEmittingPragma(_asmLine: AssemblyLine<TInstruction>): boolean {
+    return false;
+  }
+
+  /**
+   * Resolves a fixup type the core does not know (the CPU's, like a relative jump, or a machine's).
+   * The default resolves none.
+   * @param _fixup The fixup
+   * @param _value The evaluated value of its expression
+   * @returns True if the fixup is resolved without error
+   */
+  protected resolveCpuFixup(_fixup: FixupEntry<TInstruction, TToken>, _value: IExpressionValue): boolean {
+    return false;
+  }
+
+  /**
+   * Converts a macro argument that is a CPU operand (a register, an indirect address, ...) into the
+   * value the macro body sees. The core converts expressions and missing arguments itself.
+   * @param _operand The operand
+   * @returns The argument value; `null` when its expression has an error (already reported);
+   * `undefined` when the operand is not an argument (the argument is then empty)
+   */
+  protected operandToMacroArgument(_operand: Operand<TInstruction, TToken>): IExpressionValue | null | undefined {
+    return undefined;
+  }
+
+  /**
+   * Called after the code is emitted and the fixups are resolved, before the output is returned
+   * @param emitSuccess Whether the code emission and the fixups succeeded
+   * @returns Whether the assembly succeeded (a machine's final checks may fail it)
+   */
+  protected completeAssembly(emitSuccess: boolean): boolean {
+    return emitSuccess;
+  }
+
+  /**
+   * Processes the `.bank` pragma. Memory banks belong to the target machine; the core knows none.
+   * @param pragma Pragma to process
+   * @param _label Label information
+   */
+  processBankPragma(pragma: BankPragma<TInstruction, TToken>, _label: string | null): void {
+    this.reportAssemblyError(this.modelSupportsBankPragma(this._output.modelType) ?? "Z0308", pragma);
+  }
+
+  /**
+   * Processes the `.page` pragma. Memory pages belong to the target machine; the core knows none.
+   * @param pragma Pragma to process
+   * @param _label Label information
+   */
+  processPagePragma(pragma: PagePragma<TInstruction, TToken>, _label: string | null): void {
+    this.reportAssemblyError("Z0333", pragma);
+  }
 
   /**
    * The condition symbols
@@ -299,23 +375,8 @@ export abstract class CommonAssembler<
    */
   compareBins: BinaryComparisonInfo<TInstruction, TToken>[] = [];
 
-  // --- True once a `.savenex border` pragma set the border, so the Next auto-mode default does not override it
-  private _nexBorderSetExplicitly = false;
-
   // --- The `.model` pragmas met while parsing, in source order
   private _modelPragmas: ModelPragma<TInstruction>[] = [];
-
-  /**
-   * Every `.copper` word emitted, in emission order; `collectCopperBlocks` turns them into the
-   * output's `copperBlocks` once the fixups have patched the words
-   */
-  private _copperEmissions: CopperEmission<TInstruction>[] = [];
-
-  /**
-   * Every `.dma` line's bytes, in emission order; `checkDmaPrograms` groups them into programs and
-   * reports their warnings once the fixups have patched the bytes (NEXT_DMA_DEBUGGING_PLAN §10)
-   */
-  private _dmaEmissions: DmaEmission<TInstruction>[] = [];
 
   /**
    * Store the handler of trace messages
@@ -323,9 +384,9 @@ export abstract class CommonAssembler<
   private _traceHandler: (message: string) => void;
 
   /**
-   * Compiles the Z80 Assembly code in the specified file into Z80
+   * Compiles the assembly code in the specified file into
    * binary code.
-   * @param filename Z80 assembly source file (absolute path)
+   * @param filename Assembly source file (absolute path)
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
@@ -338,9 +399,9 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * Compiles he passed Z80 Assembly code into Z80 binary code.
+   * Compiles the passed assembly code into binary code.
    * binary code.
-   * @param sourceText Z80 assembly source code text
+   * @param sourceText Assembly source code text
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
@@ -376,9 +437,9 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * Compiles the passed Z80 Assembly code into Z80 binary code.
+   * Compiles the passed assembly code into binary code.
    * @param sourceItem Represents the source file item to add to the output
-   * @param sourceText Z80 assembly source code text
+   * @param sourceText Assembly source code text
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
@@ -398,7 +459,7 @@ export abstract class CommonAssembler<
    * caller may cache the unit and reuse it across builds, as long as the text and the options that
    * affect preprocessing (`predefinedSymbols`, `currentModel`, case sensitivity) are unchanged.
    * @param filename The (possibly virtual) file name the unit's lines and errors refer to
-   * @param sourceText Z80 assembly source code text
+   * @param sourceText Assembly source code text
    * @param options Compiler options used for preprocessing
    */
   async parseSourceUnit(
@@ -471,9 +532,19 @@ export abstract class CommonAssembler<
     );
     this.compareBins = [];
     this._modelPragmas = [];
-    this._nexBorderSetExplicitly = false;
-    this._copperEmissions = [];
-    this._dmaEmissions = [];
+
+    // --- The emission state of a previous compilation on this instance
+    this._currentSegment = null;
+    this._currentStructInvocation = null;
+    this._currentStructLine = null;
+    this._currentStructBytes = null;
+    this._isInStructCloning = false;
+    this._overflowLabelLine = null;
+    this._procNames = [];
+    this._lastGlobalLabel = undefined;
+    this._macroInvocations = [];
+    this._macroDefiningModuleStack = [];
+    this.resetCpuCompilationState();
 
     // --- Prepare pre-defined symbols
     this.conditionSymbols = Object.assign({}, this._options.predefinedSymbols);
@@ -495,32 +566,18 @@ export abstract class CommonAssembler<
   private async assembleParsedLines(
     parsedLines: AssemblyLine<TInstruction>[]
   ): Promise<AssemblerOutput<TInstruction, TToken>> {
-    let emitSuccess = false;
     this.preprocessedLines = parsedLines;
 
-    // --- Set up unbanked code defaults if using Next auto mode
-    if (this._output.isNextAutoMode) {
-      this.setupNextUnbankedCodeDefaults();
-    }
-
-    emitSuccess = await this.emitCode(this.preprocessedLines);
+    let emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
       emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
     }
-    if (emitSuccess) {
-      emitSuccess = this.collectCopperBlocks();
-    }
-    if (emitSuccess) {
-      this.checkDmaPrograms();
-    }
+
+    // --- The CPU's and machine's final steps (they may fail the assembly)
+    emitSuccess = this.completeAssembly(emitSuccess);
     if (!emitSuccess) {
       // --- If failed, clear output segments
       this._output.segments.length = 0;
-    }
-
-    // --- Next auto-mode defaults for whatever the source did not set (`.ent` is resolved by now)
-    if (this._output.isNextAutoMode) {
-      this.applyNextAutoModeFinalDefaults();
     }
 
     // --- Done
@@ -721,10 +778,7 @@ export abstract class CommonAssembler<
       if (scope.fixups.length === 0) {
         continue;
       }
-      if (await this.fixupSymbols(scope, false)) {
-        // --- Local scope successfully resolved
-        break;
-      }
+      await this.fixupSymbols(scope, false);
     }
     return await this.fixupSymbols(this._currentModule, true);
   }
@@ -780,8 +834,7 @@ export abstract class CommonAssembler<
       // --- Read the binary file
       const currentSourceFile =
         this._output.sourceFileList[(pragma as unknown as AssemblyLine<TInstruction>).fileIndex];
-      const dirname = path.dirname(currentSourceFile.filename) ?? "";
-      const filename = path.join(dirname, fileNameValue.asString());
+      const filename = resolveSourcePath(currentSourceFile.filename, fileNameValue.asString());
 
       let contents: Buffer;
       try {
@@ -880,8 +933,8 @@ export abstract class CommonAssembler<
     }
 
     let filename = lineDir.filename.trim();
-    if (sourceItem.filename !== NO_FILE_ITEM && !path.isAbsolute(filename)) {
-      filename = path.join(path.dirname(sourceItem.filename) ?? "", filename);
+    if (sourceItem.filename !== NO_FILE_ITEM) {
+      filename = resolveSourcePath(sourceItem.filename, filename);
     }
     const fileItem = new SourceFileItem(filename);
     const fileList = this._output.sourceFileList;
@@ -907,9 +960,8 @@ export abstract class CommonAssembler<
 
     // --- Now, we have the file name, calculate the path
     if (sourceItem.filename !== NO_FILE_ITEM) {
-      // --- The file name is taken into account as relative
-      const dirname = path.dirname(sourceItem.filename) ?? "";
-      filename = path.join(dirname, filename).replace(/\\/g, "/");
+      // --- A relative file name is relative to the including file
+      filename = resolveSourcePath(sourceItem.filename, filename).replace(/\\/g, "/");
     }
 
     // --- Check for file existence
@@ -1033,172 +1085,13 @@ export abstract class CommonAssembler<
       return;
     }
 
-    const modelType = findModelTypeByName(pragma.modelId);
-    if (!modelType) {
+    const modelType = this.getModelIdByName(pragma.modelId);
+    if (modelType === undefined) {
       this.reportAssemblyError("Z0303", pragma, null, pragma.modelId);
       return;
     }
     this._output.modelType = modelType;
-    
-    // Apply Next-specific defaults if using .model next
-    if (modelType === 4) { // SpectrumModelType.Next
-      this.applyNextDefaults();
-    }
-  }
-
-  /**
-   * Applies automatic defaults for ZX Spectrum Next model.
-   *
-   * Only switches automatic Next mode on. The border and entry address defaults are applied by
-   * `applyNextAutoModeFinalDefaults` once the whole source has been assembled: filling them in here
-   * (when `.model Next` is seen) made them indistinguishable from explicit values - `.ent` could never
-   * set the NEX entry point, and a `.savenex border 0` could only survive by the accident that `.model`
-   * is processed before the pragmas.
-   */
-  private applyNextDefaults(): void {
-    // Mark that we're in automatic Next mode (for unbanked code handling)
-    this._output.isNextAutoMode = true;
-  }
-
-  /**
-   * Fills the Next auto-mode `.savenex` defaults that no source line set, after all fixups are resolved:
-   * - border: 7, unless `.savenex border` gave a value (0 included);
-   * - entry address: `.savenex entryaddr` > `.ent` > $8000.
-   */
-  private applyNextAutoModeFinalDefaults(): void {
-    const nexConfig = this._output.nexConfig;
-    if (!this._nexBorderSetExplicitly) {
-      nexConfig.borderColor = 7;
-    }
-    if (nexConfig.entryAddr === undefined) {
-      nexConfig.entryAddr = this._output.entryAddress ?? 0x8000;
-    }
-  }
-
-  /**
-   * Sets up automatic .org $8000 for unbanked Next code
-   * Called during initial assembly setup if conditions are met
-   */
-  protected setupNextUnbankedCodeDefaults(): void {
-    if (!this._output.isNextAutoMode) {
-      return; // Not in auto mode
-    }
-    
-    // Create initial segment for unbanked code
-    // It starts at $8000 by default, but can be overridden with .org
-    this.ensureCodeSegment(0x8000);
-    
-    // Mark this initial segment as unbanked and track it
-    if (!this._output.unbankedSegments) {
-      this._output.unbankedSegments = [];
-    }
-    this._output.unbankedSegments.push(this._currentSegment);
-  }
-
-  /**
-   * Checks if current unbanked code exceeds typical bank 2 range
-   * Emits a warning if address exceeds $bfff
-   */
-  /**
-   * On a ZX80/ZX81, an instruction fetched at $8000 or above executes as a NOP (the ULA's display
-   * trick), so code there cannot run. Warned once per segment: data may legitimately live there.
-   */
-  protected checkZx8081CodeRange(): void {
-    const model = this._output.modelType ?? this._options.currentModel;
-    if (!isZx8081ModelType(model) || !this._currentSegment) return;
-    const currentAddress = this.getCurrentAssemblyAddress();
-    if (currentAddress > 0x7fff && !(this._currentSegment as any).zx8081RangeWarned) {
-      this.reportAssemblyWarning(
-        "Z0378",
-        this._currentSourceLine,
-        null,
-        currentAddress.toString(16).toUpperCase()
-      );
-      (this._currentSegment as any).zx8081RangeWarned = true;
-    }
-  }
-
-  /**
-   * On the HT-1080Z, code below $3C00 is in the ROM or the keyboard area and cannot be loaded, and code
-   * in $3C00-$42E8 is overwritten by BASIC's screen and the ROM's work area
-   * (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D2). Warned once per segment and area: injection and
-   * export refuse the first, and the second can be deliberate (a picture in video RAM).
-   */
-  protected checkHt1080zCodeRange(): void {
-    const model = this._output.modelType ?? this._options.currentModel;
-    if (!isHt1080zModelType(model) || !this._currentSegment) return;
-    const address = this.getCurrentAssemblyAddress();
-    const segment = this._currentSegment as any;
-    const hex = address.toString(16).toUpperCase().padStart(4, "0");
-    if (address < 0x3c00) {
-      if (!segment.ht1080zRomWarned) this.reportAssemblyWarning("Z0382", this._currentSourceLine, null, hex);
-      segment.ht1080zRomWarned = true;
-    } else if (address < 0x42e9) {
-      if (!segment.ht1080zWorkWarned) this.reportAssemblyWarning("Z0383", this._currentSourceLine, null, hex);
-      segment.ht1080zWorkWarned = true;
-    }
-  }
-
-  /**
-   * On the TVC, code below $1A30 is in BASIC's and the ROM's work area or the launcher line, and code
-   * above $BBFF leaves BASIC no room or reaches the ROM (`common/tvc/codePlacement.ts`). Warned once
-   * per segment and area; Run and Export refuse both.
-   */
-  protected checkTvcCodeRange(): void {
-    const model = this._output.modelType ?? this._options.currentModel;
-    if (!isTvcModelType(model) || !this._currentSegment) return;
-    const address = this.getCurrentAssemblyAddress();
-    const segment = this._currentSegment as any;
-    const hex = address.toString(16).toUpperCase().padStart(4, "0");
-    if (address < 0x1a30) {
-      if (!segment.tvcLowWarned) this.reportAssemblyWarning("Z0384", this._currentSourceLine, null, hex);
-      segment.tvcLowWarned = true;
-    } else if (address > 0xbbff) {
-      if (!segment.tvcHighWarned) this.reportAssemblyWarning("Z0385", this._currentSourceLine, null, hex);
-      segment.tvcHighWarned = true;
-    }
-  }
-
-  /**
-   * On the Enterprise, a program is an EXOS `$$APP` loaded at $0100 (`common/enterprise/codePlacement.ts`):
-   * below $0100 is EXOS's page-zero area, and from $C000 page 3 holds EXOS's system segment. Warned
-   * once per segment and area; Run and Export refuse both.
-   */
-  protected checkEnterpriseCodeRange(): void {
-    const model = this._output.modelType ?? this._options.currentModel;
-    if (!isEnterpriseModelType(model) || !this._currentSegment) return;
-    const address = this.getCurrentAssemblyAddress();
-    const segment = this._currentSegment as any;
-    const hex = address.toString(16).toUpperCase().padStart(4, "0");
-    if (address < 0x0100) {
-      if (!segment.epLowWarned) this.reportAssemblyWarning("Z0386", this._currentSourceLine, null, hex);
-      segment.epLowWarned = true;
-    } else if (address > 0xbfff) {
-      if (!segment.epHighWarned) this.reportAssemblyWarning("Z0387", this._currentSourceLine, null, hex);
-      segment.epHighWarned = true;
-    }
-  }
-
-  protected checkUnbankedCodeRange(): void {
-    // Only check if in Next auto mode and current segment is unbanked
-    if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
-      return; // Not in auto mode, or segment is explicitly banked
-    }
-    
-    const currentAddress = this.getCurrentAssemblyAddress();
-    if (currentAddress > 0xbfff) {
-      // Mark segment as warned so we don't repeat the warning
-      if (!(this._currentSegment as any).rangeWarned) {
-        // Report as warning, not error - code can exceed $bfff
-        this.reportAssemblyWarning(
-          "Z0370",
-          this._currentSourceLine,
-          null,
-          currentAddress.toString(16).toUpperCase()
-        );
-        (this._currentSegment as any).rangeWarned = true;
-      }
-    }
+    this.onModelSelected(modelType);
   }
 
   // ==========================================================================
@@ -1406,30 +1299,6 @@ export abstract class CommonAssembler<
   // Code emission methods
 
   /**
-   * Where code with no `.org` goes: $8000, except on the ZX80/ZX81, where nothing executes there and
-   * code lives in the `1 REM` line (`dev/ai/zx8081.md`, "Machine code decisions", D3)
-   */
-  private modelDefaultStartAddress(): number {
-    switch (this._output.modelType ?? this._options?.currentModel) {
-      case SpectrumModelType.ZX81:
-        return ZX81_REM_BODY;
-      case SpectrumModelType.ZX80:
-        return ZX80_REM_BODY;
-      // --- Free RAM on every HT-1080Z model, above BASIC (`dev/plans/HT1080Z_CODE_INJECTION_PLAN.md` D8)
-      case SpectrumModelType.HT1080Z:
-        return 0x7000;
-      // --- After the BASIC launcher line, where TVC machine code is loaded (`common/tvc/codePlacement.ts`)
-      case SpectrumModelType.TVC:
-        return 0x1a30;
-      // --- Where EXOS loads a `$$APP` program (`common/enterprise/codePlacement.ts`)
-      case SpectrumModelType.Enterprise:
-        return 0x0100;
-      default:
-        return 0x8000;
-    }
-  }
-
-  /**
    * Ensures that there is a code segment into which to emit the code
    * @param defaultAddress Default start address of the segment
    * @param maxLength Maximum segment length
@@ -1441,20 +1310,13 @@ export abstract class CommonAssembler<
     const segment = new BinarySegment();
     segment.startAddress =
       (defaultAddress === undefined
-        ? this._options?.defaultStartAddress ?? this.modelDefaultStartAddress()
+        ? this._options?.defaultStartAddress ?? this.getDefaultStartAddress()
         : defaultAddress) & 0xffff;
     segment.currentInstructionOffset = 0;
     segment.maxCodeLength = maxLength & 0xffff;
     this._output.segments.push(segment);
     this._currentSegment = segment;
-    
-    // --- Track as unbanked segment if we're in Next auto mode and segment has no bank
-    if (this._output.isNextAutoMode && segment.bank === undefined) {
-      if (!this._output.unbankedSegments) {
-        this._output.unbankedSegments = [];
-      }
-      this._output.unbankedSegments.push(segment);
-    }
+    this.onSegmentStarted(segment);
   }
 
   /**
@@ -1494,13 +1356,13 @@ export abstract class CommonAssembler<
      */
     const found = annotationsInComment(asmLine.comment);
     if (found.length === 0) {
-      await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
+      await this.emitLineReportingConversions(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
       return;
     }
     const segmentBefore = this._currentSegment;
     const lengthBefore = segmentBefore?.emittedCode.length ?? 0;
-    const addressBefore = this.locationCounter();
-    await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
+    const addressBefore = this.getCurrentAssemblyAddress();
+    await this.emitLineReportingConversions(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
     const emitted =
       this._currentSegment === segmentBefore &&
       (this._currentSegment?.emittedCode.length ?? 0) > lengthBefore;
@@ -1519,7 +1381,7 @@ export abstract class CommonAssembler<
         kind,
         fileIndex: asmLine.fileIndex,
         line: asmLine.line,
-        address: (emitted ? addressBefore : this.locationCounter()) & 0xffff,
+        address: (emitted ? addressBefore : this.getCurrentAssemblyAddress()) & 0xffff,
         segmentIndex: this._output.segments.length - 1,
         text,
         ...(invokedAt ? { invokedAt } : {})
@@ -1528,13 +1390,24 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * The address the next emitted byte goes to. Not `getCurrentAddress()`, which is "$" - the start
-   * of the instruction being assembled - and between two lines still names the previous one.
+   * `emitSingleLineCore`, reporting a string used as a number (`.org "a"`, `jr "a"`) as Z0601 on the
+   * line instead of letting the conversion's exception end the compilation
    */
-  private locationCounter(): number {
-    this.ensureCodeSegment();
-    const segment = this._currentSegment;
-    return (segment.startAddress + (segment.displacement ?? 0) + segment.emittedCode.length) & 0xffff;
+  private async emitLineReportingConversions(
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
+    asmLine: AssemblyLine<TInstruction>,
+    currentLineIndex: { index: number },
+    fromMacroEmit: boolean
+  ): Promise<void> {
+    try {
+      await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
+    } catch (err) {
+      if (!(err instanceof ValueConversionError)) {
+        throw err;
+      }
+      this.reportAssemblyError("Z0601", asmLine);
+    }
   }
 
   /** `emitSingleLine` without the source-annotation scan. */
@@ -1607,7 +1480,7 @@ export abstract class CommonAssembler<
           if (
             !(
               this._isInStructCloning ||
-              (isByteEmittingPragma(asmLine) && this._currentStructInvocation)
+              (this.isByteEmittingPragma(asmLine) && this._currentStructInvocation)
             )
           ) {
             await this.createCurrentPointLabel(this._overflowLabelLine);
@@ -1627,7 +1500,7 @@ export abstract class CommonAssembler<
           !(
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
-            (isFieldAssignment && isByteEmittingPragma(asmLine) && this._currentStructInvocation)
+            (isFieldAssignment && this.isByteEmittingPragma(asmLine) && this._currentStructInvocation)
           )
         ) {
           if (!currentLabel.startsWith("`") && this._currentModule.localScopes.length > 0) {
@@ -1979,8 +1852,8 @@ export abstract class CommonAssembler<
     pragmaLine: Pragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
-    // --- A `.dma` line: where its bytes start, recorded after the switch
-    const dmaStart = (pragmaLine.type as string).startsWith("Dma") ? this.dmaEmissionStart() : undefined;
+    // --- Inside a structure invocation, the byte-emitting pragmas emit into the structure's bytes
+    const structEmit = this._currentStructInvocation ? (b: number) => this.emitStructByte(b) : undefined;
     switch (pragmaLine.type) {
       case "OrgPragma":
         await this.processOrgPragma(pragmaLine, label);
@@ -1988,7 +1861,6 @@ export abstract class CommonAssembler<
       case "BankPragma":
         this.processBankPragma(pragmaLine, label);
         break;
-
       case "PagePragma":
         this.processPagePragma(pragmaLine, label);
         break;
@@ -2014,62 +1886,27 @@ export abstract class CommonAssembler<
         this.processSkipPragma(pragmaLine);
         break;
       case "DefBPragma":
-        if (this._currentStructInvocation) {
-          this.processDefBPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefBPragma(pragmaLine);
-        }
+        this.processDefBPragma(pragmaLine, structEmit);
         break;
       case "DefWPragma":
-        if (this._currentStructInvocation) {
-          this.processDefWPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefWPragma(pragmaLine);
-        }
+        this.processDefWPragma(pragmaLine, structEmit);
         break;
       case "DefMPragma":
       case "DefNPragma":
       case "DefCPragma":
-        if (this._currentStructInvocation) {
-          this.processDefMNCPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefMNCPragma(pragmaLine);
-        }
-        break;
-      case "DefZxPragma":
-        if (this._currentStructInvocation) {
-          this.processDefZxPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefZxPragma(pragmaLine);
-        }
+        this.processDefMNCPragma(pragmaLine, structEmit);
         break;
       case "DefHPragma":
-        if (this._currentStructInvocation) {
-          this.processDefHPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefHPragma(pragmaLine);
-        }
+        this.processDefHPragma(pragmaLine, structEmit);
         break;
       case "DefSPragma":
-        if (this._currentStructInvocation) {
-          this.processDefSPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefSPragma(pragmaLine);
-        }
+        this.processDefSPragma(pragmaLine, structEmit);
         break;
       case "FillbPragma":
-        if (this._currentStructInvocation) {
-          this.processFillbPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processFillbPragma(pragmaLine);
-        }
+        this.processFillbPragma(pragmaLine, structEmit);
         break;
       case "FillwPragma":
-        if (this._currentStructInvocation) {
-          this.processFillwPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processFillwPragma(pragmaLine);
-        }
+        this.processFillwPragma(pragmaLine, structEmit);
         break;
       case "AlignPragma":
         this.processAlignPragma(pragmaLine);
@@ -2093,187 +1930,42 @@ export abstract class CommonAssembler<
         this.processInjectOptPragma(pragmaLine);
         break;
       case "DefGPragma":
-        if (this._currentStructInvocation) {
-          this.processDefGPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefGPragma(pragmaLine);
-        }
+        this.processDefGPragma(pragmaLine, structEmit);
         break;
       case "DefGxPragma":
-        if (this._currentStructInvocation) {
-          this.processDefGXPragma(pragmaLine, this.emitStructByte);
-        } else {
-          this.processDefGXPragma(pragmaLine);
-        }
+        this.processDefGXPragma(pragmaLine, structEmit);
         break;
       case "OnSuccessPragma":
         this.processOnSuccessPragma(pragmaLine);
         break;
-      case "SaveNexFilePragma":
-        this.processSaveNexFile(pragmaLine);
-        break;
-      case "SaveNexRamPragma":
-        this.processSaveNexRam(pragmaLine);
-        break;
-      case "SaveNexBorderPragma":
-        this.processSaveNexBorder(pragmaLine);
-        break;
-      case "SaveNexCorePragma":
-        this.processSaveNexCore(pragmaLine);
-        break;
-      case "SaveNexStackAddrPragma":
-        this.processSaveNexStackAddr(pragmaLine);
-        break;
-      case "SaveNexEntryAddrPragma":
-        this.processSaveNexEntryAddr(pragmaLine);
-        break;
-      case "SaveNexEntryBankPragma":
-        this.processSaveNexEntryBank(pragmaLine);
-        break;
-      case "SaveNexFileHandlePragma":
-        this.processSaveNexFileHandle(pragmaLine);
-        break;
-      case "SaveNexPreservePragma":
-        this.processSaveNexPreserve(pragmaLine);
-        break;
-      case "SaveNexScreenPragma":
-        this.processSaveNexScreen(pragmaLine);
-        break;
-      case "SaveNexPalettePragma":
-        this.processSaveNexPalette(pragmaLine);
-        break;
-      case "SaveNexCopperPragma":
-        this.processSaveNexCopper(pragmaLine);
-        break;
-      case "SaveNexBarPragma":
-        this.processSaveNexBar(pragmaLine);
-        break;
-
-      // --- DMA pragma cases (each line's bytes are recorded for `checkDmaPrograms`)
-      case "DmaResetPragma":
-        this.processDmaSimpleCommand(pragmaLine, 0xc3);
-        break;
-      case "DmaLoadPragma":
-        this.processDmaSimpleCommand(pragmaLine, 0xcf);
-        break;
-      case "DmaEnablePragma":
-        this.processDmaSimpleCommand(pragmaLine, 0x87);
-        break;
-      case "DmaDisablePragma":
-        this.processDmaSimpleCommand(pragmaLine, 0x83);
-        break;
-      case "DmaContinuePragma":
-        this.processDmaSimpleCommand(pragmaLine, 0xd3);
-        break;
-      case "DmaCmdPragma":
-        this.processDmaCmdPragma(pragmaLine);
-        break;
-      case "DmaReadMaskPragma":
-        this.processDmaReadMaskPragma(pragmaLine);
-        break;
-      case "DmaWr0Pragma":
-        this.processDmaWr0Pragma(pragmaLine);
-        break;
-      case "DmaWr1Pragma":
-        this.processDmaWr1Pragma(pragmaLine);
-        break;
-      case "DmaWr2Pragma":
-        this.processDmaWr2Pragma(pragmaLine);
-        break;
-      case "DmaWr3Pragma":
-        this.processDmaWr3Pragma(pragmaLine);
-        break;
-      case "DmaWr4Pragma":
-        this.processDmaWr4Pragma(pragmaLine);
-        break;
-      case "DmaWr5Pragma":
-        this.processDmaWr5Pragma(pragmaLine);
-        break;
-
-      // --- Copper pragma cases
-      case "CopperWaitPragma":
-        this.processCopperWaitPragma(pragmaLine);
-        break;
-      case "CopperMovePragma":
-        this.processCopperMovePragma(pragmaLine);
-        break;
-      case "CopperNopPragma":
-        this.processCopperFixedWord(pragmaLine, 0x0000);
-        break;
-      case "CopperHaltPragma":
-        this.processCopperFixedWord(pragmaLine, 0xffff);
-        break;
-      case "CopperWordPragma":
-        this.processCopperWordPragma(pragmaLine);
+      default:
+        // --- A pragma of the CPU or of its target machines
+        this.applyCpuPragma(pragmaLine as unknown as AssemblyLine<TInstruction>, label, structEmit);
         break;
     }
-    if (dmaStart) this.recordDmaEmission(pragmaLine, dmaStart);
-  }
-
-  /** The segment and offset the next byte goes to, for a `.dma` line's record */
-  private dmaEmissionStart(): { segmentIndex: number; offset: number; segment: BinarySegment } {
-    this.ensureCodeSegment();
-    return {
-      segmentIndex: this._output.segments.length - 1,
-      offset: this._currentSegment.currentOffset,
-      segment: this._currentSegment
-    };
-  }
-
-  /** Records the bytes a `.dma` line emitted (none when the model is not the Next) */
-  private recordDmaEmission(
-    pragma: Pragma<TInstruction, TToken>,
-    start: { segmentIndex: number; offset: number; segment: BinarySegment }
-  ): void {
-    if (this._currentSegment !== start.segment) return;
-    const length = this._currentSegment.currentOffset - start.offset;
-    if (length <= 0) return;
-    this._dmaEmissions.push({
-      segmentIndex: start.segmentIndex,
-      offset: start.offset,
-      length,
-      sourceLine: pragma as unknown as AssemblyLine<TInstruction>
-    });
   }
 
   /**
-   * Groups the `.dma` lines into programs and reports their warnings (NEXT_DMA_DEBUGGING_PLAN §10.2):
-   * after the fixups, so symbolic values are in. Warnings only; it never fails a build.
+   * Tests if the specified line is a byte-emitting pragma (one that can be a structure field)
+   * @param asmLine Assembly line to test
    */
-  private checkDmaPrograms(): void {
-    this._output.dmaPrograms.length = 0;
-    let run: DmaEmission<TInstruction>[] = [];
-    const flush = () => {
-      if (run.length === 0) return;
-      const code = this._output.segments[run[0].segmentIndex]?.emittedCode;
-      if (code) {
-        const lines = run.map((e, index) => ({ key: index, offset: e.offset, length: e.length }));
-        for (const program of groupDmaPrograms(code, lines)) {
-          this._output.dmaPrograms.push({
-            address: (this._output.segments[run[0].segmentIndex].startAddress + program.start) & 0xffff,
-            bytes: Array.from(code.slice(program.start, program.end)),
-            lines: program.lines.map((l) => ({
-              fileIndex: run[l.key].sourceLine.fileIndex,
-              line: run[l.key].sourceLine.line,
-              offset: l.offset - program.start,
-              length: l.length
-            }))
-          });
-          for (const w of dmaProgramWarnings(program)) {
-            const args = w.ownerKey !== undefined ? [...w.args, run[w.ownerKey].sourceLine.line] : w.args;
-            this.reportAssemblyWarning(w.code, run[w.key].sourceLine, null, ...args);
-          }
-        }
-      }
-      run = [];
-    };
-    for (const emission of this._dmaEmissions) {
-      if (run.length > 0 && (run[0].segmentIndex !== emission.segmentIndex || emission.offset < run[run.length - 1].offset)) {
-        flush();
-      }
-      run.push(emission);
+  private isByteEmittingPragma(asmLine: AssemblyLine<TInstruction>): boolean {
+    switch (asmLine.type) {
+      case "DefBPragma":
+      case "DefWPragma":
+      case "DefCPragma":
+      case "DefMPragma":
+      case "DefNPragma":
+      case "DefHPragma":
+      case "DefSPragma":
+      case "FillbPragma":
+      case "FillwPragma":
+      case "DefGPragma":
+      case "DefGxPragma":
+        return true;
+      default:
+        return asmLine.type.endsWith("Pragma") && this.isCpuByteEmittingPragma(asmLine);
     }
-    flush();
   }
 
   /**
@@ -2306,28 +1998,10 @@ export abstract class CommonAssembler<
       segment.maxCodeLength = 0x10000 - value.value;
       this._output.segments.push(segment);
       this._currentSegment = segment;
-      
-      // --- Track as unbanked segment if we're in Next auto mode
-      if (this._output.isNextAutoMode && segment.bank === undefined) {
-        if (!this._output.unbankedSegments) {
-          this._output.unbankedSegments = [];
-        }
-        this._output.unbankedSegments.push(segment);
-      }
     } else {
       this._currentSegment.startAddress = value.value;
-      
-      // --- If current segment is unbanked and we're in Next auto mode,
-      // --- make sure it's tracked
-      if (this._output.isNextAutoMode && this._currentSegment.bank === undefined) {
-        if (!this._output.unbankedSegments) {
-          this._output.unbankedSegments = [];
-        }
-        if (!this._output.unbankedSegments.includes(this._currentSegment)) {
-          this._output.unbankedSegments.push(this._currentSegment);
-        }
-      }
     }
+    this.onSegmentStarted(this._currentSegment);
 
     if (!label) {
       return;
@@ -2336,165 +2010,6 @@ export abstract class CommonAssembler<
     // --- There is a labels, set its value
     await this.fixupTemporaryScope();
     await this.addSymbol(label, pragma as unknown as AssemblyLine<TInstruction>, value);
-  }
-
-  /**
-   * Processes the .bank pragma
-   * @param pragma Pragma to process
-   * @param label Label information
-   */
-  processBankPragma(pragma: BankPragma<TInstruction, TToken>, label: string | null): void {
-    if (label) {
-      // --- No label is allowed
-      this.reportAssemblyError("Z0305", pragma);
-      return;
-    }
-
-    // --- Check pragma value
-    var value = this.evaluateExprImmediate(pragma.bankId);
-    if (!value.isValid) {
-      return;
-    }
-    
-    // --- Check for appropriate model type first
-    const errCode = this.modelSupportsBankPragma(this._output.modelType);
-    if (this._output.modelType === undefined || errCode) {
-      this.reportAssemblyError(errCode, pragma);
-      return;
-    }
-    
-    // --- Check if noexport flag is used (only allowed for Next model)
-    if (pragma.noexport) {
-      const isNext = this._output.modelType === 4; // SpectrumModelType.Next
-      if (!isNext) {
-        this.reportAssemblyError("Z0331", pragma);
-        return;
-      }
-    }
-    
-    // --- Bank range check depends on model
-    const isNext = this._output.modelType === 4; // SpectrumModelType.Next
-    const maxBank = isNext ? 111 : 7;
-    if (value.asWord() > maxBank) {
-      this.reportAssemblyError("Z0306", pragma);
-      return;
-    }
-
-    // --- Check offsetValue
-    let offset = 0;
-    if (pragma.offset !== null) {
-      var offsetValue = this.evaluateExprImmediate(pragma.offset);
-      if (!offsetValue.isValid) {
-        return;
-      }
-      offset = offsetValue.asWord();
-      if (offset > 0x3fff) {
-        this.reportAssemblyError("Z0307", pragma);
-        return;
-      }
-    }
-
-    this.ensureCodeSegment((0xc000 + offset) & 0xffff);
-    if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
-      // --- There is already code emitted for the current segment,
-      // --- thus create a new segment
-      this._currentSegment = new BinarySegment();
-      this._output.segments.push(this._currentSegment);
-    }
-    
-    // --- For non-Next models, a bank can be used only once
-    // --- For Next, allow multiple segments per bank
-    if (!isNext && this._output.segments.some((s) => s.bank === value.value)) {
-      this.reportAssemblyError("Z0309", pragma, null, value.value);
-      return;
-    }
-    this._currentSegment.startAddress = (0xc000 + offset) & 0xffff;
-    this._currentSegment.bank = value.value;
-    this._currentSegment.bankOffset = offset;
-    this._currentSegment.nexExport = !pragma.noexport; // Default true, set to false if noexport flag present
-    this._currentSegment.maxCodeLength = 0x4000 - offset;
-    // --- A reused empty segment may be the one Next auto mode tracked as unbanked; once it has a
-    // --- bank, the NEX writer must not also treat it as bank 2 code (as `.page` already ensures)
-    if (this._output.unbankedSegments) {
-      const index = this._output.unbankedSegments.indexOf(this._currentSegment);
-      if (index >= 0) this._output.unbankedSegments.splice(index, 1);
-    }
-  }
-
-  /**
-   * Processes the .page pragma: the code that follows is assembled for `address` (by default
-   * $C000 for an even page, $E000 for an odd one) and stored in the 8K `page`, that is, in 16K bank
-   * `page >> 1` from offset `(page & 1) * $2000` plus the address's offset within its 8K slot. With a
-   * count of 2 (an even page, an address on an 8K boundary) the code may fill `page` and `page + 1`:
-   * the whole 16K bank, for code that runs in a 16K window.
-   * @param pragma Pragma to process
-   * @param label Label information
-   */
-  processPagePragma(pragma: PagePragma<TInstruction, TToken>, label: string | null): void {
-    if (label) {
-      this.reportAssemblyError("Z0332", pragma);
-      return;
-    }
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
-      // SpectrumModelType.Next
-      this.reportAssemblyError("Z0333", pragma);
-      return;
-    }
-
-    const pageValue = this.evaluateExprImmediate(pragma.page);
-    if (!pageValue.isValid) {
-      return;
-    }
-    const page = pageValue.asLong();
-    if (page < 0 || page > 223) {
-      this.reportAssemblyError("Z0334", pragma);
-      return;
-    }
-
-    let address = page & 1 ? 0xe000 : 0xc000;
-    if (pragma.address) {
-      const addressValue = this.evaluateExprImmediate(pragma.address);
-      if (!addressValue.isValid) {
-        return;
-      }
-      address = addressValue.asLong();
-      if (address < 0 || address > 0xffff) {
-        this.reportAssemblyError("Z0335", pragma);
-        return;
-      }
-    }
-
-    let count = 1;
-    if (pragma.count) {
-      const countValue = this.evaluateExprImmediate(pragma.count);
-      if (!countValue.isValid) {
-        return;
-      }
-      count = countValue.asLong();
-      if (count !== 1 && count !== 2) {
-        this.reportAssemblyError("Z0336", pragma);
-        return;
-      }
-      if (count === 2 && ((page & 1) !== 0 || (address & 0x1fff) !== 0 || address > 0xc000)) {
-        this.reportAssemblyError("Z0337", pragma);
-        return;
-      }
-    }
-
-    this.ensureCodeSegment(address);
-    if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
-      this._currentSegment = new BinarySegment();
-      this._output.segments.push(this._currentSegment);
-    }
-    const offsetInPage = address & 0x1fff;
-    this._currentSegment.startAddress = address;
-    this._currentSegment.bank = page >> 1;
-    this._currentSegment.bankOffset = (page & 1) * 0x2000 + offsetInPage;
-    this._currentSegment.maxCodeLength = count * 0x2000 - offsetInPage;
-    if (this._output.unbankedSegments) {
-      const index = this._output.unbankedSegments.indexOf(this._currentSegment);
-      if (index >= 0) this._output.unbankedSegments.splice(index, 1);
-    }
   }
 
   /**
@@ -2647,7 +2162,7 @@ export abstract class CommonAssembler<
     var fillByte = 0xff;
     if (pragma.fill !== null) {
       var fillValue = this.evaluateExprImmediate(pragma.fill);
-      if (fillValue === null) {
+      if (!fillValue.isValid) {
         return;
       }
       fillByte = fillValue.value;
@@ -2674,7 +2189,7 @@ export abstract class CommonAssembler<
       if (value.isValid) {
         if (value.type === ExpressionValueType.String) {
           // --- A string emits its characters, one byte each, so text and numbers can be
-          // --- mixed (`.defb 22, 9, 5, "TEXT"`), as in other Z80 assemblers
+          // --- mixed (`.defb 22, 9, 5, "TEXT"`), as in other assemblers
           this.emitString(value, false, false, emitAction);
         } else {
           emit(value.value & 0xff);
@@ -2781,43 +2296,6 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * Processes the .defzx pragma: text in the ZX80's or ZX81's character set, a lower-case letter
-   * giving the inverse-video capital (`dev/ai/zx8081.md`, "Machine code decisions", D2)
-   * @param pragma Pragma to process
-   * @param emitAction Action to emit a code byte
-   */
-  processDefZxPragma(pragma: DefZxPragma<TInstruction, TToken>, emitAction?: (b: number) => void): void {
-    const model = this._output.modelType ?? this._options.currentModel;
-    if (!isZx8081ModelType(model)) {
-      this.reportAssemblyError("Z0379", pragma);
-      return;
-    }
-    const message = this.evaluateExprImmediate(pragma.value);
-    if (!message.isValid) return;
-    if (message.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0380", pragma);
-      return;
-    }
-    const isZx81 = model === SpectrumModelType.ZX81;
-    const codes: number[] = [];
-    for (const ch of message.asString()) {
-      const code = zx8081CharCode(ch, isZx81);
-      if (code === undefined) {
-        this.reportAssemblyError("Z0381", pragma, null, isZx81 ? "ZX81" : "ZX80", ch);
-        return;
-      }
-      codes.push(code);
-    }
-    for (const code of codes) {
-      if (emitAction) {
-        emitAction.call(this, code);
-      } else {
-        this.emitByte(code);
-      }
-    }
-  }
-
-  /**
    * Processes the .defh pragma
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
@@ -2828,8 +2306,12 @@ export abstract class CommonAssembler<
   ): void {
     const assembler = this;
     const byteVector = this.evaluateExprImmediate(pragma.value);
-    if (byteVector.isValid && byteVector.type !== ExpressionValueType.String) {
+    if (!byteVector.isValid) {
+      return;
+    }
+    if (byteVector.type !== ExpressionValueType.String) {
       this.reportAssemblyError("Z0316", pragma);
+      return;
     }
 
     const bytesString = byteVector.asString();
@@ -2975,7 +2457,7 @@ export abstract class CommonAssembler<
           let intValue = exprValue.asLong();
           if (pragma.isHex) {
             const valueStr =
-              intValue > 0x10000
+              intValue >= 0x10000
                 ? `${intValue.toString(16).padStart(8, "0")}`
                 : `${intValue.toString(16).padStart(4, "0")}`;
             message += valueStr;
@@ -2988,7 +2470,7 @@ export abstract class CommonAssembler<
           break;
         case ExpressionValueType.String:
           if (pragma.isHex) {
-            var bytes = convertSpectrumString(exprValue.asString());
+            const bytes = this.convertStringToBytes(exprValue.asString());
             for (let i = 0; i < bytes.length; i++) {
               message += `${bytes.charCodeAt(i).toString(16).padStart(2, "0")}`;
             }
@@ -3072,8 +2554,7 @@ export abstract class CommonAssembler<
     // --- Read the binary file
     const currentSourceFile =
       this._output.sourceFileList[(pragma as unknown as AssemblyLine<TInstruction>).fileIndex];
-    const dirname = path.dirname(currentSourceFile.filename) ?? "";
-    const filename = path.join(dirname, fileNameValue.asString());
+    const filename = resolveSourcePath(currentSourceFile.filename, fileNameValue.asString());
 
     let contents: Buffer | null = null;
     try {
@@ -3101,7 +2582,7 @@ export abstract class CommonAssembler<
 
     // --- Check for too long binary segment
     if (
-      this.getCurrentAssemblyAddress() - this._currentSegment.startAddress + length >=
+      this._currentSegment.currentOffset + length >
       this._currentSegment.maxCodeLength
     ) {
       this.reportAssemblyError("Z0323", pragma);
@@ -3181,863 +2662,6 @@ export abstract class CommonAssembler<
    */
   processOnSuccessPragma(pragma: OnSuccessPragma<TInstruction>): void {
     this._output.onSuccessCommands.push(pragma.command);
-  }
-
-  /**
-   * Processes the .savenex file pragma
-   */
-  processSaveNexFile(pragma: SaveNexFilePragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma); // SaveNex only with Next model
-      return;
-    }
-
-    const filenameValue = this.evaluateExprImmediate(pragma.filename);
-    if (filenameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0341", pragma); // File requires string filename
-      return;
-    }
-
-    this._output.nexConfig.filename = filenameValue.asString();
-  }
-
-  /**
-   * Processes the .savenex ram pragma
-   */
-  processSaveNexRam(pragma: SaveNexRamPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const sizeValue = this.evaluateExprImmediate(pragma.size);
-    if (sizeValue.type !== ExpressionValueType.Integer) {
-      this.reportAssemblyError("Z0342", pragma); // RAM requires 768 or 1792
-      return;
-    }
-
-    const size = sizeValue.asLong();
-    if (size !== 768 && size !== 1792) {
-      this.reportAssemblyError("Z0342", pragma);
-      return;
-    }
-
-    this._output.nexConfig.ramSize = size;
-  }
-
-  /**
-   * Processes the .savenex border pragma
-   */
-  processSaveNexBorder(pragma: SaveNexBorderPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const colorValue = this.evaluateExprImmediate(pragma.color);
-    if (colorValue.type !== ExpressionValueType.Integer) {
-      this.reportAssemblyError("Z0343", pragma); // Border requires 0-7
-      return;
-    }
-
-    const color = colorValue.asLong();
-    if (color < 0 || color > 7) {
-      this.reportAssemblyError("Z0343", pragma);
-      return;
-    }
-
-    this._output.nexConfig.borderColor = color;
-    this._nexBorderSetExplicitly = true;
-  }
-
-  /**
-   * Processes the .savenex core pragma
-   */
-  processSaveNexCore(pragma: SaveNexCorePragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const majorValue = this.evaluateExprImmediate(pragma.major);
-
-    let major: number;
-    let minor: number;
-    let subminor: number;
-
-    // Check if it's a string format like "3.1.10"
-    if (majorValue.type === ExpressionValueType.String && !pragma.minor && !pragma.subminor) {
-      const versionStr = majorValue.asString();
-      const parts = versionStr.split('.');
-      
-      if (parts.length !== 3) {
-        this.reportAssemblyError("Z0344", pragma); // Core version number ranges
-        return;
-      }
-
-      major = parseInt(parts[0], 10);
-      minor = parseInt(parts[1], 10);
-      subminor = parseInt(parts[2], 10);
-
-      if (isNaN(major) || isNaN(minor) || isNaN(subminor)) {
-        this.reportAssemblyError("Z0344", pragma);
-        return;
-      }
-    } else {
-      // Handle the numeric format with three separate expressions
-      if (!pragma.minor || !pragma.subminor) {
-        this.reportAssemblyError("Z0344", pragma);
-        return;
-      }
-
-      const minorValue = this.evaluateExprImmediate(pragma.minor);
-      const subminorValue = this.evaluateExprImmediate(pragma.subminor);
-
-      if (majorValue.type !== ExpressionValueType.Integer ||
-          minorValue.type !== ExpressionValueType.Integer ||
-          subminorValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z0344", pragma); // Core version number ranges
-        return;
-      }
-
-      major = majorValue.asLong();
-      minor = minorValue.asLong();
-      subminor = subminorValue.asLong();
-    }
-
-    if (major < 0 || major > 255 || minor < 0 || minor > 255 || subminor < 0 || subminor > 255) {
-      this.reportAssemblyError("Z0344", pragma);
-      return;
-    }
-
-    this._output.nexConfig.coreVersion = { major, minor, subminor };
-  }
-
-  /**
-   * Processes the .savenex stackaddr pragma
-   */
-  processSaveNexStackAddr(pragma: SaveNexStackAddrPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const addrValue = this.evaluateExpr(pragma.address);
-    if (!addrValue.isValid) {
-      // Forward reference - record a fixup
-      this.recordFixup(
-        pragma as unknown as AssemblyLine<TInstruction>,
-        FixupType.NexStackAddr,
-        pragma.address
-      );
-      return;
-    }
-
-    if (addrValue.type !== ExpressionValueType.Integer) {
-      this.reportAssemblyError("Z0351", pragma); // Value range error
-      return;
-    }
-
-    const addr = addrValue.asLong();
-    if (addr < 0 || addr > 0xffff) {
-      this.reportAssemblyError("Z0351", pragma);
-      return;
-    }
-
-    this._output.nexConfig.stackAddr = addr;
-  }
-
-  /**
-   * Processes the .savenex entryaddr pragma
-   */
-  processSaveNexEntryAddr(pragma: SaveNexEntryAddrPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const addrValue = this.evaluateExpr(pragma.address);
-    if (!addrValue.isValid) {
-      // Forward reference - record a fixup
-      this.recordFixup(
-        pragma as unknown as AssemblyLine<TInstruction>,
-        FixupType.NexEntryAddr,
-        pragma.address
-      );
-      return;
-    }
-
-    if (addrValue.type !== ExpressionValueType.Integer) {
-      this.reportAssemblyError("Z0352", pragma); // Value range error
-      return;
-    }
-
-    const addr = addrValue.asLong();
-    if (addr < 0 || addr > 0xffff) {
-      this.reportAssemblyError("Z0352", pragma);
-      return;
-    }
-
-    this._output.nexConfig.entryAddr = addr;
-  }
-
-  /**
-   * Processes the .savenex entrybank pragma
-   */
-  processSaveNexEntryBank(pragma: SaveNexEntryBankPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const bankValue = this.evaluateExprImmediate(pragma.bankNo);
-    if (bankValue.type !== ExpressionValueType.Integer) {
-      this.reportAssemblyError("Z0345", pragma); // Entry bank 0-111
-      return;
-    }
-
-    const bank = bankValue.asLong();
-    if (bank < 0 || bank > 111) {
-      this.reportAssemblyError("Z0345", pragma);
-      return;
-    }
-
-    this._output.nexConfig.entryBank = bank;
-  }
-
-  /**
-   * Processes the .savenex filehandle pragma
-   */
-  processSaveNexFileHandle(pragma: SaveNexFileHandlePragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const modeValue = this.evaluateExprImmediate(pragma.mode);
-    if (modeValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0349", pragma); // Filehandle modes
-      return;
-    }
-
-    const mode = modeValue.asString().toLowerCase();
-    if (mode !== "close" && mode !== "open") {
-      this.reportAssemblyError("Z0349", pragma);
-      return;
-    }
-
-    this._output.nexConfig.fileHandle = mode as NexFileHandleMode;
-  }
-
-  /**
-   * Processes the .savenex preserve pragma
-   */
-  processSaveNexPreserve(pragma: SaveNexPreservePragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const valueExpr = this.evaluateExprImmediate(pragma.value);
-    
-    let preserveValue: boolean;
-    if (valueExpr.type === ExpressionValueType.String) {
-      const str = valueExpr.asString().toLowerCase();
-      if (str === "on" || str === "true") {
-        preserveValue = true;
-      } else if (str === "off" || str === "false") {
-        preserveValue = false;
-      } else {
-        this.reportAssemblyError("Z0350", pragma); // Preserve requires on/off
-        return;
-      }
-    } else if (valueExpr.type === ExpressionValueType.Integer) {
-      preserveValue = valueExpr.asLong() !== 0;
-    } else {
-      this.reportAssemblyError("Z0350", pragma);
-      return;
-    }
-
-    this._output.nexConfig.preserveRegs = preserveValue;
-  }
-
-  /**
-   * Processes the .savenex screen pragma
-   */
-  processSaveNexScreen(pragma: SaveNexScreenPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const typeValue = this.evaluateExprImmediate(pragma.screenType);
-    if (typeValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0347", pragma); // Invalid screen type
-      return;
-    }
-
-    const type = typeValue.asString().toLowerCase();
-    const validTypes = ["layer2", "ula", "lores", "hires-color", "hires-mono"];
-    if (!validTypes.includes(type)) {
-      this.reportAssemblyError("Z0347", pragma);
-      return;
-    }
-
-    if (!pragma.filename) {
-      this._output.nexConfig.screen = { type: type as any };
-      return;
-    }
-
-    const filenameValue = this.evaluateExprImmediate(pragma.filename);
-    if (filenameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0347", pragma);
-      return;
-    }
-
-    let paletteOffset: number | undefined;
-    if (pragma.paletteOffset) {
-      const offsetValue = this.evaluateExprImmediate(pragma.paletteOffset);
-      if (offsetValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z0347", pragma);
-        return;
-      }
-      paletteOffset = offsetValue.asLong();
-    }
-
-    this._output.nexConfig.screen = {
-      type: type as any,
-      filename: filenameValue.asString(),
-      paletteOffset
-    };
-  }
-
-  /**
-   * Processes the .savenex palette pragma
-   */
-  processSaveNexPalette(pragma: SaveNexPalettePragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const filenameValue = this.evaluateExprImmediate(pragma.filename);
-    if (filenameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0341", pragma); // Needs string filename
-      return;
-    }
-
-    this._output.nexConfig.paletteFile = filenameValue.asString();
-  }
-
-  /**
-   * Processes the .savenex copper pragma
-   */
-  processSaveNexCopper(pragma: SaveNexCopperPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const filenameValue = this.evaluateExprImmediate(pragma.filename);
-    if (filenameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z0341", pragma); // Needs string filename
-      return;
-    }
-
-    this._output.nexConfig.copperFile = filenameValue.asString();
-  }
-
-  /**
-   * Processes the .savenex bar pragma
-   */
-  processSaveNexBar(pragma: SaveNexBarPragma<TInstruction, TToken>): void {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
-      this.reportAssemblyError("Z0340", pragma);
-      return;
-    }
-
-    const enabledValue = this.evaluateExprImmediate(pragma.enabled);
-    
-    let enabled: boolean;
-    if (enabledValue.type === ExpressionValueType.String) {
-      const str = enabledValue.asString().toLowerCase();
-      if (str === "on" || str === "true") {
-        enabled = true;
-      } else if (str === "off" || str === "false") {
-        enabled = false;
-      } else {
-        this.reportAssemblyError("Z0348", pragma); // Bar requires on/off
-        return;
-      }
-    } else if (enabledValue.type === ExpressionValueType.Integer) {
-      enabled = enabledValue.asLong() !== 0;
-    } else {
-      this.reportAssemblyError("Z0348", pragma);
-      return;
-    }
-
-    this._output.nexConfig.loadingBar.enabled = enabled;
-
-    if (pragma.color) {
-      const colorValue = this.evaluateExprImmediate(pragma.color);
-      if (colorValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z0348", pragma);
-        return;
-      }
-      const color = colorValue.asLong();
-      if (color < 0 || color > 255) {
-        this.reportAssemblyError("Z0348", pragma);
-        return;
-      }
-      this._output.nexConfig.loadingBar.color = color;
-    }
-
-    if (pragma.delay) {
-      const delayValue = this.evaluateExprImmediate(pragma.delay);
-      if (delayValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z0348", pragma);
-        return;
-      }
-      this._output.nexConfig.loadingBar.delay = delayValue.asLong();
-    }
-
-    if (pragma.startDelay) {
-      const startDelayValue = this.evaluateExprImmediate(pragma.startDelay);
-      if (startDelayValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z0348", pragma);
-        return;
-      }
-      this._output.nexConfig.loadingBar.startDelay = startDelayValue.asLong();
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // DMA pragma emission helpers
-
-  private isDmaNextModel(pragma: PartialAssemblyLine<TInstruction>): boolean {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
-      this.reportAssemblyError("Z0368", pragma as unknown as AssemblyLine<TInstruction>);
-      return false;
-    }
-    return true;
-  }
-
-  private processDmaSimpleCommand(
-    pragma: DmaResetPragma<TInstruction> | DmaLoadPragma<TInstruction> | DmaEnablePragma<TInstruction> | DmaDisablePragma<TInstruction> | DmaContinuePragma<TInstruction>,
-    cmdByte: number
-  ): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    this.emitByte(cmdByte);
-  }
-
-  private processDmaCmdPragma(pragma: DmaCmdPragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    const value = this.evaluateExpr(pragma.value);
-    if (value.isValid) {
-      this.emitByte(value.value & 0xff);
-    } else if (value.isNonEvaluated) {
-      this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.value);
-      this.emitByte(0x00);
-    }
-  }
-
-  private processDmaReadMaskPragma(pragma: DmaReadMaskPragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    this.emitByte(0xbb);
-    const value = this.evaluateExpr(pragma.mask);
-    if (value.isValid) {
-      this.emitByte(value.value & 0x7f);
-    } else if (value.isNonEvaluated) {
-      this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.mask);
-      this.emitByte(0x00);
-    }
-  }
-
-  private processDmaWr0Pragma(pragma: DmaWr0Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 0111_1DTT where D=direction, TT=transfer type
-    // D6:D3 always 1111 — all follow bytes exist in the stream
-    const dirBit = pragma.direction === "a_to_b" ? 0x04 : 0x00;
-    let ttBits: number;
-    switch (pragma.transferType) {
-      case "transfer":        ttBits = 0x01; break;
-      case "search":          ttBits = 0x02; break;
-      case "search_transfer": ttBits = 0x03; break;
-      default:                ttBits = 0x01; break;
-    }
-    const baseByte = 0x78 | dirBit | ttBits;
-    this.emitByte(baseByte);
-
-    if (pragma.portAAddr !== undefined) {
-      const addr = this.evaluateExpr(pragma.portAAddr);
-      if (addr.isValid) {
-        this.emitByte(addr.value & 0xff);
-        this.emitByte((addr.value >> 8) & 0xff);
-      } else if (addr.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.portAAddr);
-        this.emitByte(0x00);
-        this.emitByte(0x00);
-      }
-
-      if (pragma.blockLength !== undefined) {
-        const len = this.evaluateExpr(pragma.blockLength);
-        if (len.isValid) {
-          this.emitByte(len.value & 0xff);
-          this.emitByte((len.value >> 8) & 0xff);
-        } else if (len.isNonEvaluated) {
-          this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.blockLength);
-          this.emitByte(0x00);
-          this.emitByte(0x00);
-        }
-      }
-    }
-  }
-
-  private processDmaWr1Pragma(pragma: DmaWr1Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 0TAA_M100
-    let baseByte = 0x04; // D2:D0 = 100 (WR1 identifier)
-    if (pragma.portType === "io") baseByte |= 0x08;         // D3
-    switch (pragma.addrMode) {
-      case "increment": baseByte |= 0x10; break;            // D4
-      case "fixed":     baseByte |= 0x20; break;            // D5
-      // decrement: 0x00
-    }
-    if (pragma.cycleLength) baseByte |= 0x40;               // D6: timing byte follows
-    this.emitByte(baseByte);
-
-    if (pragma.cycleLength) {
-      let timingByte = 0x00;
-      switch (pragma.cycleLength) {
-        case "4t": timingByte = 0x00; break;
-        case "3t": timingByte = 0x01; break;
-        case "2t": timingByte = 0x02; break;
-      }
-      this.emitByte(timingByte);
-    }
-  }
-
-  private processDmaWr2Pragma(pragma: DmaWr2Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 0TAA_M000
-    let baseByte = 0x00; // D2:D0 = 000 (WR2 identifier)
-    if (pragma.portType === "io") baseByte |= 0x08;
-    switch (pragma.addrMode) {
-      case "increment": baseByte |= 0x10; break;
-      case "fixed":     baseByte |= 0x20; break;
-    }
-    if (pragma.cycleLength || pragma.prescaler) baseByte |= 0x40;
-    this.emitByte(baseByte);
-
-    if (pragma.cycleLength || pragma.prescaler) {
-      let timingByte = 0x00;
-      if (pragma.cycleLength) {
-        switch (pragma.cycleLength) {
-          case "4t": timingByte = 0x00; break;
-          case "3t": timingByte = 0x01; break;
-          case "2t": timingByte = 0x02; break;
-        }
-      }
-      if (pragma.prescaler) timingByte |= 0x20; // D5: prescaler byte follows
-      this.emitByte(timingByte);
-
-      if (pragma.prescaler) {
-        const ps = this.evaluateExpr(pragma.prescaler);
-        if (ps.isValid) {
-          this.emitByte(ps.value & 0xff);
-        } else if (ps.isNonEvaluated) {
-          this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.prescaler);
-          this.emitByte(0x00);
-        }
-      }
-    }
-  }
-
-  private processDmaWr3Pragma(pragma: DmaWr3Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 1EIS_MK00
-    let baseByte = 0x80; // D7=1, D1:D0=00 (WR3 identifier)
-    if (pragma.dmaEnable)   baseByte |= 0x40; // D6
-    if (pragma.intEnable)   baseByte |= 0x20; // D5
-    if (pragma.match)       baseByte |= 0x10; // D4: match byte follows
-    if (pragma.mask)        baseByte |= 0x08; // D3: mask byte follows
-    if (pragma.stopOnMatch) baseByte |= 0x04; // D2
-    this.emitByte(baseByte);
-
-    if (pragma.mask) {
-      const m = this.evaluateExpr(pragma.mask);
-      if (m.isValid) {
-        this.emitByte(m.value & 0xff);
-      } else if (m.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.mask);
-        this.emitByte(0x00);
-      }
-    }
-    if (pragma.match) {
-      const m = this.evaluateExpr(pragma.match);
-      if (m.isValid) {
-        this.emitByte(m.value & 0xff);
-      } else if (m.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.match);
-        this.emitByte(0x00);
-      }
-    }
-  }
-
-  private processDmaWr4Pragma(pragma: DmaWr4Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 1MM_IBA01 where D2=D3=1 (address follow bytes always present in stream)
-    let baseByte = 0x81; // D7=1, D1:D0=01 (WR4 identifier), D2=D3=1
-    switch (pragma.mode) {
-      case "continuous": baseByte |= 0x20; break; // MM=01
-      case "burst":      baseByte |= 0x40; break; // MM=10
-      // byte: MM=00
-    }
-    baseByte |= 0x0c; // D3=1, D2=1: address follow bytes in stream
-    this.emitByte(baseByte);
-
-    if (pragma.portBAddr !== undefined) {
-      const addr = this.evaluateExpr(pragma.portBAddr);
-      if (addr.isValid) {
-        this.emitByte(addr.value & 0xff);
-        this.emitByte((addr.value >> 8) & 0xff);
-      } else if (addr.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.portBAddr);
-        this.emitByte(0x00);
-        this.emitByte(0x00);
-      }
-    }
-  }
-
-  private processDmaWr5Pragma(pragma: DmaWr5Pragma<TInstruction, TToken>): void {
-    if (!this.isDmaNextModel(pragma)) return;
-    // Base byte: 10R0_R010
-    let baseByte = 0x82; // D7:D6=10, D2:D0=010 (WR5 identifier)
-    if (pragma.autoRestart) baseByte |= 0x20; // D5
-    this.emitByte(baseByte);
-  }
-
-
-  // ---------------------------------------------------------------------------
-  // Copper pragma emission helpers (`dev/plans/COPPER_DEBUGGING_PLAN.md` §4.9)
-  //
-  // Copper words are big-endian (high byte first), as the Copper reads them:
-  //   WAIT  1HHHHHHL LLLLLLLL   line 0..511, horizontal position 0..63
-  //   MOVE  0RRRRRRR VVVVVVVV   NextReg $00..$7F (0 is a NOP), 8-bit value
-  // An operand that is not yet known gets a `CopperWait`/`CopperMove` fixup (trap T6), which
-  // patches only its own bits and applies the same range check as an immediate operand.
-
-  private isCopperNextModel(pragma: PartialAssemblyLine<TInstruction>): boolean {
-    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
-      this.reportAssemblyError("Z0372", pragma as unknown as AssemblyLine<TInstruction>);
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Checks one Copper operand's range; reports the error and returns false when it is out of range.
-   * @param kind The fixup kind (`CopperWait` or `CopperMove`)
-   * @param operand 0 for the first operand (line or register), 1 for the second (hpos or value)
-   */
-  private checkCopperOperand(
-    sourceLine: PartialAssemblyLine<TInstruction>,
-    kind: FixupType,
-    operand: number,
-    value: number
-  ): boolean {
-    if (kind === FixupType.CopperWait) {
-      if (operand === 0 && (value < 0 || value > 511)) {
-        this.reportAssemblyError("Z0373", sourceLine, null, value);
-        return false;
-      }
-      if (operand === 1 && (value < 0 || value > 63)) {
-        this.reportAssemblyError("Z0374", sourceLine, null, value);
-        return false;
-      }
-    } else {
-      // --- T7: never mask the register - `$80` would silently become a write to `$00`
-      if (operand === 0 && (value < 0 || value > 0x7f)) {
-        const shown = value < 0 ? `${value}` : `$${value.toString(16).toUpperCase().padStart(2, "0")}`;
-        this.reportAssemblyError("Z0375", sourceLine, null, shown);
-        return false;
-      }
-      if (operand === 1 && (value < -128 || value > 0xff)) {
-        this.reportAssemblyError("Z0376", sourceLine, null, value);
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Patches one Copper operand into the big-endian word at `offset`, touching only its bits
-   */
-  private patchCopperOperand(
-    code: number[],
-    offset: number,
-    kind: FixupType,
-    operand: number,
-    value: number
-  ): void {
-    if (kind === FixupType.CopperWait) {
-      if (operand === 0) {
-        code[offset] = (code[offset] & 0xfe) | ((value >> 8) & 0x01);
-        code[offset + 1] = value & 0xff;
-      } else {
-        code[offset] = (code[offset] & 0x81) | ((value & 0x3f) << 1);
-      }
-    } else {
-      if (operand === 0) {
-        code[offset] = (code[offset] & 0x80) | (value & 0x7f);
-      } else {
-        code[offset + 1] = value & 0xff;
-      }
-    }
-  }
-
-  /**
-   * Evaluates one Copper operand. Returns its value, `null` when a fixup was recorded (the operand
-   * is then emitted as zero bits), or `undefined` on an error.
-   */
-  private evalCopperOperand(
-    pragma: PartialAssemblyLine<TInstruction>,
-    expr: Expression<TInstruction, TToken>,
-    kind: FixupType,
-    operand: number
-  ): number | null | undefined {
-    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
-    const value = this.evaluateExpr(expr);
-    if (value.isNonEvaluated) {
-      this.recordFixup(sourceLine, kind, expr, null, null, null, operand);
-      return null;
-    }
-    if (!value.isValid) return undefined;
-    if (value.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z0603", sourceLine);
-      return undefined;
-    }
-    const numeric = value.asLong();
-    return this.checkCopperOperand(pragma, kind, operand, numeric) ? numeric : undefined;
-  }
-
-  /**
-   * Emits one big-endian Copper word and records it for the debug info
-   */
-  private emitCopperWord(pragma: PartialAssemblyLine<TInstruction>, word: number): void {
-    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
-    this.ensureCodeSegment();
-    this._copperEmissions.push({
-      segmentIndex: this._output.segments.length - 1,
-      offset: this._currentSegment.currentOffset,
-      address: this.locationCounter(),
-      sourceLine
-    });
-    this.emitByte((word >> 8) & 0xff);
-    this.emitByte(word & 0xff);
-  }
-
-  private processCopperTwoOperands(
-    pragma: PartialAssemblyLine<TInstruction>,
-    kind: FixupType,
-    first: Expression<TInstruction, TToken>,
-    second: Expression<TInstruction, TToken>,
-    baseWord: number
-  ): void {
-    if (!this.isCopperNextModel(pragma)) return;
-    // --- Both fixups (if any) are recorded before the word is emitted, so they point at it
-    const a = this.evalCopperOperand(pragma, first, kind, 0);
-    const b = this.evalCopperOperand(pragma, second, kind, 1);
-    if (a === undefined || b === undefined) return;
-    const code = [(baseWord >> 8) & 0xff, baseWord & 0xff];
-    if (a !== null) this.patchCopperOperand(code, 0, kind, 0, a);
-    if (b !== null) this.patchCopperOperand(code, 0, kind, 1, b);
-    this.emitCopperWord(pragma, (code[0] << 8) | code[1]);
-  }
-
-  private processCopperWaitPragma(pragma: CopperWaitPragma<TInstruction, TToken>): void {
-    this.processCopperTwoOperands(pragma, FixupType.CopperWait, pragma.waitLine, pragma.waitHpos, 0x8000);
-  }
-
-  private processCopperMovePragma(pragma: CopperMovePragma<TInstruction, TToken>): void {
-    // --- `move 0, x` is legal (a NOP) and is emitted as written (T7)
-    this.processCopperTwoOperands(pragma, FixupType.CopperMove, pragma.reg, pragma.value, 0x0000);
-  }
-
-  private processCopperFixedWord(
-    pragma: CopperNopPragma<TInstruction> | CopperHaltPragma<TInstruction>,
-    word: number
-  ): void {
-    if (!this.isCopperNextModel(pragma)) return;
-    this.emitCopperWord(pragma, word);
-  }
-
-  private processCopperWordPragma(pragma: CopperWordPragma<TInstruction, TToken>): void {
-    if (!this.isCopperNextModel(pragma)) return;
-    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
-    const value = this.evaluateExpr(pragma.value);
-    if (value.isNonEvaluated) {
-      this.recordFixup(sourceLine, FixupType.Bit16Be, pragma.value);
-      this.emitCopperWord(pragma, 0x0000);
-      return;
-    }
-    if (!value.isValid) return;
-    if (value.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z0603", sourceLine);
-      return;
-    }
-    this.emitCopperWord(pragma, value.asWord());
-  }
-
-  /**
-   * Builds the output's `copperBlocks` from the emitted `.copper` words, after the fixups: a block
-   * is a maximal run of words at consecutive offsets of one segment (nothing else emitted between).
-   * Reports Z0377 for a block longer than the Copper's 1024 instructions.
-   * @returns False if a block is too long
-   */
-  private collectCopperBlocks(): boolean {
-    const blocks = this._output.copperBlocks;
-    blocks.length = 0;
-    let success = true;
-    let current: CopperBlock | null = null;
-    let first: CopperEmission<TInstruction> | null = null;
-    let prev: CopperEmission<TInstruction> | null = null;
-    const close = () => {
-      if (current && current.length > 1024) {
-        this.reportAssemblyError(
-          "Z0377",
-          first.sourceLine,
-          null,
-          `$${current.address.toString(16).toUpperCase().padStart(4, "0")}`,
-          current.length
-        );
-        success = false;
-      }
-    };
-    for (const emission of this._copperEmissions) {
-      const code = this._output.segments[emission.segmentIndex]?.emittedCode;
-      if (!code) continue;
-      const word = ((code[emission.offset] & 0xff) << 8) | (code[emission.offset + 1] & 0xff);
-      const contiguous =
-        prev &&
-        prev.segmentIndex === emission.segmentIndex &&
-        prev.offset + 2 === emission.offset;
-      if (!contiguous) {
-        close();
-        current = { address: emission.address, length: 0, entries: [] };
-        first = emission;
-        blocks.push(current);
-      }
-      current.entries.push({
-        word,
-        fileIndex: emission.sourceLine.fileIndex,
-        line: emission.sourceLine.line
-      });
-      current.length++;
-      prev = emission;
-    }
-    close();
-    return success;
   }
 
   /**
@@ -4180,7 +2804,8 @@ export abstract class CommonAssembler<
     this._macroInvocations.push(macroOrStructStmt);
 
     // --- Evaluate arguments
-    const macroArgs: Record<string, IExpressionValue> = {};
+    // --- No prototype: an argument named `constructor` or `toString` is an ordinary name
+    const macroArgs: Record<string, IExpressionValue> = Object.create(null);
     let errorFound = false;
     const emptyArgValue = new ExpressionValue("$<none>$");
     for (let i = 0; i < macroDef.argNames.length; i++) {
@@ -4191,18 +2816,7 @@ export abstract class CommonAssembler<
       var op = macroOrStructStmt.operands[i];
       let argValue: IExpressionValue;
       switch (op.operandType) {
-        case OperandType.Reg8:
-        case OperandType.Reg8Idx:
-        case OperandType.Reg8Spec:
-        case OperandType.Reg16:
-        case OperandType.Reg16Idx:
-        case OperandType.Reg16Spec:
-          argValue = new ExpressionValue(op.register);
-          break;
-        case OperandType.RegIndirect:
-          argValue = new ExpressionValue(`(${op.register})`);
-          break;
-        case OperandType.Expression:
+        case CommonOperandType.Expression:
           // Forward references are not evaluated yet, but they are still
           // source-level usages and must be visible to editor references.
           if (!this.readyToEvaluate(op.expr) && op.expr.type === "Symbol") {
@@ -4213,37 +2827,19 @@ export abstract class CommonAssembler<
             argValue = new ExpressionValue(op.expr.sourceText);
           }
           break;
-        case OperandType.MemIndirect:
-          argValue = this.evaluateExprImmediate(op.expr);
-          if (!argValue.isValid) {
-            errorFound = true;
-          } else {
-            argValue = new ExpressionValue(`(${argValue.asString()})`);
-          }
-          break;
-        case OperandType.CPort:
-          argValue = new ExpressionValue("(c)");
-          break;
-        case OperandType.IndexedIndirect:
-          if (!op.expr) {
-            argValue = new ExpressionValue(`(${op.register})`);
-          } else {
-            argValue = this.evaluateExprImmediate(op.expr);
-            if (!argValue.isValid) {
-              errorFound = true;
-            } else {
-              argValue = new ExpressionValue(
-                `(${op.register}${op.offsetSign}${argValue.asString()})`
-              );
-            }
-          }
-          break;
-        case OperandType.Condition:
-          argValue = new ExpressionValue(op.register);
-          break;
-        default:
+        case CommonOperandType.NoneArg:
           argValue = emptyArgValue;
           break;
+        default: {
+          // --- A CPU operand (a register, an indirect address, ...)
+          const cpuArg = this.operandToMacroArgument(op);
+          if (cpuArg === null) {
+            errorFound = true;
+          } else {
+            argValue = cpuArg ?? emptyArgValue;
+          }
+          break;
+        }
       }
       if (errorFound) {
         continue;
@@ -4310,7 +2906,9 @@ export abstract class CommonAssembler<
           argName = argName.toLowerCase();
         }
         if (macroArgs[argName]) {
-          newText = newText.replace(toReplace, macroArgs[argName].asString());
+          // --- A function replacement: `$$`, `$&` in the argument are kept as they are
+          const argText = macroArgs[argName].asString();
+          newText = newText.replace(toReplace, () => argText);
         }
       }
 
@@ -4498,7 +3096,7 @@ export abstract class CommonAssembler<
         this.collectMacroDefinition(stmt, label, allLines, currentLineIndex);
         break;
       case "MacroEndStatement":
-        this.reportAssemblyError("Z0704", stmt, null, ".endm/.mend", ".if/.ifused/.ifnused");
+        this.reportAssemblyError("Z0704", stmt, null, ".endm/.mend", ".macro");
         break;
       case "LoopStatement":
         await this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
@@ -4734,7 +3332,7 @@ export abstract class CommonAssembler<
     for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
       const structLine = allLines[i];
       if (
-        !isByteEmittingPragma(structLine) &&
+        !this.isByteEmittingPragma(structLine) &&
         structLine.type !== "CommentOnlyLine" &&
         structLine.type !== "LabelOnlyLine"
       ) {
@@ -4777,10 +3375,6 @@ export abstract class CommonAssembler<
           this.processDefMNCPragma(pragma, emitAction);
           break;
 
-        case "DefZxPragma":
-          this.processDefZxPragma(pragma, emitAction);
-          break;
-
         case "DefHPragma":
           this.processDefHPragma(pragma, emitAction);
           break;
@@ -4803,6 +3397,11 @@ export abstract class CommonAssembler<
 
         case "DefGxPragma":
           this.processDefGXPragma(pragma, emitAction);
+          break;
+
+        default:
+          // --- A byte-emitting pragma of the CPU or of its target machines
+          this.applyCpuPragma(structLine, null, emitAction);
           break;
       }
 
@@ -4854,6 +3453,8 @@ export abstract class CommonAssembler<
 
     // --- Create a scope for the loop
     const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
+    // --- Every exit path restores the scope stack to this depth (the loop and iteration scopes)
+    const scopeDepth = this._currentModule.localScopes.length;
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
@@ -4867,11 +3468,11 @@ export abstract class CommonAssembler<
       // --- Evaluate the loop expression
       var loopCondition = this.evaluateExprImmediate(whileStmt.expr);
       if (!loopCondition.isValid) {
-        return;
+        break;
       }
       if (loopCondition.type === ExpressionValueType.String) {
         this.reportAssemblyError("Z0603", whileStmt);
-        return;
+        break;
       }
 
       // --- Exit if while condition fails
@@ -4936,7 +3537,7 @@ export abstract class CommonAssembler<
     }
 
     // --- Clean up the loop's scope
-    this._currentModule.localScopes.pop();
+    this._currentModule.localScopes.length = scopeDepth;
   }
 
   /**
@@ -5073,6 +3674,8 @@ export abstract class CommonAssembler<
 
     // --- Create a scope for the loop
     const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
+    // --- Every exit path restores the scope stack to this depth (the loop and iteration scopes)
+    const scopeDepth = this._currentModule.localScopes.length;
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
@@ -5128,11 +3731,11 @@ export abstract class CommonAssembler<
       // --- Evaluate the loop expression
       const loopExitCondition = this.evaluateExprImmediate(untilStmt.expr);
       if (!loopExitCondition.isValid) {
-        return;
+        break;
       }
       if (loopExitCondition.type === ExpressionValueType.String) {
         this.reportAssemblyError("Z0603", untilStmt);
-        return;
+        break;
       }
       condition = loopExitCondition.asBool();
 
@@ -5153,7 +3756,7 @@ export abstract class CommonAssembler<
     } while (!condition);
 
     // --- Clean up the loop's scope
-    this._currentModule.localScopes.pop();
+    this._currentModule.localScopes.length = scopeDepth;
   }
 
   /**
@@ -5420,25 +4023,22 @@ export abstract class CommonAssembler<
         continue;
       }
 
-      // --- Check the condition
+      // --- The first true condition selects the section
       if (conditionValue.asBool()) {
         sectionToCompile = ifSection;
+        break;
       }
     }
 
-    // --- Check if there is any section to compile
+    // --- Emit the matching section (no matching IF, ELIF, and no ELSE: nothing to emit)
     sectionToCompile = sectionToCompile ?? ifDef.definition.elseSection;
-    if (!sectionToCompile) {
-      // --- No matching IF, ELIF, and no ELSE, so there's nothing to emit
-      return;
-    }
-
-    // --- Emit the matching section
-    let loopLineIndex = { index: sectionToCompile.section.firstLine + 1 };
-    while (loopLineIndex.index < sectionToCompile.section.lastLine) {
-      var curLine = scopeLines[loopLineIndex.index];
-      await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
-      loopLineIndex.index++;
+    if (sectionToCompile) {
+      const loopLineIndex = { index: sectionToCompile.section.firstLine + 1 };
+      while (loopLineIndex.index < sectionToCompile.section.lastLine) {
+        const curLine = scopeLines[loopLineIndex.index];
+        await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        loopLineIndex.index++;
+      }
     }
 
     // --- Add the end label to the local scope
@@ -5890,7 +4490,7 @@ export abstract class CommonAssembler<
   }
 
   // ==========================================================================
-  // Z80 instruction processing methods
+  // Code emission helpers for the CPU encoders
 
   /**
    * Emits a new byte to the current code segment
@@ -5898,11 +4498,7 @@ export abstract class CommonAssembler<
    */
   protected emitByte(data: number): void {
     this.ensureCodeSegment();
-    this.checkUnbankedCodeRange();
-    this.checkZx8081CodeRange();
-    this.checkHt1080zCodeRange();
-    this.checkTvcCodeRange();
-    this.checkEnterpriseCodeRange();
+    this.checkEmitAddress();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);
@@ -5944,7 +4540,14 @@ export abstract class CommonAssembler<
     emitAction?: (byte: number) => void
   ): void {
     const assembler = this;
-    const bytes = convertSpectrumString(message.asString());
+    const bytes = this.convertStringToBytes(message.asString());
+    if (bytes.length === 0) {
+      // --- An empty string emits nothing but its terminator (`.defn ""` is a single zero)
+      if (nullTerminator) {
+        emit(0x00);
+      }
+      return;
+    }
     if (bytes.length > 1) {
       for (let i = 0; i < bytes.length - 1; i++) {
         emit(bytes.charCodeAt(i));
@@ -6136,21 +4739,15 @@ export abstract class CommonAssembler<
       }
     }
 
-    // --- #2: fix Bit8, Bit16, Bit16Be, BitIndex, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
+    // --- #2: fix Bit8, Bit16, Bit16Be, Ent, Xent, and the CPU's and machine's own fixups
+    // --- (Jr, BitIndex, NexStackAddr, NexEntryAddr, CopperWait, CopperMove, ...)
     for (const fixup of scope.fixups.filter(
       (f) =>
         !f.resolved &&
-        (f.type === FixupType.Bit8 ||
-          f.type === FixupType.Bit16 ||
-          f.type === FixupType.Bit16Be ||
-          f.type === FixupType.BitIndex ||
-          f.type === FixupType.Jr ||
-          f.type === FixupType.Ent ||
-          f.type === FixupType.Xent ||
-          f.type === FixupType.NexStackAddr ||
-          f.type === FixupType.NexEntryAddr ||
-          f.type === FixupType.CopperWait ||
-          f.type === FixupType.CopperMove)
+        f.type !== FixupType.Equ &&
+        f.type !== FixupType.Struct &&
+        f.type !== FixupType.FieldBit8 &&
+        f.type !== FixupType.FieldBit16
     )) {
       const evalResult = this.evaluateFixupExpression(fixup, true, signNotEvaluable);
 
@@ -6172,34 +4769,6 @@ export abstract class CommonAssembler<
             emittedCode[fixup.offset + 1] = evalResult.value.asByte();
             break;
 
-          case FixupType.BitIndex:
-            const bitIndex = evalResult.value.asLong();
-            if (bitIndex < 0 || bitIndex > 7) {
-              this.reportAssemblyError("Z0407", fixup.sourceLine, null, bitIndex);
-              success = false;
-              break;
-            }
-            emittedCode[fixup.offset] = (fixup.data ?? 0) + 8 * bitIndex;
-            break;
-
-          case FixupType.Jr:
-            // --- Check for Relative address
-            var currentAssemblyAddress =
-              segment.startAddress +
-              ((segment.startAddress + fixup.offset >= segment.dispPragmaOffset
-                ? segment.displacement ?? 0
-                : 0) &
-                0xffff) +
-              fixup.offset;
-            var dist = evalResult.value.asWord() - (currentAssemblyAddress + 2);
-            if (dist < -128 || dist > 127) {
-              this.reportAssemblyError("Z0403", fixup.sourceLine, null, dist);
-              success = false;
-              break;
-            }
-            emittedCode[fixup.offset + 1] = dist & 0xff;
-            break;
-
           case FixupType.Ent:
             this._output.entryAddress = evalResult.value.asWord();
             break;
@@ -6208,38 +4777,12 @@ export abstract class CommonAssembler<
             this._output.exportEntryAddress = evalResult.value.asWord();
             break;
 
-          case FixupType.NexStackAddr:
-            const stackAddr = evalResult.value.asWord();
-            if (stackAddr < 0 || stackAddr > 0xffff) {
-              this.reportAssemblyError("Z0351", fixup.sourceLine);
+          default:
+            // --- The CPU's or the machine's own fixup
+            if (!this.resolveCpuFixup(fixup, evalResult.value)) {
               success = false;
-              break;
             }
-            this._output.nexConfig.stackAddr = stackAddr;
             break;
-
-          case FixupType.NexEntryAddr:
-            const entryAddr = evalResult.value.asWord();
-            if (entryAddr < 0 || entryAddr > 0xffff) {
-              this.reportAssemblyError("Z0352", fixup.sourceLine);
-              success = false;
-              break;
-            }
-            this._output.nexConfig.entryAddr = entryAddr;
-            break;
-
-          case FixupType.CopperWait:
-          case FixupType.CopperMove: {
-            // --- The same range checks as an immediate operand (T6, T7)
-            const operandValue = evalResult.value.asLong();
-            const operand = fixup.data ?? 0;
-            if (!this.checkCopperOperand(fixup.sourceLine, fixup.type, operand, operandValue)) {
-              success = false;
-              break;
-            }
-            this.patchCopperOperand(emittedCode, fixup.offset, fixup.type, operand, operandValue);
-            break;
-          }
         }
       } else {
         success = false;
@@ -6257,6 +4800,10 @@ export abstract class CommonAssembler<
         const offset = fixup.offset + key;
         emittedCode[offset] = entry;
       }
+
+      // --- The same fixup is in every enclosing scope: applying it again from an outer scope would
+      // --- overwrite the field values an inner scope's field fixups have patched since
+      fixup.resolved = true;
     }
 
     // --- #4: fix FieldBit8, and FieldBit16
@@ -6521,45 +5068,15 @@ function locationFromLine<TInstruction extends TypedObject>(
 }
 
 /**
- * Is the line a byte-emitting pragma?
- * @param asmLine Assembly line to test
- */
-function isByteEmittingPragma<TInstruction extends TypedObject>(
-  asmLine: AssemblyLine<TInstruction>
-): boolean {
-  switch (asmLine.type) {
-    case "DefBPragma":
-    case "DefWPragma":
-    case "DefCPragma":
-    case "DefMPragma":
-    case "DefNPragma":
-    case "DefZxPragma":
-    case "DefHPragma":
-    case "DefSPragma":
-    case "FillbPragma":
-    case "FillwPragma":
-    case "DefGPragma":
-    case "DefGxPragma":
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
  * One `.copper` word as it was emitted: where it is, and which line produced it
  */
-/** A `.dma` line's bytes in a segment (NEXT_DMA_DEBUGGING_PLAN §10) */
-type DmaEmission<TInstruction extends TypedObject> = {
-  segmentIndex: number;
-  offset: number;
-  length: number;
-  sourceLine: AssemblyLine<TInstruction>;
-};
 
-type CopperEmission<TInstruction extends TypedObject> = {
-  segmentIndex: number;
-  offset: number;
-  address: number;
-  sourceLine: AssemblyLine<TInstruction>;
-};
+/**
+ * Resolves a file name in a source file (`#include`, `.includebin`, `.comparebin`, `#line`): an
+ * absolute name as it is, a relative one from the source file's folder
+ * @param sourceFile The source file the name is in
+ * @param fileName The file name
+ */
+function resolveSourcePath(sourceFile: string, fileName: string): string {
+  return path.isAbsolute(fileName) ? fileName : path.join(path.dirname(sourceFile) ?? "", fileName);
+}

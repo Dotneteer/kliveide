@@ -1,5 +1,5 @@
 /**
- * This class represents the input stream of the Z80 Assembler
+ * This class represents the input stream of the assembler
  */
 export class InputStream {
   // --- Current stream position
