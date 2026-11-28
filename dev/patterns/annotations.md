@@ -202,7 +202,10 @@ A page's `inherits` — and, for an unknown ROM in a 48K BASIC position (Q7), `s
 are added after it **byte-bound**: a label and its comments apply only where the bytes from
 it to the next label are identical, so a changed routine loses its name rather than being
 misnamed. Inherited sidecars resolve through the same lookup, so a working `sp48.rom.dis`
-reaches every ROM that inherits it.
+reaches every ROM that inherits it. **An `inherits` entry applies to the page with its own page
+number only** (`inheritsForPage`): a file of several pages lists each base page once
+(`sam-rom31.rom.dis` inherits pages 0 and 1 of `sam-rom30.rom.dis`), because binding is by byte
+position and a base page tried against another page binds wherever bytes match by chance.
 
 The machine reports where each ROM partition came from (`getRomSources`: CRC, size, file
 and page). `RomAnnotationsHost` loads the pages' sidecars on every machine or ROM change, on

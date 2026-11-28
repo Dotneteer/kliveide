@@ -2,6 +2,7 @@ import { NEXT_ROM_SETS, nextRomAnnotationFile, type NextRomSet } from "@common/z
 import {
   MI_ENTERPRISE,
   MI_HT1080Z,
+  MI_SAM_COUPE,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
@@ -88,6 +89,11 @@ export const ROM_ANNOTATION_CATALOG: readonly RomCatalogMachine[] = [
       [...pages("ep-exos20.rom", 2), ...files("ep-basic20.rom")],
       pages("ep-exdos13.rom", 2)
     ]
+  },
+  {
+    machineId: MI_SAM_COUPE,
+    // --- ROM 3.0 (the default) and 3.1, each ROM0 (page 0, at $0000) and ROM1 (page 1, at $C000)
+    groups: [pages("sam-rom30.rom", 2), pages("sam-rom31.rom", 2)]
   },
   {
     machineId: MI_Z88,

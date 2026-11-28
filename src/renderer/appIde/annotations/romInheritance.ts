@@ -33,6 +33,18 @@ export function inheritsOf(annotations: unknown): { sidecar: string; page: numbe
 }
 
 /**
+ * The inherited sidecars that apply to one page of a sidecar: those naming the same page number.
+ * A file of several pages lists each base page once (`sam-rom31.rom.dis`: page 0 of
+ * `sam-rom30.rom.dis` for its page 0, page 1 for its page 1); binding is by byte position, so a
+ * base page tried against another page bound a label wherever the bytes happened to match and,
+ * listed first, won over the right page's label there. Every single-page sidecar already pairs
+ * equal numbers (`sp128-1` page 0 <- `sp48` page 0, `enNextLG` page 2 <- page 2).
+ */
+export function inheritsForPage(annotations: unknown, page: number): { sidecar: string; page: number }[] {
+  return inheritsOf(annotations).filter((entry) => entry.page === page);
+}
+
+/**
  * Each page of a sidecar merged with what it inherits: its own entries first, then the inherited
  * sidecars' entries whose bytes still match this page. A sidecar that inherits nothing comes back
  * as it is.
@@ -68,6 +80,8 @@ export async function withInheritedEntries(
       { kind: "working", path: "", origin: "", annotations, page }
     ];
     for (const { entry, sidecar } of inherited) {
+      // --- A base page applies to the page of the same number only (`inheritsForPage`)
+      if (entry.page !== page) continue;
       const inheritedBank = sidecar.annotations.banks[String(entry.page)]!;
       const binding = bindRomPage(inheritedBank, sidecar.bytes, target);
       layers.push({

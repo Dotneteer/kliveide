@@ -1,6 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 import type { RomPageKind } from "@common/roms/romIdentity";
 
+import { samSysVars } from "@emu/machines/samcoupe/SamSysVars";
 import { zx80SysVars } from "@emu/machines/zx8081/Zx80SysVars";
 import { zx81SysVars } from "@emu/machines/zx8081/Zx81SysVars";
 import { zxSpectrum48SysVars } from "@emu/machines/zxSpectrum48/ZxSpectrum48SysVars";
@@ -42,6 +43,9 @@ export function romSysVarsFor(kind: RomPageKind | undefined): SysVar[] | undefin
     case "next-os1":
     case "next-os2":
       return SPECTRUM_128_SYS_VARS;
+    case "sam-rom0":
+    case "sam-rom1":
+      return samSysVars;
     default:
       return undefined;
   }

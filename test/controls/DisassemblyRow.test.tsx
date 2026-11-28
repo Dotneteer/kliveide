@@ -6,7 +6,9 @@ import {
   deriveInstructionWidthCh,
   deriveDisassemblyRowViewModel,
   DisassemblyRow,
-  isAuthoredRow
+  isAuthoredRow,
+  isInstructionClipped,
+  MAX_INSTRUCTION_WIDTH_CH
 } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import { splitInstructionOperands } from "@renderer/controls/data/DisassemblyText";
 import type { BranchVerdict } from "@renderer/appIde/DocumentPanels/branchVerdict";
@@ -1183,5 +1185,17 @@ describe("deriveInstructionWidthCh", () => {
         { address: 1, instruction: longest }
       ])
     ).toBe(longest.length + 1);
+  });
+
+  it("stops at the cap, so one long data row cannot push the comments off screen", () => {
+    const message = `.defc "${"M".repeat(60)}"`;
+    expect(
+      deriveInstructionWidthCh([
+        { address: 0, instruction: "ld hl,$8100" },
+        { address: 3, instruction: message }
+      ])
+    ).toBe(MAX_INSTRUCTION_WIDTH_CH);
+    expect(isInstructionClipped(message, MAX_INSTRUCTION_WIDTH_CH)).toBe(true);
+    expect(isInstructionClipped(".dma wr0 a_to_b, transfer, $4000, $0020", MAX_INSTRUCTION_WIDTH_CH)).toBe(false);
   });
 });

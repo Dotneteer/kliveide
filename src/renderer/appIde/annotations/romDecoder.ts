@@ -3,6 +3,7 @@ import type { RomDecoder, RomInstruction } from "@common/roms/romAnnotationTools
 import {
   romKindHasBasicCalls,
   romKindIsEnterprise,
+  romKindIsSam,
   romKindIsTvc,
   romKindIsZ88,
   romKindOrigin,
@@ -28,6 +29,7 @@ import {
 } from "@renderer/appIde/disassemblers/z80-disassembler/ep-disassembler";
 import { ChainedCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/rom-gated-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { SamCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/sam-disassembler";
 
 /**
  * Install the ROM's own decoding on a disassembler: the report code after `RST $08` and the
@@ -66,6 +68,11 @@ export function prepareRomDisassembler(
     );
   } else if (romKindIsEnterprise(kind)) disassembler.setCustomDisassembler(new EpCustomDisassembler());
   if (romKindIsZ88(kind)) disassembler.setCustomDisassembler(new Z88CustomDisassembler());
+  // --- The SAM: RST 08h's byte and RST 28h's calculator stream on both pages; ROM0's RST 30h (at $0000)
+  // --- is followed by a ROM1 address, ROM1's (at $C000) by nothing
+  if (romKindIsSam(kind)) {
+    disassembler.setCustomDisassembler(new SamCustomDisassembler({ rst30HasWord: () => kind === "sam-rom0" }));
+  }
 }
 
 /**
