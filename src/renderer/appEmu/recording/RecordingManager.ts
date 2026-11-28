@@ -26,6 +26,23 @@ type Dispatch = (action: any) => void;
 export const RECORDING_SURROUND = 4;
 
 /**
+ * Recorded frames that may be on their way to the main process before `submitFrame` waits.
+ *
+ * The emulator's frame loop awaits `submitFrame` before it sleeps. It used to wait for main's answer
+ * to every frame: a ~400 KB IPC round trip that took 6.5 ms (median) and up to 73 ms on a fast Mac,
+ * where the frame itself takes 1 ms. The live sound holds only ~25 ms in hand, so every slow answer
+ * ran it dry, and a 128K game's AY music crackled while it was being recorded. The frame is copied
+ * into the IPC message when it is sent, so the loop need not wait for the answer. Eight frames
+ * (160 ms at 50 Hz) absorb main's slow moments and bound what can queue up.
+ *
+ * Main answers as soon as it has handed the frame to FFmpeg's input, not when FFmpeg has read it:
+ * FFmpeg reads no more video while its audio input is empty, so waiting for it would freeze a
+ * machine that sends no sound. An unthrottled run (RZX render to video) therefore still waits for
+ * every answer (`submitFrame`'s `waitForAnswer`), which keeps it at the pace it always had.
+ */
+export const MAX_FRAMES_IN_FLIGHT = 8;
+
+/**
  * Framework-agnostic state machine that coordinates screen recording.
  *
  * Lifecycle:
@@ -52,6 +69,10 @@ export class RecordingManager {
   private _surroundColor: (() => number | undefined) | undefined;
   /** The frame with its surround, reused from frame to frame */
   private _surroundFrame: Uint8Array | undefined;
+  /** Frames sent to the main process and not yet answered, oldest first */
+  private _framesInFlight: Promise<void>[] = [];
+  /** A failed frame is reported once per recording, not 50 times a second */
+  private _frameFailureReported = false;
 
   constructor(
     private readonly mainApi: MainApi,
@@ -219,14 +240,38 @@ export class RecordingManager {
 
   /**
    * Submits a raw RGBA frame to the recording.
-   * @param rgba Raw RGBA pixel data at machine resolution (width × height × 4 bytes).
+   * @param rgba Raw RGBA pixel data at machine resolution (width × height × 4 bytes). The caller
+   * may reuse it once this returns: the IPC message carries a copy.
+   * @param waitForAnswer Wait until main has taken this frame (an unthrottled run, which has no
+   * other pace)
+   * @returns Once the frame is sent, or, with MAX_FRAMES_IN_FLIGHT frames unanswered, once the
+   * oldest of them is answered.
    */
-  async submitFrame(rgba: Uint8Array): Promise<void> {
+  async submitFrame(rgba: Uint8Array, waitForAnswer = false): Promise<void> {
     if (this._state !== "recording") return;
     this._captureCount++;
     // For half fps, skip odd-numbered capture frames
     if (this._fps === "half" && this._captureCount % 2 !== 0) return;
-    await this.mainApi.appendRecordingFrame(this._withSurround(rgba));
+
+    // --- Sent now, in order; the answer is not waited for (see MAX_FRAMES_IN_FLIGHT)
+    const sent: Promise<void> = this.mainApi
+      .appendRecordingFrame(this._withSurround(rgba))
+      .catch((err) => {
+        if (!this._frameFailureReported) {
+          this._frameFailureReported = true;
+          console.error(`[RecordingManager] IPC appendRecordingFrame FAILED:`, err);
+        }
+      })
+      .finally(() => {
+        const index = this._framesInFlight.indexOf(sent);
+        if (index >= 0) this._framesInFlight.splice(index, 1);
+      });
+    this._framesInFlight.push(sent);
+    if (waitForAnswer) {
+      await sent;
+    } else if (this._framesInFlight.length >= MAX_FRAMES_IN_FLIGHT) {
+      await this._framesInFlight[0];
+    }
   }
 
   /** The frame as recorded: the picture itself, or the picture inside its surround */
@@ -291,6 +336,7 @@ export class RecordingManager {
       this._fps === "half" ? Math.max(1, Math.round(this._nativeFps / 2)) : this._nativeFps;
 
     this._captureCount = 0;
+    this._frameFailureReported = false;
     try {
       const surround = this._surroundColor ? 2 * RECORDING_SURROUND : 0;
       const filePath = await this.mainApi.startScreenRecording(
@@ -323,6 +369,8 @@ export class RecordingManager {
     this._state = "idle";
     this.dispatch(setScreenRecordingStateAction("idle"));
     if (prevState === "recording" || prevState === "paused") {
+      // --- The last frames reach the file before it is closed
+      await Promise.all(this._framesInFlight);
       try {
         await this.mainApi.stopScreenRecording();
       } catch (err) {
